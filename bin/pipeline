@@ -1,0 +1,143 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "fileutils"
+require_relative "../config/environment"
+
+require "dry/cli"
+require "dotenv/load"
+
+module PipelineCLI
+  module Commands
+    extend Dry::CLI::Registry
+
+    class Run < Dry::CLI::Command
+      WATCH_INTERVAL = 6 * 60 * 60 # 6 hours
+
+      desc "Run the job application tracking pipeline"
+
+      option :model,     default: ENV.fetch("DEFAULT_MODEL", "mistral-large-latest"),
+                         desc: "LLM model (e.g. mistral-large-latest, gpt-4.1)"
+      option :watch,     type: :boolean, default: false,
+                         desc: "Run in a loop every 6 hours"
+      option :log_level, default: "info",
+                         desc: "Logging verbosity: debug, info, warn, error"
+      option :log_file,  desc: "Path to log file (default: log/pipeline.log)"
+
+      def call(model:, watch:, log_level: "info", log_file: nil, **)
+        log_path = log_file || Rails.root.join("log/pipeline.log").to_s
+        FileUtils.mkdir_p(File.dirname(log_path))
+        logger = Pipeline::Logger.new(level: log_level.to_sym, log_file: log_path)
+
+        RubyLLM.configure do |config|
+          config.mistral_api_key   = ENV.fetch("MISTRAL_API_KEY", "")
+          config.openai_api_key    = ENV.fetch("OPENAI_API_KEY", "")
+          config.gemini_api_key    = ENV.fetch("GEMINI_API_KEY", "")
+          config.anthropic_api_key = ENV.fetch("ANTHROPIC_API_KEY", "")
+          config.log_level = log_level.to_sym
+        end
+
+        registry = build_registry
+
+        loop do
+          logger.info "Starting pipeline (model: #{model})..."
+          result = Pipeline::JobsWorkflow.new(registry: registry, model: model, logger: logger).run
+          logger.info "Pipeline complete: #{result.inspect}"
+
+          break unless watch
+
+          next_run = Time.now + WATCH_INTERVAL
+          logger.info "Watch mode: next run at #{next_run.strftime('%Y-%m-%d %H:%M:%S')}. Ctrl+C to stop."
+          sleep WATCH_INTERVAL
+        end
+      end
+
+      private
+
+      def build_registry
+        registry = ProviderRegistry.new
+
+        # Gmail
+        credentials_path = Rails.root.join(ENV.fetch("CREDENTIALS_PATH", "credentials.json")).to_s
+        token_path       = Rails.root.join(ENV.fetch("TOKEN_PATH", "token.yaml")).to_s
+        if File.exist?(credentials_path)
+          gmail = GmailService.new(credentials_path: credentials_path, token_path: token_path)
+          registry.register("gmail", Adapters::GmailAdapter.new(gmail))
+        end
+
+        # Yahoo
+        yahoo_user = ENV["YAHOO_USERNAME"]
+        yahoo_pass = ENV["YAHOO_APP_PASSWORD"]
+        if yahoo_user && yahoo_pass
+          yahoo = YahooMailService.new(
+            host:     ENV.fetch("YAHOO_IMAP_HOST", "imap.mail.yahoo.com"),
+            port:     ENV.fetch("YAHOO_IMAP_PORT", "993").to_i,
+            username: yahoo_user,
+            password: yahoo_pass
+          )
+          registry.register("yahoo", Adapters::YahooAdapter.new(yahoo))
+          at_exit { yahoo.disconnect }
+        end
+
+        if registry.providers.empty?
+          puts "ERROR: No providers configured. Set up Gmail (credentials.json) or Yahoo (YAHOO_USERNAME + YAHOO_APP_PASSWORD)."
+          exit 1
+        end
+
+        registry
+      end
+    end
+
+    class DbMigrate < Dry::CLI::Command
+      desc "Run database migrations"
+
+      def call(*)
+        ActiveRecord::MigrationContext.new(
+          Rails.root.join("db/migrate").to_s,
+          ActiveRecord::SchemaMigration
+        ).migrate
+        puts "Migrations complete."
+      end
+    end
+
+    class UploadGist < Dry::CLI::Command
+      desc "Upload interviews data to a GitHub Gist as CSV"
+
+      option :token,    desc: "GitHub personal access token (default: $GITHUB_TOKEN)"
+      option :gist_id,  desc: "Existing Gist ID to update (default: $GIST_ID)"
+      option :filename, default: "interviews.csv", desc: "Filename inside the Gist"
+
+      def call(token: nil, gist_id: nil, filename: "interviews.csv", **)
+        resolved_token = token || ENV["GITHUB_TOKEN"]
+        unless resolved_token
+          puts "ERROR: GitHub token required. Pass --token or set $GITHUB_TOKEN."
+          exit 1
+        end
+
+        rows    = Interview.as_rows
+        headers = Interview::COLUMN_NAMES
+        csv     = CSV.generate(headers: true) do |c|
+          c << headers
+          rows.each { |r| c << headers.map { |h| r[h] } }
+        end
+
+        uploader = GistUploader.new(
+          token:    resolved_token,
+          gist_id:  gist_id || ENV["GIST_ID"],
+          filename: filename
+        )
+        url = uploader.upload(csv)
+        puts "Uploaded: #{url}"
+      rescue GistUploader::ApiError => e
+        puts "Upload failed: #{e.message}"
+        exit 1
+      end
+    end
+
+    register "run",          Run
+    register "db:migrate",   DbMigrate
+    register "upload_gist",  UploadGist
+  end
+end
+
+Dry::CLI.new(PipelineCLI::Commands).call
