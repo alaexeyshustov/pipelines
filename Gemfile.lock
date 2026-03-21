@@ -115,6 +115,12 @@ GEM
       traces (~> 0.10)
     async-http-cache (0.4.6)
       async-http (~> 0.56)
+    async-job (0.11.1)
+      async (~> 2.9)
+      string-format (~> 0.2)
+    async-job-adapter-active_job (0.18.4)
+      async-job (~> 0.9)
+      async-service (~> 0.12)
     async-pool (0.11.2)
       async (>= 2.0)
     async-service (0.21.0)
@@ -469,6 +475,7 @@ PLATFORMS
 
 DEPENDENCIES
   async
+  async-job-adapter-active_job
   debug
   dotenv-rails
   dry-cli
@@ -511,6 +518,8 @@ CHECKSUMS
   async-container (0.34.4) sha256=0d705d485802a01c9dba070e7288257b4d8032f7f052d4e8753d76f74673ff66
   async-http (0.94.2) sha256=c5ca94b337976578904a373833abe5b8dfb466a2946af75c4ae38c409c5c78b2
   async-http-cache (0.4.6) sha256=2038d1f093182f16b50b4db271c25085e3938da10bfcfc2904cadb0530fddfd6
+  async-job (0.11.1) sha256=6a43c732597d490dd0dabc4fa390faed0b0fde9226a3a33f25979ff356a096a1
+  async-job-adapter-active_job (0.18.4) sha256=b687965682c6ba8b10c94a571a979d6a28cd9a86e0c00946ee4e541544b9728d
   async-pool (0.11.2) sha256=0a43a17b02b04d9c451b7d12fafa9a50e55dc6dd00d4369aca00433f16a7e3ed
   async-service (0.21.0) sha256=3bc9e0f8dc293ba8855bc790959db7f981ae22bbb731456d221d93b388e9706f
   async-utilization (0.3.2) sha256=201a27e0948fe23fc14a01a0ecbe5e420e27cebae3a51f36e56fc45fb31df3b4

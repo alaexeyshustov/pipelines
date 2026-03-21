@@ -3,7 +3,7 @@ require_relative "boot"
 require "rails"
 # Pick the frameworks you want:
 require "active_model/railtie"
-# require "active_job/railtie"
+require "active_job/railtie"
 require "active_record/railtie"
 # require "active_storage/engine"
 require "action_controller/railtie"
@@ -41,6 +41,9 @@ module ApplicationPipeline
 
     # Use SQL schema format so sqlite-vec virtual tables are preserved correctly.
     config.active_record.schema_format = :sql
+
+    # Use async-job adapter backed by Async::Job::Processor::Inline.
+    config.active_job.queue_adapter = :async_job
 
     # Autoload app/pipeline and app/tools in addition to standard Rails paths.
     config.autoload_paths += %w[pipeline tools].map { |d| Rails.root.join("app", d).to_s }
