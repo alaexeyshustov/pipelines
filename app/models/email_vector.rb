@@ -8,7 +8,7 @@ class EmailVector < ApplicationRecord
   def self.upsert_embedding(email_id:, embedding:)
     connection.execute(
       "INSERT OR REPLACE INTO email_vectors(email_id, embedding) VALUES (?, ?)",
-      [ email_id, SqliteVec.serialize_float32(embedding) ]
+      [ email_id, serialize(embedding) ]
     )
   end
 
@@ -17,8 +17,13 @@ class EmailVector < ApplicationRecord
   def self.search(embedding, limit: 5)
     rows = connection.execute(
       "SELECT email_id, distance FROM email_vectors WHERE embedding MATCH ? ORDER BY distance LIMIT ?",
-      [ SqliteVec.serialize_float32(embedding), limit ]
+      [ serialize(embedding), limit ]
     )
     rows.map { |row| { email_id: row[0], distance: row[1] } }
   end
+
+  def self.serialize(embedding)
+    embedding.pack("f*")
+  end
+  private_class_method :serialize
 end

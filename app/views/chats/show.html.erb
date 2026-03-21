@@ -1,0 +1,105 @@
+<% content_for :title, "Chat ##{@chat.id}" %>
+
+<div class="mb-6 flex items-center justify-between">
+  <%= link_to "← All Chats", chats_path, class: "text-sm text-gray-500 hover:text-gray-700" %>
+  <%= button_to "Delete", chat_path(@chat), method: :delete, form: { data: { turbo_confirm: "Delete chat ##{@chat.id}?" } }, class: "text-sm text-red-500 hover:text-red-700 font-medium bg-transparent border-0 cursor-pointer p-0" %>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+  <h1 class="text-xl font-bold text-gray-900 mb-4">Chat #<%= @chat.id %></h1>
+  <dl class="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+    <div class="flex gap-2">
+      <dt class="text-gray-500 font-medium">Model:</dt>
+      <dd class="text-gray-800"><%= @chat.model&.name || "—" %></dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="text-gray-500 font-medium">Messages:</dt>
+      <dd class="text-gray-800"><%= @chat.messages.size %></dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="text-gray-500 font-medium">Created:</dt>
+      <dd class="text-gray-800"><%= @chat.created_at.strftime("%b %-d, %Y %H:%M:%S") %></dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="text-gray-500 font-medium">Updated:</dt>
+      <dd class="text-gray-800"><%= @chat.updated_at.strftime("%b %-d, %Y %H:%M:%S") %></dd>
+    </div>
+  </dl>
+</div>
+
+<h2 class="text-lg font-semibold text-gray-900 mb-4">Messages</h2>
+
+<% if @chat.messages.empty? %>
+  <p class="text-gray-400 text-sm">No messages.</p>
+<% else %>
+  <div class="space-y-4">
+    <% @chat.messages.order(:created_at).each do |message| %>
+      <%
+        role_styles = case message.role
+                      when "user"      then "bg-blue-50 border-blue-200"
+                      when "assistant" then "bg-white border-gray-200"
+                      when "tool"      then "bg-amber-50 border-amber-200"
+                      else                  "bg-gray-50 border-gray-200"
+                      end
+        role_badge = case message.role
+                     when "user"      then "bg-blue-100 text-blue-700"
+                     when "assistant" then "bg-gray-100 text-gray-700"
+                     when "tool"      then "bg-amber-100 text-amber-700"
+                     else                  "bg-gray-100 text-gray-600"
+                     end
+      %>
+      <div class="rounded-xl border <%= role_styles %> overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-2 border-b <%= role_styles %> gap-4">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full <%= role_badge %>">
+              <%= message.role %>
+            </span>
+            <span class="text-xs text-gray-400">#<%= message.id %></span>
+          </div>
+          <div class="flex items-center gap-4 text-xs text-gray-400">
+            <% if message.input_tokens.to_i > 0 %>
+              <span>in: <%= message.input_tokens %></span>
+            <% end %>
+            <% if message.output_tokens.to_i > 0 %>
+              <span>out: <%= message.output_tokens %></span>
+            <% end %>
+            <% if message.cached_tokens.to_i > 0 %>
+              <span>cached: <%= message.cached_tokens %></span>
+            <% end %>
+            <span><%= message.created_at.strftime("%H:%M:%S") %></span>
+          </div>
+        </div>
+
+        <div class="px-4 py-3">
+          <% if message.thinking_text.present? %>
+            <details class="mb-3 text-xs text-gray-500">
+              <summary class="cursor-pointer hover:text-gray-700 font-medium">Thinking</summary>
+              <pre class="mt-2 whitespace-pre-wrap font-mono text-xs text-gray-600 bg-gray-50 rounded p-3 overflow-x-auto"><%= message.thinking_text %></pre>
+            </details>
+          <% end %>
+
+          <% if message.content.present? %>
+            <pre class="whitespace-pre-wrap text-sm text-gray-800 font-sans"><%= message.content %></pre>
+          <% else %>
+            <span class="text-xs text-gray-400 italic">No text content</span>
+          <% end %>
+        </div>
+
+        <% if message.tool_calls.any? %>
+          <div class="border-t border-dashed border-gray-200 px-4 py-3 space-y-3">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tool Calls</p>
+            <% message.tool_calls.each do |tc| %>
+              <div class="bg-gray-900 rounded-lg overflow-hidden">
+                <div class="flex items-center justify-between px-3 py-2 bg-gray-800">
+                  <span class="text-xs font-mono text-emerald-400 font-semibold"><%= tc.name %></span>
+                  <span class="text-xs font-mono text-gray-400"><%= tc.tool_call_id %></span>
+                </div>
+                <pre class="px-3 py-3 text-xs font-mono text-gray-200 overflow-x-auto"><%= JSON.pretty_generate(tc.arguments) rescue tc.arguments.inspect %></pre>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

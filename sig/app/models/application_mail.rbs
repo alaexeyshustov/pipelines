@@ -1,0 +1,18 @@
+class ApplicationMail < ApplicationRecord
+  COLUMN_NAMES: Array[String]
+
+  def date: () -> String?
+  def date=: (String?) -> String?
+  def provider: () -> String?
+  def provider=: (String?) -> String?
+  def email_id: () -> String?
+  def email_id=: (String?) -> String?
+  def company: () -> String?
+  def company=: (String?) -> String?
+  def job_title: () -> String?
+  def job_title=: (String?) -> String?
+  def action: () -> String?
+  def action=: (String?) -> String?
+
+  def self.as_rows: (?untyped scope) -> Array[Hash[String, String?]]
+end

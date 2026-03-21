@@ -1,0 +1,13 @@
+module Emails
+  class GmailAuth
+    USER_ID: String
+
+    @credentials_path: String
+    @token_path: String
+    @scope: Array[String]
+    @output: IO
+
+    def initialize: (credentials_path: String, token_path: String, scope: Array[String], ?output: IO) -> void
+    def credentials: () -> untyped
+  end
+end

@@ -33,3 +33,8 @@
 # Ignore key files for decrypting credentials and more.
 /config/*.key
 
+credentials.json
+token.yaml
+
+# RSpec
+/spec/examples.txt

@@ -1,0 +1,63 @@
+<% content_for :title, "Chats" %>
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">Chats</h1>
+  <span class="text-sm text-gray-500"><%= @pagy.count %> total</span>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">ID</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Model</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Created</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Updated</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% if @chats.empty? %>
+        <tr>
+          <td colspan="5" class="px-4 py-10 text-center text-gray-400">No chats found.</td>
+        </tr>
+      <% else %>
+        <% @chats.each do |chat| %>
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-4 py-3 font-mono text-gray-500">#<%= chat.id %></td>
+            <td class="px-4 py-3 text-gray-700"><%= chat.model&.name || "—" %></td>
+            <td class="px-4 py-3 text-gray-500"><%= chat.created_at.strftime("%b %-d, %Y %H:%M") %></td>
+            <td class="px-4 py-3 text-gray-500"><%= chat.updated_at.strftime("%b %-d, %Y %H:%M") %></td>
+            <td class="px-4 py-3 text-right flex items-center justify-end gap-3">
+              <%= link_to "View", chat_path(chat), class: "text-indigo-600 hover:text-indigo-800 font-medium" %>
+              <%= button_to "Delete", chat_path(chat), method: :delete, form: { data: { turbo_confirm: "Delete chat ##{chat.id}?" } }, class: "text-red-500 hover:text-red-700 font-medium bg-transparent border-0 cursor-pointer p-0" %>
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<% if @pagy.pages > 1 %>
+  <div class="mt-6 flex items-center justify-center gap-1 flex-wrap">
+    <% if @pagy.previous %>
+      <%= link_to "← Prev", chats_path(page: @pagy.previous), class: "px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-100 transition-colors" %>
+    <% end %>
+
+    <% @pagy.series.each do |item| %>
+      <% if item == :gap %>
+        <span class="px-2 text-gray-400">…</span>
+      <% elsif item.is_a?(String) %>
+        <%# Current page is a String in pagy v43 %>
+        <span class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium"><%= item %></span>
+      <% else %>
+        <%= link_to item, chats_path(page: item), class: "px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-100 transition-colors" %>
+      <% end %>
+    <% end %>
+
+    <% if @pagy.next %>
+      <%= link_to "Next →", chats_path(page: @pagy.next), class: "px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-100 transition-colors" %>
+    <% end %>
+  </div>
+<% end %>

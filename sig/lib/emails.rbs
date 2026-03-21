@@ -1,0 +1,19 @@
+module Emails
+  PROVIDERS: Hash[String, singleton(Emails::Adapters::BaseAdapter)]
+
+  @provider_registry: Emails::ProviderRegistry?
+
+  def self.configure: (**untyped providers_config) -> void
+  def self.list_messages: (String provider_name, **untyped opts) -> untyped
+  def self.get_message: (String provider_name, String message_id, **untyped opts) -> untyped
+  def self.search_messages: (String provider_name, String query, **untyped opts) -> untyped
+  def self.get_labels: (String provider_name, **untyped opts) -> untyped
+  def self.get_unread_count: (String provider_name, **untyped opts) -> untyped
+  def self.modify_labels: (String provider_name, String message_id, ?add: Array[String], ?remove: Array[String], **untyped opts) -> untyped
+  def self.create_label: (String provider_name, name: String, **untyped opts) -> untyped
+
+  private
+
+  def self.registry: () -> Emails::ProviderRegistry
+  def self.fetch: (String provider_name) -> untyped
+end

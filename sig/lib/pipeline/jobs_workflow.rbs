@@ -1,0 +1,48 @@
+module Pipeline
+  class JobsWorkflow
+    PROVIDERS: Array[String]
+    BATCH_SIZE: Integer
+    MAX_CONCURRENT_REQUESTS: Integer
+    LOOKBACK_MONTHS: Integer
+    MODELS_POOL: Array[String]
+    RATE_LIMIT_SWITCH_AFTER: Integer
+    RATE_LIMIT_BASE_DELAY: Integer
+
+    type run_result =
+        { status: "no_new_emails" }
+      | { status: "no_job_emails" }
+      | { status: "complete", new_emails: Integer, job_emails: Integer, rows_added: Integer, reconcile_summaries: Array[String?] }
+
+    type day_result = {
+      emails: Array[Hash[String, untyped]],
+      job_list: Array[Hash[String, untyped]],
+      added_rows: Array[Hash[String, untyped]],
+      summary: String?
+    }
+
+    @registry: Emails::ProviderRegistry
+    @model: String?
+    @logger: Pipeline::Logger
+    @tools: Array[RubyLLM::Tool]
+
+    def initialize: (registry: Emails::ProviderRegistry, ?model: String?, ?logger: Pipeline::Logger) -> void
+    def run: () -> run_result
+
+    private
+    def run_single_day: (String date, Array[String] existing_ids) -> day_result
+    def step1_init_database: () -> [String, Array[String]]
+    def step2_fetch_emails: (String after_date, String before_date, Array[String] existing_ids) -> Array[Hash[String, untyped]]
+    def step3_classify: (Array[Hash[String, untyped]] new_emails) -> Array[Hash[String, untyped]]
+    def step4_label_and_store: (Array[Hash[String, untyped]] job_list) -> Array[Hash[String, untyped]]
+    def step5_reconcile: (Array[Hash[String, untyped]] added_rows) -> String?
+    def run_agent: (Class agent_class, String message) -> String
+    def effective_models_pool: () -> Array[String]
+    def tools_for: (Class agent_class) -> Array[RubyLLM::Tool]
+    def days_to_process: (String cutoff_date) -> Array[String]
+    def extract_date: (String text) -> String
+    def extract_ids: (String text) -> Array[String]
+    def parse_json_array: (String? text) -> Array[Hash[String, untyped]]
+    def safe_parse_json: (String? text) -> Hash[String, untyped]
+    def default_beginning_date: () -> String
+  end
+end

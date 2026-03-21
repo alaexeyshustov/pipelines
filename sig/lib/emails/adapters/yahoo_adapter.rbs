@@ -1,0 +1,71 @@
+module Emails
+  module Adapters
+    type yahoo_list_message = {
+      id: Integer,
+      subject: String,
+      from: String,
+      to: String,
+      date: String,
+      snippet: String,
+      folders: Array[String]
+    }
+
+    type yahoo_message = {
+      id: Integer,
+      subject: String,
+      from: String,
+      to: String,
+      date: String,
+      snippet: String,
+      body: String,
+      folders: Array[String]
+    }
+
+    type yahoo_label = { id: String, name: String, type: String }
+    type yahoo_folder = { name: String, delimiter: String?, attributes: Array[String] }
+    type yahoo_tag_result = { uid: Integer, action: String, tags: Array[String], mailbox: String }
+
+    class YahooAdapter < BaseAdapter
+      IMAP_DATE_FORMAT: String
+
+      @host: String
+      @port: Integer
+      @username: String
+      @password: String
+      @mutex: Mutex
+      @current_mailbox: String?
+      @imap: Net::IMAP
+
+      def self.setup: (**untyped opts) -> void
+      def self.test_connection: (**untyped opts) -> void
+      def self.reset: (**untyped opts) -> void
+      def self.from_env: (**untyped opts) -> YahooAdapter
+
+      def initialize: (host: String, port: Integer, username: String, password: String) -> void
+      def at_exit: () -> void
+      def list_messages: (?mailbox: String, ?max_results: Integer, ?query: String?, ?flagged: bool?, ?after_date: Date?, ?before_date: Date?, ?offset: Integer, ?label: String?) -> Array[yahoo_list_message]
+      def get_message: (Integer uid, ?mailbox: String) -> yahoo_message?
+      def search_messages: (String query, ?max_results: Integer, ?mailbox: String) -> Array[yahoo_message]
+      def get_labels: (**untyped ignored) -> Array[yahoo_label]
+      def get_unread_count: (?mailbox: String) -> Integer
+      def modify_labels: (untyped message_uid, ?add: Array[String], ?remove: Array[String], ?mailbox: String, **untyped ignored) -> untyped
+      def create_label: (name: String, **untyped opts) -> yahoo_label
+
+      private
+      def connect!: () -> void
+      def disconnect: () -> void
+      def ensure_mailbox: (String mailbox) -> void
+      def with_reconnect: [T] () { () -> T } -> T
+      def with_lock: [T] () { () -> T } -> T
+      def fetch_and_parse: (Integer uid, String mailbox) -> yahoo_list_message?
+      def get_folders: () -> Array[yahoo_folder]
+      def tag_email: (Integer uid, tags: Array[String], ?mailbox: String, ?action: String) -> yahoo_tag_result
+      def extract_body: (untyped mail) -> String
+      def decode_part: (untyped? part) -> String
+      def strip_html: (String html) -> String
+      def decode_header: (untyped? value) -> String?
+      def build_search_criteria: (?query: String?, ?flagged: bool?, ?after_date: Date?, ?before_date: Date?) -> Array[String]
+      def parse_query_criteria: (String query) -> Array[String]
+    end
+  end
+end

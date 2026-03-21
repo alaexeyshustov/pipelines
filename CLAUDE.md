@@ -1,42 +1,13 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Project Overview
-
 Rails 8.1 / Ruby 4.0 application that runs a **multi-agent job-application tracking pipeline**. It pulls emails from Gmail and Yahoo Mail, classifies them with Mistral AI, labels them in the provider, and maintains an SQLite database of job applications and interview progress.
 
-This is a **backend-only pipeline** with no web interface. Entry point is `bin/pipeline`.
+- Language: Ruby 4.0. 
+- Do NOT use Python anywhere.
+- Use TDD for new features and refactoring.
+- Testing Framework: RSpec
+- Do not use shoulda matchers
+- Use VCR casettes for API calls stubbing
 
-**Language: Ruby 4.0. Do NOT use Python anywhere.**
-
----
-
-## Commands
-
-| Task                   | Command                                                          |
-| ---------------------- | ---------------------------------------------------------------- |
-| Install dependencies   | `bundle install`                                                 |
-| Run migrations         | `bundle exec rails db:migrate`                                   |
-| Run all tests          | `bundle exec rspec`                                              |
-| Run a single spec      | `bundle exec rspec spec/tools/list_emails_tool_spec.rb`          |
-| Run pipeline once      | `bin/pipeline run`                                               |
-| Run pipeline (model)   | `bin/pipeline run --model mistral-large-latest`                  |
-| Run pipeline (watch)   | `bin/pipeline run --watch`                                       |
-| Run pipeline (debug)   | `bin/pipeline run --log-level debug`                             |
-| Upload interviews gist | `bin/pipeline upload_gist`                                       |
-| Rails console          | `bundle exec rails console`                                      |
-| Format code            | `rubyfmt`                                                        |
-
----
-
-## Architecture
-
-### Key Difference from `gmail_mcp`
-
-This app has **no MCP**. Tools are plain `RubyLLM::Tool` subclasses instantiated directly in `JobsWorkflow#build_tools` and passed to agents. There is no subprocess or stdio transport.
-
-### Request Flow
+## Request Flow
 
 ```
 bin/pipeline run
@@ -47,59 +18,46 @@ bin/pipeline run
               → GmailService / YahooMailService / EmailClassifier / ApplicationMail / Interview
 ```
 
-### Tool Name Resolution
-
-`RubyLLM::Tool` derives the tool name from the class name by snake_casing and stripping the `_tool` suffix:
-- `ListEmailsTool` → `"list_emails"`
-- `ManageDatabaseTool` → `"manage_database"`
-
-Agent `TOOLS` constants list these derived names. `JobsWorkflow#tools_for` filters `@tools` by `t.name`.
 
 ### Database (SQLite + sqlite-vec)
 
 - `application_mails` — one row per job email (date, provider, email_id, company, job_title, action)
 - `interviews` — one row per company/job_title pair, tracking lifecycle status and interview dates
-- `email_vectors` — sqlite-vec virtual table (vec0) storing 1536-dim float embeddings for RAG
+- `email_vectors` — sqlite-vec virtual table (vec0) storing 1536-dim float embeddings for RAG (**not yet wired into the workflow** — exists for future RAG use)
 
 `EmailVector.search(embedding)` wraps the `vec0` KNN query. `SqliteVecExtension` in `config/initializers/sqlite_vec.rb` loads the extension on every connection.
 
 Schema format is `:sql` (not `:ruby`) because `vec0` virtual tables cannot be expressed in Ruby schema DSL.
 
-### Provider Adapters
+## RBS Type Signatures
 
-Same pattern as `gmail_mcp`: `ProviderRegistry` → `Adapters::GmailAdapter` / `Adapters::YahooAdapter` → `GmailService` / `YahooMailService`. Adapters live in `app/services/adapters/`.
+All Ruby source files have corresponding RBS signatures under `sig/`, mirroring the source tree:
 
-### ManageDatabaseTool vs manage_csv
+```
+sig/app/models/          ← ApplicationRecord, ApplicationMail, Interview, EmailVector
+sig/app/agents/          ← one .rbs per agent class
+sig/app/tools/           ← one .rbs per tool class
+sig/app/services/        ← MailService
+sig/lib/pipeline/        ← JobsWorkflow, Logger, TestWorkflow
+sig/lib/emails/          ← GmailAuth, ProviderRegistry
+sig/lib/emails/adapters/ ← BaseAdapter, GmailAdapter, YahooAdapter
+```
 
-`ManageDatabaseTool` replaces the CSV-based `manage_csv` from `gmail_mcp`. It writes to `ApplicationMail` and `Interview` ActiveRecord models. Column names changed to snake_case to match the schema (e.g. `applied_at` instead of "applied at").
+**Signature maintenance rules — apply after every code change:**
 
----
+- When you **add a new class or module**: create the matching `.rbs` file under `sig/` in the same relative path.
+- When you **add or change a method signature** (parameters, return type, visibility): update the corresponding `.rbs` file to match.
+- When you **add a constant** (`FOO = ...`): declare it in the `.rbs` with the correct type.
+- When you **add an instance variable** assigned in `initialize`: declare it as `@var: Type` in the `.rbs`.
+- When you **delete a method or class**: remove its declaration from the `.rbs`.
+- When you **rename** anything: update both the `.rb` and the `.rbs` together.
 
-## Adding a New Tool
+Run `bundle exec rbs validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**/**/*.rbs` after any signature edit to confirm syntax is valid.
 
-1. Create `app/tools/<name>_tool.rb` subclassing `RubyLLM::Tool`.
-2. Add it to the array in `JobsWorkflow#build_tools`.
-3. Add to the relevant agent's `TOOLS` constant.
-4. Write a spec in `spec/tools/`.
+**Typing conventions used in this project:**
 
-## Testing Conventions
-
-- Framework: RSpec
-- No real HTTP or IMAP calls — mock at the service/adapter layer
-- `ManageDatabaseTool` specs use `Rails.application.config.database_configuration` to hit the test DB in-memory
-
-## Environment Variables
-
-| Variable               | Purpose                                      |
-| ---------------------- | -------------------------------------------- |
-| `CREDENTIALS_PATH`     | Path to Google OAuth credentials JSON        |
-| `TOKEN_PATH`           | Path to persisted OAuth token YAML           |
-| `YAHOO_USERNAME`       | Yahoo Mail address                           |
-| `YAHOO_APP_PASSWORD`   | Yahoo IMAP app password                      |
-| `YAHOO_IMAP_HOST/PORT` | IMAP server (default: imap.mail.yahoo.com/993) |
-| `MISTRAL_API_KEY`      | Mistral AI key (primary LLM)                 |
-| `OPENAI_API_KEY`       | Optional fallback model                      |
-| `LOOKBACK_MONTHS`      | How far back to search on first run (default 3) |
-| `DEFAULT_MODEL`        | Override default agent model                 |
-| `GITHUB_TOKEN`         | For `upload_gist` command                    |
-| `GIST_ID`              | Existing Gist ID to update                   |
+- Use `untyped` for RubyLLM / ActiveRecord meta-programmed return values that cannot be expressed statically.
+- Tool `execute` methods return `untyped` unless the return shape is fully known.
+- Agent subclasses have minimal `.rbs` bodies (just `class Foo < RubyLLM::Agent; end`) because all behaviour is declared via DSL macros.
+- Hash shapes with known keys use inline literal types: `{ status: String, rows_added: Integer }`.
+- Prefer named type aliases (`type foo_result = ...`) over anonymous hashes when a shape is shared or complex.

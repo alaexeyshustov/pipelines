@@ -1,0 +1,2 @@
+class EmailFilterAgent < RubyLLM::Agent
+end

@@ -1,0 +1,2 @@
+class InitDatabaseAgent < RubyLLM::Agent
+end

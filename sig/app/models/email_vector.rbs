@@ -1,0 +1,9 @@
+type email_vector_result = { email_id: String, distance: Float }
+
+class EmailVector < ApplicationRecord
+  def self.upsert_embedding: (email_id: String, embedding: Array[Float]) -> void
+  def self.search: (Array[Float] embedding, ?limit: Integer) -> Array[email_vector_result]
+
+  private
+  def self.serialize: (Array[Float] embedding) -> String
+end

@@ -1,0 +1,3 @@
+class SearchEmailsTool < RubyLLM::Tool
+  def execute: (provider: String, query: String, ?max_results: Integer, ?mailbox: String) -> untyped
+end

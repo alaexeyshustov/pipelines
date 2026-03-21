@@ -1,0 +1,25 @@
+class Interview < ApplicationRecord
+  STATUSES: Array[String]
+  COLUMN_NAMES: Array[String]
+
+  def company: () -> String?
+  def company=: (String?) -> String?
+  def job_title: () -> String?
+  def job_title=: (String?) -> String?
+  def status: () -> String?
+  def status=: (String?) -> String?
+  def applied_at: () -> String?
+  def applied_at=: (String?) -> String?
+  def rejected_at: () -> String?
+  def rejected_at=: (String?) -> String?
+  def first_interview_at: () -> String?
+  def first_interview_at=: (String?) -> String?
+  def second_interview_at: () -> String?
+  def second_interview_at=: (String?) -> String?
+  def third_interview_at: () -> String?
+  def third_interview_at=: (String?) -> String?
+  def fourth_interview_at: () -> String?
+  def fourth_interview_at=: (String?) -> String?
+
+  def self.as_rows: (?untyped scope) -> Array[Hash[String, String?]]
+end

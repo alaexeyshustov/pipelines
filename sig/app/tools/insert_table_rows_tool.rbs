@@ -1,0 +1,6 @@
+class InsertTableRowsTool < RubyLLM::Tool
+  def execute: (table: String, data: String) -> { status: String, rows_added: Integer, total_rows: Integer }
+
+  private
+  def resolve_model: (String table) -> untyped
+end

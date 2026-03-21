@@ -1,0 +1,22 @@
+module Pipeline
+  class Logger
+    LEVELS: Array[String]
+
+    class MultiIO
+      @targets: Array[IO]
+
+      def initialize: (*IO targets) -> void
+      def write: (*untyped args) -> void
+      def flush: () -> void
+      def close: () -> void
+    end
+
+    @logger: ::Logger
+
+    def initialize: (?level: Symbol | String, ?output: IO, ?log_file: String?) -> void
+    def debug: (*untyped args) ?{ () -> untyped } -> void
+    def info: (*untyped args) ?{ () -> untyped } -> void
+    def warn: (*untyped args) ?{ () -> untyped } -> void
+    def error: (*untyped args) ?{ () -> untyped } -> void
+  end
+end

@@ -1,0 +1,20 @@
+module Emails
+  class ProviderRegistry
+    class UnknownProviderError < StandardError
+    end
+
+    @adapters: Hash[String, Emails::Adapters::BaseAdapter]
+    @known_adapters: Hash[String, singleton(Emails::Adapters::BaseAdapter)]
+
+    def initialize: (?Hash[String, singleton(Emails::Adapters::BaseAdapter)] known_adapters) -> void
+    def register: (String name, Emails::Adapters::BaseAdapter adapter) -> void
+    def fetch: (String name) -> Emails::Adapters::BaseAdapter
+    def providers: () -> Array[String]
+    def on_init: () -> void
+    def on_exit: () -> void
+
+    private
+
+    def auto_load: (String name) -> Emails::Adapters::BaseAdapter
+  end
+end

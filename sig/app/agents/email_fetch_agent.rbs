@@ -1,0 +1,2 @@
+class EmailFetchAgent < RubyLLM::Agent
+end

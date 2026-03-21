@@ -1,0 +1,3 @@
+class ManageTempFileTool < RubyLLM::Tool
+  def execute: (action: String, filename: String, ?content: String?) -> String
+end

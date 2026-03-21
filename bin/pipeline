@@ -14,17 +14,28 @@ module PipelineCLI
     class Run < Dry::CLI::Command
       WATCH_INTERVAL = 6 * 60 * 60 # 6 hours
 
-      desc "Run the job application tracking pipeline"
+      desc "Run a pipeline"
+
+      option :pipeline,  required: true, desc: "The pipeline to run", default: "test"
 
       option :model,     default: ENV.fetch("DEFAULT_MODEL", "mistral-large-latest"),
-                         desc: "LLM model (e.g. mistral-large-latest, gpt-4.1)"
+                         desc: "LLM model (e.g. mistral-large-latest, gpt-5.1)"
       option :watch,     type: :boolean, default: false,
                          desc: "Run in a loop every 6 hours"
       option :log_level, default: "info",
                          desc: "Logging verbosity: debug, info, warn, error"
       option :log_file,  desc: "Path to log file (default: log/pipeline.log)"
 
-      def call(model:, watch:, log_level: "info", log_file: nil, **)
+      def call(pipeline:, model:, watch:, log_level: "info", log_file: nil, **)
+        pipeline_class = case pipeline.downcase
+                         when "jobs"
+                           Pipeline::JobsWorkflow
+                         when 'test'
+                           Pipeline::TestWorkflow
+                         else
+                           raise ArgumentError, "Unknown pipeline: #{pipeline}"
+                         end
+
         log_path = log_file || Rails.root.join("log/pipeline.log").to_s
         FileUtils.mkdir_p(File.dirname(log_path))
         logger = Pipeline::Logger.new(level: log_level.to_sym, log_file: log_path)
@@ -35,13 +46,15 @@ module PipelineCLI
           config.gemini_api_key    = ENV.fetch("GEMINI_API_KEY", "")
           config.anthropic_api_key = ENV.fetch("ANTHROPIC_API_KEY", "")
           config.log_level = log_level.to_sym
+          config.logger    = logger
         end
 
-        registry = build_registry
+        providers = ENV.fetch("MAIL_PROVIDERS", "gmail,yahoo").split(",").map(&:strip).reject(&:empty?)
+        Emails.configure(**providers.to_h { |p| [ p.to_sym, {} ] })
 
         loop do
           logger.info "Starting pipeline (model: #{model})..."
-          result = Pipeline::JobsWorkflow.new(registry: registry, model: model, logger: logger).run
+          result = pipeline_class.new(model: model, logger: logger).run
           logger.info "Pipeline complete: #{result.inspect}"
 
           break unless watch
@@ -51,52 +64,67 @@ module PipelineCLI
           sleep WATCH_INTERVAL
         end
       end
+    end
 
-      private
+    class TestProviders < Dry::CLI::Command
+      desc "Test connectivity to configured mail providers"
 
-      def build_registry
-        registry = ProviderRegistry.new
+      option :providers, default: ENV.fetch("MAIL_PROVIDERS", "gmail,yahoo").split(","),
+                          desc: "Comma-separated list of providers to test (e.g. gmail,yahoo)"
 
-        # Gmail
-        credentials_path = Rails.root.join(ENV.fetch("CREDENTIALS_PATH", "credentials.json")).to_s
-        token_path       = Rails.root.join(ENV.fetch("TOKEN_PATH", "token.yaml")).to_s
-        if File.exist?(credentials_path)
-          gmail = GmailService.new(credentials_path: credentials_path, token_path: token_path)
-          registry.register("gmail", Adapters::GmailAdapter.new(gmail))
-        end
+      def call(providers: [], **)
+        providers = providers.map(&:strip).reject(&:empty?)
 
-        # Yahoo
-        yahoo_user = ENV["YAHOO_USERNAME"]
-        yahoo_pass = ENV["YAHOO_APP_PASSWORD"]
-        if yahoo_user && yahoo_pass
-          yahoo = YahooMailService.new(
-            host:     ENV.fetch("YAHOO_IMAP_HOST", "imap.mail.yahoo.com"),
-            port:     ENV.fetch("YAHOO_IMAP_PORT", "993").to_i,
-            username: yahoo_user,
-            password: yahoo_pass
-          )
-          registry.register("yahoo", Adapters::YahooAdapter.new(yahoo))
-          at_exit { yahoo.disconnect }
-        end
-
-        if registry.providers.empty?
-          puts "ERROR: No providers configured. Set up Gmail (credentials.json) or Yahoo (YAHOO_USERNAME + YAHOO_APP_PASSWORD)."
+        providers.each do |provider|
+          adapter_class = Emails::PROVIDERS.fetch(provider) do
+            puts "ERROR: Unknown provider '#{provider}'. Available: #{Emails::PROVIDERS.keys.join(', ')}"
+            exit 1
+          end
+          adapter_class.test_connection
+        rescue Google::Apis::AuthorizationError => e
+          puts "ERROR: Authorization failed for #{provider} - #{e.message}"
+          puts "  Try deleting the token file and re-running the test."
+          exit 1
+        rescue StandardError => e
+          puts "ERROR: Failed to connect to #{provider} - #{e.message}"
           exit 1
         end
-
-        registry
       end
     end
 
-    class DbMigrate < Dry::CLI::Command
-      desc "Run database migrations"
+    class SetupProviders < Dry::CLI::Command
+      desc "Guide to setting up mail providers"
 
-      def call(*)
-        ActiveRecord::MigrationContext.new(
-          Rails.root.join("db/migrate").to_s,
-          ActiveRecord::SchemaMigration
-        ).migrate
-        puts "Migrations complete."
+      option :providers, default: ENV.fetch("MAIL_PROVIDERS", "gmail,yahoo").split(","),
+                          desc: "Comma-separated list of providers to set up (e.g. gmail,yahoo)"
+
+      def call(providers: [], **)
+        providers = providers.map(&:strip).reject(&:empty?)
+
+        providers.each do |provider|
+          case provider.downcase
+          when "gmail"
+            puts "Gmail setup:"
+            puts "1. Create a project in Google Cloud Console."
+            puts "2. Enable the Gmail API for your project."
+            puts "3. Create OAuth 2.0 credentials and download the JSON file."
+            puts "4. Save the file as credentials.json in the project root."
+            puts
+            puts "Clearing any existing token and launching OAuth authorization flow..."
+            Emails::Adapters::GmailAdapter.reset
+            Emails::Adapters::GmailAdapter.setup
+            puts "✓ Gmail OAuth token saved."
+          when "yahoo"
+            puts "Yahoo setup:"
+            puts "1. Sign in to your Yahoo account and go to Account Security settings."
+            puts "2. Generate an app password for 'Mail' and 'Other device'."
+            puts "3. Set YAHOO_USERNAME to your Yahoo email and YAHOO_APP_PASSWORD to the generated password in your environment variables."
+            puts "4. Run `bin/cli test` to test the connection."
+          else
+            puts "No setup instructions for '#{provider}'. Please refer to provider documentation."
+          end
+          puts
+        end
       end
     end
 
@@ -134,9 +162,10 @@ module PipelineCLI
       end
     end
 
-    register "run",          Run
-    register "db:migrate",   DbMigrate
-    register "upload_gist",  UploadGist
+    register "run",            Run
+    register "test",           TestProviders
+    register "setup",          SetupProviders
+    register "upload_gist",    UploadGist
   end
 end
 

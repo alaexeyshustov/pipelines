@@ -1,0 +1,10 @@
+module Pipeline
+  class TestWorkflow
+    @model: String
+    @logger: Pipeline::Logger
+
+    def initialize: (model: String, logger: Pipeline::Logger) -> void
+    def run: () -> { status: String, model_used: String, step1_result: String? }
+    def step1: (provider: String, after: String, before: String) -> String?
+  end
+end

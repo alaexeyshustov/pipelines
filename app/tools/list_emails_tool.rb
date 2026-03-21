@@ -1,4 +1,3 @@
-module Tools
   class ListEmailsTool < RubyLLM::Tool
     description "List recent emails from Gmail or Yahoo Mail inbox."
 
@@ -11,15 +10,13 @@ module Tools
     param :label,        type: :string,  desc: 'Gmail: filter by label ID or name (e.g. "INBOX", "UNREAD").', required: false
     param :mailbox,      type: :string,  desc: 'Yahoo: mailbox/folder name (e.g. "INBOX", "Sent"). Defaults to INBOX.', required: false
 
-    class << self
-      attr_accessor :registry
-    end
-
     def execute(provider:, max_results: 10, query: nil, after_date: nil, before_date: nil,
                 offset: 0, label: nil, mailbox: "INBOX")
       parsed_after  = after_date  ? Date.parse(after_date)  : nil
       parsed_before = before_date ? Date.parse(before_date) : nil
-      self.class.registry.fetch(provider).list_messages(
+
+      Emails.list_messages(
+        provider,
         max_results:  max_results,
         query:        query,
         after_date:   parsed_after,
@@ -30,4 +27,3 @@ module Tools
       )
     end
   end
-end

@@ -1,0 +1,3 @@
+class GetEmailTool < RubyLLM::Tool
+  def execute: (provider: String, message_id: String, ?mailbox: String) -> untyped
+end

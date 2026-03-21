@@ -1,0 +1,20 @@
+module Emails
+  module Adapters
+    class BaseAdapter
+      def self.from_env: (**untyped opts) -> instance
+      def self.setup: (**untyped opts) -> void
+      def self.test_connection: (**untyped opts) -> void
+      def self.reset: (**untyped opts) -> void
+
+      def on_init: () -> void
+      def on_exit: () -> void
+      def list_messages: (**untyped opts) -> Array[untyped]
+      def get_message: (untyped message_id, **untyped opts) -> Hash[Symbol, untyped]?
+      def search_messages: (String query, **untyped opts) -> Array[untyped]
+      def get_labels: (**untyped opts) -> Array[Hash[Symbol, String]]
+      def get_unread_count: (**untyped opts) -> Integer
+      def modify_labels: (untyped message_id, ?add: Array[String], ?remove: Array[String], **untyped opts) -> untyped
+      def create_label: (name: String, **untyped opts) -> Hash[Symbol, String]
+    end
+  end
+end
