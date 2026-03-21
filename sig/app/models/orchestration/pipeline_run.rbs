@@ -18,6 +18,6 @@ module Orchestration
 
     def pipeline: () -> Orchestration::Pipeline
     def pipeline=: (Orchestration::Pipeline) -> Orchestration::Pipeline
-    def action_runs: () -> untyped
+    def action_runs: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::ActionRun]
   end
 end

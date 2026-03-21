@@ -10,14 +10,14 @@ module Orchestration
     def description=: (String?) -> String?
     def model: () -> String?
     def model=: (String?) -> String?
-    def tools: () -> untyped
-    def tools=: (untyped) -> untyped
+    def tools: () -> Array[String]?
+    def tools=: (Array[String]?) -> Array[String]?
     def prompt: () -> String?
     def prompt=: (String?) -> String?
-    def params: () -> untyped
-    def params=: (untyped) -> untyped
+    def params: () -> Hash[String, untyped]?
+    def params=: (Hash[String, untyped]?) -> Hash[String, untyped]?
 
-    def step_actions: () -> untyped
+    def step_actions: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::StepAction]
 
     private
 

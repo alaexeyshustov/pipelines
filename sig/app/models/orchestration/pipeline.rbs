@@ -11,7 +11,7 @@ module Orchestration
     def enabled: () -> bool
     def enabled=: (bool) -> bool
 
-    def steps: () -> untyped
-    def pipeline_runs: () -> untyped
+    def steps: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::Step]
+    def pipeline_runs: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::PipelineRun]
   end
 end
