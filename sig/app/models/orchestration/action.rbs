@@ -1,0 +1,26 @@
+module Orchestration
+  class Action < ApplicationRecord
+    def self.table_name: () -> String
+
+    def name: () -> String?
+    def name=: (String?) -> String?
+    def agent_class: () -> String?
+    def agent_class=: (String?) -> String?
+    def description: () -> String?
+    def description=: (String?) -> String?
+    def model: () -> String?
+    def model=: (String?) -> String?
+    def tools: () -> untyped
+    def tools=: (untyped) -> untyped
+    def prompt: () -> String?
+    def prompt=: (String?) -> String?
+    def params: () -> untyped
+    def params=: (untyped) -> untyped
+
+    def step_actions: () -> untyped
+
+    private
+
+    def agent_class_must_be_valid: () -> void
+  end
+end

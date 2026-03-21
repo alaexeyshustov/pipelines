@@ -1,0 +1,15 @@
+module Orchestration
+  class StepAction < ApplicationRecord
+    def self.table_name: () -> String
+
+    def position: () -> Integer?
+    def position=: (Integer?) -> Integer?
+    def params: () -> untyped
+    def params=: (untyped) -> untyped
+
+    def step: () -> Orchestration::Step
+    def step=: (Orchestration::Step) -> Orchestration::Step
+    def action: () -> Orchestration::Action
+    def action=: (Orchestration::Action) -> Orchestration::Action
+  end
+end

@@ -1,0 +1,17 @@
+module Orchestration
+  class Step < ApplicationRecord
+    def self.table_name: () -> String
+
+    def name: () -> String?
+    def name=: (String?) -> String?
+    def position: () -> Integer?
+    def position=: (Integer?) -> Integer?
+    def input_mapping: () -> untyped
+    def input_mapping=: (untyped) -> untyped
+
+    def pipeline: () -> Orchestration::Pipeline
+    def pipeline=: (Orchestration::Pipeline) -> Orchestration::Pipeline
+    def step_actions: () -> untyped
+    def actions: () -> untyped
+  end
+end

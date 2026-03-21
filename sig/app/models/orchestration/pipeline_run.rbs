@@ -1,0 +1,23 @@
+module Orchestration
+  class PipelineRun < ApplicationRecord
+    STATUSES: Array[String]
+    TRIGGERED_BY: Array[String]
+
+    def self.table_name: () -> String
+
+    def status: () -> String?
+    def status=: (String?) -> String?
+    def triggered_by: () -> String?
+    def triggered_by=: (String?) -> String?
+    def started_at: () -> Time?
+    def started_at=: (Time?) -> Time?
+    def finished_at: () -> Time?
+    def finished_at=: (Time?) -> Time?
+    def error: () -> String?
+    def error=: (String?) -> String?
+
+    def pipeline: () -> Orchestration::Pipeline
+    def pipeline=: (Orchestration::Pipeline) -> Orchestration::Pipeline
+    def action_runs: () -> untyped
+  end
+end
