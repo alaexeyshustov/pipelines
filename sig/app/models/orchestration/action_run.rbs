@@ -1,0 +1,25 @@
+module Orchestration
+  class ActionRun < ApplicationRecord
+    STATUSES: Array[String]
+
+    def self.table_name: () -> String
+
+    def status: () -> String?
+    def status=: (String?) -> String?
+    def input: () -> Hash[String, untyped]?
+    def input=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def output: () -> Hash[String, untyped]?
+    def output=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def error: () -> String?
+    def error=: (String?) -> String?
+    def started_at: () -> Time?
+    def started_at=: (Time?) -> Time?
+    def finished_at: () -> Time?
+    def finished_at=: (Time?) -> Time?
+
+    def pipeline_run: () -> Orchestration::PipelineRun
+    def pipeline_run=: (Orchestration::PipelineRun) -> Orchestration::PipelineRun
+    def step_action: () -> Orchestration::StepAction
+    def step_action=: (Orchestration::StepAction) -> Orchestration::StepAction
+  end
+end

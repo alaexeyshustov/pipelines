@@ -1,0 +1,17 @@
+module Orchestration
+  class Pipeline < ApplicationRecord
+    def self.table_name: () -> String
+
+    def name: () -> String?
+    def name=: (String?) -> String?
+    def description: () -> String?
+    def description=: (String?) -> String?
+    def schedule_interval: () -> Integer?
+    def schedule_interval=: (Integer?) -> Integer?
+    def enabled: () -> bool
+    def enabled=: (bool) -> bool
+
+    def steps: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::Step]
+    def pipeline_runs: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::PipelineRun]
+  end
+end
