@@ -32,6 +32,7 @@ group :development, :test do
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
   gem "ruby-lsp"
   gem "rubocop-rails-omakase", require: false
+  gem 'rubycritic', require: false
   gem "pry"
   gem "rspec-rails"
   gem "factory_bot_rails"
