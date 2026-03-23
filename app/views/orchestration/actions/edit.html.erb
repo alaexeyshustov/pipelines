@@ -1,0 +1,12 @@
+<% content_for :title, "Edit Action" %>
+
+<div class="mb-6 flex items-center gap-2 text-sm text-gray-500">
+  <%= link_to "Action Library", orchestration_actions_path, class: "hover:text-gray-700" %>
+  <span>›</span>
+  <span class="text-gray-900">Edit Action</span>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
+  <h1 class="text-xl font-bold text-gray-900 mb-6">Edit Action: <%= @action.name %></h1>
+  <%= render "form", action: @action %>
+</div>

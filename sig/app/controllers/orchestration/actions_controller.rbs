@@ -1,0 +1,15 @@
+module Orchestration
+  class ActionsController < ApplicationController
+    def index: () -> void
+    def new: () -> void
+    def create: () -> void
+    def edit: () -> void
+    def update: () -> void
+    def destroy: () -> void
+
+    private
+
+    def set_action: () -> void
+    def action_params: () -> ActionController::Parameters
+  end
+end
