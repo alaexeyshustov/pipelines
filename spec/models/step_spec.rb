@@ -7,31 +7,10 @@ RSpec.describe Orchestration::Step, type: :model do
       expect(step).to be_valid
     end
 
-    it 'requires name' do
-      step = build(:orchestration_step, name: nil)
-      expect(step).not_to be_valid
-      expect(step.errors[:name]).not_to be_empty
-    end
-
-    it 'requires position' do
-      step = build(:orchestration_step, position: nil)
-      expect(step).not_to be_valid
-      expect(step.errors[:position]).not_to be_empty
-    end
-
-    it 'enforces position uniqueness scoped to pipeline' do
-      pipeline = create(:orchestration_pipeline)
-      create(:orchestration_step, pipeline: pipeline, position: 1)
-      duplicate = build(:orchestration_step, pipeline: pipeline, position: 1)
-      expect(duplicate).not_to be_valid
-      expect(duplicate.errors[:position]).not_to be_empty
-    end
-
-    it 'allows same position in different pipelines' do
-      create(:orchestration_step, pipeline: create(:orchestration_pipeline), position: 1)
-      other = build(:orchestration_step, pipeline: create(:orchestration_pipeline), position: 1)
-      expect(other).to be_valid
-    end
+    it_behaves_like 'requires attribute', :name, :orchestration_step
+    it_behaves_like 'requires attribute', :position, :orchestration_step
+    it_behaves_like 'enforces position uniqueness scoped to',
+                    :orchestration_step, :pipeline, :orchestration_pipeline
   end
 
   describe 'associations' do

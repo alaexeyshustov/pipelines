@@ -7,29 +7,10 @@ RSpec.describe Orchestration::Action, type: :model do
       expect(action).to be_valid
     end
 
-    it 'requires name' do
-      action = build(:orchestration_action, name: nil)
-      expect(action).not_to be_valid
-      expect(action.errors[:name]).not_to be_empty
-    end
-
-    it 'requires agent_class' do
-      action = build(:orchestration_action, agent_class: nil)
-      expect(action).not_to be_valid
-      expect(action.errors[:agent_class]).not_to be_empty
-    end
-
-    it 'rejects agent_class that does not exist as a constant' do
-      action = build(:orchestration_action, agent_class: 'NonExistentClass::Whatever')
-      expect(action).not_to be_valid
-      expect(action.errors[:agent_class]).not_to be_empty
-    end
-
-    it 'rejects agent_class that does not inherit from RubyLLM::Agent' do
-      action = build(:orchestration_action, agent_class: 'ApplicationRecord')
-      expect(action).not_to be_valid
-      expect(action.errors[:agent_class]).not_to be_empty
-    end
+    it_behaves_like 'requires attribute', :name, :orchestration_action
+    it_behaves_like 'requires attribute', :agent_class, :orchestration_action
+    it_behaves_like 'rejects invalid attribute value', :agent_class, :orchestration_action, 'NonExistentClass::Whatever'
+    it_behaves_like 'rejects invalid attribute value', :agent_class, :orchestration_action, 'ApplicationRecord'
   end
 
   describe 'associations' do

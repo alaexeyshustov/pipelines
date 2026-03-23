@@ -7,23 +7,9 @@ RSpec.describe ApplicationMail, type: :model do
       expect(mail).to be_valid
     end
 
-    it 'requires date' do
-      mail = build(:application_mail, date: nil)
-      expect(mail).not_to be_valid
-      expect(mail.errors[:date]).not_to be_empty
-    end
-
-    it 'requires provider' do
-      mail = build(:application_mail, provider: nil)
-      expect(mail).not_to be_valid
-      expect(mail.errors[:provider]).not_to be_empty
-    end
-
-    it 'requires email_id' do
-      mail = build(:application_mail, email_id: nil)
-      expect(mail).not_to be_valid
-      expect(mail.errors[:email_id]).not_to be_empty
-    end
+    it_behaves_like 'requires attribute', :date, :application_mail
+    it_behaves_like 'requires attribute', :provider, :application_mail
+    it_behaves_like 'requires attribute', :email_id, :application_mail
 
     it 'enforces uniqueness of email_id' do
       create(:application_mail, email_id: 'unique@example.com')

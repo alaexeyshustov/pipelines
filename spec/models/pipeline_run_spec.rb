@@ -7,34 +7,14 @@ RSpec.describe Orchestration::PipelineRun, type: :model do
       expect(run).to be_valid
     end
 
-    it 'requires status' do
-      run = build(:orchestration_pipeline_run, status: nil)
-      expect(run).not_to be_valid
-      expect(run.errors[:status]).not_to be_empty
-    end
-
-    it 'rejects invalid status' do
-      run = build(:orchestration_pipeline_run, status: 'invalid')
-      expect(run).not_to be_valid
-      expect(run.errors[:status]).not_to be_empty
-    end
-
-    it 'accepts valid statuses' do
-      %w[pending running completed failed].each do |s|
-        run = build(:orchestration_pipeline_run, status: s)
-        expect(run).to be_valid
-      end
-    end
+    it_behaves_like 'requires attribute', :status, :orchestration_pipeline_run
+    it_behaves_like 'rejects invalid attribute value', :status, :orchestration_pipeline_run, 'invalid'
+    it_behaves_like 'accepts valid statuses', :orchestration_pipeline_run, %w[pending running completed failed]
+    it_behaves_like 'rejects invalid attribute value', :triggered_by, :orchestration_pipeline_run, 'robot'
 
     it 'accepts nil triggered_by' do
       run = build(:orchestration_pipeline_run, triggered_by: nil)
       expect(run).to be_valid
-    end
-
-    it 'rejects invalid triggered_by' do
-      run = build(:orchestration_pipeline_run, triggered_by: 'robot')
-      expect(run).not_to be_valid
-      expect(run.errors[:triggered_by]).not_to be_empty
     end
 
     it 'contains expected STATUSES' do

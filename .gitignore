@@ -38,3 +38,4 @@ token.yaml
 
 # RSpec
 /spec/examples.txt
+coverage/

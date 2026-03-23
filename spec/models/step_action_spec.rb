@@ -7,25 +7,9 @@ RSpec.describe Orchestration::StepAction, type: :model do
       expect(step_action).to be_valid
     end
 
-    it 'requires position' do
-      step_action = build(:orchestration_step_action, position: nil)
-      expect(step_action).not_to be_valid
-      expect(step_action.errors[:position]).not_to be_empty
-    end
-
-    it 'enforces position uniqueness scoped to step' do
-      step = create(:orchestration_step)
-      create(:orchestration_step_action, step: step, position: 1)
-      duplicate = build(:orchestration_step_action, step: step, position: 1)
-      expect(duplicate).not_to be_valid
-      expect(duplicate.errors[:position]).not_to be_empty
-    end
-
-    it 'allows same position in different steps' do
-      create(:orchestration_step_action, step: create(:orchestration_step), position: 1)
-      other = build(:orchestration_step_action, step: create(:orchestration_step), position: 1)
-      expect(other).to be_valid
-    end
+    it_behaves_like 'requires attribute', :position, :orchestration_step_action
+    it_behaves_like 'enforces position uniqueness scoped to',
+                    :orchestration_step_action, :step, :orchestration_step
   end
 
   describe 'associations' do

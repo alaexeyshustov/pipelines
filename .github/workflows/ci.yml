@@ -37,11 +37,27 @@ jobs:
       - name: Validate RBS signatures
         run: bundle exec rbs validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**/**/*.rbs
 
+  brakeman:
+    name: Brakeman
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Run Brakeman
+        run: bundle exec brakeman --no-pager
+
   rspec:
     name: RSpec
     runs-on: ubuntu-latest
     env:
       RAILS_ENV: test
+      COVERAGE: true
     steps:
       - uses: actions/checkout@v4
 

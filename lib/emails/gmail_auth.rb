@@ -30,7 +30,7 @@ module Emails
       url = authorizer.get_authorization_url(base_url: redirect_uri)
       @output.puts "Opening browser for authorization..."
       @output.puts url
-      system("open '#{url}' 2>/dev/null || xdg-open '#{url}' 2>/dev/null || true")
+      system("open", url, err: File::NULL) || system("xdg-open", url, err: File::NULL)
       @output.puts "Waiting for authorization callback..."
 
       client       = tcp_server.accept

@@ -7,17 +7,8 @@ RSpec.describe Interview, type: :model do
       expect(interview).to be_valid
     end
 
-    it 'requires company' do
-      interview = build(:interview, company: nil)
-      expect(interview).not_to be_valid
-      expect(interview.errors[:company]).not_to be_empty
-    end
-
-    it 'requires job_title' do
-      interview = build(:interview, job_title: nil)
-      expect(interview).not_to be_valid
-      expect(interview.errors[:job_title]).not_to be_empty
-    end
+    it_behaves_like 'requires attribute', :company, :interview
+    it_behaves_like 'requires attribute', :job_title, :interview
 
     it 'enforces uniqueness of job_title scoped to company' do
       create(:interview, company: 'Acme', job_title: 'Engineer')

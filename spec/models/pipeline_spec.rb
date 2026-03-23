@@ -7,11 +7,7 @@ RSpec.describe Orchestration::Pipeline, type: :model do
       expect(pipeline).to be_valid
     end
 
-    it 'requires name' do
-      pipeline = build(:orchestration_pipeline, name: nil)
-      expect(pipeline).not_to be_valid
-      expect(pipeline.errors[:name]).not_to be_empty
-    end
+    it_behaves_like 'requires attribute', :name, :orchestration_pipeline
 
     it 'defaults enabled to true' do
       pipeline = Orchestration::Pipeline.new(name: 'My Pipeline')
