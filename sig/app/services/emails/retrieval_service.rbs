@@ -1,0 +1,13 @@
+module Emails
+  class RetrievalService
+    PAGE_SIZE: Integer
+
+    type email_hash = Hash[String, String]
+
+    def initialize: (provider: String, after_date: String | Date, ?before_date: String | Date | nil) -> void
+    def call: () -> Array[email_hash]
+
+    private
+    def normalize: (Hash[Symbol, untyped] email) -> email_hash
+  end
+end

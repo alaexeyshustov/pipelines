@@ -1,3 +1,0 @@
-class AddLabelsTool < RubyLLM::Tool
-  def execute: (provider: String, message_id: String, label_ids: Array[String], ?mailbox: String) -> untyped
-end

@@ -1,0 +1,6 @@
+module Emails
+  class GetLabelsTool < RubyLLM::Tool
+    def name: () -> String
+    def execute: (provider: String) -> untyped
+  end
+end

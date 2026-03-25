@@ -1,0 +1,6 @@
+module Emails
+  class AddLabelsTool < RubyLLM::Tool
+    def name: () -> String
+    def execute: (provider: String, message_id: String, label_ids: Array[String], ?mailbox: String) -> untyped
+  end
+end

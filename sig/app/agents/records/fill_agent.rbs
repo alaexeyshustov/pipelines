@@ -1,0 +1,4 @@
+module Records
+  class FillAgent < RubyLLM::Agent
+  end
+end

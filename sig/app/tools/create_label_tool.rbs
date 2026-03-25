@@ -1,3 +1,0 @@
-class CreateLabelTool < RubyLLM::Tool
-  def execute: (provider: String, name: String) -> untyped
-end

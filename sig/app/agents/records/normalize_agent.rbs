@@ -1,0 +1,4 @@
+module Records
+  class NormalizeAgent < RubyLLM::Agent
+  end
+end

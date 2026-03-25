@@ -1,0 +1,4 @@
+module Records
+  class StoreAgent < RubyLLM::Agent
+  end
+end

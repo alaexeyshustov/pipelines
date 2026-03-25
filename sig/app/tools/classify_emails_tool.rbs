@@ -1,6 +1,0 @@
-class ClassifyEmailsTool < RubyLLM::Tool
-  def execute: (emails: Array[Hash[untyped, untyped]]) -> Hash[String, Array[String]]
-
-  private
-  def reshape: (untyped content) -> Hash[String, Array[String]]
-end

@@ -1,0 +1,6 @@
+module Records
+  class TempFileTool < RubyLLM::Tool
+    def name: () -> String
+    def execute: (action: String, filename: String, ?content: String?) -> String
+  end
+end

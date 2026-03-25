@@ -1,6 +1,0 @@
-class ReadTableSchemaTool < RubyLLM::Tool
-  def execute: (table: String) -> { headers: Array[String] }
-
-  private
-  def resolve_model: (String table) -> untyped
-end

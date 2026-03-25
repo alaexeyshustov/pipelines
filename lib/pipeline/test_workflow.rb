@@ -15,7 +15,7 @@ module Pipeline
         tasks = [ "gmail", "yahoo" ].map do |provider|
           semaphore.async do
             result = step1(provider: provider, after: start_date, before: end_date)
-            
+
             result = result.is_a?(Array) ? result : (result["results"] || result[:results] || [])
             puts "Fetched #{result.size} emails from #{provider}: #{result}"
             result
@@ -27,11 +27,11 @@ module Pipeline
       return { status: "no_emails_fetched" } if all_emails.empty?
 
       results = step2(emails: all_emails)
-      tags = results['results'] || []
+      tags = results["results"] || []
       puts "Classified #{tags.size} emails: #{tags}"
-      
+
       results = step3(emails: all_emails, tags: tags)
-      filtered_ids = results['results'] || []
+      filtered_ids = results["results"] || []
       puts "Filtered #{filtered_ids.size} emails: #{filtered_ids}"
 
       return { status: "no_filtered_emails" } if filtered_ids.empty?
@@ -39,38 +39,32 @@ module Pipeline
       filtered_emails = all_emails.select { |email| filtered_ids.include?(email["id"]) }
 
       results = step4(emails: filtered_emails)
-      mapped_emails = results['results'] || []
+      mapped_emails = results["results"] || []
       puts "Mapped emails to records: #{mapped_emails}"
-      
+
       results = step5(emails: mapped_emails.map(&:attributes))
-      email_ids = results['results'] || results[:results] || []
+      email_ids = results["results"] || results[:results] || []
       puts "Stored IDs: #{email_ids}"
 
       emails = ApplicationMail.groupped.map(&:attributes)
 
       results = step6(emails: emails)
-      normalized_records = results['results'] || results[:results] || []
+      normalized_records = results["results"] || results[:results] || []
       puts "Normalized records: #{normalized_records}"
-      
+
       result = step7(emails: emails)
 
       { status: "test_complete", model_used: @model, result: result }
     end
 
     def step1(provider:, after:, before:)
-      input = {
-        provider: provider,
-        after_date: after,
-        before_date: before
-      }.to_json
-
-      EmailFetchAgent.create.with_model(@model).ask(input).content
+      Emails::RetrievalService.new(provider: provider, after_date: after, before_date: before).call
     end
 
     def step2(emails:)
       input = { emails: emails.map { |email| { id: email["id"], subject: email["subject"] } } }.to_json
 
-      EmailClassifyAgent.create.with_model(@model).ask(input).content
+      Emails::ClassifyAgent.create.with_model(@model).ask(input).content
     end
 
     def step3(emails:, tags:)
@@ -82,7 +76,7 @@ module Pipeline
         end
       }.to_json
 
-      EmailFilterAgent.create.with_model(@model).ask(input).content
+      Emails::FilterAgent.create.with_model(@model).ask(input).content
     end
 
     def step4(emails:)
@@ -90,7 +84,7 @@ module Pipeline
         emails: emails
       }.to_json
 
-      EmailMappingAgent.create
+      Emails::MappingAgent.create
         .with_model(@model)
         .with_schema(ApplicationMailsSchema)
         .ask(input)
@@ -104,7 +98,7 @@ module Pipeline
         emails: emails
       }.to_json
 
-      LabelAndStoreAgent.create.with_model(@model).ask(input).content
+      Records::StoreAgent.create.with_model(@model).ask(input).content
     end
 
     def step6(emails: [])
@@ -114,7 +108,7 @@ module Pipeline
         columns_to_normalize: [ "company", "job_title" ]
       }.to_json
 
-      NormalizeRecordsAgent.create.with_model(@model).ask(input).content
+      Records::NormalizeAgent.create.with_model(@model).ask(input).content
     end
 
     def step7(emails: [])
@@ -128,7 +122,7 @@ module Pipeline
         statuses: [ "pending_reply", "having_interviews", "rejected", "offer_received" ],
         initial_status: "pending_reply"
       }.to_json
-      ReconcileInterviewsAgent.create.with_model(@model).ask(input).content
+      Records::ReconcileAgent.create.with_model(@model).ask(input).content
     end
 
     def start_date

@@ -1,0 +1,4 @@
+module Emails
+  class FilterAgent < RubyLLM::Agent
+  end
+end

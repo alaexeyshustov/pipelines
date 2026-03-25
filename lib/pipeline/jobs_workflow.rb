@@ -97,8 +97,7 @@ module Pipeline
         semaphore = Async::Semaphore.new(MAX_CONCURRENT_REQUESTS)
         tasks = PROVIDERS.map do |provider|
           semaphore.async do
-            result = run_agent(EmailFetchAgent, @prompts.build_fetch_message(provider, after_date, before_date))
-            parse_json_array(result).map { |e| e.merge("provider" => provider) }
+            Emails::RetrievalService.new(provider: provider, after_date: after_date, before_date: before_date).call
           end
         end
         tasks.flat_map(&:wait)
@@ -125,7 +124,7 @@ module Pipeline
         semaphore = Async::Semaphore.new(MAX_CONCURRENT_REQUESTS)
         tasks = job_list.each_slice(BATCH_SIZE).map do |batch|
           semaphore.async do
-            result = run_agent(LabelAndStoreAgent, @prompts.build_label_store_message(batch))
+            result = run_agent(Records::StoreAgent, @prompts.build_label_store_message(batch))
             parse_json_array(result)
           end
         end
@@ -138,7 +137,7 @@ module Pipeline
 
     def step5_reconcile(added_rows)
       @logger.info "Step 5: Reconciling interviews..."
-      summary = run_agent(ReconcileInterviewsAgent, @prompts.build_reconcile_message(added_rows))
+      summary = run_agent(Records::ReconcileAgent, @prompts.build_reconcile_message(added_rows))
       @logger.info "  reconciliation complete"
       summary
     end

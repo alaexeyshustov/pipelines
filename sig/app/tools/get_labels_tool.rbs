@@ -1,3 +1,0 @@
-class GetLabelsTool < RubyLLM::Tool
-  def execute: (provider: String) -> untyped
-end

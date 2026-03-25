@@ -1,0 +1,10 @@
+module Records
+  class InsertRowsTool < RubyLLM::Tool
+    def name: () -> String
+    def execute: (table: String, data: String) -> { status: String, rows_added: Integer, total_rows: Integer, ids: Array[Integer] }
+
+    private
+    def safe_parse_data: (String data) -> { status: String, records: Array[untyped] }
+    def resolve_model: (String table) -> untyped
+  end
+end

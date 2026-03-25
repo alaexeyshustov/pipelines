@@ -5,11 +5,11 @@ require "rails_helper"
 RSpec.describe "Orchestration::Actions", type: :request do
   describe "GET /orchestration/actions" do
     it "returns 200 and lists actions" do
-      action = create(:orchestration_action, name: "My Action", agent_class: "EmailClassifyAgent")
+      action = create(:orchestration_action, name: "My Action", agent_class: "Emails::ClassifyAgent")
       get orchestration_actions_path
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("My Action")
-      expect(response.body).to include("EmailClassifyAgent")
+      expect(response.body).to include("Emails::ClassifyAgent")
     end
 
     it "shows pipeline usage count" do
@@ -36,7 +36,7 @@ RSpec.describe "Orchestration::Actions", type: :request do
         {
           orchestration_action: {
             name: "New Action",
-            agent_class: "EmailClassifyAgent",
+            agent_class: "Emails::ClassifyAgent",
             description: "A description",
             model: "mistral-small",
             tools: '["EmailClassifier"]',
@@ -77,7 +77,7 @@ RSpec.describe "Orchestration::Actions", type: :request do
       it "updates and redirects" do
         action = create(:orchestration_action, name: "Old Name")
         patch orchestration_action_path(action), params: {
-          orchestration_action: { name: "New Name", agent_class: "EmailClassifyAgent" }
+          orchestration_action: { name: "New Name", agent_class: "Emails::ClassifyAgent" }
         }
         expect(response).to redirect_to(orchestration_actions_path)
         expect(action.reload.name).to eq("New Name")

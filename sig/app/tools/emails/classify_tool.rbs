@@ -1,0 +1,6 @@
+module Emails
+  class ClassifyTool < RubyLLM::Tool
+    def name: () -> String
+    def execute: (emails: Array[Hash[untyped, untyped]]) -> untyped
+  end
+end

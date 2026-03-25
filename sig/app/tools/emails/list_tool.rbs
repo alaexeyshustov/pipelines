@@ -1,0 +1,15 @@
+module Emails
+  class ListTool < RubyLLM::Tool
+    def name: () -> String
+    def execute: (
+      provider: String,
+      ?max_results: Integer,
+      ?query: String?,
+      ?after_date: String?,
+      ?before_date: String?,
+      ?offset: Integer,
+      ?label: String?,
+      ?mailbox: String
+    ) -> untyped
+  end
+end

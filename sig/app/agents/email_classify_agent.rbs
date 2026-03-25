@@ -1,2 +1,0 @@
-class EmailClassifyAgent < RubyLLM::Agent
-end

@@ -1,6 +1,0 @@
-class ReadTableRowsTool < RubyLLM::Tool
-  def execute: (table: String, ?column_name: String?, ?column_value: String?) -> { headers: Array[String], rows: Array[Hash[String, String?]], row_count: Integer }
-
-  private
-  def resolve_model: (String table) -> untyped
-end
