@@ -1,0 +1,39 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://gmail.googleapis.com/gmail/v1/users/me/labels
+    body:
+      encoding: UTF-8
+      string: '{"name":"applications"}'
+    headers: {}
+  response:
+    status:
+      code: 409
+      message: Conflict
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"error":{"code":409,"message":"Label name exists or conflicts","status":"ALREADY_EXISTS","errors":[{"message":"Label name exists or conflicts","domain":"gmail","reason":"labelNameExistsOrConflicts"}]}}'
+  recorded_at: 'Tue, 24 Mar 2026 10:00:00 GMT'
+- request:
+    method: get
+    uri: https://gmail.googleapis.com/gmail/v1/users/me/labels
+    body:
+      encoding: UTF-8
+      string: ''
+    headers: {}
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"labels":[{"id":"INBOX","name":"INBOX","type":"system"},{"id":"Label_1","name":"applications","type":"user"}]}'
+  recorded_at: 'Tue, 24 Mar 2026 10:00:00 GMT'
+recorded_with: VCR 6.3.1

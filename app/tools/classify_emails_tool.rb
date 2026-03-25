@@ -23,17 +23,4 @@ class ClassifyEmailsTool < RubyLLM::Tool
     input = { emails: emails }.to_json
     EmailClassifyAgent.create.ask(input).content
   end
-
-  private
-
-  def reshape(content)
-    results = content.is_a?(Hash) ? content["results"] || content[:results] : nil
-    return {} unless results.is_a?(Array)
-
-    results.each_with_object({}) do |entry, hash|
-      id   = entry["id"]   || entry[:id]
-      tags = entry["tags"] || entry[:tags]
-      hash[id] = tags if id && tags
-    end
-  end
 end

@@ -39,25 +39,4 @@
   </table>
 </div>
 
-<% if @pagy.pages > 1 %>
-  <div class="mt-6 flex items-center justify-center gap-1 flex-wrap">
-    <% if @pagy.previous %>
-      <%= link_to "← Prev", chats_path(page: @pagy.previous), class: "px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-100 transition-colors" %>
-    <% end %>
-
-    <% @pagy.series.each do |item| %>
-      <% if item == :gap %>
-        <span class="px-2 text-gray-400">…</span>
-      <% elsif item.is_a?(String) %>
-        <%# Current page is a String in pagy v43 %>
-        <span class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium"><%= item %></span>
-      <% else %>
-        <%= link_to item, chats_path(page: item), class: "px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-100 transition-colors" %>
-      <% end %>
-    <% end %>
-
-    <% if @pagy.next %>
-      <%= link_to "Next →", chats_path(page: @pagy.next), class: "px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:bg-gray-100 transition-colors" %>
-    <% end %>
-  </div>
-<% end %>
+<%== @pagy.series_nav %>

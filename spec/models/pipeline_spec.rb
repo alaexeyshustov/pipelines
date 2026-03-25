@@ -10,7 +10,7 @@ RSpec.describe Orchestration::Pipeline, type: :model do
     it_behaves_like 'requires attribute', :name, :orchestration_pipeline
 
     it 'defaults enabled to true' do
-      pipeline = Orchestration::Pipeline.new(name: 'My Pipeline')
+      pipeline = described_class.new(name: 'My Pipeline')
       expect(pipeline.enabled).to be true
     end
   end

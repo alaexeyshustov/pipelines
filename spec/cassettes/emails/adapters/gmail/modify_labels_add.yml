@@ -1,0 +1,21 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://gmail.googleapis.com/gmail/v1/users/me/messages/msg1/modify
+    body:
+      encoding: UTF-8
+      string: '{"addLabelIds":["Label_1"],"removeLabelIds":[]}'
+    headers: {}
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"id":"msg1","threadId":"thread1","labelIds":["INBOX","Label_1"]}'
+  recorded_at: 'Tue, 24 Mar 2026 10:00:00 GMT'
+recorded_with: VCR 6.3.1

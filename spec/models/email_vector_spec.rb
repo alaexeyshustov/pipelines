@@ -6,24 +6,24 @@ RSpec.describe EmailVector, type: :model do
 
   describe '.upsert_embedding' do
     it 'executes an INSERT OR REPLACE with serialized embedding' do
-      expect(EmailVector.connection).to receive(:execute).with(
+      expect(described_class.connection).to receive(:execute).with(
         "INSERT OR REPLACE INTO email_vectors(email_id, embedding) VALUES (?, ?)",
         [ 'email_123', serialized ]
       )
 
-      EmailVector.upsert_embedding(email_id: 'email_123', embedding: embedding)
+      described_class.upsert_embedding(email_id: 'email_123', embedding: embedding)
     end
   end
 
   describe '.search' do
     it 'queries the vec0 table and returns email_id/distance hashes' do
       raw_rows = [ [ 'email_1', 0.12 ], [ 'email_2', 0.34 ] ]
-      allow(EmailVector.connection).to receive(:execute).with(
+      allow(described_class.connection).to receive(:execute).with(
         "SELECT email_id, distance FROM email_vectors WHERE embedding MATCH ? ORDER BY distance LIMIT ?",
         [ serialized, 5 ]
       ).and_return(raw_rows)
 
-      results = EmailVector.search(embedding)
+      results = described_class.search(embedding)
       expect(results).to eq([
         { email_id: 'email_1', distance: 0.12 },
         { email_id: 'email_2', distance: 0.34 }
@@ -31,18 +31,18 @@ RSpec.describe EmailVector, type: :model do
     end
 
     it 'respects a custom limit' do
-      allow(EmailVector.connection).to receive(:execute).with(
+      allow(described_class.connection).to receive(:execute).with(
         "SELECT email_id, distance FROM email_vectors WHERE embedding MATCH ? ORDER BY distance LIMIT ?",
         [ serialized, 10 ]
       ).and_return([])
 
-      EmailVector.search(embedding, limit: 10)
+      described_class.search(embedding, limit: 10)
     end
 
     it 'returns an empty array when there are no matches' do
-      allow(EmailVector.connection).to receive(:execute).with(anything, anything).and_return([])
+      allow(described_class.connection).to receive(:execute).with(anything, anything).and_return([])
 
-      expect(EmailVector.search(embedding)).to eq([])
+      expect(described_class.search(embedding)).to eq([])
     end
   end
 end

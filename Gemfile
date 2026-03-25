@@ -32,6 +32,8 @@ group :development, :test do
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
   gem "ruby-lsp"
   gem "rubocop-rails-omakase", require: false
+  gem "rubocop-rspec", require: false
+  gem "rubocop-rspec_rails", require: false
   gem "rubycritic", require: false
   gem "brakeman", require: false
   gem "simplecov", require: false
@@ -40,4 +42,7 @@ group :development, :test do
   gem "factory_bot_rails"
   gem "vcr"
   gem "webmock"
+end
+
+group :test do
 end

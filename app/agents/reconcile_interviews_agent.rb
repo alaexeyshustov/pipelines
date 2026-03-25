@@ -1,35 +1,31 @@
 class ReconcileInterviewsAgent < RubyLLM::Agent
   chat_model Chat
-  tools ReadTableRowsTool, InsertTableRowsTool
-  model "mistral-large-latest"
+  tools ReadTableRowsTool, InsertTableRowsTool, UpdateTableRowsTool, ReadTableSchemaTool, ManageTempFileTool
+  # model "mistral-large-latest"
+  model "gpt-5.1"
+  schema do
+    integer :rows_inserted, description: "The number of rows inserted into the database"
+    integer :rows_updated, description: "The number of rows updated in the database"
+  end
 
   instructions <<~INSTRUCTIONS
-    You are a job application lifecycle tracker. Update the interviews table
-    based on new application_mails rows.
+    You are a emails lifecycle tracker. Update the <destination_table> records based on <emailsto_reconcile>.
+    For each of the given <emailsto_reconcile>.
 
-    The interviews table columns are:
-    company, job_title, status, applied_at, rejected_at,
-    first_interview_at, second_interview_at, third_interview_at, fourth_interview_at
-
-    Status values: pending_reply, having_interviews, rejected, offer_received
+    Status values: <statuses>
 
     Steps:
-    1. Read the interviews table: manage_database action "read", table "interviews".
-    2. For each unique company + job_title pair in the new rows:
+    2. Read the schema of the <destination_table> to understand its structure.
+    3. Read the rows from <destination_table>.
+    4. Match <emailsto_reconcile> to existing records in <destination_table> based on the <matching_logic>.
+    5. Skip <emailsto_reconcile> that have already been processed.
+    6. For each unique <matching_columns> in the new rows:
 
-        If NOT in interviews → add_rows with:
-          company, job_title, status=pending_reply,
-          applied_at=<date if action is Applied/Sent, else blank>,
-          all other date columns blank.
+        If NOT in <destination_table> → add_rows with:
+          status=<initial_status>.
 
-        If ALREADY in interviews → update_rows (match on company + job_title via
-          column_name: "company", column_value: "<company>", then use data to set fields):
-          - action "Applied" or "Sent": set applied_at if currently blank
-          - action "Rejection": set rejected_at, status = "rejected"
-          - action "Interview": fill the next empty interview slot
-            (first_interview_at → second → third → fourth), status = "having_interviews"
-          - action "Offer": status = "offer_received"
+        If ALREADY in <destination_table> → update_rows (match on <matching_columns> via
+          column_name: "<matching_columns>", then use data to set fields in schema, and update status based on changes
 
-    3. Return a plain-text summary of all changes made.
   INSTRUCTIONS
 end

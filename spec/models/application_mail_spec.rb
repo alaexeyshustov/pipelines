@@ -29,7 +29,7 @@ RSpec.describe ApplicationMail, type: :model do
       create(:application_mail, date: '2026-01-01', provider: 'gmail', email_id: 'a@gmail.com',
              company: 'Acme', job_title: 'Engineer', action: 'applied')
 
-      rows = ApplicationMail.as_rows
+      rows = described_class.as_rows
       expect(rows.length).to eq(1)
       expect(rows.first.keys).to match_array(ApplicationMail::COLUMN_NAMES)
     end
@@ -38,26 +38,26 @@ RSpec.describe ApplicationMail, type: :model do
       create(:application_mail, date: '2026-03-01', email_id: 'b@gmail.com')
       create(:application_mail, date: '2026-01-01', email_id: 'a@gmail.com')
 
-      dates = ApplicationMail.as_rows.map { |r| r['date'] }
+      dates = described_class.as_rows.map { |r| r['date'] }
       expect(dates).to eq(dates.sort)
     end
 
     it 'converts all values to strings' do
       create(:application_mail, date: Date.new(2026, 1, 1), email_id: 'test@gmail.com')
 
-      row = ApplicationMail.as_rows.first
+      row = described_class.as_rows.first
       expect(row.values).to all(be_a(String).or(be_nil))
     end
 
     it 'returns empty array when no records exist' do
-      expect(ApplicationMail.as_rows).to eq([])
+      expect(described_class.as_rows).to eq([])
     end
 
     it 'accepts a custom scope' do
       gmail  = create(:application_mail, provider: 'gmail',  email_id: 'g@gmail.com')
       _yahoo = create(:application_mail, provider: 'yahoo',  email_id: 'y@yahoo.com')
 
-      rows = ApplicationMail.as_rows(ApplicationMail.where(provider: 'gmail'))
+      rows = described_class.as_rows(described_class.where(provider: 'gmail'))
       expect(rows.length).to eq(1)
       expect(rows.first['provider']).to eq('gmail')
     end

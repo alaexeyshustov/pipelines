@@ -10,24 +10,37 @@ class InsertTableRowsTool < RubyLLM::Tool
 
   def execute(table:, data:)
     model   = resolve_model(table)
-    records = JSON.parse(data)
-    raise ArgumentError, "data must be a JSON array" unless records.is_a?(Array)
+    parsed_data = safe_parse_data(data)
+    return parsed_data if parsed_data[:status] != "success"
 
+    records = parsed_data[:records]
     inserted = 0
+    ids = []
     records.each do |row|
       attrs = row.is_a?(Hash) ? row.transform_keys(&:to_s).slice(*model::COLUMN_NAMES) : {}
       next if attrs.empty?
 
-      model.create!(attrs)
+      record = model.create!(attrs)
+      ids << record.id
       inserted += 1
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
       Rails.logger.warn "Skipping row for #{model}: #{e.message}"
     end
 
-    { status: "rows_added", rows_added: inserted, total_rows: model.count }
+    { status: "rows_added", rows_added: inserted, total_rows: model.count, ids: ids }
   end
 
   private
+
+  def safe_parse_data(data)
+    records = JSON.parse(data)
+
+    return { status: "invalid_data", error: "Expected an array of objects" } unless records.is_a?(Array)
+
+    { status: "success", records: records }
+  rescue JSON::ParserError => e
+    { status: "invalid_data", error: "Failed to parse JSON data: #{e.message}" }
+  end
 
   def resolve_model(table)
     case table.to_s

@@ -2,11 +2,7 @@
 
 class ChatsController < ApplicationController
   def index
-    collection = Chat.includes(:model).order(created_at: :desc)
-    page  = [ params[:page].to_i, 1 ].max
-    count = collection.count
-    @pagy = Pagy::Offset.new(page: page, count: count)
-    @chats = @pagy.records(collection)
+    @pagy, @chats = pagy(:offset, Chat.includes(:model).order(created_at: :desc))
   end
 
   def show

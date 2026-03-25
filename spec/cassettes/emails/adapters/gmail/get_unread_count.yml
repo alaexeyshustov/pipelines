@@ -1,0 +1,21 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://gmail.googleapis.com/gmail/v1/users/me/labels/UNREAD
+    body:
+      encoding: UTF-8
+      string: ''
+    headers: {}
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"id":"UNREAD","name":"UNREAD","type":"system","messagesTotal":5,"messagesUnread":5,"threadsTotal":5,"threadsUnread":5}'
+  recorded_at: 'Tue, 24 Mar 2026 10:00:00 GMT'
+recorded_with: VCR 6.3.1

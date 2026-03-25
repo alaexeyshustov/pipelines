@@ -11,19 +11,19 @@ RSpec.describe GistUploader do
       allow(ENV).to receive(:fetch).with('GITHUB_TOKEN').and_return(token)
       allow(ENV).to receive(:[]).with('GIST_ID').and_return('gist_42')
 
-      uploader = GistUploader.from_env(filename: filename)
-      expect(uploader).to be_a(GistUploader)
+      uploader = described_class.from_env(filename: filename)
+      expect(uploader).to be_a(described_class)
     end
 
     it 'raises KeyError when GITHUB_TOKEN is absent' do
       allow(ENV).to receive(:fetch).with('GITHUB_TOKEN').and_raise(KeyError)
-      expect { GistUploader.from_env(filename: filename) }.to raise_error(KeyError)
+      expect { described_class.from_env(filename: filename) }.to raise_error(KeyError)
     end
   end
 
   describe '#upload' do
     context 'when gist_id is provided (update)' do
-      subject(:uploader) { GistUploader.new(token: token, gist_id: 'gist_42', filename: filename) }
+      subject(:uploader) { described_class.new(token: token, gist_id: 'gist_42', filename: filename) }
 
       before do
         stub_request(:patch, "https://api.github.com/gists/gist_42")
@@ -53,7 +53,7 @@ RSpec.describe GistUploader do
     end
 
     context 'when gist_id is absent (create)' do
-      subject(:uploader) { GistUploader.new(token: token, gist_id: nil, filename: filename) }
+      subject(:uploader) { described_class.new(token: token, gist_id: nil, filename: filename) }
 
       before do
         stub_request(:post, "https://api.github.com/gists")
@@ -76,7 +76,7 @@ RSpec.describe GistUploader do
     end
 
     context 'when the API returns an error' do
-      subject(:uploader) { GistUploader.new(token: token, gist_id: nil, filename: filename) }
+      subject(:uploader) { described_class.new(token: token, gist_id: nil, filename: filename) }
 
       before do
         stub_request(:post, "https://api.github.com/gists")

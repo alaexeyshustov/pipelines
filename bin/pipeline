@@ -25,8 +25,9 @@ module PipelineCLI
       option :log_level, default: "info",
                          desc: "Logging verbosity: debug, info, warn, error"
       option :log_file,  desc: "Path to log file (default: log/pipeline.log)"
+      option :date,      desc: "Date for the workflow (default: today)"
 
-      def call(pipeline:, model:, watch:, log_level: "info", log_file: nil, **)
+      def call(pipeline:, model:, watch:, log_level: "info", log_file: nil, date: Date.today, **)
         pipeline_class = case pipeline.downcase
                          when "jobs"
                            Pipeline::JobsWorkflow
@@ -54,7 +55,7 @@ module PipelineCLI
 
         loop do
           logger.info "Starting pipeline (model: #{model})..."
-          result = pipeline_class.new(model: model, logger: logger).run
+          result = pipeline_class.new(model: model, logger: logger, date: date).run
           logger.info "Pipeline complete: #{result.inspect}"
 
           break unless watch

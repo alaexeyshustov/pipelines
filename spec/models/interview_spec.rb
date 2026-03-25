@@ -34,7 +34,7 @@ RSpec.describe Interview, type: :model do
     it 'returns records as hashes with COLUMN_NAMES keys' do
       create(:interview, company: 'Acme', job_title: 'Engineer 1')
 
-      rows = Interview.as_rows
+      rows = described_class.as_rows
       expect(rows.length).to eq(1)
       expect(rows.first.keys).to match_array(Interview::COLUMN_NAMES)
     end
@@ -44,7 +44,7 @@ RSpec.describe Interview, type: :model do
       create(:interview, company: 'Alpha', job_title: 'Dev 2')
       create(:interview, company: 'Alpha', job_title: 'Dev 1')
 
-      rows = Interview.as_rows
+      rows = described_class.as_rows
       expect(rows.map { |r| [ r['company'], r['job_title'] ] }).to eq([
         [ 'Alpha', 'Dev 1' ],
         [ 'Alpha', 'Dev 2' ],
@@ -55,19 +55,19 @@ RSpec.describe Interview, type: :model do
     it 'converts values to strings, allowing nil' do
       create(:interview, company: 'Acme', job_title: 'Engineer 2', rejected_at: nil)
 
-      row = Interview.as_rows.first
+      row = described_class.as_rows.first
       row.each_value { |v| expect(v).to be_a(String).or(be_nil) }
     end
 
     it 'returns empty array when no records exist' do
-      expect(Interview.as_rows).to eq([])
+      expect(described_class.as_rows).to eq([])
     end
 
     it 'accepts a custom scope' do
       create(:interview, company: 'Acme',   job_title: 'Engineer 3', status: 'rejected')
       create(:interview, company: 'Globex', job_title: 'Engineer 4', status: 'pending_reply')
 
-      rows = Interview.as_rows(Interview.where(status: 'rejected'))
+      rows = described_class.as_rows(described_class.where(status: 'rejected'))
       expect(rows.length).to eq(1)
       expect(rows.first['company']).to eq('Acme')
     end

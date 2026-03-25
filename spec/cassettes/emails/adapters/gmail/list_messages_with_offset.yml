@@ -1,0 +1,57 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://gmail.googleapis.com/gmail/v1/users/me/messages
+    body:
+      encoding: UTF-8
+      string: ''
+    headers: {}
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"messages":[{"id":"msg_skip1"}],"resultSizeEstimate":2,"nextPageToken":"token_page2"}'
+  recorded_at: 'Tue, 24 Mar 2026 10:00:00 GMT'
+- request:
+    method: get
+    uri: https://gmail.googleapis.com/gmail/v1/users/me/messages
+    body:
+      encoding: UTF-8
+      string: ''
+    headers: {}
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"messages":[{"id":"msg1"}],"resultSizeEstimate":1}'
+  recorded_at: 'Tue, 24 Mar 2026 10:00:00 GMT'
+- request:
+    method: get
+    uri: https://gmail.googleapis.com/gmail/v1/users/me/messages/msg1
+    body:
+      encoding: UTF-8
+      string: ''
+    headers: {}
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"id":"msg1","threadId":"thread1","snippet":"Application received","labelIds":["INBOX"],"payload":{"headers":[{"name":"Subject","value":"Job Application Update"},{"name":"From","value":"hr@company.com"},{"name":"To","value":"me@example.com"},{"name":"Date","value":"Mon, 1 Jan 2026 12:00:00 +0000"}]}}'
+  recorded_at: 'Tue, 24 Mar 2026 10:00:00 GMT'
+recorded_with: VCR 6.4.0

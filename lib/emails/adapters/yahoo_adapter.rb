@@ -91,12 +91,16 @@ module Emails
       def create_label(name:, **_opts)
         with_lock { @imap.create(name) }
         { id: name, name: name, type: "user" }
+      rescue Net::IMAP::NoResponseError => e
+        raise e unless e.message.include?("CREATE failed - Mailbox exists")
+
+        { id: name, name: name, type: "user" }
       end
 
       def modify_labels(message_uid, add: [], remove: [], mailbox: "INBOX", **_ignored)
         result = {}
-        result = @service.tag_email(message_uid.to_i, tags: add,    mailbox: mailbox, action: "add")    unless add.empty?
-        result = @service.tag_email(message_uid.to_i, tags: remove, mailbox: mailbox, action: "remove") unless remove.empty?
+        result = tag_email(message_uid.to_i, tags: add,    mailbox: mailbox, action: "add")    unless add.empty?
+        result = tag_email(message_uid.to_i, tags: remove, mailbox: mailbox, action: "remove") unless remove.empty?
         result
       end
 
@@ -179,6 +183,10 @@ module Emails
           @imap.uid_store(uid, imap_action, imap_flags)
           { uid: uid, action: action, tags: tags, mailbox: mailbox }
         end
+      rescue Net::IMAP::BadResponseError => e
+        binding.pry
+        raise e unless e.message.include?("UID STORE Command arguments invalid")
+        { uid: uid, action: action, tags: tags, mailbox: mailbox }
       end
 
       def extract_body(mail)

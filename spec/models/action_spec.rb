@@ -19,7 +19,7 @@ RSpec.describe Orchestration::Action, type: :model do
       create(:orchestration_step_action, action: action)
       action.destroy
       expect(action.errors[:base]).not_to be_empty
-      expect(Orchestration::Action.exists?(action.id)).to be true
+      expect(described_class.exists?(action.id)).to be true
     end
   end
 end

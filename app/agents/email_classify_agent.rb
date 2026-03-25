@@ -6,9 +6,8 @@ class EmailClassifyAgent < RubyLLM::Agent
   schema do
     array :results do
       object do
-        string :id,       description: "The email message ID"
-        string :subject,  description: "The email subject line"
-        array :tags,      description: "Short lowercase classification tags", of: :string
+        string :id,   description: "The email message ID"
+        array  :tags, of: :string, description: "Short lowercase classification tags"
       end
     end
   end
@@ -23,6 +22,8 @@ class EmailClassifyAgent < RubyLLM::Agent
       ]
     }
 
-    If no emails are found, return an empty JSON array: []
+    Steps:
+    1. For each email, analyze the subject line and suggest short lowercase classification tags that are relevant to the content of the email. 
+      Tags should be concise and descriptive (e.g. "job", "application", "interview", "offer").
   INSTRUCTIONS
 end

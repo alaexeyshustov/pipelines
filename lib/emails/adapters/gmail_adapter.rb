@@ -94,6 +94,10 @@ module Emails
       def get_message(message_id, mailbox: nil)
         message = @service.get_user_message("me", message_id, format: "full")
         parse_message(message).merge(body: extract_body(message.payload))
+      rescue Google::Apis::ClientError => e
+        puts "ERROR: Failed to get message #{message_id} - #{e.message}"
+
+        { id: message_id, error: e.message }
       end
 
       def search_messages(query, max_results: 10, mailbox: nil)
@@ -101,7 +105,7 @@ module Emails
       end
 
       def get_labels
-        @service.list_user_labels("me").labels.map do |label|
+        @labels ||= @service.list_user_labels("me").labels.map do |label|
           { id: label.id, name: label.name, type: label.type }
         end
       end
@@ -117,12 +121,21 @@ module Emails
         )
         message = @service.modify_message("me", message_id, request)
         { id: message.id, labels: message.label_ids || [] }
+      rescue Google::Apis::ClientError => e
+        raise e unless e.message.include?("Label name exists or conflicts")
+
+        { id: message_id, labels: [] }
       end
 
       def create_label(name:, **_opts)
         label = Google::Apis::GmailV1::Label.new(name: name)
         result = @service.create_user_label("me", label)
         { id: result.id, name: result.name, type: result.type }
+      rescue Google::Apis::ClientError => e
+        raise e unless e.message.include?("Label name exists or conflicts")
+
+        existing = get_labels.find { |l| l[:name] == name } || raise("Failed to create or find existing label '#{name}'")
+        { id: existing[:id], name: existing[:name], type: existing[:type] }
       end
 
       private
