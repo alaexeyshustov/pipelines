@@ -1,0 +1,12 @@
+<% content_for :title, "Edit Email Record" %>
+
+<div class="mb-6 flex items-center gap-2 text-sm text-gray-500">
+  <%= link_to "Application Emails", application_mails_path, class: "hover:text-gray-700" %>
+  <span>›</span>
+  <span class="text-gray-900">Edit Email Record</span>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
+  <h1 class="text-xl font-bold text-gray-900 mb-6">Edit Email Record</h1>
+  <%= render "form", mail: @mail %>
+</div>

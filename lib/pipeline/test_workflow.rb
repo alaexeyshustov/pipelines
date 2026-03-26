@@ -10,20 +10,7 @@ module Pipeline
       @logger.info "Running TestWorkflow with model: #{@model}"
       # Simulate some processing and return a test result
 
-      all_emails = Sync do
-        semaphore = Async::Semaphore.new(5)
-        tasks = [ "gmail", "yahoo" ].map do |provider|
-          semaphore.async do
-            result = step1(provider: provider, after: start_date, before: end_date)
-
-            result = result.is_a?(Array) ? result : (result["results"] || result[:results] || [])
-            puts "Fetched #{result.size} emails from #{provider}: #{result}"
-            result
-          end
-        end
-        tasks.flat_map(&:wait)
-      end
-
+      all_emails= fetach_emails
       return { status: "no_emails_fetched" } if all_emails.empty?
 
       results = step2(emails: all_emails)
@@ -31,25 +18,26 @@ module Pipeline
       puts "Classified #{tags.size} emails: #{tags}"
 
       results = step3(emails: all_emails, tags: tags)
-      filtered_ids = results["results"] || []
-      puts "Filtered #{filtered_ids.size} emails: #{filtered_ids}"
+      filtered_ids = (results["results"] || []).map { |email| email["id"] }
+      puts "Filtered #{filtered_ids.size} ids: #{filtered_ids}"
 
       return { status: "no_filtered_emails" } if filtered_ids.empty?
 
       filtered_emails = all_emails.select { |email| filtered_ids.include?(email["id"]) }
+      puts "Filtered #{filtered_emails.size} emails: #{filtered_emails}"
 
       results = step4(emails: filtered_emails)
       mapped_emails = results["results"] || []
       puts "Mapped emails to records: #{mapped_emails}"
 
-      results = step5(emails: mapped_emails.map(&:attributes))
-      email_ids = results["results"] || results[:results] || []
+      results = step5(emails: mapped_emails)
+      email_ids = results["results"] || []
       puts "Stored IDs: #{email_ids}"
 
       emails = ApplicationMail.groupped.map(&:attributes)
 
       results = step6(emails: emails)
-      normalized_records = results["results"] || results[:results] || []
+      normalized_records = results["results"] || []
       puts "Normalized records: #{normalized_records}"
 
       result = step7(emails: emails)
@@ -123,6 +111,27 @@ module Pipeline
         initial_status: "pending_reply"
       }.to_json
       Records::ReconcileAgent.create.with_model(@model).ask(input).content
+    end
+
+    def fetach_emails
+      tmp_file = Rails.root.join("tmp", "emails_#{start_date}_#{end_date}.json")
+      if File.exist?(tmp_file)
+        JSON.parse(File.read(tmp_file))
+      else
+        emails = Sync do
+          semaphore = Async::Semaphore.new(5)
+          tasks = [ "gmail", "yahoo" ].map do |provider|
+            semaphore.async do
+              result = step1(provider: provider, after: start_date, before: end_date)
+              result = result.is_a?(Array) ? result : (result["results"] || result[:results] || [])
+              result
+            end
+          end
+          tasks.flat_map(&:wait)
+        end
+        File.write(tmp_file, emails.to_json)
+        emails
+      end
     end
 
     def start_date

@@ -1,0 +1,54 @@
+<% content_for :title, "Email Record" %>
+
+<div class="mb-6 flex items-center gap-2 text-sm text-gray-500">
+  <%= link_to "Application Emails", application_mails_path, class: "hover:text-gray-700" %>
+  <span>›</span>
+  <span class="text-gray-900">Email Record</span>
+</div>
+
+<% if notice.present? %>
+  <div class="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm"><%= notice %></div>
+<% end %>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-xl font-bold text-gray-900">Email Record</h1>
+    <div class="flex items-center gap-3">
+      <%= link_to "Edit", edit_application_mail_path(@mail), class: "px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors" %>
+      <%= button_to "Delete", application_mail_path(@mail), method: :delete,
+            form: { data: { turbo_confirm: "Delete this email record?" } },
+            class: "px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors border-0 cursor-pointer" %>
+    </div>
+  </div>
+
+  <dl class="space-y-4">
+    <div class="flex gap-4">
+      <dt class="w-28 text-sm font-medium text-gray-500 shrink-0">Date</dt>
+      <dd class="text-sm text-gray-900 tabular-nums"><%= @mail.date %></dd>
+    </div>
+    <div class="flex gap-4">
+      <dt class="w-28 text-sm font-medium text-gray-500 shrink-0">Provider</dt>
+      <dd>
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium <%= @mail.provider == 'gmail' ? 'bg-red-50 text-red-700' : 'bg-purple-50 text-purple-700' %>">
+          <%= @mail.provider %>
+        </span>
+      </dd>
+    </div>
+    <div class="flex gap-4">
+      <dt class="w-28 text-sm font-medium text-gray-500 shrink-0">Email ID</dt>
+      <dd class="text-sm text-gray-900 font-mono"><%= @mail.email_id %></dd>
+    </div>
+    <div class="flex gap-4">
+      <dt class="w-28 text-sm font-medium text-gray-500 shrink-0">Company</dt>
+      <dd class="text-sm text-gray-900"><%= @mail.company || "—" %></dd>
+    </div>
+    <div class="flex gap-4">
+      <dt class="w-28 text-sm font-medium text-gray-500 shrink-0">Job Title</dt>
+      <dd class="text-sm text-gray-900"><%= @mail.job_title || "—" %></dd>
+    </div>
+    <div class="flex gap-4">
+      <dt class="w-28 text-sm font-medium text-gray-500 shrink-0">Action</dt>
+      <dd class="text-sm text-gray-900"><%= @mail.action || "—" %></dd>
+    </div>
+  </dl>
+</div>

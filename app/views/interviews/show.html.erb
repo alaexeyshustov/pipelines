@@ -1,0 +1,73 @@
+<% content_for :title, "Interview" %>
+
+<div class="mb-6 flex items-center gap-2 text-sm text-gray-500">
+  <%= link_to "Interviews", interviews_path, class: "hover:text-gray-700" %>
+  <span>›</span>
+  <span class="text-gray-900">Interview</span>
+</div>
+
+<% if notice.present? %>
+  <div class="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm"><%= notice %></div>
+<% end %>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-xl font-bold text-gray-900"><%= @interview.company %> — <%= @interview.job_title %></h1>
+    <div class="flex items-center gap-3">
+      <%= link_to "Edit", edit_interview_path(@interview), class: "px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors" %>
+      <%= button_to "Delete", interview_path(@interview), method: :delete,
+            form: { data: { turbo_confirm: "Delete this interview record?" } },
+            class: "px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors border-0 cursor-pointer" %>
+    </div>
+  </div>
+
+  <dl class="space-y-4">
+    <div class="flex gap-4">
+      <dt class="w-40 text-sm font-medium text-gray-500 shrink-0">Company</dt>
+      <dd class="text-sm text-gray-900"><%= @interview.company %></dd>
+    </div>
+    <div class="flex gap-4">
+      <dt class="w-40 text-sm font-medium text-gray-500 shrink-0">Job Title</dt>
+      <dd class="text-sm text-gray-900"><%= @interview.job_title %></dd>
+    </div>
+    <div class="flex gap-4">
+      <dt class="w-40 text-sm font-medium text-gray-500 shrink-0">Status</dt>
+      <dd>
+        <% badge_class = case @interview.status
+          when "pending_reply"      then "bg-yellow-50 text-yellow-700"
+          when "having_interviews"  then "bg-blue-50 text-blue-700"
+          when "rejected"           then "bg-red-50 text-red-700"
+          when "offer_received"     then "bg-green-50 text-green-700"
+          else                           "bg-gray-50 text-gray-700"
+          end %>
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium <%= badge_class %>">
+          <%= @interview.status&.humanize || "—" %>
+        </span>
+      </dd>
+    </div>
+    <div class="flex gap-4">
+      <dt class="w-40 text-sm font-medium text-gray-500 shrink-0">Applied</dt>
+      <dd class="text-sm text-gray-900 tabular-nums"><%= @interview.applied_at || "—" %></dd>
+    </div>
+    <div class="flex gap-4">
+      <dt class="w-40 text-sm font-medium text-gray-500 shrink-0">Rejected</dt>
+      <dd class="text-sm text-gray-900 tabular-nums"><%= @interview.rejected_at || "—" %></dd>
+    </div>
+    <div class="flex gap-4">
+      <dt class="w-40 text-sm font-medium text-gray-500 shrink-0">1st Interview</dt>
+      <dd class="text-sm text-gray-900 tabular-nums"><%= @interview.first_interview_at || "—" %></dd>
+    </div>
+    <div class="flex gap-4">
+      <dt class="w-40 text-sm font-medium text-gray-500 shrink-0">2nd Interview</dt>
+      <dd class="text-sm text-gray-900 tabular-nums"><%= @interview.second_interview_at || "—" %></dd>
+    </div>
+    <div class="flex gap-4">
+      <dt class="w-40 text-sm font-medium text-gray-500 shrink-0">3rd Interview</dt>
+      <dd class="text-sm text-gray-900 tabular-nums"><%= @interview.third_interview_at || "—" %></dd>
+    </div>
+    <div class="flex gap-4">
+      <dt class="w-40 text-sm font-medium text-gray-500 shrink-0">4th Interview</dt>
+      <dd class="text-sm text-gray-900 tabular-nums"><%= @interview.fourth_interview_at || "—" %></dd>
+    </div>
+  </dl>
+</div>

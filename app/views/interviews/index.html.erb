@@ -1,0 +1,65 @@
+<% content_for :title, "Interviews" %>
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">Interviews</h1>
+  <%= link_to "New Interview", new_interview_path,
+        class: "px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors" %>
+</div>
+
+<% if notice.present? %>
+  <div class="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm"><%= notice %></div>
+<% end %>
+
+<% if alert.present? %>
+  <div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-800 rounded-lg text-sm"><%= alert %></div>
+<% end %>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Company</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Job Title</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Status</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-600">Applied</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% if @interviews.empty? %>
+        <tr>
+          <td colspan="5" class="px-4 py-10 text-center text-gray-400">No interviews found.</td>
+        </tr>
+      <% else %>
+        <% @interviews.each do |interview| %>
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-4 py-3 font-medium text-gray-900"><%= interview.company %></td>
+            <td class="px-4 py-3 text-gray-600"><%= interview.job_title %></td>
+            <td class="px-4 py-3">
+              <% badge_class = case interview.status
+                when "pending_reply"      then "bg-yellow-50 text-yellow-700"
+                when "having_interviews"  then "bg-blue-50 text-blue-700"
+                when "rejected"           then "bg-red-50 text-red-700"
+                when "offer_received"     then "bg-green-50 text-green-700"
+                else                           "bg-gray-50 text-gray-700"
+                end %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium <%= badge_class %>">
+                <%= interview.status&.humanize || "—" %>
+              </span>
+            </td>
+            <td class="px-4 py-3 text-gray-500 tabular-nums"><%= interview.applied_at || "—" %></td>
+            <td class="px-4 py-3 text-right flex items-center justify-end gap-3">
+              <%= link_to "View", interview_path(interview), class: "text-gray-500 hover:text-gray-700 font-medium" %>
+              <%= link_to "Edit", edit_interview_path(interview), class: "text-indigo-600 hover:text-indigo-800 font-medium" %>
+              <%= button_to "Delete", interview_path(interview), method: :delete,
+                    form: { data: { turbo_confirm: "Delete this interview record?" } },
+                    class: "text-red-500 hover:text-red-700 font-medium bg-transparent border-0 cursor-pointer p-0" %>
+            </td>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<%== @pagy.series_nav %>
