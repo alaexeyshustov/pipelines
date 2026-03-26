@@ -1,17 +1,19 @@
 require 'rails_helper'
 
-RSpec.describe EmailVector, type: :model do
+RSpec.describe EmailVector do
   let(:embedding) { Array.new(1536, 0.1) }
   let(:serialized) { embedding.pack("f*") }
 
   describe '.upsert_embedding' do
     it 'executes an INSERT OR REPLACE with serialized embedding' do
-      expect(described_class.connection).to receive(:execute).with(
+      allow(described_class.connection).to receive(:execute)
+
+      described_class.upsert_embedding(email_id: 'email_123', embedding: embedding)
+
+      expect(described_class.connection).to have_received(:execute).with(
         "INSERT OR REPLACE INTO email_vectors(email_id, embedding) VALUES (?, ?)",
         [ 'email_123', serialized ]
       )
-
-      described_class.upsert_embedding(email_id: 'email_123', embedding: embedding)
     end
   end
 
@@ -36,7 +38,7 @@ RSpec.describe EmailVector, type: :model do
         [ serialized, 10 ]
       ).and_return([])
 
-      described_class.search(embedding, limit: 10)
+      expect(described_class.search(embedding, limit: 10)).to eq([])
     end
 
     it 'returns an empty array when there are no matches' do

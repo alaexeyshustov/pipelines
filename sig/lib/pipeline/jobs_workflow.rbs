@@ -29,6 +29,7 @@ module Pipeline
     def run: () -> run_result
 
     private
+
     def run_single_day: (String date, Array[String] existing_ids) -> day_result
     def step1_init_database: () -> [String, Array[String]]
     def step2_fetch_emails: (String after_date, String before_date, Array[String] existing_ids) -> Array[Hash[String, untyped]]

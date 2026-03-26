@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Message, type: :model do
+RSpec.describe Message do
   it 'can be persisted' do
     message = create(:message)
     expect(message).to be_persisted

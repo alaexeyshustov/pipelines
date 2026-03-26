@@ -4,7 +4,7 @@ RSpec.describe Records::ReadRowsTool do
   subject(:tool) { described_class.new }
 
   describe 'application_mails' do
-    let!(:mail) { create(:application_mail, company: 'Acme', job_title: 'Engineer') }
+    before { create(:application_mail, company: 'Acme', job_title: 'Engineer') }
 
     it 'returns all rows with headers' do
       result = tool.execute(table: 'application_mails')
@@ -21,7 +21,7 @@ RSpec.describe Records::ReadRowsTool do
   end
 
   describe 'interviews' do
-    let!(:interview) { create(:interview, company: 'Globex', job_title: 'Developer 1') }
+    before { create(:interview, company: 'Globex', job_title: 'Developer 1') }
 
     it 'returns all rows with headers' do
       result = tool.execute(table: 'interviews')

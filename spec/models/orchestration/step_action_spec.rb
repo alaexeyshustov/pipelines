@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Orchestration::StepAction, type: :model do
+RSpec.describe Orchestration::StepAction do
   describe 'validations' do
     it 'is valid with required attributes' do
       step_action = build(:orchestration_step_action)

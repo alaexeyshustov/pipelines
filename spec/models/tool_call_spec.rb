@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe ToolCall, type: :model do
+RSpec.describe ToolCall do
   it 'can be persisted' do
     tool_call = create(:tool_call)
     expect(tool_call).to be_persisted

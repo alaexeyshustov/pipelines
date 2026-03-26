@@ -51,6 +51,7 @@ module Emails
       def create_label: (name: String, **untyped opts) -> gmail_label
 
       private
+
       def list_message: (String message_id) -> gmail_list_message
       def parse_message: (untyped message) -> gmail_list_message
       def header_value: (Array[untyped] headers, String name) -> String?

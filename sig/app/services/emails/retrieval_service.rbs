@@ -8,6 +8,7 @@ module Emails
     def call: () -> Array[email_hash]
 
     private
+
     def normalize: (Hash[Symbol, untyped] email) -> email_hash
   end
 end

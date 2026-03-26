@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Orchestration::Action, type: :model do
+RSpec.describe Orchestration::Action do
   describe 'validations' do
     it 'is valid with a name and a valid agent_class' do
       action = build(:orchestration_action)

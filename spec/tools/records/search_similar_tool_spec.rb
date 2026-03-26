@@ -46,5 +46,11 @@ RSpec.describe Records::SearchSimilarTool do
       expect { tool.execute(table: 'application_mails', column: 'nonexistent', value: 'Google') }
         .to raise_error(ArgumentError, /Unknown column/)
     end
+
+    it 'searches the interviews table' do
+      create(:interview, company: 'Acme Corp', job_title: 'Engineer')
+      result = tool.execute(table: 'interviews', column: 'company', value: 'Acme')
+      expect(result[:matches]).to include('Acme Corp')
+    end
   end
 end

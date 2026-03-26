@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "Orchestration::Actions", type: :request do
+RSpec.describe "Orchestration::Actions" do
   describe "GET /orchestration/actions" do
     it "returns 200 and lists actions" do
       action = create(:orchestration_action, name: "My Action", agent_class: "Emails::ClassifyAgent")
@@ -57,8 +57,18 @@ RSpec.describe "Orchestration::Actions", type: :request do
     context "with invalid params" do
       it "renders new with 422" do
         post orchestration_actions_path, params: { orchestration_action: { name: "", agent_class: "" } }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(response.body).to include("agent_class")
+      end
+
+      it "falls back to raw params when tools JSON is invalid" do
+        expect {
+          post orchestration_actions_path, params: {
+            orchestration_action: {
+              name: "Test", agent_class: "Emails::ClassifyAgent", tools: "{invalid json"
+            }
+          }
+        }.to change(Orchestration::Action, :count).by(1)
       end
     end
   end
@@ -90,7 +100,7 @@ RSpec.describe "Orchestration::Actions", type: :request do
         patch orchestration_action_path(action), params: {
           orchestration_action: { name: "", agent_class: "" }
         }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
     end
   end

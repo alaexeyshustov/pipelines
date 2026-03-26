@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Chat, type: :model do
+RSpec.describe Chat do
   it 'can be persisted' do
     chat = create(:chat)
     expect(chat).to be_persisted

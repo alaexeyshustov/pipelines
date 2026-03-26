@@ -29,6 +29,8 @@ module Records
         Rails.logger.warn "Skipping row for #{model}: #{e.message}"
       end
 
+      puts "Inserted #{inserted}/#{records.size} rows into #{table}. IDs: #{ids}"
+
       { status: "rows_added", rows_added: inserted, total_rows: model.count, ids: ids }
     end
 

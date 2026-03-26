@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Interview, type: :model do
+RSpec.describe Interview do
   describe 'validations' do
     it 'is valid with required attributes' do
       interview = build(:interview)

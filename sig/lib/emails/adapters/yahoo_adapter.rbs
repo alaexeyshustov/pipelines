@@ -52,6 +52,7 @@ module Emails
       def create_label: (name: String, **untyped opts) -> yahoo_label
 
       private
+
       def connect!: () -> void
       def disconnect: () -> void
       def ensure_mailbox: (String mailbox) -> void

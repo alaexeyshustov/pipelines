@@ -20,7 +20,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
   end
 
   let(:fetch_data) do
-    [ double('FetchData', attr: { 'RFC822.HEADER' => header_text, 'FLAGS' => [], 'UID' => 101 }) ]
+    [ instance_double(Net::IMAP::FetchData, attr: { 'RFC822.HEADER' => header_text, 'FLAGS' => [], 'UID' => 101 }) ]
   end
 
   before do
@@ -91,7 +91,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
   end
 
   describe '#get_labels' do
-    let(:mailbox) { double('Mailbox', name: 'INBOX', delim: '/', attr: [ :Noselect ]) }
+    let(:mailbox) { instance_double(Net::IMAP::MailboxList, name: 'INBOX', delim: '/', attr: [ :Noselect ]) }
 
     before do
       allow(imap).to receive(:list).with('', '*').and_return([ mailbox ])
@@ -148,8 +148,8 @@ RSpec.describe Emails::Adapters::YahooAdapter do
 
     context 'when uid_store raises BadResponseError for invalid arguments' do
       let(:bad_response) do
-        resp = double('BadResponse')
-        data = double('ResponseData', text: 'UID STORE Command arguments invalid foo')
+        resp = instance_double(Net::IMAP::TaggedResponse)
+        data = instance_double(Net::IMAP::ResponseText, text: 'UID STORE Command arguments invalid foo')
         allow(resp).to receive_messages(data: data, to_s: 'UID STORE Command arguments invalid foo')
         resp
       end
@@ -217,7 +217,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
   describe 'fetch_and_parse error handling' do
     before do
       allow(imap).to receive(:select)
-      allow(imap).to receive_messages(uid_search: [ 101 ], uid_fetch: [ double('FetchData', attr: { 'RFC822.HEADER' => '', 'FLAGS' => [], 'UID' => 101 }) ])
+      allow(imap).to receive_messages(uid_search: [ 101 ], uid_fetch: [ instance_double(Net::IMAP::FetchData, attr: { 'RFC822.HEADER' => '', 'FLAGS' => [], 'UID' => 101 }) ])
     end
 
     it 'skips messages that fail to parse' do

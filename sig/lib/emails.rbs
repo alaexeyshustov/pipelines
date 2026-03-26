@@ -12,8 +12,6 @@ module Emails
   def self.modify_labels: (String provider_name, String message_id, ?add: Array[String], ?remove: Array[String], **untyped opts) -> untyped
   def self.create_label: (String provider_name, name: String, **untyped opts) -> untyped
 
-  private
-
   def self.registry: () -> Emails::ProviderRegistry
   def self.fetch: (String provider_name) -> untyped
 end

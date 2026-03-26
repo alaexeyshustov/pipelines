@@ -16,3 +16,4 @@
 [ ] Add rubocop for rspec
 [ ] Measure specs quality
 [ ] Models balancer
+[ ] Button to fill the content

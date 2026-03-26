@@ -4,6 +4,7 @@ module Records
     def execute: (table: String, column: String, value: String) -> { matches: Array[String] }
 
     private
+
     def fetch_substring_matches: (untyped model, String column, String value) -> Array[String]
     def fetch_fuzzy_matches: (untyped model, String column, String value) -> Array[String]
     def normalize_words: (String str) -> Array[String]

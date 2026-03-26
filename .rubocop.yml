@@ -3,3 +3,12 @@ inherit_gem:
 plugins:
   - rubocop-rspec
   - rubocop-rspec_rails
+  - rubocop-on-rbs
+
+AllCops:
+  NewCops: enable
+
+RSpec/MultipleExpectations:
+  Max: 3
+RSpec/ExampleLength:
+  Max: 10

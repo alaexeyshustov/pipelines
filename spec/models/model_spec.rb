@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Model, type: :model do
+RSpec.describe Model do
   it 'can be persisted' do
     model = create(:model)
     expect(model).to be_persisted

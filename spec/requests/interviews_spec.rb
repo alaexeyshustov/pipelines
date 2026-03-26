@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "Interviews", type: :request do
+RSpec.describe "Interviews" do
   let(:valid_params) do
     {
       interview: {
@@ -72,7 +72,7 @@ RSpec.describe "Interviews", type: :request do
     context "with invalid params" do
       it "renders new with 422" do
         post interviews_path, params: { interview: { company: "", job_title: "" } }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(response.body).to include("company")
       end
     end
@@ -101,7 +101,7 @@ RSpec.describe "Interviews", type: :request do
       it "renders edit with 422" do
         interview = create(:interview)
         patch interview_path(interview), params: { interview: { company: "" } }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
     end
   end

@@ -1,7 +1,8 @@
 module Records
   class StoreAgent < RubyLLM::Agent
     chat_model Chat
-    tools Emails::GetLabelsTool, Emails::CreateLabelTool, Emails::AddLabelsTool, InsertRowsTool, ReadSchemaTool, Emails::GetTool
+    tools Emails::GetLabelsTool, Emails::CreateLabelTool, Emails::AddLabelsTool,
+    Records::InsertRowsTool, Records::ReadSchemaTool, Emails::GetTool
     model "mistral-large-latest"
 
     schema do

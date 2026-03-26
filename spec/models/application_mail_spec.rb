@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe ApplicationMail, type: :model do
+RSpec.describe ApplicationMail do
   describe 'validations' do
     it 'is valid with required attributes' do
       mail = build(:application_mail)
@@ -60,6 +60,17 @@ RSpec.describe ApplicationMail, type: :model do
       rows = described_class.as_rows(described_class.where(provider: 'gmail'))
       expect(rows.length).to eq(1)
       expect(rows.first['provider']).to eq('gmail')
+    end
+  end
+
+  describe '.groupped' do
+    it 'groups records by company and job_title' do
+      create(:application_mail, company: 'Acme', job_title: 'Engineer', email_id: 'a@x.com')
+      create(:application_mail, company: 'Acme', job_title: 'Engineer', email_id: 'b@x.com')
+
+      rows = described_class.groupped
+      expect(rows.length).to eq(1)
+      expect(rows.first.company).to eq('Acme')
     end
   end
 

@@ -10,7 +10,7 @@ module Pipeline
       @logger.info "Running TestWorkflow with model: #{@model}"
       # Simulate some processing and return a test result
 
-      all_emails= fetach_emails
+      all_emails = fetach_emails
       return { status: "no_emails_fetched" } if all_emails.empty?
 
       results = step2(emails: all_emails)
@@ -27,20 +27,23 @@ module Pipeline
       puts "Filtered #{filtered_emails.size} emails: #{filtered_emails}"
 
       results = step4(emails: filtered_emails)
-      mapped_emails = results["results"] || []
+      mapped_emails = results["emails"] || []
+
       puts "Mapped emails to records: #{mapped_emails}"
+      return { status: "no_mapped_emails" } if mapped_emails.empty?
 
       results = step5(emails: mapped_emails)
-      email_ids = results["results"] || []
+      email_ids = results["ids"] || []
       puts "Stored IDs: #{email_ids}"
 
-      emails = ApplicationMail.groupped.map(&:attributes)
+      saved_emails = ApplicationMail.where(id: email_ids).groupped.map(&:attributes)
 
-      results = step6(emails: emails)
+      results = step6(emails: saved_emails)
       normalized_records = results["results"] || []
       puts "Normalized records: #{normalized_records}"
 
-      result = step7(emails: emails)
+      result = step7(emails: saved_emails)
+      puts "Reconciliation result: #{result}"
 
       { status: "test_complete", model_used: @model, result: result }
     end

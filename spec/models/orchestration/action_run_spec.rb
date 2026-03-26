@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Orchestration::ActionRun, type: :model do
+RSpec.describe Orchestration::ActionRun do
   describe 'validations' do
     it 'is valid with required attributes' do
       action_run = build(:orchestration_action_run)

@@ -4,6 +4,7 @@ module Records
     def execute: (table: String) -> { headers: Array[String] }
 
     private
+
     def resolve_model: (String table) -> untyped
   end
 end

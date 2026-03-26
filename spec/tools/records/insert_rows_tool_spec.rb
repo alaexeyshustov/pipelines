@@ -45,6 +45,12 @@ RSpec.describe Records::InsertRowsTool do
     expect { tool.execute(table: 'application_mails', data: '{}') }.to raise_error(ArgumentError, /must be a JSON array/)
   end
 
+  it 'returns invalid_data status when data is not valid JSON' do
+    result = tool.execute(table: 'application_mails', data: 'not-json')
+    expect(result[:status]).to eq('invalid_data')
+    expect(result[:error]).to be_present
+  end
+
   it 'raises ArgumentError for an unknown table' do
     expect { tool.execute(table: 'unknown', data: '[]') }.to raise_error(ArgumentError, /Unknown table/)
   end

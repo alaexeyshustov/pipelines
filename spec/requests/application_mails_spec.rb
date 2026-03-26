@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "ApplicationMails", type: :request do
+RSpec.describe "ApplicationMails" do
   let(:valid_params) do
     {
       application_mail: {
@@ -74,7 +74,7 @@ RSpec.describe "ApplicationMails", type: :request do
     context "with invalid params" do
       it "renders new with 422" do
         post application_mails_path, params: { application_mail: { date: "", provider: "", email_id: "" } }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(response.body).to include("email_id")
       end
     end
@@ -103,7 +103,7 @@ RSpec.describe "ApplicationMails", type: :request do
       it "renders edit with 422" do
         mail = create(:application_mail)
         patch application_mail_path(mail), params: { application_mail: { email_id: "" } }
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
     end
   end

@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Orchestration::PipelineRun, type: :model do
+RSpec.describe Orchestration::PipelineRun do
   describe 'validations' do
     it 'is valid with required attributes' do
       run = build(:orchestration_pipeline_run)

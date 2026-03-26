@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe "Chats", type: :request do
+RSpec.describe "Chats" do
   describe "GET /chats" do
     it "returns 200 with empty state" do
       get chats_path

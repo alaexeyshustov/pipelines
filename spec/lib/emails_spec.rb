@@ -79,6 +79,7 @@ RSpec.describe Emails do
     it 'defaults add and remove to empty arrays' do
       allow(adapter).to receive(:modify_labels).with('msg_1', add: [], remove: []).and_return(true)
       described_class.modify_labels('gmail', 'msg_1')
+      expect(adapter).to have_received(:modify_labels).with('msg_1', add: [], remove: [])
     end
   end
 

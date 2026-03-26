@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe "async-job infrastructure" do
+RSpec.describe "async-job infrastructure" do # rubocop:disable RSpec/DescribeClass
   describe "queue adapter" do
     it "is configured as :async_job" do
       expect(Rails.application.config.active_job.queue_adapter).to eq(:async_job)
