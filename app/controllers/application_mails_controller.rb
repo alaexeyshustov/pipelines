@@ -1,10 +1,16 @@
 # frozen_string_literal: true
 
 class ApplicationMailsController < ApplicationController
+  include Paginable
+  paginable sortable: %w[date provider company job_title action],
+            per_page: [ 20, 50, 100 ],
+            default_sort: "date"
+
   before_action :set_mail, only: [ :show, :edit, :update, :destroy ]
 
   def index
-    @pagy, @mails = pagy(ApplicationMail.order(date: :desc))
+    @query = params[:q]
+    @pagy, @mails = paginate(ApplicationMail.search(@query))
   end
 
   def show
@@ -37,6 +43,18 @@ class ApplicationMailsController < ApplicationController
   def destroy
     @mail.destroy
     redirect_to application_mails_path, notice: "Email record deleted."
+  end
+
+  def batch
+    ids = params[:ids]
+    if ids.blank?
+      redirect_back_or_to application_mails_path, alert: "No records selected."
+      return
+    end
+
+    result = ApplicationMails::BatchService.new(ids: ids, batch_action: params[:batch_action]).call
+    redirect_back_or_to application_mails_path,
+                         **(result.ok? ? { notice: result.message } : { alert: result.message })
   end
 
   private

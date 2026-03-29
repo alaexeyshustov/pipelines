@@ -12,11 +12,12 @@ RSpec.describe Records::InsertRowsTool do
       expect(ApplicationMail.count).to eq(1)
     end
 
-    it 'skips duplicate email_ids without raising' do
-      create(:application_mail, email_id: 'abc123')
+    it 'skips duplicate email_ids and returns the existing id' do
+      existing = create(:application_mail, email_id: 'abc123')
       result = tool.execute(table: 'application_mails', data: [ row ].to_json)
       expect(result[:rows_added]).to eq(0)
       expect(ApplicationMail.count).to eq(1)
+      expect(result[:duplicate]).to eq([ { existing_id: existing.id } ])
     end
 
     it 'skips rows missing required columns' do
@@ -34,10 +35,11 @@ RSpec.describe Records::InsertRowsTool do
       expect(Interview.count).to eq(1)
     end
 
-    it 'skips duplicate company+job_title pairs without raising' do
-      create(:interview, company: 'Globex', job_title: 'Developer')
+    it 'skips duplicate company+job_title pairs and returns the existing id' do
+      existing = create(:interview, company: 'Globex', job_title: 'Developer')
       result = tool.execute(table: 'interviews', data: [ row ].to_json)
       expect(result[:rows_added]).to eq(0)
+      expect(result[:duplicate]).to eq([ { existing_id: existing.id } ])
     end
   end
 
@@ -51,7 +53,9 @@ RSpec.describe Records::InsertRowsTool do
     expect(result[:error]).to be_present
   end
 
-  it 'raises ArgumentError for an unknown table' do
-    expect { tool.execute(table: 'unknown', data: '[]') }.to raise_error(ArgumentError, /Unknown table/)
+  it 'returns an error for an unknown table' do
+    result = tool.execute(table: 'unknown', data: '[]')
+    expect(result[:status]).to eq('insert_failed')
+    expect(result[:error]).to match(/Unknown table/)
   end
 end

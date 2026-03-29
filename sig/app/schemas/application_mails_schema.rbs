@@ -1,0 +1,2 @@
+class ApplicationMailsSchema < RubyLLM::Schema
+end

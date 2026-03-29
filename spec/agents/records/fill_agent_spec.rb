@@ -33,7 +33,7 @@ RSpec.describe Records::FillAgent, type: :model do
     expect(
       a_request(:post, openai_url).with { |req|
         messages = JSON.parse(req.body)['messages']
-        messages.any? { |m| m['content'].to_s.include?('fill the missing values') }
+        messages.any? { |m| m['content'].to_s.include?('fill missing values') }
       }
     ).to have_been_made
   end

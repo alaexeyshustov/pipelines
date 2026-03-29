@@ -12,8 +12,8 @@
 
 # features
 
-[ ] Export service from apllication_emails to interviews
-[ ] Add rubocop for rspec
-[ ] Measure specs quality
+[x] Export service from application_emails to interviews
+[x] Add rubocop for rspec
+[x] Measure specs quality
+[x] Button to fill the content
 [ ] Models balancer
-[ ] Button to fill the content

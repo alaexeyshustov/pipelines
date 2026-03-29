@@ -37,7 +37,8 @@ RSpec.describe Records::ReadRowsTool do
     end
   end
 
-  it 'raises ArgumentError for an unknown table' do
-    expect { tool.execute(table: 'unknown') }.to raise_error(ArgumentError, /Unknown table/)
+  it 'returns an error for an unknown table' do
+    result = tool.execute(table: 'unknown')
+    expect(result[:error]).to match(/Unknown table/)
   end
 end

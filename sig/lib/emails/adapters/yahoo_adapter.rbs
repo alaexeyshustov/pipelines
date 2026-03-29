@@ -58,7 +58,8 @@ module Emails
       def ensure_mailbox: (String mailbox) -> void
       def with_reconnect: [T] () { () -> T } -> T
       def with_lock: [T] () { () -> T } -> T
-      def fetch_and_parse: (Integer uid, String mailbox) -> yahoo_list_message?
+      def fetch: (Integer uid, String mailbox, ?full: bool) -> untyped
+      def parse_message: (Integer uid, untyped mail, String mailbox) -> yahoo_list_message
       def get_folders: () -> Array[yahoo_folder]
       def tag_email: (Integer uid, tags: Array[String], ?mailbox: String, ?action: String) -> yahoo_tag_result
       def extract_body: (untyped mail) -> String

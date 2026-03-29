@@ -1,7 +1,7 @@
 module Records
   class ReconcileAgent < RubyLLM::Agent
     chat_model Chat
-    tools ReadRowsTool, InsertRowsTool, UpdateRowsTool, ReadSchemaTool, TempFileTool
+    tools ReadSchemaTool, TempFileTool, SearchSimilarTool, InsertRowsTool, UpdateRowsTool, ReadRowsTool
     model "gpt-5.1"
 
     schema do
@@ -20,7 +20,8 @@ module Records
       3. Read the rows from <destination_table>.
       4. Match <emailsto_reconcile> to existing records in <destination_table> based on the <matching_logic>.
       5. Skip <emailsto_reconcile> that have already been processed.
-      6. For each unique <matching_columns> in the new rows:
+      6. Set 'unknown' for any blank or missing fields.
+      7. For each unique <matching_columns> in the new rows:
 
           If NOT in <destination_table> → add_rows with:
             status=<initial_status>.

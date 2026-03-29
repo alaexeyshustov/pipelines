@@ -1,10 +1,11 @@
 class Interview < ApplicationRecord
+  include Searchable
   validates :company, :job_title, presence: true
   validates :job_title, uniqueness: { scope: :company }
 
   STATUSES = %w[pending_reply having_interviews rejected offer_received].freeze
   COLUMN_NAMES = %w[
-    company job_title status applied_at rejected_at
+    id company job_title status applied_at rejected_at
     first_interview_at second_interview_at third_interview_at fourth_interview_at
   ].freeze
 

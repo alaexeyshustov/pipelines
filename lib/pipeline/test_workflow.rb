@@ -1,3 +1,8 @@
+require "date"
+require "json"
+require "async"
+require "async/semaphore"
+
 module Pipeline
   class TestWorkflow
     def initialize(model:, logger:, date: Date.today)

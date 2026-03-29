@@ -13,8 +13,9 @@ module Emails
       }
 
       Steps:
-      1. For each email in <emails> map the raw email data to a structured format with the fields.
-      2. When information is missing, use the get_email tool to read the original email content and extract the missing information if possible.
+      1. For each email in <emails>, call get_email to fetch its full content — this is mandatory before mapping any field.
+      2. After reading the full email content, extract and map all required fields.
+      3. Base the "action" field strictly on the email body text, not just the subject line.
 
     INSTRUCTIONS
   end

@@ -1,0 +1,6 @@
+module Interviews
+  class CsvExportService
+    def initialize: (ids: untyped) -> void
+    def call: () -> String
+  end
+end

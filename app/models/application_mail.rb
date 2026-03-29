@@ -1,5 +1,6 @@
 class ApplicationMail < ApplicationRecord
-  COLUMN_NAMES = %w[date provider email_id company job_title action].freeze
+  include Searchable
+  COLUMN_NAMES = %w[id date provider email_id company job_title action].freeze
 
   validates :date, :provider, :email_id, presence: true
   validates :email_id, uniqueness: true

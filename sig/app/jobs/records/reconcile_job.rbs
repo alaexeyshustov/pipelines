@@ -1,0 +1,5 @@
+module Records
+  class ReconcileJob < ApplicationJob
+    def perform: (Array[untyped] ids) -> untyped
+  end
+end

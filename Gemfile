@@ -19,6 +19,11 @@ gem "falcon", require: false
 
 # Pagination
 gem "pagy"
+gem "csv"
+
+# Assets
+gem "propshaft"
+gem "tailwindcss-rails"
 
 # Pipeline
 gem "async"
@@ -29,24 +34,28 @@ gem "dry-cli"
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
 group :development, :test do
-  gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
-  gem "ruby-lsp"
+  gem "simplecov", require: false
+  gem "reline"
+  gem "pry"
+  gem "pry-nav"
+end
+
+group :development do
+  gem "mutant", require: false
+  gem "mutant-rspec", require: false
+  gem "rubycritic", require: false
+  gem "brakeman", require: false
   gem "rubocop", require: false
   gem "rubocop-rails-omakase", require: false
   gem "rubocop-rspec", require: false
   gem "rubocop-rspec_rails", require: false
   gem "rubocop-on-rbs", require: false
-  gem "rubycritic", require: false
-  gem "brakeman", require: false
-  gem "simplecov", require: false
-  gem "pry"
-  gem "pry-stack_explorer"
-  gem "pry-nav"
+  gem "ruby-lsp"
+end
+
+group :test do
   gem "rspec-rails"
   gem "factory_bot_rails"
   gem "vcr"
   gem "webmock"
-end
-
-group :test do
 end

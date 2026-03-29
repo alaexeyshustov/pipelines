@@ -2,6 +2,8 @@ require "json"
 
 module Records
   class UpdateRowsTool < RubyLLM::Tool
+    include ModelResolver
+
     description "Update rows in a database table. Duplicate or invalid rows are skipped."
 
     param :table, type: :string, desc: "Table name: application_mails or interviews", required: true
@@ -15,7 +17,7 @@ module Records
       record = model.find(id)
 
       attrs = JSON.parse(data)
-      raise ArgumentError, "data must be a JSON object" unless attrs.is_a?(Hash)
+      return { status: "invalid_attributes" } if attrs.empty? || !attrs.is_a?(Hash)
 
       attrs = attrs.transform_keys(&:to_s).slice(*model::COLUMN_NAMES)
       record.update(attrs) unless attrs.empty?
@@ -26,16 +28,8 @@ module Records
     rescue ActiveRecord::RecordNotFound => e
       Rails.logger.warn "Row not found for #{model}: #{e.message}"
       { status: "update_failed", error: e.message }
-    end
-
-    private
-
-    def resolve_model(table)
-      case table.to_s
-      when "application_mails" then ApplicationMail
-      when "interviews"        then Interview
-      else raise ArgumentError, "Unknown table '#{table}'. Use: application_mails, interviews."
-      end
+    rescue ModelNotFound => e
+      { status: "update_failed", error: e.message }
     end
   end
 end

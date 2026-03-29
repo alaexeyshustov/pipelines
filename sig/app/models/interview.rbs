@@ -1,6 +1,10 @@
 class Interview < ApplicationRecord
+  include Searchable
+
   STATUSES: Array[String]
   COLUMN_NAMES: Array[String]
+
+  def self.search: (String? q) -> untyped
 
   def company: () -> String?
   def company=: (String?) -> String?
