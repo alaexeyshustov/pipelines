@@ -7,5 +7,6 @@ Rails 8.1 / Ruby 4.0 application that runs a **multi-agent job-application track
 - Testing Framework: RSpec
 - Do not use shoulda matchers.
 - Use VCR casettes to stubb API calls.
-- Use .rds  type signatures [rds.md](docs/rbs.md)
+- Use .rbs type signatures [rbs.md](docs/rbs.md). **After every code change, always update or create the matching `.rbs` file under `sig/` mirroring the source path.**
 - Schemas Defintion (keep synchronised) [schemas.md](docs/schemas.md)
+- Mutation testing: `bundle exec rake mutant:baseline` for a full-codebase baseline run. CI reports score for changed files only (`--since origin/main`). Target: 50%. Subjects configured in `.mutant.yml`.

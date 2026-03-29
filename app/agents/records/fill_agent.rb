@@ -1,7 +1,7 @@
 module Records
   class FillAgent < RubyLLM::Agent
     chat_model Chat
-    tools UpdateRowsTool, Emails::GetTool
+    tools Records::UpdateRowsTool, Emails::GetTool
     model "gpt-5.1"
 
     schema do
@@ -9,18 +9,18 @@ module Records
     end
 
     instructions <<~INSTRUCTIONS
-      Your task is to fill the missing values in the <destination_table> table based on the content of the original emails.
+      Your task is to fill missing values in the <destination_table> table using the original email content.
 
       Input:
         {
           "emails": ["list", "of", "emails", "to", "process"],
-          "destination_table": "The name of the database table for normalization.",
+          "destination_table": "The name of the database table to update.",
         }
 
       Steps:
-      1. For each of <emails>, if there is a missing value or 'unknown' in the record, attempt to read the original email content using get_email tool and extract the missing information to fill in the gaps.
-       (e.g. if company or job_title is missing, read the email content to find and extract this information).
-      2. Update the rows in the <destination_table> with the normalized values using update_rows tool, matching on the row ID and only updating the specified columns.
+      1. For each email in <emails>, always call get_email to fetch its full content — this is mandatory regardless of what fields appear to be populated.
+      2. A field is considered missing if its value is null, an empty string, "unknown", "n/a", or any other clear placeholder.
+      3. Call update_rows only for records where at least one field was successfully extracted. Skip records where nothing new was found.
 
     INSTRUCTIONS
   end

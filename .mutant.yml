@@ -1,0 +1,28 @@
+integration: rspec
+usage: opensource
+jobs: 2
+includes:
+  - app/agents
+  - app/controllers
+  - app/helpers
+  - app/jobs
+  - app/models
+  - app/services
+  - app/tools
+  - lib
+  - spec
+requires:
+  - rspec/core
+  - mutant_helper
+matcher:
+  subjects:
+    - Application*
+    - Emails*
+    - Records*
+    - Orchestration*
+    - Interview*
+    - EmailVector*
+    - SqliteVecExtension*
+  ignore:
+    - ApplicationMailsSchema
+    - Pipeline

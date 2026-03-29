@@ -34,7 +34,7 @@ RSpec.describe Emails::MappingAgent, type: :model do
       a_request(:post, mistral_url).with { |req|
         messages = JSON.parse(req.body)['messages']
         system_msg = messages.find { |m| m['role'] == 'system' }
-        system_msg['content'].include?('map raw email data')
+        system_msg['content'].include?('call get_email to fetch its full content')
       }
     ).to have_been_made
   end

@@ -1,0 +1,5 @@
+module Records
+  class FillJob < ApplicationJob
+    def perform: (Array[untyped] ids) -> untyped
+  end
+end

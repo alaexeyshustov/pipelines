@@ -1,0 +1,17 @@
+class InterviewsController < ApplicationController
+  def index: () -> void
+  def show: () -> void
+  def new: () -> void
+  def create: () -> void
+  def edit: () -> void
+  def update: () -> void
+  def destroy: () -> void
+  def batch: () -> void
+  def export_gist: () -> void
+
+  private
+
+  def interviews_index_with_filters: () -> String
+  def set_interview: () -> void
+  def interview_params: () -> untyped
+end

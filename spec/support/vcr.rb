@@ -11,6 +11,7 @@ VCR.configure do |config|
   config.filter_sensitive_data('<GMAIL_CLIENT_SECRET>') { ENV['GMAIL_CLIENT_SECRET'] }
   config.filter_sensitive_data('<GMAIL_ACCESS_TOKEN>')  { ENV['GMAIL_ACCESS_TOKEN'] }
   config.filter_sensitive_data('<MISTRAL_API_KEY>')     { ENV['MISTRAL_API_KEY'] }
+  config.filter_sensitive_data('<GITHUB_TOKEN>')        { ENV['GITHUB_TOKEN'] }
 
   config.default_cassette_options = {
     record: :new_episodes,

@@ -63,14 +63,15 @@ module Emails
           criteria = build_search_criteria(query: query, flagged: flagged, after_date: after_date, before_date: before_date)
           uids = @imap.uid_search(criteria).sort.reverse
           uids = uids[offset, max_results] || []
-          uids.map { |uid| fetch_and_parse(uid, mailbox) }.compact
+          uids.filter_map { |uid| (mail = fetch(uid, mailbox)) && parse_message(uid, mail, mailbox) }
         end
       end
 
       def get_message(uid, mailbox: "INBOX")
         with_lock do
           ensure_mailbox(mailbox)
-          fetch_and_parse(uid, mailbox)
+          mail = fetch(uid, mailbox, full: true)
+          parse_message(uid, mail, mailbox).merge(body: extract_body(mail))
         end
       end
 
@@ -142,15 +143,22 @@ module Emails
         @mutex.synchronize { with_reconnect(&block) }
       end
 
-      def fetch_and_parse(uid, mailbox)
-        data = @imap.uid_fetch(uid, %w[RFC822.HEADER FLAGS UID])
+      def fetch(uid, mailbox, full: false)
+        fields = full ? %w[RFC822 FLAGS UID] : %w[RFC822.HEADER FLAGS UID]
+        data   = @imap.uid_fetch(uid, fields)
         return nil if data.nil? || data.empty?
 
-        attrs  = data.first.attr
-        header = attrs["RFC822.HEADER"]
-        return nil if header.nil? || header.empty?
+        attrs = data.first.attr
+        raw   = attrs["RFC822"] || attrs["RFC822.HEADER"]
+        return nil if raw.nil? || raw.empty?
 
-        mail    = Mail.new(header)
+        Mail.new(raw)
+      rescue StandardError => e
+        $stderr.puts "Warning: failed to parse message UID #{uid}: #{e.message}"
+        nil
+      end
+
+      def parse_message(uid, mail, mailbox)
         snippet = mail.body.decoded.to_s[0, 200] rescue ""
 
         {
@@ -162,9 +170,6 @@ module Emails
           snippet: snippet,
           folders: [ mailbox ]
         }
-      rescue StandardError => e
-        $stderr.puts "Warning: failed to parse message UID #{uid}: #{e.message}"
-        nil
       end
 
       def get_folders
@@ -184,12 +189,12 @@ module Emails
           { uid: uid, action: action, tags: tags, mailbox: mailbox }
         end
       rescue Net::IMAP::BadResponseError => e
-        binding.pry
         raise e unless e.message.include?("UID STORE Command arguments invalid")
         { uid: uid, action: action, tags: tags, mailbox: mailbox }
       end
 
       def extract_body(mail)
+        # binding.pry
         if mail.multipart?
           plain = mail.parts.find { |p| p.mime_type == "text/plain" }
           return decode_part(plain) if plain

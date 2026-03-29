@@ -6,6 +6,7 @@
 
 # Ignore bundler config.
 /.bundle
+.idea/
 
 # Ignore all environment files.
 /.env*
@@ -39,3 +40,7 @@ token.yaml
 # RSpec
 /spec/examples.txt
 coverage/
+.pryrc
+
+/app/assets/builds/*
+!/app/assets/builds/.keep

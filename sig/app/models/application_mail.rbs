@@ -1,5 +1,10 @@
 class ApplicationMail < ApplicationRecord
+  include Searchable
+
   COLUMN_NAMES: Array[String]
+
+  def self.search: (String? q) -> untyped
+  def self.groupped: () -> untyped
 
   def date: () -> String?
   def date=: (String?) -> String?

@@ -2,9 +2,19 @@ module Pipeline
   class TestWorkflow
     @model: String
     @logger: Pipeline::Logger
+    @date: Date
 
-    def initialize: (model: String, logger: Pipeline::Logger) -> void
-    def run: () -> { status: String, model_used: String, step1_result: String? }
-    def step1: (provider: String, after: String | Date, before: String | Date) -> Array[Hash[String, String]]
+    def initialize: (model: String, logger: Pipeline::Logger, ?date: String | Date) -> void
+    def run: () -> Hash[String, untyped]
+    def step1: (provider: String, after: String | Date, before: String | Date) -> Array[Hash[String, untyped]]
+    def step2: (emails: Array[untyped]) -> untyped
+    def step3: (emails: Array[untyped], tags: Array[untyped]) -> untyped
+    def step4: (emails: Array[untyped]) -> untyped
+    def step5: (emails: Array[untyped]) -> untyped
+    def step6: (?emails: Array[untyped]) -> untyped
+    def step7: (?emails: Array[untyped]) -> untyped
+    def fetach_emails: () -> Array[untyped]
+    def start_date: () -> Date
+    def end_date: () -> Date
   end
 end

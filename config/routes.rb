@@ -6,8 +6,17 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
   resources :chats, only: [ :index, :show, :destroy ]
-  resources :application_mails
-  resources :interviews
+  resources :application_mails do
+    collection do
+      post :batch
+    end
+  end
+  resources :interviews do
+    collection do
+      post :batch
+      post :export_gist
+    end
+  end
 
   namespace :orchestration do
     resources :actions

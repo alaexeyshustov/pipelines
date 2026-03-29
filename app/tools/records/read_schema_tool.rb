@@ -1,5 +1,7 @@
 module Records
   class ReadSchemaTool < RubyLLM::Tool
+    include ModelResolver
+
     description "Return the column names for a database table."
 
     param :table, type: :string,
@@ -11,16 +13,8 @@ module Records
     def execute(table:)
       model = resolve_model(table)
       { headers: model::COLUMN_NAMES }
-    end
-
-    private
-
-    def resolve_model(table)
-      case table.to_s
-      when "application_mails" then ApplicationMail
-      when "interviews"        then Interview
-      else raise ArgumentError, "Unknown table '#{table}'. Use: application_mails, interviews."
-      end
+    rescue ModelNotFound => e
+      { error: e.message }
     end
   end
 end

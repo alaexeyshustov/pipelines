@@ -76,7 +76,7 @@ RSpec.describe Interview do
   describe 'COLUMN_NAMES' do
     it 'contains all expected column names' do
       expect(Interview::COLUMN_NAMES).to eq(%w[
-        company job_title status applied_at rejected_at
+        id company job_title status applied_at rejected_at
         first_interview_at second_interview_at third_interview_at fourth_interview_at
       ])
     end

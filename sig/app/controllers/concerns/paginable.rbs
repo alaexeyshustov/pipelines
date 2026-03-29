@@ -1,0 +1,13 @@
+module Paginable
+  module ClassMethods
+    def paginable: (?sortable: Array[String], ?per_page: Array[Integer], ?default_sort: String?, ?default_direction: Symbol) -> void
+  end
+
+  private
+
+  def set_pagination_params: () -> void
+  def paginate: (untyped collection) -> [untyped, untyped]
+  def resolve_per_page: (Array[Integer] options) -> Integer
+  def resolve_sort: (Array[String] columns, default: String?) -> String
+  def resolve_direction: (?default: Symbol) -> Symbol
+end

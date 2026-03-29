@@ -1,0 +1,22 @@
+module Interviews
+  class BatchService
+    STATUS_PRIORITY: Array[String]
+
+    class Result
+      attr_reader ok: bool
+      attr_reader message: String?
+      attr_reader csv: String?
+
+      def initialize: (ok: bool, ?message: String?, ?csv: String?) -> void
+      def ok?: () -> bool
+      def csv?: () -> bool
+    end
+
+    def initialize: (ids: untyped, batch_action: String) -> void
+    def call: () -> Result
+
+    private
+
+    def merge_records: () -> void
+  end
+end

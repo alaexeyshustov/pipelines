@@ -2,9 +2,5 @@ module Records
   class ListRowsTool < RubyLLM::Tool
     def name: () -> String
     def execute: (table: String, ?limit: Integer, ?offset: Integer) -> { headers: Array[String], rows: Array[Hash[String, String?]], row_count: Integer }
-
-    private
-
-    def resolve_model: (String table) -> untyped
   end
 end

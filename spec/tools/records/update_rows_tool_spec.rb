@@ -51,9 +51,9 @@ RSpec.describe Records::UpdateRowsTool do
     end
   end
 
-  it 'raises ArgumentError for an unknown table' do
-    expect {
-      tool.execute(table: 'unknown', id: '1', data: '{}')
-    }.to raise_error(ArgumentError, /Unknown table/)
+  it 'returns an error for an unknown table' do
+    result = tool.execute(table: 'unknown', id: '1', data: '{}')
+    expect(result[:status]).to eq('update_failed')
+    expect(result[:error]).to match(/Unknown table/)
   end
 end

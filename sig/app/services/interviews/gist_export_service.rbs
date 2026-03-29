@@ -1,0 +1,20 @@
+module Interviews
+  class GistExportService
+    GITHUB_API_URI: String
+
+    class Result
+      attr_reader ok: bool
+      attr_reader message: String
+
+      def initialize: (ok: bool, message: String) -> void
+      def ok?: () -> bool
+    end
+
+    def initialize: (ids: untyped, gist_id: String) -> void
+    def call: () -> Result
+
+    private
+
+    def patch_gist: (String token, String csv_content) -> Net::HTTPResponse
+  end
+end

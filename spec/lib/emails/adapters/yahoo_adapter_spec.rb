@@ -74,9 +74,17 @@ RSpec.describe Emails::Adapters::YahooAdapter do
   end
 
   describe '#get_message' do
+    let(:full_message_text) do
+      header_text + "We are pleased to inform you that your application was successful.\r\n"
+    end
+
+    let(:full_fetch_data) do
+      [ instance_double(Net::IMAP::FetchData, attr: { 'RFC822' => full_message_text, 'FLAGS' => [], 'UID' => 101 }) ]
+    end
+
     before do
       allow(imap).to receive(:select)
-      allow(imap).to receive(:uid_fetch).with(101, anything).and_return(fetch_data)
+      allow(imap).to receive(:uid_fetch).with(101, anything).and_return(full_fetch_data)
     end
 
     it 'returns the message for the given uid' do
@@ -87,6 +95,18 @@ RSpec.describe Emails::Adapters::YahooAdapter do
         subject: 'Job Application Update',
         from:    'hr@company.com'
       )
+    end
+
+    it 'includes the message body' do
+      message = adapter.get_message(101)
+
+      expect(message[:body]).to include('application was successful')
+    end
+
+    it 'fetches the full RFC822 message' do
+      adapter.get_message(101)
+
+      expect(imap).to have_received(:uid_fetch).with(101, include('RFC822'))
     end
   end
 
@@ -155,7 +175,6 @@ RSpec.describe Emails::Adapters::YahooAdapter do
       end
 
       before do
-        allow(Pry).to receive(:start)
         allow(imap).to receive(:uid_store).and_raise(Net::IMAP::BadResponseError.new(bad_response))
       end
 
@@ -217,7 +236,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
   describe 'fetch_and_parse error handling' do
     before do
       allow(imap).to receive(:select)
-      allow(imap).to receive_messages(uid_search: [ 101 ], uid_fetch: [ instance_double(Net::IMAP::FetchData, attr: { 'RFC822.HEADER' => '', 'FLAGS' => [], 'UID' => 101 }) ])
+      allow(imap).to receive_messages(uid_search: [ 101 ], uid_fetch: [ instance_double(Net::IMAP::FetchData, attr: { 'RFC822.HEADER' => '', 'RFC822' => nil, 'FLAGS' => [], 'UID' => 101 }) ])
     end
 
     it 'skips messages that fail to parse' do

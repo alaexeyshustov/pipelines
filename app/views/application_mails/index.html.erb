@@ -1,9 +1,7 @@
 <% content_for :title, "Application Emails" %>
 
-<div class="flex items-center justify-between mb-6">
+<div class="mb-6">
   <h1 class="text-2xl font-bold text-gray-900">Application Emails</h1>
-  <%= link_to "New Email Record", new_application_mail_path,
-        class: "px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors" %>
 </div>
 
 <% if notice.present? %>
@@ -14,26 +12,80 @@
   <div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-800 rounded-lg text-sm"><%= alert %></div>
 <% end %>
 
+<%= form_with url: application_mails_path, method: :get, class: "mb-4" do |f| %>
+  <div class="flex items-center gap-2">
+    <%= f.text_field :q, value: @query, placeholder: "Search by company or job title…",
+          class: "w-72 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" %>
+    <%= f.submit "Search", class: "px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 cursor-pointer" %>
+    <% if @query.present? %>
+      <%= link_to "Clear", application_mails_path, class: "text-sm text-gray-500 hover:text-gray-700" %>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="flex items-center gap-3 mb-4">
+  <button type="button" id="select-all-btn"
+          class="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+    Select all
+  </button>
+  <button type="button" onclick="batchSubmit('<%= batch_application_mails_path %>', 'fill')"
+          class="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors">
+    Fill gaps
+  </button>
+  <button type="button" onclick="batchSubmit('<%= batch_application_mails_path %>', 'normalize')"
+          class="px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
+    Normalize
+  </button>
+  <button type="button" onclick="batchSubmit('<%= batch_application_mails_path %>', 'reconcile', 'Transfer selected emails into interviews?')"
+          class="px-3 py-1.5 text-xs font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 transition-colors">
+    Reconcile
+  </button>
+  <button type="button" onclick="batchSubmit('<%= batch_application_mails_path %>', 'delete', 'Delete selected emails?')"
+          class="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors">
+    Delete
+  </button>
+
+  <div class="ml-auto flex items-center gap-2 text-xs text-gray-500">
+    <span>Per page:</span>
+    <% @per_page_options.each do |n| %>
+      <%= link_to n, application_mails_path(sort: @sort, direction: @direction, per_page: n, q: @query),
+            class: "px-2 py-1 rounded border #{@pagy.limit == n ? 'bg-gray-200 border-gray-400 font-semibold text-gray-800' : 'border-gray-300 hover:bg-gray-50 text-gray-600'}" %>
+    <% end %>
+  </div>
+</div>
+
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
   <table class="w-full text-sm">
     <thead class="bg-gray-50 border-b border-gray-200">
       <tr>
-        <th class="px-4 py-3 text-left font-medium text-gray-600">Date</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-600">Provider</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-600">Company</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-600">Job Title</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-600">Action</th>
+        <th class="px-4 py-3 w-8"></th>
+        <% [["date", "Date"], ["provider", "Provider"], ["company", "Company"], ["job_title", "Job Title"], ["action", "Action"]].each do |col, label| %>
+          <% next_dir = (@sort == col && @direction == "desc") ? "asc" : "desc" %>
+          <th class="px-4 py-3 text-left font-medium text-gray-600">
+            <%= link_to application_mails_path(sort: col, direction: next_dir, per_page: @pagy.limit, q: @query),
+                  class: "inline-flex items-center gap-1 hover:text-gray-900 #{@sort == col ? 'text-gray-900' : ''}" do %>
+              <%= label %>
+              <% if @sort == col %>
+                <span class="text-gray-400"><%= @direction == "asc" ? "↑" : "↓" %></span>
+              <% end %>
+            <% end %>
+          </th>
+        <% end %>
         <th class="px-4 py-3"></th>
       </tr>
     </thead>
     <tbody class="divide-y divide-gray-100">
       <% if @mails.empty? %>
         <tr>
-          <td colspan="6" class="px-4 py-10 text-center text-gray-400">No emails found.</td>
+          <td colspan="7" class="px-4 py-10 text-center text-gray-400">No emails found.</td>
         </tr>
       <% else %>
         <% @mails.each do |mail| %>
           <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-4 py-3">
+              <input type="checkbox" value="<%= mail.id %>"
+                     class="row-checkbox h-4 w-4 rounded border-gray-300 text-indigo-600 cursor-pointer">
+            </td>
             <td class="px-4 py-3 text-gray-500 tabular-nums"><%= mail.date %></td>
             <td class="px-4 py-3">
               <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium <%= mail.provider == 'gmail' ? 'bg-red-50 text-red-700' : 'bg-purple-50 text-purple-700' %>">
@@ -58,3 +110,48 @@
 </div>
 
 <%== @pagy.series_nav %>
+
+<script>
+  document.getElementById("select-all-btn").addEventListener("click", function () {
+    const checkboxes = document.querySelectorAll(".row-checkbox");
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    this.textContent = allChecked ? "Select all" : "Deselect all";
+  });
+
+  function batchSubmit(url, actionName, confirmMsg) {
+    const checked = Array.from(document.querySelectorAll(".row-checkbox:checked"));
+    if (checked.length === 0) {
+      alert("Please select at least one record.");
+      return;
+    }
+    if (confirmMsg && !confirm(confirmMsg)) return;
+
+    const form = document.createElement("form");
+    form.method = "post";
+    form.action = url;
+
+    const csrf = document.createElement("input");
+    csrf.type = "hidden";
+    csrf.name = "authenticity_token";
+    csrf.value = document.querySelector('meta[name="csrf-token"]').content;
+    form.appendChild(csrf);
+
+    const batchAction = document.createElement("input");
+    batchAction.type = "hidden";
+    batchAction.name = "batch_action";
+    batchAction.value = actionName;
+    form.appendChild(batchAction);
+
+    checked.forEach(cb => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "ids[]";
+      input.value = cb.value;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+  }
+</script>

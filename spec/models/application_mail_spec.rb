@@ -76,7 +76,7 @@ RSpec.describe ApplicationMail do
 
   describe 'COLUMN_NAMES' do
     it 'contains all expected column names' do
-      expect(ApplicationMail::COLUMN_NAMES).to eq(%w[date provider email_id company job_title action])
+      expect(ApplicationMail::COLUMN_NAMES).to eq(%w[id date provider email_id company job_title action])
     end
   end
 end

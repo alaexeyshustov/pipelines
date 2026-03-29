@@ -2,9 +2,5 @@ module Records
   class UpdateRowsTool < RubyLLM::Tool
     def name: () -> String
     def execute: (table: String, id: String, data: String) -> { status: String }
-
-    private
-
-    def resolve_model: (String table) -> untyped
   end
 end

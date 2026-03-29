@@ -1,0 +1,14 @@
+module ApplicationMails
+  class BatchService
+    class Result
+      attr_reader ok: bool
+      attr_reader message: String
+
+      def initialize: (ok: bool, message: String) -> void
+      def ok?: () -> bool
+    end
+
+    def initialize: (ids: untyped, batch_action: String) -> void
+    def call: () -> Result
+  end
+end
