@@ -1,0 +1,16 @@
+module Orchestration
+  class StepsController < ApplicationController
+    def create: () -> void
+    def update: () -> void
+    def destroy: () -> void
+    def move_up: () -> void
+    def move_down: () -> void
+
+    private
+
+    def set_pipeline: () -> void
+    def set_step: () -> void
+    def step_params: () -> ActionController::Parameters
+    def swap_positions: (Orchestration::Step step_a, Orchestration::Step step_b) -> void
+  end
+end

@@ -20,6 +20,15 @@ Rails.application.routes.draw do
 
   namespace :orchestration do
     resources :actions
+    resources :pipelines do
+      resources :steps, only: [ :create, :update, :destroy ] do
+        member do
+          patch :move_up
+          patch :move_down
+        end
+        resources :step_actions, only: [ :create, :destroy ]
+      end
+    end
   end
 
   root to: "chats#index"

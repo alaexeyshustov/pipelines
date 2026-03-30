@@ -1,0 +1,35 @@
+<%= form_with model: pipeline, url: pipeline.new_record? ? orchestration_pipelines_path : orchestration_pipeline_path(pipeline), class: "space-y-6" do |f| %>
+  <% if pipeline.errors.any? %>
+    <div class="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+      <p class="font-medium mb-1">Please fix the following errors:</p>
+      <ul class="list-disc list-inside space-y-0.5">
+        <% pipeline.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :name, class: "block text-sm font-medium text-gray-700 mb-1" %>
+    <%= f.text_field :name, class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 #{"border-red-400" if pipeline.errors[:name].any?}" %>
+    <% if pipeline.errors[:name].any? %>
+      <p class="mt-1 text-xs text-red-600"><%= pipeline.errors[:name].first %></p>
+    <% end %>
+  </div>
+
+  <div>
+    <%= f.label :description, class: "block text-sm font-medium text-gray-700 mb-1" %>
+    <%= f.text_area :description, rows: 2, class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <%= f.check_box :enabled, class: "rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" %>
+    <%= f.label :enabled, "Enabled", class: "text-sm font-medium text-gray-700" %>
+  </div>
+
+  <div class="flex items-center gap-3 pt-2">
+    <%= f.submit class: "px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer" %>
+    <%= link_to "Cancel", orchestration_pipelines_path, class: "px-5 py-2 text-sm text-gray-600 hover:text-gray-800" %>
+  </div>
+<% end %>
