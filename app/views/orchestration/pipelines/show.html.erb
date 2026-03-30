@@ -15,6 +15,8 @@
     <% end %>
   </div>
   <div class="flex items-center gap-3">
+    <%= button_to "Run now", run_orchestration_pipeline_path(@pipeline), method: :post,
+          class: "px-4 py-2 text-sm text-white font-medium bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer" %>
     <%= link_to "Edit", edit_orchestration_pipeline_path(@pipeline), class: "px-4 py-2 text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors" %>
     <%= button_to "Delete", orchestration_pipeline_path(@pipeline), method: :delete,
           form: { data: { turbo_confirm: "Delete pipeline \"#{@pipeline.name}\"? This will also delete all steps and step-actions." } },
@@ -29,6 +31,21 @@
 
 <% if alert.present? %>
   <div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-800 rounded-lg text-sm"><%= alert %></div>
+<% end %>
+
+<% if @latest_run %>
+  <div class="mb-4 px-4 py-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm">
+    Latest run: <span class="font-medium"><%= @latest_run.status %></span>
+    <% if @latest_run.started_at %>
+      &middot; started <%= @latest_run.started_at.strftime("%Y-%m-%d %H:%M:%S") %>
+    <% end %>
+    <% if @latest_run.finished_at %>
+      &middot; finished <%= @latest_run.finished_at.strftime("%Y-%m-%d %H:%M:%S") %>
+    <% end %>
+    <% if @latest_run.error.present? %>
+      &middot; <span class="text-red-600"><%= @latest_run.error %></span>
+    <% end %>
+  </div>
 <% end %>
 
 <div class="grid grid-cols-1 gap-6">
