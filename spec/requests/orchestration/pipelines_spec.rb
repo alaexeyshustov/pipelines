@@ -353,6 +353,30 @@ RSpec.describe "Orchestration::Pipelines" do
       follow_redirect!
       expect(response.body).to include("Pipeline run triggered.")
     end
+
+    it "does not create a second run and redirects with alert when a pending run already exists" do
+      pipeline = create(:orchestration_pipeline)
+      create(:orchestration_pipeline_run, pipeline: pipeline, status: "pending")
+
+      expect {
+        post run_orchestration_pipeline_path(pipeline)
+      }.not_to change(Orchestration::PipelineRun, :count)
+
+      expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
+      follow_redirect!
+      expect(response.body).to include("A run is already pending.")
+    end
+
+    it "does not create a run and redirects with alert when a run is already running" do
+      pipeline = create(:orchestration_pipeline)
+      create(:orchestration_pipeline_run, pipeline: pipeline, status: "running")
+
+      expect {
+        post run_orchestration_pipeline_path(pipeline)
+      }.not_to change(Orchestration::PipelineRun, :count)
+
+      expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
+    end
   end
 
   describe "DELETE /orchestration/pipelines/:pipeline_id/steps/:step_id/step_actions/:id" do
