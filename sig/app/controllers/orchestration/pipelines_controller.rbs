@@ -4,6 +4,7 @@ module Orchestration
     def new: () -> void
     def create: () -> void
     def show: () -> void
+    def run: () -> void
     def edit: () -> void
     def update: () -> void
     def destroy: () -> void

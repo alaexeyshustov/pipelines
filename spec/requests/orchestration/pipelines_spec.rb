@@ -92,6 +92,16 @@ RSpec.describe "Orchestration::Pipelines" do
 
       expect(response).to have_http_status(:ok)
     end
+
+    it "displays latest run status when a run exists" do
+      pipeline = create(:orchestration_pipeline, name: "Show Pipeline")
+      create(:orchestration_pipeline_run, pipeline: pipeline, status: "completed")
+
+      get orchestration_pipeline_path(pipeline)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("completed")
+    end
   end
 
   describe "GET /orchestration/pipelines/:id/edit" do
@@ -298,6 +308,50 @@ RSpec.describe "Orchestration::Pipelines" do
 
       expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
       expect(Orchestration::StepAction.last.params).to eq({ "override" => "true" })
+    end
+  end
+
+  describe "POST /orchestration/pipelines/:id/run" do
+    it "creates a PipelineRun with status pending and triggered_by manual" do
+      pipeline = create(:orchestration_pipeline)
+      allow(PipelineRunJob).to receive(:perform_later)
+
+      expect {
+        post run_orchestration_pipeline_path(pipeline)
+      }.to change(Orchestration::PipelineRun, :count).by(1)
+
+      run = Orchestration::PipelineRun.last
+      expect(run.status).to eq("pending")
+      expect(run.triggered_by).to eq("manual")
+    end
+
+    it "associates the created PipelineRun with the pipeline" do
+      pipeline = create(:orchestration_pipeline)
+      allow(PipelineRunJob).to receive(:perform_later)
+
+      post run_orchestration_pipeline_path(pipeline)
+
+      expect(Orchestration::PipelineRun.last.pipeline).to eq(pipeline)
+    end
+
+    it "enqueues PipelineRunJob with the pipeline_run_id" do
+      pipeline = create(:orchestration_pipeline)
+      allow(PipelineRunJob).to receive(:perform_later)
+
+      post run_orchestration_pipeline_path(pipeline)
+
+      expect(PipelineRunJob).to have_received(:perform_later).with(Orchestration::PipelineRun.last.id)
+    end
+
+    it "redirects to pipeline show page with a notice" do
+      pipeline = create(:orchestration_pipeline)
+      allow(PipelineRunJob).to receive(:perform_later)
+
+      post run_orchestration_pipeline_path(pipeline)
+
+      expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
+      follow_redirect!
+      expect(response.body).to include("Pipeline run triggered.")
     end
   end
 

@@ -21,6 +21,9 @@ Rails.application.routes.draw do
   namespace :orchestration do
     resources :actions
     resources :pipelines do
+      member do
+        post :run
+      end
       resources :steps, only: [ :create, :update, :destroy ] do
         member do
           patch :move_up
