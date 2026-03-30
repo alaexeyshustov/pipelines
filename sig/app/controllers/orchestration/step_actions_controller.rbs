@@ -1,0 +1,12 @@
+module Orchestration
+  class StepActionsController < ApplicationController
+    def create: () -> void
+    def destroy: () -> void
+
+    private
+
+    def set_pipeline: () -> void
+    def set_step: () -> void
+    def step_action_params: () -> ActionController::Parameters
+  end
+end

@@ -1,0 +1,16 @@
+module Orchestration
+  class PipelinesController < ApplicationController
+    def index: () -> void
+    def new: () -> void
+    def create: () -> void
+    def show: () -> void
+    def edit: () -> void
+    def update: () -> void
+    def destroy: () -> void
+
+    private
+
+    def set_pipeline: () -> void
+    def pipeline_params: () -> ActionController::Parameters
+  end
+end
