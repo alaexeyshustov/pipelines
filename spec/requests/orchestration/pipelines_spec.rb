@@ -379,6 +379,37 @@ RSpec.describe "Orchestration::Pipelines" do
     end
   end
 
+  describe "PATCH /orchestration/pipelines/:id/toggle" do
+    it "disables an enabled pipeline and redirects" do
+      pipeline = create(:orchestration_pipeline, enabled: true)
+
+      patch toggle_orchestration_pipeline_path(pipeline)
+
+      expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
+      expect(pipeline.reload.enabled).to be false
+    end
+
+    it "enables a disabled pipeline and redirects" do
+      pipeline = create(:orchestration_pipeline, enabled: false)
+
+      patch toggle_orchestration_pipeline_path(pipeline)
+
+      expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
+      expect(pipeline.reload.enabled).to be true
+    end
+  end
+
+  describe "POST /orchestration/pipelines with cron_expression" do
+    it "creates a pipeline with cron_expression" do
+      post orchestration_pipelines_path, params: {
+        orchestration_pipeline: { name: "Cron Pipeline", cron_expression: "0 * * * *", enabled: true }
+      }
+
+      expect(response).to redirect_to(orchestration_pipeline_path(Orchestration::Pipeline.last))
+      expect(Orchestration::Pipeline.last.cron_expression).to eq("0 * * * *")
+    end
+  end
+
   describe "DELETE /orchestration/pipelines/:pipeline_id/steps/:step_id/step_actions/:id" do
     it "detaches action from step and redirects to pipeline show" do
       pipeline = create(:orchestration_pipeline)

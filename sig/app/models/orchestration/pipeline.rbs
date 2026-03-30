@@ -6,12 +6,18 @@ module Orchestration
     def name=: (String?) -> String?
     def description: () -> String?
     def description=: (String?) -> String?
-    def schedule_interval: () -> Integer?
-    def schedule_interval=: (Integer?) -> Integer?
+    def cron_expression: () -> String?
+    def cron_expression=: (String?) -> String?
     def enabled: () -> bool
     def enabled=: (bool) -> bool
 
+    def next_run_at: (?from: Time) -> Time?
+
     def steps: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::Step]
     def pipeline_runs: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::PipelineRun]
+
+    private
+
+    def cron_expression_parseable: () -> void
   end
 end

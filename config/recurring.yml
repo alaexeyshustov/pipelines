@@ -1,0 +1,10 @@
+# Solid Queue recurring tasks configuration.
+# Requires Solid Queue as the queue adapter.
+# See https://github.com/rails/solid_queue#recurring-tasks
+
+production:
+  scheduler:
+    class: SchedulerJob
+    schedule: "* * * * *"
+    queue: default
+    description: "Check enabled pipelines and enqueue due runs every minute"

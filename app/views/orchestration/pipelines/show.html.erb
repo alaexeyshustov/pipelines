@@ -13,10 +13,15 @@
     <% if @pipeline.description.present? %>
       <p class="mt-1 text-sm text-gray-500"><%= @pipeline.description %></p>
     <% end %>
+    <% if @pipeline.cron_expression.present? %>
+      <p class="mt-1 text-xs text-gray-400 font-mono">Schedule: <%= @pipeline.cron_expression %></p>
+    <% end %>
   </div>
   <div class="flex items-center gap-3">
     <%= button_to "Run now", run_orchestration_pipeline_path(@pipeline), method: :post,
           class: "px-4 py-2 text-sm text-white font-medium bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer" %>
+    <%= button_to @pipeline.enabled? ? "Disable" : "Enable", toggle_orchestration_pipeline_path(@pipeline), method: :patch,
+          class: "px-4 py-2 text-sm font-medium border rounded-lg transition-colors bg-transparent cursor-pointer #{@pipeline.enabled? ? 'text-gray-600 border-gray-200 hover:bg-gray-50' : 'text-green-600 border-green-200 hover:bg-green-50'}" %>
     <%= link_to "Edit", edit_orchestration_pipeline_path(@pipeline), class: "px-4 py-2 text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors" %>
     <%= button_to "Delete", orchestration_pipeline_path(@pipeline), method: :delete,
           form: { data: { turbo_confirm: "Delete pipeline \"#{@pipeline.name}\"? This will also delete all steps and step-actions." } },

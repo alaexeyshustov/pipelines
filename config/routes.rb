@@ -23,6 +23,7 @@ Rails.application.routes.draw do
     resources :pipelines do
       member do
         post :run
+        patch :toggle
       end
       resources :pipeline_runs, only: [ :index, :show ]
       resources :steps, only: [ :create, :update, :destroy ] do

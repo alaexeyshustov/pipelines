@@ -45,6 +45,8 @@
               <% end %>
             </td>
             <td class="px-4 py-3 text-right flex items-center justify-end gap-3">
+              <%= button_to pipeline.enabled? ? "Disable" : "Enable", toggle_orchestration_pipeline_path(pipeline), method: :patch,
+                    class: "text-gray-500 hover:text-gray-700 font-medium bg-transparent border-0 cursor-pointer p-0" %>
               <%= link_to "Edit", edit_orchestration_pipeline_path(pipeline), class: "text-indigo-600 hover:text-indigo-800 font-medium" %>
               <%= button_to "Delete", orchestration_pipeline_path(pipeline), method: :delete,
                     form: { data: { turbo_confirm: "Delete pipeline \"#{pipeline.name}\"? This will also delete all steps and step-actions." } },
