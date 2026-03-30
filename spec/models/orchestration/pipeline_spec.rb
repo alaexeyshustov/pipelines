@@ -28,4 +28,30 @@ RSpec.describe Orchestration::Pipeline do
       expect { pipeline.destroy }.to change(Orchestration::PipelineRun, :count).by(-1)
     end
   end
+
+  describe '#next_run_at' do
+    it 'returns nil when cron_expression is nil' do
+      pipeline = build(:orchestration_pipeline, cron_expression: nil)
+      expect(pipeline.next_run_at).to be_nil
+    end
+
+    it 'returns nil when cron_expression is blank' do
+      pipeline = build(:orchestration_pipeline, cron_expression: '')
+      expect(pipeline.next_run_at).to be_nil
+    end
+
+    it 'returns the next scheduled time from the given reference time' do
+      pipeline = build(:orchestration_pipeline, cron_expression: '0 * * * *')
+      from = Time.utc(2026, 3, 30, 10, 0, 0)
+      result = pipeline.next_run_at(from: from)
+      expect(result).to eq(Time.utc(2026, 3, 30, 11, 0, 0))
+    end
+
+    it 'defaults from to Time.current when not provided' do
+      pipeline = build(:orchestration_pipeline, cron_expression: '0 * * * *')
+      result = pipeline.next_run_at
+      expect(result).to be_a(Time)
+      expect(result).to be > Time.current
+    end
+  end
 end

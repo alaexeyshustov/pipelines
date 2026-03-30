@@ -28,6 +28,7 @@ gem "tailwindcss-rails"
 # Pipeline
 gem "async"
 gem "async-job-adapter-active_job"
+gem "fugit"
 gem "dotenv-rails"
 gem "dry-cli"
 

@@ -1,0 +1,3 @@
+class SchedulerJob < ApplicationJob
+  def perform: () -> void
+end

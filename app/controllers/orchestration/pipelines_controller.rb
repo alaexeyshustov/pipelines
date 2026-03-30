@@ -2,7 +2,7 @@
 
 module Orchestration
   class PipelinesController < ApplicationController
-    before_action :set_pipeline, only: [ :show, :edit, :update, :destroy, :run ]
+    before_action :set_pipeline, only: [ :show, :edit, :update, :destroy, :run, :toggle ]
 
     def index
       @pipelines = Orchestration::Pipeline
@@ -46,6 +46,12 @@ module Orchestration
       end
     end
 
+    def toggle
+      @pipeline.update!(enabled: !@pipeline.enabled)
+      redirect_to request.referer || orchestration_pipeline_path(@pipeline),
+                  notice: "Pipeline #{@pipeline.enabled? ? 'enabled' : 'disabled'}."
+    end
+
     def edit
     end
 
@@ -69,7 +75,7 @@ module Orchestration
     end
 
     def pipeline_params
-      params.require(:orchestration_pipeline).permit(:name, :description, :enabled)
+      params.require(:orchestration_pipeline).permit(:name, :description, :enabled, :cron_expression)
     end
   end
 end
