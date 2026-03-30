@@ -1,0 +1,14 @@
+module Orchestration
+  class InputMappingResolver
+    type previous_output_entry = { "step_name" => String, "output" => Hash[String, untyped] }
+
+    def initialize: (input_mapping: Hash[String, untyped]?, previous_outputs: Array[previous_output_entry]) -> void
+    def resolve: () -> Hash[String, untyped]
+
+    private
+
+    def concatenate_all: () -> Hash[String, untyped]
+    def resolve_explicit: () -> Hash[String, untyped]
+    def apply_merge: (Array[untyped], String?) -> untyped
+  end
+end
