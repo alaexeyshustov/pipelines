@@ -9,6 +9,8 @@ module Orchestration
     def input_mapping: () -> Hash[String, untyped]?
     def input_mapping=: (Hash[String, untyped]?) -> Hash[String, untyped]?
 
+    def self.derive_status: (Array[Orchestration::ActionRun] action_runs) -> String
+
     def pipeline: () -> Orchestration::Pipeline
     def pipeline=: (Orchestration::Pipeline) -> Orchestration::Pipeline
     def step_actions: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::StepAction]

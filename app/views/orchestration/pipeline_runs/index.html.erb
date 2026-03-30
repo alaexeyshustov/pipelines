@@ -1,0 +1,62 @@
+<% content_for :title, "Run History — #{@pipeline.name}" %>
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Run History</h1>
+    <p class="mt-1 text-sm text-gray-500"><%= @pipeline.name %></p>
+  </div>
+  <div class="flex items-center gap-3">
+    <%= link_to "Pipeline", orchestration_pipeline_path(@pipeline),
+          class: "text-sm text-gray-500 hover:text-gray-700" %>
+  </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <% if @pagy.count > 0 %>
+    <div class="px-6 py-3 border-b border-gray-100 text-xs text-gray-500"><%= @pagy.count %> total</div>
+  <% end %>
+  <% if @runs.empty? %>
+    <p class="px-6 py-8 text-center text-gray-400 text-sm">No runs yet.</p>
+  <% else %>
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-200">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Triggered by</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Started</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Finished</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Duration</th>
+          <th class="px-6 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @runs.each do |run| %>
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-6 py-4">
+              <%= render partial: "orchestration/pipeline_runs/status_badge", locals: { status: run.status } %>
+            </td>
+            <td class="px-6 py-4 text-gray-600"><%= run.triggered_by || "—" %></td>
+            <td class="px-6 py-4 text-gray-600">
+              <%= run.started_at ? run.started_at.strftime("%Y-%m-%d %H:%M:%S") : "—" %>
+            </td>
+            <td class="px-6 py-4 text-gray-600">
+              <%= run.finished_at ? run.finished_at.strftime("%Y-%m-%d %H:%M:%S") : "—" %>
+            </td>
+            <td class="px-6 py-4 text-gray-600">
+              <% if run.started_at && run.finished_at %>
+                <%= distance_of_time_in_words(run.started_at, run.finished_at) %>
+              <% else %>
+                —
+              <% end %>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <%= link_to "Details", orchestration_pipeline_pipeline_run_path(@pipeline, run),
+                    class: "text-indigo-600 hover:text-indigo-800 font-medium text-xs" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <%== @pagy.series_nav %>
+  <% end %>
+</div>

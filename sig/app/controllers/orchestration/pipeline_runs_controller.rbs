@@ -1,0 +1,10 @@
+module Orchestration
+  class PipelineRunsController < ApplicationController
+    def index: () -> void
+    def show: () -> void
+
+    private
+
+    def set_pipeline: () -> void
+  end
+end
