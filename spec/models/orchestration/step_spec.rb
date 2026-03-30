@@ -13,6 +13,41 @@ RSpec.describe Orchestration::Step do
                     :orchestration_step, :pipeline, :orchestration_pipeline
   end
 
+  describe '.derive_status' do
+    def stub_run(status)
+      instance_double(Orchestration::ActionRun, status: status)
+    end
+
+    it 'returns pending when action_runs is empty' do
+      expect(described_class.derive_status([])).to eq('pending')
+    end
+
+    it 'returns completed when all action_runs are completed' do
+      runs = [ stub_run('completed'), stub_run('completed') ]
+      expect(described_class.derive_status(runs)).to eq('completed')
+    end
+
+    it 'returns failed when any action_run is failed' do
+      runs = [ stub_run('completed'), stub_run('failed') ]
+      expect(described_class.derive_status(runs)).to eq('failed')
+    end
+
+    it 'returns running when any action_run is running and none failed' do
+      runs = [ stub_run('completed'), stub_run('running') ]
+      expect(described_class.derive_status(runs)).to eq('running')
+    end
+
+    it 'returns failed over running when both are present' do
+      runs = [ stub_run('failed'), stub_run('running') ]
+      expect(described_class.derive_status(runs)).to eq('failed')
+    end
+
+    it 'returns pending when all action_runs are pending' do
+      runs = [ stub_run('pending'), stub_run('pending') ]
+      expect(described_class.derive_status(runs)).to eq('pending')
+    end
+  end
+
   describe 'associations' do
     it 'destroys step_actions when step is destroyed' do
       pipeline = create(:orchestration_pipeline)

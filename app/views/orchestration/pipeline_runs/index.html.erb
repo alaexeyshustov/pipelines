@@ -12,6 +12,9 @@
 </div>
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <% if @pagy.count > 0 %>
+    <div class="px-6 py-3 border-b border-gray-100 text-xs text-gray-500"><%= @pagy.count %> total</div>
+  <% end %>
   <% if @runs.empty? %>
     <p class="px-6 py-8 text-center text-gray-400 text-sm">No runs yet.</p>
   <% else %>
@@ -54,5 +57,6 @@
         <% end %>
       </tbody>
     </table>
+    <%== @pagy.series_nav %>
   <% end %>
 </div>

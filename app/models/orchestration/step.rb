@@ -8,5 +8,14 @@ module Orchestration
 
     validates :name, presence: true
     validates :position, presence: true, uniqueness: { scope: :pipeline_id }
+
+    def self.derive_status(action_runs)
+      return "pending" if action_runs.empty?
+      return "failed" if action_runs.any? { |ar| ar.status == "failed" }
+      return "running" if action_runs.any? { |ar| ar.status == "running" }
+      return "completed" if action_runs.all? { |ar| ar.status == "completed" }
+
+      "pending"
+    end
   end
 end

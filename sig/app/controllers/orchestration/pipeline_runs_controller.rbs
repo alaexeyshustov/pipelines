@@ -6,6 +6,5 @@ module Orchestration
     private
 
     def set_pipeline: () -> void
-    def derive_status: (Array[Orchestration::ActionRun] action_runs) -> String
   end
 end
