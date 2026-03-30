@@ -15,5 +15,9 @@ module Orchestration
 
     def steps: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::Step]
     def pipeline_runs: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::PipelineRun]
+
+    private
+
+    def cron_expression_parseable: () -> void
   end
 end

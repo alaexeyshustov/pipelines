@@ -78,7 +78,9 @@ CREATE INDEX "index_action_runs_on_step_action_id" ON "action_runs" ("step_actio
 CREATE INDEX "index_action_runs_on_status" ON "action_runs" ("status") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_pipeline_runs_on_pipeline_id_and_created_at" ON "pipeline_runs" ("pipeline_id", "created_at") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "pipelines" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "description" text, "enabled" boolean DEFAULT TRUE NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "cron_expression" varchar);
+CREATE INDEX "index_pipelines_on_enabled_and_cron_expression" ON "pipelines" ("enabled", "cron_expression") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260330160511'),
 ('20260330154456'),
 ('20260330145327'),
 ('20260321000006'),

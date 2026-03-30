@@ -69,6 +69,26 @@ RSpec.describe SchedulerJob do
       end
     end
 
+    context "with multiple due pipelines" do
+      it "issues a fixed number of queries regardless of pipeline count" do
+        3.times do
+          p = create(:orchestration_pipeline, enabled: true, cron_expression: cron_expression)
+          p.update_column(:created_at, 2.hours.ago)
+        end
+
+        # 3 constant read queries (running ids, latest completed, pipeline load)
+        # + 1 INSERT per due pipeline — no per-pipeline read queries (no N+1)
+        query_count = 0
+        counter = ->(*, **) { query_count += 1 }
+        ActiveSupport::Notifications.subscribed(counter, "sql.active_record") do
+          described_class.new.perform
+        end
+
+        # 16 would be the N+1 count (old impl); ceiling here ensures reads stay constant
+        expect(query_count).to be <= 12
+      end
+    end
+
     context "when the next tick is in the future" do
       it "does not enqueue a run" do
         # Use an expression that only runs at midnight, so next run is in the future

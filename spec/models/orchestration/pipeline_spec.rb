@@ -13,6 +13,22 @@ RSpec.describe Orchestration::Pipeline do
       pipeline = described_class.new(name: 'My Pipeline')
       expect(pipeline.enabled).to be true
     end
+
+    it 'is valid with a blank cron_expression' do
+      pipeline = build(:orchestration_pipeline, cron_expression: '')
+      expect(pipeline).to be_valid
+    end
+
+    it 'is valid with a valid cron_expression' do
+      pipeline = build(:orchestration_pipeline, cron_expression: '0 * * * *')
+      expect(pipeline).to be_valid
+    end
+
+    it 'is invalid with a malformed cron_expression' do
+      pipeline = build(:orchestration_pipeline, cron_expression: 'not-a-cron')
+      expect(pipeline).not_to be_valid
+      expect(pipeline.errors[:cron_expression]).to be_present
+    end
   end
 
   describe 'associations' do
