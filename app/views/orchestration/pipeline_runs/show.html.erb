@@ -1,0 +1,110 @@
+<% content_for :title, "Run ##{@run.id} — #{@pipeline.name}" %>
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <div class="flex items-center gap-3">
+      <h1 class="text-2xl font-bold text-gray-900">Run #<%= @run.id %></h1>
+      <%= render partial: "orchestration/pipeline_runs/status_badge", locals: { status: @run.status } %>
+    </div>
+    <p class="mt-1 text-sm text-gray-500"><%= @pipeline.name %></p>
+  </div>
+  <div class="flex items-center gap-3">
+    <%= link_to "Run History", orchestration_pipeline_pipeline_runs_path(@pipeline),
+          class: "text-sm text-gray-500 hover:text-gray-700" %>
+    <%= link_to "Pipeline", orchestration_pipeline_path(@pipeline),
+          class: "text-sm text-gray-500 hover:text-gray-700" %>
+  </div>
+</div>
+
+<div class="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4">
+  <dl class="grid grid-cols-2 gap-4 sm:grid-cols-4 text-sm">
+    <div>
+      <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Triggered by</dt>
+      <dd class="mt-1 text-gray-900"><%= @run.triggered_by || "—" %></dd>
+    </div>
+    <div>
+      <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Started</dt>
+      <dd class="mt-1 text-gray-900"><%= @run.started_at ? @run.started_at.strftime("%Y-%m-%d %H:%M:%S") : "—" %></dd>
+    </div>
+    <div>
+      <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Finished</dt>
+      <dd class="mt-1 text-gray-900"><%= @run.finished_at ? @run.finished_at.strftime("%Y-%m-%d %H:%M:%S") : "—" %></dd>
+    </div>
+    <div>
+      <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</dt>
+      <dd class="mt-1 text-gray-900">
+        <% if @run.started_at && @run.finished_at %>
+          <%= distance_of_time_in_words(@run.started_at, @run.finished_at) %>
+        <% else %>
+          —
+        <% end %>
+      </dd>
+    </div>
+  </dl>
+  <% if @run.error.present? %>
+    <div class="mt-4 px-4 py-3 bg-red-50 border border-red-200 text-red-800 rounded-lg text-sm">
+      <%= @run.error %>
+    </div>
+  <% end %>
+</div>
+
+<div class="grid grid-cols-1 gap-4">
+  <% @steps_with_action_runs.each do |entry| %>
+    <% step = entry[:step] %>
+    <% action_runs = entry[:action_runs] %>
+    <% derived_status = entry[:derived_status] %>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-3">
+        <span class="flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full flex items-center justify-center"><%= step.position %></span>
+        <h2 class="text-base font-semibold text-gray-900 flex-1"><%= step.name %></h2>
+        <%= render partial: "orchestration/pipeline_runs/status_badge", locals: { status: derived_status } %>
+      </div>
+
+      <% if action_runs.empty? %>
+        <p class="px-6 py-4 text-sm text-gray-400">No action runs recorded for this step.</p>
+      <% else %>
+        <div class="divide-y divide-gray-100">
+          <% action_runs.each do |ar| %>
+            <div class="px-6 py-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-3">
+                  <span class="font-medium text-sm text-gray-900"><%= ar.step_action.action.name %></span>
+                  <%= render partial: "orchestration/pipeline_runs/status_badge", locals: { status: ar.status } %>
+                </div>
+                <div class="text-xs text-gray-500">
+                  <% if ar.started_at %>
+                    <%= ar.started_at.strftime("%H:%M:%S") %>
+                    <% if ar.finished_at %>
+                      → <%= ar.finished_at.strftime("%H:%M:%S") %>
+                    <% end %>
+                  <% end %>
+                </div>
+              </div>
+
+              <% if ar.error.present? %>
+                <div class="mb-3 px-3 py-2 bg-red-50 border border-red-200 text-red-700 rounded text-xs">
+                  <%= ar.error %>
+                </div>
+              <% end %>
+
+              <% if ar.input.present? %>
+                <details class="mb-2">
+                  <summary class="text-xs font-medium text-gray-500 cursor-pointer hover:text-gray-700">Input</summary>
+                  <pre class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded text-xs font-mono overflow-x-auto"><%= JSON.pretty_generate(ar.input) %></pre>
+                </details>
+              <% end %>
+
+              <% if ar.output.present? %>
+                <details class="mb-2">
+                  <summary class="text-xs font-medium text-gray-500 cursor-pointer hover:text-gray-700">Output</summary>
+                  <pre class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded text-xs font-mono overflow-x-auto"><%= JSON.pretty_generate(ar.output) %></pre>
+                </details>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

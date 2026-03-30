@@ -1,0 +1,11 @@
+module Orchestration
+  class PipelineRunsController < ApplicationController
+    def index: () -> void
+    def show: () -> void
+
+    private
+
+    def set_pipeline: () -> void
+    def derive_status: (Array[Orchestration::ActionRun] action_runs) -> String
+  end
+end

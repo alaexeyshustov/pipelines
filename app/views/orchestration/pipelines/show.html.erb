@@ -21,6 +21,7 @@
     <%= button_to "Delete", orchestration_pipeline_path(@pipeline), method: :delete,
           form: { data: { turbo_confirm: "Delete pipeline \"#{@pipeline.name}\"? This will also delete all steps and step-actions." } },
           class: "px-4 py-2 text-sm text-red-600 hover:text-red-800 font-medium border border-red-200 rounded-lg hover:bg-red-50 transition-colors bg-transparent cursor-pointer" %>
+    <%= link_to "Run History", orchestration_pipeline_pipeline_runs_path(@pipeline), class: "text-sm text-gray-500 hover:text-gray-700" %>
     <%= link_to "All Pipelines", orchestration_pipelines_path, class: "text-sm text-gray-500 hover:text-gray-700" %>
   </div>
 </div>
