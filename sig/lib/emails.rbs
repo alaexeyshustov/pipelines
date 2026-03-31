@@ -1,17 +1,30 @@
 module Emails
-  PROVIDERS: Hash[String, singleton(Emails::Adapters::BaseAdapter)]
+  type message = {
+      id: Integer,
+      subject: String,
+      from: String,
+      to: String,
+      date: String,
+      snippet: String,
+      body: String,
+      labels: Array[String]
+    }
+  type label = { id: String, name: String, type: String }
+  type modify_result = { message_id: Integer | String, added: Array[String], removed: Array[String] }
 
-  @provider_registry: Emails::ProviderRegistry?
+  PROVIDERS: Hash[String, singleton(Adapters::BaseAdapter)]
+
+  @provider_registry: ProviderRegistry?
 
   def self.configure: (**untyped providers_config) -> void
-  def self.list_messages: (String provider_name, **untyped opts) -> untyped
-  def self.get_message: (String provider_name, String message_id, **untyped opts) -> untyped
-  def self.search_messages: (String provider_name, String query, **untyped opts) -> untyped
-  def self.get_labels: (String provider_name, **untyped opts) -> untyped
-  def self.get_unread_count: (String provider_name, **untyped opts) -> untyped
-  def self.modify_labels: (String provider_name, String message_id, ?add: Array[String], ?remove: Array[String], **untyped opts) -> untyped
-  def self.create_label: (String provider_name, name: String, **untyped opts) -> untyped
+  def self.search_messages: (String provider_name, String query, ?max_results: Integer, ?offset: Integer, ?label: String?) -> Array[message]
+  def self.list_messages: (String provider_name, ?max_results: Integer, ?after_date: Date?, ?before_date: Date?, ?offset: Integer, ?label: String?) -> Array[message]
+  def self.get_message: (String provider_name, String | Integer message_id, ?mailbox: String?) -> message
+  def self.get_labels: (String provider_name) -> Array[label]
+  def self.get_unread_count: (String provider_name) -> Integer
+  def self.modify_labels: (String provider_name, String message_id, ?add: Array[String], ?remove: Array[String], ?mailbox: String?) -> modify_result
+  def self.create_label: (String provider_name, name: String) -> label
 
-  def self.registry: () -> Emails::ProviderRegistry
-  def self.fetch: (String provider_name) -> untyped
+  def self.registry: () -> ProviderRegistry
+  def self.fetch: (String provider_name) -> Adapters::BaseAdapter
 end

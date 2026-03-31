@@ -7,8 +7,18 @@ module Records
 
     def fetch_substring_matches: (untyped model, String column, String value) -> Array[{ value: String, ids: Array[Integer] }]
     def fetch_fuzzy_matches: (untyped model, String column, String value) -> Array[{ value: String, ids: Array[Integer] }]
+  end
+
+  class FuzzyMatcher
+    MATCH_THRESHOLD: Float
+
+    def initialize: (String value) -> void
+    def matches?: (String stored) -> bool
+
+    private
+
     def normalize_words: (String str) -> Array[String]
-    def words_similar?: (String a, String b) -> bool
-    def levenshtein: (String a, String b) -> Integer
+    def words_similar?: (String word_a, String word_b) -> bool
+    def levenshtein: (String str_a, String str_b) -> Integer
   end
 end

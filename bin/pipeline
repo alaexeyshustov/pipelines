@@ -105,22 +105,10 @@ module PipelineCLI
         providers.each do |provider|
           case provider.downcase
           when "gmail"
-            puts "Gmail setup:"
-            puts "1. Create a project in Google Cloud Console."
-            puts "2. Enable the Gmail API for your project."
-            puts "3. Create OAuth 2.0 credentials and download the JSON file."
-            puts "4. Save the file as credentials.json in the project root."
-            puts
-            puts "Clearing any existing token and launching OAuth authorization flow..."
             Emails::Adapters::GmailAdapter.reset
             Emails::Adapters::GmailAdapter.setup
-            puts "✓ Gmail OAuth token saved."
           when "yahoo"
-            puts "Yahoo setup:"
-            puts "1. Sign in to your Yahoo account and go to Account Security settings."
-            puts "2. Generate an app password for 'Mail' and 'Other device'."
-            puts "3. Set YAHOO_USERNAME to your Yahoo email and YAHOO_APP_PASSWORD to the generated password in your environment variables."
-            puts "4. Run `bin/cli test` to test the connection."
+            Emails::Adapters::YahooAdapter.setup
           else
             puts "No setup instructions for '#{provider}'. Please refer to provider documentation."
           end

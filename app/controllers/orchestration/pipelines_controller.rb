@@ -32,17 +32,20 @@ module Orchestration
     end
 
     def run
-      if @pipeline.pipeline_runs.exists?(status: %w[pending running])
-        redirect_to orchestration_pipeline_path(@pipeline), alert: "A run is already pending."
+      path = orchestration_pipeline_path(@pipeline)
+      runs = @pipeline.pipeline_runs
+
+      if runs.exists?(status: %w[pending running])
+        redirect_to path, alert: "A run is already pending."
         return
       end
 
-      pipeline_run = @pipeline.pipeline_runs.create(status: "pending", triggered_by: "manual")
+      pipeline_run = runs.create(status: "pending", triggered_by: "manual")
       if pipeline_run.persisted?
         PipelineRunJob.perform_later(pipeline_run.id)
-        redirect_to orchestration_pipeline_path(@pipeline), notice: "Pipeline run triggered."
+        redirect_to path, notice: "Pipeline run triggered."
       else
-        redirect_to orchestration_pipeline_path(@pipeline), alert: "Failed to trigger pipeline run."
+        redirect_to path, alert: "Failed to trigger pipeline run."
       end
     end
 

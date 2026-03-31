@@ -1,63 +1,27 @@
 module Emails
   module Adapters
-    type gmail_list_message = {
-      id: String,
-      thread_id: String,
-      subject: String,
-      from: String,
-      to: String,
-      date: String,
-      snippet: String?,
-      labels: Array[String]
-    }
-
-    type gmail_message = {
-      id: String,
-      thread_id: String,
-      subject: String,
-      from: String,
-      to: String,
-      date: String,
-      snippet: String?,
-      body: String,
-      labels: Array[String]
-    }
-
-    type gmail_label = { id: String, name: String, type: String }
-    type gmail_modify_result = { id: String, labels: Array[String] }
-
     class GmailAdapter < BaseAdapter
       APPLICATION_NAME: String
       SCOPE: Array[String]
 
       @credentials_path: String
+      @labels: Array[label]
       @token_path: String
-      @service: untyped
+      @service: Google::Apis::GmailV1::GmailService
 
-      def self.setup: (**untyped opts) -> void
-      def self.test_connection: (**untyped opts) -> void
-      def self.reset: (**untyped opts) -> void
       def self.from_env: (**untyped opts) -> GmailAdapter
 
       def initialize: (credentials_path: String, token_path: String) -> void
-      def on_init: () -> void
       def authorize: () -> untyped
-      def list_messages: (?max_results: Integer, ?query: String?, ?after_date: Date?, ?before_date: Date?, ?offset: Integer, ?label_ids: Array[String]?, ?label: String?, ?mailbox: String?) -> Array[gmail_list_message]
-      def get_message: (String message_id, ?mailbox: String?) -> gmail_message
-      def search_messages: (String query, ?max_results: Integer, ?mailbox: String?) -> Array[gmail_message]
-      def get_labels: (**untyped opts) -> Array[gmail_label]
-      def get_unread_count: (**untyped opts) -> Integer
-      def modify_labels: (String message_id, ?add: Array[String], ?remove: Array[String], ?mailbox: String?) -> gmail_modify_result
-      def create_label: (name: String, **untyped opts) -> gmail_label
 
       private
 
-      def list_message: (String message_id) -> gmail_list_message
-      def parse_message: (untyped message) -> gmail_list_message
-      def header_value: (Array[untyped] headers, String name) -> String?
-      def extract_body: (untyped payload) -> String
-      def collect_parts: (untyped payload, String mime_type) -> Array[String]
-      def decode_body: (String? data) -> String
+      def fetch_messages: (Integer max_results, Integer offset) { (Integer page_size, String? page_token) -> Google::Apis::GmailV1::ListMessagesResponse? } -> Array[message]
+      def find_existing_label: (String name) -> label
+
+      def build_label_ids: (Array[String] | String) -> Array[String]
+
+      def list_message: (String message_id) -> message?
     end
   end
 end

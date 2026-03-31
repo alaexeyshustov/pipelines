@@ -38,8 +38,9 @@ module Orchestration
 
     def destroy
       @action.destroy
-      if @action.errors.any?
-        redirect_to orchestration_actions_path, alert: "Cannot delete action: #{@action.errors.full_messages.to_sentence}."
+      errors = @action.errors
+      if errors.any?
+        redirect_to orchestration_actions_path, alert: "Cannot delete action: #{errors.full_messages.to_sentence}."
       else
         redirect_to orchestration_actions_path, notice: "Action deleted."
       end
@@ -52,14 +53,19 @@ module Orchestration
     end
 
     def action_params
-      parsed = params.require(:orchestration_action).permit(
+      permitted = params.require(:orchestration_action).permit(
         :name, :description, :agent_class, :model, :tools, :prompt, :params
       )
-      parsed[:tools] = JSON.parse(parsed[:tools]) if parsed[:tools].present?
-      parsed[:params] = JSON.parse(parsed[:params]) if parsed[:params].present?
-      parsed
-    rescue JSON::ParserError => e
-      params.require(:orchestration_action).permit(:name, :description, :agent_class, :model, :tools, :prompt, :params)
+      parse_json_field(permitted, :tools)
+      parse_json_field(permitted, :params)
+      permitted
+    rescue JSON::ParserError
+      permitted
+    end
+
+    def parse_json_field(permitted, key)
+      raw = permitted[key]
+      permitted[key] = JSON.parse(raw) if raw.present?
     end
   end
 end

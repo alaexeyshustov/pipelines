@@ -8,7 +8,10 @@ module ApplicationMails
       def ok?: () -> bool
     end
 
-    def initialize: (ids: untyped, batch_action: String) -> void
+    @ids: Array[String] | Array[Integer]
+    @batch_action: String
+
+    def initialize: (ids: Array[String] | Array[Integer], batch_action: String) -> void
     def call: () -> Result
   end
 end

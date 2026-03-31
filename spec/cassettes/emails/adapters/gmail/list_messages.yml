@@ -2,6 +2,24 @@
 http_interactions:
 - request:
     method: get
+    uri: https://gmail.googleapis.com/gmail/v1/users/me/labels
+    body:
+      encoding: UTF-8
+      string: ''
+    headers: {}
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json; charset=UTF-8
+    body:
+      encoding: UTF-8
+      string: '{"labels":[{"id":"INBOX","name":"INBOX","type":"system"},{"id":"Label_1","name":"applications","type":"user"}]}'
+  recorded_at: 'Tue, 24 Mar 2026 10:00:00 GMT'
+- request:
+    method: get
     uri: https://gmail.googleapis.com/gmail/v1/users/me/messages
     body:
       encoding: UTF-8

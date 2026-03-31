@@ -17,32 +17,32 @@ module Emails
       end
     end
 
-    def list_messages(provider_name, **opts)
-      fetch(provider_name).list_messages(**opts)
+    def search_messages(provider_name, query, max_results: 10, offset: 0, label: nil)
+      fetch(provider_name).search_messages(query, max_results:, offset:, label:)
     end
 
-    def get_message(provider_name, message_id, **opts)
-      fetch(provider_name).get_message(message_id, **opts)
+    def list_messages(provider_name, max_results: 10, after_date: nil, before_date: nil, offset: 0, label: nil)
+      fetch(provider_name).list_messages(max_results:, after_date:, before_date:, offset:, label:)
     end
 
-    def search_messages(provider_name, query, **opts)
-      fetch(provider_name).search_messages(query, **opts)
+    def get_message(provider_name, message_id, label: nil)
+      fetch(provider_name).get_message(message_id, label:)
     end
 
-    def get_labels(provider_name, **opts)
-      fetch(provider_name).get_labels(**opts)
+    def get_labels(provider_name)
+      fetch(provider_name).get_labels
     end
 
-    def get_unread_count(provider_name, **opts)
-      fetch(provider_name).get_unread_count(**opts)
+    def get_unread_count(provider_name)
+      fetch(provider_name).get_unread_count
     end
 
-    def modify_labels(provider_name, message_id, add: [], remove: [], **opts)
-      fetch(provider_name).modify_labels(message_id, add: add, remove: remove, **opts)
+    def modify_labels(provider_name, message_id, add: [], remove: [])
+      fetch(provider_name).modify_labels(message_id, add: add, remove: remove)
     end
 
-    def create_label(provider_name, name:, **opts)
-      fetch(provider_name).create_label(name: name, **opts)
+    def create_label(provider_name, name:)
+      fetch(provider_name).create_label(name:)
     end
 
     private

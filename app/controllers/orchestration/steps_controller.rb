@@ -6,14 +6,13 @@ module Orchestration
     before_action :set_step, only: [ :update, :destroy, :move_up, :move_down ]
 
     def create
-      next_position = (@pipeline.steps.maximum(:position) || 0) + 1
-      @step = @pipeline.steps.build(step_params.merge(position: next_position))
+      steps         = @pipeline.steps
+      next_position = (steps.maximum(:position) || 0) + 1
+      @step = steps.build(step_params.merge(position: next_position))
       if @step.save
         redirect_to orchestration_pipeline_path(@pipeline), notice: "Step added."
       else
-        @steps = @pipeline.steps.includes(step_actions: :action)
-        @actions = Orchestration::Action.order(:name)
-        render "orchestration/pipelines/show", status: :unprocessable_entity
+        render_pipeline_show
       end
     end
 
@@ -21,9 +20,7 @@ module Orchestration
       if @step.update(step_params)
         redirect_to orchestration_pipeline_path(@pipeline), notice: "Step updated."
       else
-        @steps = @pipeline.steps.includes(step_actions: :action)
-        @actions = Orchestration::Action.order(:name)
-        render "orchestration/pipelines/show", status: :unprocessable_entity
+        render_pipeline_show
       end
     end
 
@@ -34,13 +31,13 @@ module Orchestration
 
     def move_up
       prev_step = @pipeline.steps.where("position < ?", @step.position).order(position: :desc).first
-      swap_positions(@step, prev_step) if prev_step
+      @step.swap_position_with(prev_step) if prev_step
       redirect_to orchestration_pipeline_path(@pipeline)
     end
 
     def move_down
       next_step = @pipeline.steps.where("position > ?", @step.position).order(position: :asc).first
-      swap_positions(@step, next_step) if next_step
+      @step.swap_position_with(next_step) if next_step
       redirect_to orchestration_pipeline_path(@pipeline)
     end
 
@@ -54,26 +51,24 @@ module Orchestration
       @step = @pipeline.steps.find(params[:id])
     end
 
-    def step_params
-      parsed = params.require(:orchestration_step).permit(:name, :input_mapping)
-      if parsed[:input_mapping].present?
-        parsed[:input_mapping] = JSON.parse(parsed[:input_mapping])
-      end
-      parsed
-    rescue JSON::ParserError
-      params.require(:orchestration_step).permit(:name, :input_mapping)
+    def render_pipeline_show
+      @steps = @pipeline.steps.includes(step_actions: :action)
+      @actions = Orchestration::Action.order(:name)
+      render "orchestration/pipelines/show", status: :unprocessable_entity
     end
 
-    def swap_positions(step_a, step_b)
-      pos_a = step_a.position
-      pos_b = step_b.position
-      temp = @pipeline.steps.maximum(:position) + 1
+    def step_params
+      permitted = params.require(:orchestration_step).permit(:name, :input_mapping)
+      raw = permitted[:input_mapping]
+      return permitted unless raw.present?
 
-      ActiveRecord::Base.transaction do
-        step_a.update_column(:position, temp)
-        step_b.update_column(:position, pos_a)
-        step_a.update_column(:position, pos_b)
-      end
+      permitted.merge(input_mapping: parse_input_mapping(raw))
+    end
+
+    def parse_input_mapping(raw)
+      JSON.parse(raw)
+    rescue JSON::ParserError
+      raw
     end
   end
 end

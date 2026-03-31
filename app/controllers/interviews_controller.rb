@@ -47,31 +47,22 @@ class InterviewsController < ApplicationController
   end
 
   def batch
-    ids = params[:ids]
-    if ids.blank? && params[:batch_action] != "export"
-      redirect_to interviews_index_with_filters, alert: "No records selected."
-      return
-    end
+    ids        = params[:ids]
+    batch_action = params[:batch_action]
 
-    result = Interviews::BatchService.new(ids: ids, batch_action: params[:batch_action]).call
+    result = Interviews::BatchService.new(ids: ids.to_a, batch_action: batch_action.to_s).call
     if result.csv?
       send_data result.csv, filename: "interviews_#{Date.today}.csv", type: "text/csv", disposition: "attachment"
     else
-      redirect_to interviews_index_with_filters,
-                  **(result.ok? ? { notice: result.message } : { alert: result.message })
+      redirect_to interviews_index_with_filters, **flash_for(result)
     end
   end
 
   def export_gist
     gist_id = params[:gist_id].to_s.strip
-    if gist_id.blank?
-      redirect_to interviews_index_with_filters, alert: "Gist ID is required."
-      return
-    end
 
     result = Interviews::GistExportService.new(ids: params[:ids], gist_id: gist_id).call
-    redirect_to interviews_index_with_filters,
-                **(result.ok? ? { notice: result.message } : { alert: result.message })
+    redirect_to interviews_index_with_filters, **flash_for(result)
   end
 
   private

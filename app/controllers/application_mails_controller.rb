@@ -46,15 +46,8 @@ class ApplicationMailsController < ApplicationController
   end
 
   def batch
-    ids = params[:ids]
-    if ids.blank?
-      redirect_back_or_to application_mails_path, alert: "No records selected."
-      return
-    end
-
-    result = ApplicationMails::BatchService.new(ids: ids, batch_action: params[:batch_action]).call
-    redirect_back_or_to application_mails_path,
-                         **(result.ok? ? { notice: result.message } : { alert: result.message })
+    result = ApplicationMails::BatchService.new(ids: params[:ids].to_a, batch_action: params[:batch_action].to_s).call
+    redirect_back_or_to application_mails_path, **flash_for(result)
   end
 
   private

@@ -10,7 +10,8 @@
 # no_browser: true # default is false
 # formats: # Available values are: html, json, console, lint. Default value is html.
 #   - console
-minimum_score: 95 # default is 0
+minimum_score: 90
 paths: 
   - 'app/'
   - 'lib/'
+

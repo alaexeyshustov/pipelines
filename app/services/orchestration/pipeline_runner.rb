@@ -60,36 +60,30 @@ module Orchestration
     end
 
     def execute_action(action_run)
+      action_run.update!(status: "running", started_at: Time.current)
+      result = run_agent(action_run)
+      action_run.update!(status: "completed", output: { "result" => result.to_s }, finished_at: Time.current)
+    rescue StandardError => error
+      action_run.update!(status: "failed", error: error.message, finished_at: Time.current)
+    end
+
+    def run_agent(action_run)
       step_action = action_run.step_action
       action      = step_action.action
-
-      action_run.update!(status: "running", started_at: Time.current)
-
-      params = (action.params || {}).merge(step_action.params || {})
-      agent  = build_agent(action, params)
-
-      input_text = action_run.input.to_json
-      result     = agent.ask(input_text)
-
-      action_run.update!(
-        status: "completed",
-        output: { "result" => result.to_s },
-        finished_at: Time.current
-      )
-    rescue StandardError => e
-      action_run.update!(status: "failed", error: e.message, finished_at: Time.current)
+      params      = (action.params || {}).merge(step_action.params || {})
+      agent       = build_agent(action, params)
+      agent.ask(action_run.input.to_json)
     end
 
     def build_agent(action, _params)
+      model  = action.model
+      tools  = action.tools
+      prompt = action.prompt
+
       agent = action.agent_class.constantize.new
-
-      agent = agent.with_model(action.model) if action.model.present?
-      agent = agent.with_tools(*action.tools) if action.tools.present?
-
-      if action.prompt.present?
-        agent.chat.with_instructions(action.prompt)
-      end
-
+      agent = agent.with_model(model) if model.present?
+      agent = agent.with_tools(*tools) if tools.present?
+      agent.chat.with_instructions(prompt) if prompt.present?
       agent
     end
   end

@@ -1,0 +1,26 @@
+module Pipeline
+  class ApplicationsWorkflow
+    @model: String
+    @logger: Pipeline::Logger
+    @date: Date
+
+    def initialize: (model: String, logger: Pipeline::Logger, ?date: String | Date) -> void
+    def run: () -> Hash[String, untyped]
+    def step1_fetch_emails: () -> Array[Hash[String, untyped]]
+    def step2_classify_email: (emails: Array[untyped]) -> untyped
+    def step3_filter_emails: (emails: Array[untyped], tags: Array[untyped]) -> untyped
+    def step4_map_emails: (emails: Array[untyped]) -> untyped
+    def step5_store_mapped_emails: (emails: Array[untyped]) -> untyped
+    def step6_normalize_stored_emails: (?emails: Array[untyped]) -> untyped
+    def step7_reconcile_emails_to_interviews: (?emails: Array[untyped]) -> untyped
+    def step8_upload_csv_gist: (gist_id: String) -> untyped
+
+    private
+
+    def filter_emails: (Array[Hash[String, untyped]] all_emails) -> Array[Hash[String, untyped]]
+    def results_from: (untyped response) -> Array[untyped]
+    def map_and_store: (Array[Hash[String, untyped]] filtered_emails) -> Array[Hash[String, untyped]]?
+    def finalize: (Array[Hash[String, untyped]] saved_emails) -> untyped
+    def fetch_from_providers: () -> Array[Hash[String, untyped]]
+  end
+end

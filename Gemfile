@@ -51,6 +51,7 @@ group :development do
   gem "rubocop-rspec", require: false
   gem "rubocop-rspec_rails", require: false
   gem "rubocop-on-rbs", require: false
+  gem "steep", require: false
   gem "ruby-lsp"
 end
 

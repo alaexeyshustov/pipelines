@@ -32,13 +32,12 @@ module Orchestration
     end
 
     def step_action_params
-      parsed = params.require(:orchestration_step_action).permit(:action_id, :params)
-      if parsed[:params].present?
-        parsed[:params] = JSON.parse(parsed[:params])
-      end
-      parsed
+      permitted = params.require(:orchestration_step_action).permit(:action_id, :params)
+      raw = permitted[:params]
+      permitted[:params] = JSON.parse(raw) if raw.present?
+      permitted
     rescue JSON::ParserError
-      params.require(:orchestration_step_action).permit(:action_id, :params)
+      permitted
     end
   end
 end

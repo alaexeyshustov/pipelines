@@ -17,6 +17,8 @@ module Interviews
     end
 
     def call
+      return Result.new(ok: false, message: "Gist ID is required.") if @gist_id.blank?
+
       token = ENV["GITHUB_TOKEN"]
       return Result.new(ok: false, message: "GITHUB_TOKEN is not configured.") if token.blank?
 

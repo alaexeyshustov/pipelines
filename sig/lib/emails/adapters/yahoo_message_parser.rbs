@@ -1,0 +1,8 @@
+module Emails
+  module Adapters
+    class YahooMessageParser
+      def initialize: (Integer uid, Mail::Message mail, String mailbox) -> void
+      def to_h: () -> Emails::Adapters::BaseAdapter::message
+    end
+  end
+end

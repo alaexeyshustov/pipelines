@@ -25,8 +25,6 @@ module Records
         If not, create it using create_label tool.
 
       2. Call add_labels to label the email in its provider:
-         - If provider is "gmail": use label_ids [<label>]
-         - If provider is "yahoo": use label_ids ["\\Flagged"]
          If add_labels fails, skip labeling but continue processing.
 
       3. Store a new row in the <table> with the mapped data using insert_rows.

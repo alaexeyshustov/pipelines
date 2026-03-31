@@ -1,0 +1,12 @@
+module Emails
+  module Adapters
+    class GmailMessageParser
+      def initialize: (Google::Apis::GmailV1::Message message) -> void
+      def to_h: () -> Emails::Adapters::BaseAdapter::message
+
+      private
+
+      def header_value: (Array[Google::Apis::GmailV1::MessagePartHeader] headers, String name) -> String?
+    end
+  end
+end

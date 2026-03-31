@@ -16,17 +16,20 @@ module Interviews
     end
 
     def call
+      return Result.new(ok: false, message: "No records selected.") if @ids.blank? && ids_needed?
+
+      count = @ids&.size || 0
       case @batch_action
       when "delete"
         Interview.where(id: @ids).destroy_all
-        Result.new(ok: true, message: "Deleted #{@ids.size} record(s).")
+        Result.new(ok: true, message: "Deleted #{count} record(s).")
       when "export"
         Result.new(ok: true, csv: Interviews::CsvExportService.new(ids: @ids).call)
       when "merge"
-        return Result.new(ok: false, message: "Select at least 2 records to merge.") if @ids.size < 2
+        return Result.new(ok: false, message: "Select at least 2 records to merge.") if count < 2
 
         merge_records
-        Result.new(ok: true, message: "Merged #{@ids.size} record(s) into one.")
+        Result.new(ok: true, message: "Merged #{count} record(s) into one.")
       else
         Result.new(ok: false, message: "Unknown batch action.")
       end
@@ -35,16 +38,11 @@ module Interviews
     private
 
     def merge_records
-      records = Interview.where(id: @ids).order(:applied_at)
-      target  = records.first
-      others  = records.where.not(id: target.id)
-
-      dates = records.flat_map { |r|
-        [ r.first_interview_at, r.second_interview_at,
-          r.third_interview_at, r.fourth_interview_at ]
-      }.compact.uniq.sort
-
-      best_status = records.map(&:status).max_by { |s| STATUS_PRIORITY.index(s) || 0 }
+      records     = Interview.where(id: @ids).order(:applied_at)
+      target      = records.first
+      others      = records.where.not(id: target.id)
+      dates       = collect_dates(records)
+      best_status = records.map(&:status).max_by { |status| STATUS_PRIORITY.index(status) || 0 }
 
       target.update!(
         status:               best_status,
@@ -54,6 +52,17 @@ module Interviews
         fourth_interview_at:  dates[3]
       )
       others.destroy_all
+    end
+
+    def collect_dates(records)
+      records.flat_map { |rec|
+        [ rec.first_interview_at, rec.second_interview_at,
+          rec.third_interview_at, rec.fourth_interview_at ]
+      }.compact.uniq.sort
+    end
+
+    def ids_needed?
+      @batch_action != "export"
     end
   end
 end

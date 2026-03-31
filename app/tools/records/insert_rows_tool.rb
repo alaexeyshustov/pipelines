@@ -16,48 +16,51 @@ module Records
       parsed_data = safe_parse_data(data)
       return parsed_data if parsed_data[:status] != "success"
 
-      records   = parsed_data[:records]
-      results = { ids: [], duplicate: [], invalids: [] }
-
-      records.each do |row|
-        attrs = row.is_a?(Hash) ? row.transform_keys(&:to_s).slice(*model::COLUMN_NAMES) : {}
-        next if attrs.empty?
-        result = insert_record(model, attrs)
-        result.keys.each { |k| results[k] << result[k] }
-      end
-
+      results = collect_results(parsed_data[:records], model)
       { status: "rows_added" }.merge(results).merge(rows_added: results[:ids].size)
-    rescue ModelNotFound => e
-      { status: "insert_failed", error: e.message }
+    rescue ModelNotFound => error
+      { status: "insert_failed", error: error.message }
     end
 
     private
 
+    def collect_results(records, model)
+      results = { ids: [], duplicate: [], invalids: [] }
+      records.each do |row|
+        attrs = row.is_a?(Hash) ? row.transform_keys(&:to_s).slice(*model::COLUMN_NAMES) : {}
+        next if attrs.empty?
+        result = insert_record(model, attrs)
+        result.keys.each { |key| results[key] << result[key] }
+      end
+      results
+    end
+
     def insert_record(model, attrs)
       record = model.create!(attrs)
       { ids: record.id }
-    rescue ActiveRecord::RecordInvalid => e
-      if (dup_id = find_duplicate_id(model, attrs))
-        { duplicate: { existing_id: dup_id } }
-      else
-        { invalids: e.message }
-      end
-    rescue ActiveRecord::RecordNotUnique
-      { duplicate: { existing_id: find_duplicate_id(model, attrs) } }
+    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => error
+      dup_id = find_duplicate_id(model, attrs)
+      return { duplicate: { existing_id: dup_id } } if dup_id
+
+      error.is_a?(ActiveRecord::RecordInvalid) ? { invalids: error.message } : { invalids: "Unique constraint violated" }
     end
 
     def find_duplicate_id(model, attrs)
-      model.validators.each do |v|
-        next unless v.is_a?(ActiveRecord::Validations::UniquenessValidator)
-
-        key_cols = (v.attributes.map(&:to_s) + Array(v.options[:scope]).map(&:to_s))
-        key_attrs = key_cols.index_with { |k| attrs[k] }.compact
-        next if key_attrs.size < key_cols.size
-
-        record = model.find_by(key_attrs)
-        return record.id if record
-      end
+      model.validators
+           .select { |v| v.is_a?(ActiveRecord::Validations::UniquenessValidator) }
+           .each do |validator|
+             record = find_by_validator(validator, attrs, model)
+             return record.id if record
+           end
       nil
+    end
+
+    def find_by_validator(validator, attrs, model)
+      key_cols  = (validator.attributes.map(&:to_s) + Array(validator.options[:scope]).map(&:to_s))
+      key_attrs = key_cols.index_with { |col| attrs[col] }.compact
+      return nil if key_attrs.size < key_cols.size
+
+      model.find_by(key_attrs)
     end
 
     def safe_parse_data(data)
@@ -65,8 +68,8 @@ module Records
       raise ArgumentError, "data must be a JSON array of objects" unless records.is_a?(Array)
 
       { status: "success", records: records }
-    rescue JSON::ParserError => e
-      { status: "invalid_data", error: "Failed to parse JSON data: #{e.message}" }
+    rescue JSON::ParserError => error
+      { status: "invalid_data", error: "Failed to parse JSON data: #{error.message}" }
     end
   end
 end

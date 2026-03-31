@@ -1,0 +1,16 @@
+module Emails
+  module Adapters
+    class ImapBodyParser
+      def self.decode_header: (untyped? value) -> String?
+
+      def initialize: (untyped mail) -> void
+      def body: () -> String
+
+      private
+
+      def extract_body: (untyped mail) -> String
+      def decode_part: (untyped? part) -> String
+      def strip_html: (String html) -> String
+    end
+  end
+end

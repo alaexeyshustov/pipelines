@@ -1,0 +1,15 @@
+module Emails
+  module Adapters
+    class ImapSearchCriteria
+      IMAP_DATE_FORMAT: String
+
+      def initialize: (?query: String?, ?flagged: bool?, ?after_date: Date?, ?before_date: Date?) -> void
+      def build: () -> Array[String]
+
+      private
+
+      def parse_query_criteria: (String query) -> Array[String]
+      def imap_date: (String date_str) -> String
+    end
+  end
+end

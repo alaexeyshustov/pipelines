@@ -1,6 +1,6 @@
 module Interviews
   class CsvExportService
-    def initialize: (ids: untyped) -> void
+    def initialize: (ids: Array[String] | Array[Integer]) -> void
     def call: () -> String
   end
 end

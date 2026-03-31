@@ -1,268 +1,184 @@
 module Emails
   module Adapters
     class YahooAdapter < BaseAdapter
-      IMAP_DATE_FORMAT = "%d-%b-%Y"
-
-      def self.setup(**_opts)
-        # TODO: add steps for yahho UI
+      def self.setup(**_kwargs)
+        puts "Yahoo setup:"
+        puts "1. Sign in to your Yahoo account and go to Account Security settings."
+        puts "2. Generate an app password for 'Mail' and 'Other device'."
+        puts "3. Set YAHOO_USERNAME to your Yahoo email and YAHOO_APP_PASSWORD to the generated password in your environment variables."
+        puts "4. Run `bin/cli test` to test the connection."
       end
 
-      def self.test_connection(**_opts)
-        connection = from_env(**_opts)
+      def self.test_connection(**kwargs)
+        connection = from_env(**kwargs)
         connection.list_messages(max_results: 1)
         puts "✓ Yahoo Mail connection successful"
-      rescue StandardError => e
-        puts "ERROR: Yahoo Mail connection failed - #{e.message}"
+      rescue StandardError => error
+        puts "ERROR: Yahoo Mail connection failed - #{error.message}"
       end
 
-      def self.reset(**_opts)
-        token_path = Rails.root.join("token.yaml").to_s
-        if File.exist?(token_path)
-          File.delete(token_path)
-          puts "✓ Token deleted: #{token_path}"
-        else
-          puts "✓ No token found at #{token_path} (already clean)"
-        end
-      end
+      def self.from_env(
+        username: ENV["YAHOO_USERNAME"],
+        password: ENV["YAHOO_APP_PASSWORD"],
+        host:     ENV.fetch("YAHOO_IMAP_HOST", "imap.mail.yahoo.com"),
+        port:     ENV.fetch("YAHOO_IMAP_PORT", "993").to_i
+      )
+        raise "Missing Yahoo credentials. Please set YAHOO_USERNAME and YAHOO_APP_PASSWORD environment variables." unless username && password
 
-
-      def self.from_env(username: nil, password: nil, host: nil, port: nil)
-        yahoo_user = username || ENV["YAHOO_USERNAME"]
-        yahoo_pass = password || ENV["YAHOO_APP_PASSWORD"]
-
-        unless yahoo_user && yahoo_pass
-          raise "Missing Yahoo credentials. Please set YAHOO_USERNAME and YAHOO_APP_PASSWORD environment variables."
-        end
-
-        self.new(
-          host:     host || ENV.fetch("YAHOO_IMAP_HOST", "imap.mail.yahoo.com"),
-          port:     port || ENV.fetch("YAHOO_IMAP_PORT", "993").to_i,
-          username: yahoo_user,
-          password: yahoo_pass
-        )
+        new(host:, port:, username:, password:)
       end
 
       def initialize(host:, port:, username:, password:)
-        @host     = host
-        @port     = port
-        @username = username
-        @password = password
-        @mutex    = Mutex.new
+        @imap_config     = { host:, port:, username:, password: }
+        @mutex           = Mutex.new
+        @imap            = nil
         @current_mailbox = nil
-        connect!
       end
 
-      def at_exit
-        disconnect
+      def on_exit
+        return unless @imap
+
+        @imap&.logout rescue nil
+        @imap&.disconnect rescue nil
+      rescue StandardError
+        nil
+      ensure
+        @imap = nil
       end
 
-      def list_messages(mailbox: "INBOX", max_results: 10, query: nil, flagged: nil,
-                        after_date: nil, before_date: nil, offset: 0, label: nil)
+      def search_messages(query, max_results: 100, offset: 0, label: nil)
+        mailbox = build_mailbox(label)
+
         with_lock do
           ensure_mailbox(mailbox)
-          criteria = build_search_criteria(query: query, flagged: flagged, after_date: after_date, before_date: before_date)
-          uids = @imap.uid_search(criteria).sort.reverse
+          criteria = ImapSearchCriteria.new(query: query).build
+          uids = imap.uid_search(criteria).sort.reverse
           uids = uids[offset, max_results] || []
-          uids.filter_map { |uid| (mail = fetch(uid, mailbox)) && parse_message(uid, mail, mailbox) }
+          uids.map { |uid| list_message(uid, mailbox) }.compact
         end
       end
 
-      def get_message(uid, mailbox: "INBOX")
+      def list_messages(max_results: 100, after_date: nil, before_date: nil, offset: 0, label: nil)
+        mailbox = build_mailbox(label)
+
         with_lock do
           ensure_mailbox(mailbox)
-          mail = fetch(uid, mailbox, full: true)
-          parse_message(uid, mail, mailbox).merge(body: extract_body(mail))
+          criteria = ImapSearchCriteria.new(after_date: after_date, before_date: before_date).build
+          uids = imap.uid_search(criteria).sort.reverse
+          uids = uids[offset, max_results] || []
+          uids.map { |uid| list_message(uid, mailbox) }.compact
         end
       end
 
-      def search_messages(query, max_results: 10, mailbox: "INBOX")
-        list_messages(mailbox: mailbox, max_results: max_results, query: query)
-      end
+      def get_message(message_id, label: nil)
+        uid     = message_id.to_i
+        mailbox = build_mailbox(label)
 
-      def get_labels(**_ignored)
-        get_folders.map do |folder|
-          { id: folder[:name], name: folder[:name], type: (folder[:attributes]&.first || "user").to_s }
+        with_lock do
+          ensure_mailbox(mailbox)
+          mail = parse_mail(uid, FULL_FIELDS)
+          return { id: message_id, error: "Message not found" } unless mail
+
+          YahooMessageParser.new(uid, mail, mailbox).to_h.merge(body: ImapBodyParser.new(mail).body)
         end
       end
 
-      def get_unread_count(mailbox: "INBOX")
-        with_lock { @imap.status(mailbox, [ "UNSEEN" ])["UNSEEN"] || 0 }
+      def get_labels
+        @labels ||= with_lock do
+          (imap.list("", "*") || []).map do |mb|
+            fname = mb.name
+            { id: fname, name: fname, type: (Array(mb.attr).map(&:to_s).first || "user") }
+          end
+        end
       end
 
-      def create_label(name:, **_opts)
-        with_lock { @imap.create(name) }
+      def get_unread_count
+        with_lock { imap.status("INBOX", [ "UNSEEN" ])["UNSEEN"] || 0 }
+      end
+
+      def create_label(name:)
+        with_lock { imap.create(name) }
         { id: name, name: name, type: "user" }
-      rescue Net::IMAP::NoResponseError => e
-        raise e unless e.message.include?("CREATE failed - Mailbox exists")
+      rescue Net::IMAP::NoResponseError => error
+        raise error unless error.message.include?("CREATE failed - Mailbox exists")
 
         { id: name, name: name, type: "user" }
       end
 
-      def modify_labels(message_uid, add: [], remove: [], mailbox: "INBOX", **_ignored)
-        result = {}
-        result = tag_email(message_uid.to_i, tags: add,    mailbox: mailbox, action: "add")    unless add.empty?
-        result = tag_email(message_uid.to_i, tags: remove, mailbox: mailbox, action: "remove") unless remove.empty?
-        result
+      def modify_labels(message_uid, add: [], remove: [], source_mailbox: "INBOX")
+        uid = message_uid.to_i
+
+        unless add.empty?
+          with_lock do
+            ensure_mailbox(source_mailbox)
+            add.each { |folder| imap.uid_copy(uid, folder) }
+          end
+        end
+
+        remove.each do |folder|
+          with_lock do
+            ensure_mailbox(folder)
+            imap.uid_store(uid, "+FLAGS", [ :Deleted ])
+            imap.expunge
+          end
+        end
+
+        { uid: uid, added: add, removed: remove }
       end
+
+      HEADER_FIELDS = %w[RFC822.HEADER FLAGS UID].freeze
+      FULL_FIELDS   = %w[RFC822 FLAGS UID].freeze
 
       private
 
-      def connect!
-        @imap = Net::IMAP.new(@host, port: @port, ssl: true)
-        @imap.login(@username, @password)
-        @current_mailbox = nil
-      end
-
-      def disconnect
-        return unless @imap
-
-        @imap.logout rescue nil
-        @imap.disconnect rescue nil
-      rescue StandardError
-        # ignore errors during teardown
-      ensure
-        @imap = nil
+      def imap
+        @imap ||= begin
+          conn = Net::IMAP.new(@imap_config[:host], port: @imap_config[:port], ssl: true)
+          conn.login(@imap_config[:username], @imap_config[:password])
+          @current_mailbox = nil
+          conn
+        end
       end
 
       def ensure_mailbox(mailbox)
         return if @current_mailbox == mailbox
 
-        @imap.select(mailbox)
+        imap.select(mailbox)
         @current_mailbox = mailbox
       end
 
-      def with_reconnect(&block)
-        block.call
-      rescue Net::IMAP::ByeResponseError, IOError, Errno::ECONNRESET, Errno::EPIPE => e
-        $stderr.puts "IMAP connection lost (#{e.class}: #{e.message}), reconnecting..."
-        connect!
-        block.call
+      def with_lock
+        attempts = 0
+        @mutex.synchronize do
+          yield
+        rescue Net::IMAP::ByeResponseError, IOError, Errno::ECONNRESET, Errno::EPIPE => error
+          raise if (attempts += 1) > 1
+          $stderr.puts "IMAP connection lost (#{error.class}: #{error.message}), reconnecting..."
+          @imap = nil
+          retry
+        end
       end
 
-      def with_lock(&block)
-        @mutex.synchronize { with_reconnect(&block) }
-      end
-
-      def fetch(uid, mailbox, full: false)
-        fields = full ? %w[RFC822 FLAGS UID] : %w[RFC822.HEADER FLAGS UID]
-        data   = @imap.uid_fetch(uid, fields)
-        return nil if data.nil? || data.empty?
-
-        attrs = data.first.attr
-        raw   = attrs["RFC822"] || attrs["RFC822.HEADER"]
-        return nil if raw.nil? || raw.empty?
+      def parse_mail(uid, fields)
+        result = imap.uid_fetch(uid, fields)&.first&.attr
+        raw    = result&.values_at("RFC822", "RFC822.HEADER")&.compact&.first
+        return nil if raw.blank?
 
         Mail.new(raw)
-      rescue StandardError => e
-        $stderr.puts "Warning: failed to parse message UID #{uid}: #{e.message}"
+      rescue StandardError => error
+        $stderr.puts "Warning: failed to parse message UID #{uid}: #{error.message}"
         nil
       end
 
-      def parse_message(uid, mail, mailbox)
-        snippet = mail.body.decoded.to_s[0, 200] rescue ""
+      def list_message(uid, mailbox)
+        mail = parse_mail(uid, HEADER_FIELDS)
+        return nil unless mail
 
-        {
-          id:      uid,
-          subject: decode_header(mail.subject) || "(No Subject)",
-          from:    Array(mail.from).join(", ").then { |v| v.empty? ? "Unknown" : v },
-          to:      Array(mail.to).join(", ").then   { |v| v.empty? ? "Unknown" : v },
-          date:    mail.date&.to_s || "Unknown",
-          snippet: snippet,
-          folders: [ mailbox ]
-        }
+        YahooMessageParser.new(uid, mail, mailbox).to_h
       end
 
-      def get_folders
-        with_lock do
-          (@imap.list("", "*") || []).map do |mb|
-            { name: mb.name, delimiter: mb.delim, attributes: Array(mb.attr).map(&:to_s) }
-          end
-        end
-      end
-
-      def tag_email(uid, tags:, mailbox: "INBOX", action: "add")
-        with_lock do
-          ensure_mailbox(mailbox)
-          imap_action = action == "remove" ? "-FLAGS" : "+FLAGS"
-          imap_flags  = tags.map { |tag| tag.start_with?("\\") ? tag[1..].to_sym : tag }
-          @imap.uid_store(uid, imap_action, imap_flags)
-          { uid: uid, action: action, tags: tags, mailbox: mailbox }
-        end
-      rescue Net::IMAP::BadResponseError => e
-        raise e unless e.message.include?("UID STORE Command arguments invalid")
-        { uid: uid, action: action, tags: tags, mailbox: mailbox }
-      end
-
-      def extract_body(mail)
-        # binding.pry
-        if mail.multipart?
-          plain = mail.parts.find { |p| p.mime_type == "text/plain" }
-          return decode_part(plain) if plain
-
-          html = mail.parts.find { |p| p.mime_type == "text/html" }
-          return strip_html(decode_part(html)) if html
-
-          mail.parts.filter_map { |p| extract_body(p) }.reject(&:empty?).join("\n\n")
-        elsif mail.mime_type == "text/html"
-          strip_html(decode_part(mail))
-        else
-          decode_part(mail)
-        end
-      end
-
-      def decode_part(part)
-        return "" unless part
-
-        body = part.respond_to?(:decoded) ? part.decoded : part.body.decoded
-        body.to_s.encode("UTF-8", invalid: :replace, undef: :replace, replace: "?").strip
-      rescue StandardError
-        ""
-      end
-
-      def strip_html(html)
-        html.gsub(/<[^>]+>/, " ").gsub(/\s+/, " ").strip
-      end
-
-      def decode_header(value)
-        return nil if value.nil?
-
-        value.to_s.encode("UTF-8", invalid: :replace, undef: :replace, replace: "?")
-      rescue StandardError
-        value.to_s
-      end
-
-      def build_search_criteria(query: nil, flagged: nil, after_date: nil, before_date: nil)
-        criteria = []
-        criteria += [ "SINCE",  after_date.strftime(IMAP_DATE_FORMAT)  ] if after_date
-        criteria += [ "BEFORE", before_date.strftime(IMAP_DATE_FORMAT) ] if before_date
-        criteria << (flagged ? "FLAGGED" : "UNFLAGGED") unless flagged.nil?
-        criteria += parse_query_criteria(query) if query
-        criteria.empty? ? [ "ALL" ] : criteria
-      end
-
-      def parse_query_criteria(query)
-        criteria   = []
-        bare_words = []
-
-        query.split(/\s+/).each do |token|
-          case token
-          when /\Afrom:(.+)\z/i    then criteria += [ "FROM",    $1 ]
-          when /\Ato:(.+)\z/i      then criteria += [ "TO",      $1 ]
-          when /\Asubject:(.+)\z/i then criteria += [ "SUBJECT", $1 ]
-          when /\Ais:unread\z/i    then criteria << "UNSEEN"
-          when /\Ais:read\z/i      then criteria << "SEEN"
-          when /\Ais:flagged\z/i   then criteria << "FLAGGED"
-          when /\Aafter:(\d{4}[-\/]\d{2}[-\/]\d{2})\z/i
-            criteria += [ "SINCE",  Date.parse($1.tr("/", "-")).strftime(IMAP_DATE_FORMAT) ]
-          when /\Abefore:(\d{4}[-\/]\d{2}[-\/]\d{2})\z/i
-            criteria += [ "BEFORE", Date.parse($1.tr("/", "-")).strftime(IMAP_DATE_FORMAT) ]
-          else
-            bare_words << token
-          end
-        end
-
-        criteria += [ "TEXT", bare_words.join(" ") ] unless bare_words.empty?
-        criteria
+      def build_mailbox(label)
+        label && get_labels.find { |lbl| lbl[:id] == label }&.dig(:name) || "INBOX"
       end
     end
   end

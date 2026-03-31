@@ -37,22 +37,26 @@ RSpec.describe Emails do
 
   describe '.list_messages' do
     it 'delegates to the matching adapter' do
-      allow(adapter).to receive(:list_messages).with(max: 10).and_return([ 'msg1' ])
-      expect(described_class.list_messages('gmail', max: 10)).to eq([ 'msg1' ])
+      allow(adapter).to receive(:list_messages)
+        .with(max_results: 10, after_date: nil, before_date: nil, offset: 0, label: nil)
+        .and_return([ 'msg1' ])
+      expect(described_class.list_messages('gmail', max_results: 10)).to eq([ 'msg1' ])
     end
   end
 
   describe '.get_message' do
     it 'delegates to the matching adapter' do
-      allow(adapter).to receive(:get_message).with('msg_1', format: :full).and_return({ subject: 'Hi' })
-      expect(described_class.get_message('gmail', 'msg_1', format: :full)).to eq({ subject: 'Hi' })
+      allow(adapter).to receive(:get_message).with('msg_1', label: nil).and_return({ subject: 'Hi' })
+      expect(described_class.get_message('gmail', 'msg_1')).to eq({ subject: 'Hi' })
     end
   end
 
   describe '.search_messages' do
     it 'delegates to the matching adapter' do
-      allow(adapter).to receive(:search_messages).with('job offer', max: 5).and_return([ 'msg2' ])
-      expect(described_class.search_messages('gmail', 'job offer', max: 5)).to eq([ 'msg2' ])
+      allow(adapter).to receive(:search_messages)
+        .with('job offer', max_results: 5, offset: 0, label: nil)
+        .and_return([ 'msg2' ])
+      expect(described_class.search_messages('gmail', 'job offer', max_results: 5)).to eq([ 'msg2' ])
     end
   end
 

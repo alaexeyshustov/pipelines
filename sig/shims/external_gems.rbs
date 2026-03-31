@@ -1,0 +1,31 @@
+module Net
+  class IMAP
+  end
+end
+
+module Google
+  module Apis
+    module GmailV1
+      class GmailService
+      end
+
+      class Label
+      end
+
+      class Message
+      end
+
+      class MessagePart
+      end
+
+      class MessagePartBody
+      end
+
+      class MessagePartHeader
+      end
+
+      class ListMessagesResponse
+      end
+    end
+  end
+end

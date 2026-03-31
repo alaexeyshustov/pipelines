@@ -1,0 +1,14 @@
+module Emails
+  module Adapters
+    class GmailBodyExtractor
+      def initialize: (untyped payload) -> void
+      def body: () -> String
+
+      private
+
+      def extract_body: (untyped payload) -> String
+      def collect_parts: (untyped payload, String mime_type) -> Array[String]
+      def decode_body: (String? data) -> String
+    end
+  end
+end

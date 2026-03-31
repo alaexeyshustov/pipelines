@@ -10,7 +10,8 @@ module Orchestration
 
     def set_pipeline: () -> void
     def set_step: () -> void
+    def render_pipeline_show: () -> void
     def step_params: () -> ActionController::Parameters
-    def swap_positions: (Orchestration::Step step_a, Orchestration::Step step_b) -> void
+    def parse_input_mapping: (String? raw) -> untyped
   end
 end

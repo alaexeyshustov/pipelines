@@ -6,7 +6,7 @@ RSpec.describe Emails::GetTool do
   include_context 'with gmail configured'
 
   let(:cache_dir) { described_class::CACHE_DIR }
-  let(:cache_file) { cache_dir.join('gmail_msg_abc_INBOX.json') }
+  let(:cache_file) { cache_dir.join('gmail_msg_abc_.json') }
 
   before do
     FileUtils.rm_f(cache_file)
@@ -58,14 +58,14 @@ RSpec.describe Emails::GetTool do
         )
     end
 
-    after { FileUtils.rm_f(cache_dir.join('gmail_msg_xyz_INBOX.json')) }
+    after { FileUtils.rm_f(cache_dir.join('gmail_msg_xyz_.json')) }
 
     it 'uses separate cache files per provider and message_id' do
       tool.execute(provider: 'gmail', message_id: 'msg_abc')
       tool.execute(provider: 'gmail', message_id: 'msg_xyz')
 
-      expect(cache_dir.join('gmail_msg_abc_INBOX.json')).to exist
-      expect(cache_dir.join('gmail_msg_xyz_INBOX.json')).to exist
+      expect(cache_dir.join('gmail_msg_abc_.json')).to exist
+      expect(cache_dir.join('gmail_msg_xyz_.json')).to exist
     end
   end
 end

@@ -1,0 +1,14 @@
+module Orchestration
+  class PipelineRunner
+    def initialize: (untyped pipeline_run) -> void
+    def call: () -> void
+
+    private
+
+    def run_step: (untyped step, untyped resolved_input) -> Array[untyped]
+    def run_actions_in_parallel: (Array[untyped] action_runs) -> void
+    def execute_action: (untyped action_run) -> void
+    def run_agent: (untyped action_run) -> untyped
+    def build_agent: (untyped action, untyped params) -> untyped
+  end
+end
