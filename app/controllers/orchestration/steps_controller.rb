@@ -3,7 +3,7 @@
 module Orchestration
   class StepsController < ApplicationController
     before_action :set_pipeline
-    before_action :set_step, only: [ :update, :destroy, :move_up, :move_down ]
+    before_action :set_step, only: [ :update, :destroy, :move_up, :move_down, :toggle ]
 
     def create
       steps         = @pipeline.steps
@@ -38,6 +38,11 @@ module Orchestration
     def move_down
       next_step = @pipeline.steps.where("position > ?", @step.position).order(position: :asc).first
       @step.swap_position_with(next_step) if next_step
+      redirect_to orchestration_pipeline_path(@pipeline)
+    end
+
+    def toggle
+      @step.update!(enabled: !@step.enabled)
       redirect_to orchestration_pipeline_path(@pipeline)
     end
 

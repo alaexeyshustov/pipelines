@@ -1,11 +1,11 @@
 module Pipeline
   class ApplicationsWorkflow
     @model: String
-    @logger: Pipeline::Logger
+    @logger: Logger
     @date: Date
 
-    def initialize: (model: String, logger: Pipeline::Logger, ?date: String | Date) -> void
-    def run: () -> Hash[String, untyped]
+    def initialize: (model: String, logger: Logger, ?date: String | Date) -> void
+    def run: () -> Hash[Symbol, untyped]
     def step1_fetch_emails: () -> Array[Hash[String, untyped]]
     def step2_classify_email: (emails: Array[untyped]) -> untyped
     def step3_filter_emails: (emails: Array[untyped], tags: Array[untyped]) -> untyped

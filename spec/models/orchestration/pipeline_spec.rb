@@ -45,6 +45,18 @@ RSpec.describe Orchestration::Pipeline do
     end
   end
 
+  describe 'model field' do
+    it 'defaults model to nil' do
+      pipeline = described_class.new(name: 'My Pipeline')
+      expect(pipeline.model).to be_nil
+    end
+
+    it 'persists a model value' do
+      pipeline = create(:orchestration_pipeline, model: 'mistral-small-latest')
+      expect(pipeline.reload.model).to eq('mistral-small-latest')
+    end
+  end
+
   describe '#next_run_at' do
     it 'returns nil when cron_expression is nil' do
       pipeline = build(:orchestration_pipeline, cron_expression: nil)

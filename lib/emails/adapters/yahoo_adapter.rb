@@ -154,7 +154,8 @@ module Emails
         rescue Net::IMAP::ByeResponseError, IOError, Errno::ECONNRESET, Errno::EPIPE => error
           raise if (attempts += 1) > 1
           $stderr.puts "IMAP connection lost (#{error.class}: #{error.message}), reconnecting..."
-          @imap = nil
+          @imap            = nil
+          @current_mailbox = nil
           retry
         end
       end

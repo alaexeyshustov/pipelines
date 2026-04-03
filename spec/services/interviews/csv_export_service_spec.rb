@@ -31,18 +31,18 @@ RSpec.describe Interviews::CsvExportService do
       expect(rows.first["company"]).to eq("Acme")
     end
 
-    it "exports multiple selected records ordered by company then job_title" do
+    it "exports multiple selected records ordered by applied_at desc" do
       result = described_class.new(ids: [ beta.id, acme.id ]).call
       rows = CSV.parse(result, headers: true)
       expect(rows.size).to eq(2)
-      expect(rows.map { |r| r["company"] }).to eq(%w[Acme Beta])
+      expect(rows.map { |r| r["company"] }).to eq(%w[Beta Acme])
     end
 
     it "exports all records when ids is nil" do
       result = described_class.new(ids: nil).call
       rows = CSV.parse(result, headers: true)
       expect(rows.size).to eq(2)
-      expect(rows.map { |r| r["company"] }).to eq(%w[Acme Beta])
+      expect(rows.map { |r| r["company"] }).to eq(%w[Beta Acme])
     end
 
     it "exports all records when ids is empty" do

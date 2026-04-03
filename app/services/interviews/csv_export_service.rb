@@ -11,7 +11,7 @@ module Interviews
 
     def call
       scope = @ids.present? ? Interview.where(id: @ids) : Interview.all
-      scope = scope.order(:company, :job_title)
+      scope = scope.order(applied_at: :desc)
       CSV.generate(headers: true) do |csv|
         csv << @columns
         scope.each do |interview|

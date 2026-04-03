@@ -10,7 +10,19 @@ RSpec.describe Orchestration::Action do
     it_behaves_like 'requires attribute', :name, :orchestration_action
     it_behaves_like 'requires attribute', :agent_class, :orchestration_action
     it_behaves_like 'rejects invalid attribute value', :agent_class, :orchestration_action, 'NonExistentClass::Whatever'
-    it_behaves_like 'rejects invalid attribute value', :agent_class, :orchestration_action, 'ApplicationRecord'
+
+    it 'accepts a class including Orchestration::Executable' do
+      stub_const('MyExecutable', Class.new { include Orchestration::Executable })
+      action = build(:orchestration_action, agent_class: 'MyExecutable')
+      expect(action).to be_valid
+    end
+
+    it 'rejects a class that is neither an agent nor an executable' do
+      stub_const('RegularClass', Class.new)
+      action = build(:orchestration_action, agent_class: 'RegularClass')
+      expect(action).not_to be_valid
+      expect(action.errors[:agent_class]).to include(/must inherit from RubyLLM::Agent or include Orchestration::Executable/)
+    end
   end
 
   describe 'associations' do

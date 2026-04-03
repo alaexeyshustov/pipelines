@@ -1,0 +1,10 @@
+module Orchestration
+  class QueryExecutor
+    include Orchestration::Executable
+    extend Records::ModelResolver
+
+    def self.call: (Hash[String, untyped] input, ?Hash[String, untyped] params) -> Hash[String, Array[Hash[String, untyped]]]
+
+    def self.dig_path: (Hash[String, untyped] hash, String path) -> untyped
+  end
+end

@@ -1,0 +1,15 @@
+module Orchestration
+  class IngestionExecutor
+    SUPPORTED_OPERATIONS: Array[String]
+
+    include Orchestration::Executable
+
+    def self.call: (Hash[String, untyped] input, ?Hash[String, untyped] params) -> Hash[String, untyped]
+
+    def self.apply_filter_by_ids: (Hash[String, untyped] output, Hash[String, untyped] op) -> Hash[String, untyped]
+    def self.apply_rename: (Hash[String, untyped] output, Hash[String, untyped] op) -> Hash[String, untyped]
+    def self.apply_pick: (Hash[String, untyped] output, Hash[String, untyped] op) -> Hash[String, untyped]
+    def self.apply_merge_by_index: (Hash[String, untyped] output, Hash[String, untyped] op) -> Hash[String, untyped]
+    def self.dig_path: (Hash[String, untyped] hash, String path) -> untyped
+  end
+end

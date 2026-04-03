@@ -40,7 +40,17 @@ module Orchestration
         return
       end
 
-      pipeline_run = runs.create(status: "pending", triggered_by: "manual")
+      initial_input = extract_initial_input
+      if @pipeline.initial_input_schema.present?
+        begin
+          Orchestration::OutputValidator.new(@pipeline.initial_input_schema).validate!(initial_input)
+        rescue Orchestration::OutputValidator::Error => e
+          redirect_to path, alert: e.message
+          return
+        end
+      end
+
+      pipeline_run = runs.create(status: "pending", triggered_by: "manual", initial_input: initial_input)
       if pipeline_run.persisted?
         PipelineRunJob.perform_later(pipeline_run.id)
         redirect_to path, notice: "Pipeline run triggered."
@@ -78,7 +88,13 @@ module Orchestration
     end
 
     def pipeline_params
-      params.require(:orchestration_pipeline).permit(:name, :description, :enabled, :cron_expression)
+      params.require(:orchestration_pipeline).permit(:name, :description, :enabled, :cron_expression, :model)
+    end
+
+    def extract_initial_input
+      return nil if @pipeline.initial_input_schema.blank?
+
+      params[:initial_input].to_unsafe_h.deep_stringify_keys
     end
   end
 end

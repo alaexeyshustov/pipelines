@@ -8,8 +8,9 @@ module Orchestration
       @pipeline_run.update!(status: "running", started_at: Time.current)
 
       previous_outputs = []
+      previous_outputs << { "step_name" => "initial", "output" => @pipeline_run.initial_input } if @pipeline_run.initial_input.present?
 
-      @pipeline_run.pipeline.steps.order(:position).each do |step|
+      @pipeline_run.pipeline.steps.where(enabled: true).order(:position).each do |step|
         resolved_input = InputMappingResolver.new(
           input_mapping: step.input_mapping,
           previous_outputs: previous_outputs
@@ -23,7 +24,7 @@ module Orchestration
           return
         end
 
-        previous_outputs = action_runs.map do |ar|
+        previous_outputs += action_runs.map do |ar|
           { "step_name" => step.name, "output" => ar.output || {} }
         end
       end
@@ -47,7 +48,7 @@ module Orchestration
     end
 
     def run_actions_in_parallel(action_runs)
-      Async do
+      Sync do
         barrier = Async::Barrier.new
         semaphore = Async::Semaphore.new(10, parent: barrier)
 
@@ -61,29 +62,52 @@ module Orchestration
 
     def execute_action(action_run)
       action_run.update!(status: "running", started_at: Time.current)
-      result = run_agent(action_run)
-      action_run.update!(status: "completed", output: { "result" => result.to_s }, finished_at: Time.current)
+      output = run_agent(action_run)
+      validate_output!(action_run.step_action.action, output)
+      action_run.update!(status: "completed", output: output, finished_at: Time.current)
     rescue StandardError => error
       action_run.update!(status: "failed", error: error.message, finished_at: Time.current)
     end
 
     def run_agent(action_run)
-      step_action = action_run.step_action
-      action      = step_action.action
-      params      = (action.params || {}).merge(step_action.params || {})
-      agent       = build_agent(action, params)
-      agent.ask(action_run.input.to_json)
+      action = action_run.step_action.action
+      klass  = action.agent_class.constantize
+      input  = action_run.input
+
+      if klass.ancestors.include?(RubyLLM::Agent)
+        params = (action.params || {}).merge(action_run.step_action.params || {})
+        result = build_agent(action, params).ask(input.to_json)
+        { "result" => parse_content(result.content) }
+      else
+        params = (action.params || {}).merge(action_run.step_action.params || {})
+        klass.call(input, params)
+      end
+    end
+
+    def parse_content(content)
+      return content unless content.is_a?(String)
+
+      JSON.parse(content)
+    rescue JSON::ParserError
+      content
+    end
+
+    def validate_output!(action, output)
+      OutputValidator.new(action.output_schema).validate!(output)
     end
 
     def build_agent(action, _params)
-      model  = action.model
-      tools  = action.tools
-      prompt = action.prompt
+      model        = @pipeline_run.pipeline.model.presence || action.model
+      tools        = action.tools
+      prompt       = action.prompt
+      schema_class = action.schema_class
 
-      agent = action.agent_class.constantize.new
-      agent = agent.with_model(model) if model.present?
-      agent = agent.with_tools(*tools) if tools.present?
-      agent.chat.with_instructions(prompt) if prompt.present?
+      # agent = action.agent_class.constantize.new
+      agent = action.agent_class.constantize.create
+      agent = agent.with_model(model)                    if model.present? && agent.respond_to?(:with_model)
+      agent = agent.with_tools(*tools)                   if tools.present?
+      agent = agent.with_schema(schema_class.constantize) if schema_class.present?
+      agent.chat.with_instructions(prompt)               if prompt.present?
       agent
     end
   end

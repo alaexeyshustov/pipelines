@@ -8,6 +8,9 @@ module Orchestration
     def position=: (Integer?) -> Integer?
     def input_mapping: () -> Hash[String, untyped]?
     def input_mapping=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def enabled: () -> bool
+    def enabled=: (bool) -> bool
+    def enabled?: () -> bool
 
     def swap_position_with: (Orchestration::Step other) -> void
 

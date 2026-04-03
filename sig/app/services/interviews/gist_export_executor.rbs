@@ -1,0 +1,6 @@
+module Interviews
+  class GistExportExecutor
+    include Orchestration::Executable
+    def self.call: (Hash[String, untyped] input, ?Hash[String, untyped] params) -> Hash[String, untyped]
+  end
+end

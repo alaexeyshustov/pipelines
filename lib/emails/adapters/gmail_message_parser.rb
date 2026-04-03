@@ -9,6 +9,7 @@ module Emails
         headers = @message.payload.headers
         {
           id:        @message.id,
+          provider:  "gmail",
           thread_id: @message.thread_id,
           subject:   header_value(headers, "Subject") || "(No Subject)",
           from:      header_value(headers, "From")    || "Unknown",

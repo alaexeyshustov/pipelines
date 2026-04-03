@@ -1,8 +1,10 @@
 module Emails
   module Adapters
     class GmailMessageParser
+      @message: Google::Apis::GmailV1::Message
+
       def initialize: (Google::Apis::GmailV1::Message message) -> void
-      def to_h: () -> Emails::Adapters::BaseAdapter::message
+      def to_h: () -> message
 
       private
 

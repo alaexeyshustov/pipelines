@@ -7,11 +7,11 @@ module Paginable
     class_attribute :paginable_sortable,           default: []
     class_attribute :paginable_per_page,           default: [ 20, 50, 100 ]
     class_attribute :paginable_default_sort,       default: nil
-    class_attribute :paginable_default_direction,  default: :desc
+    class_attribute :paginable_default_direction,  default: "desc"
   end
 
   class_methods do
-    def paginable(sortable: [], per_page: [ 20, 50, 100 ], default_sort: nil, default_direction: :desc)
+    def paginable(sortable: [], per_page: [ 20, 50, 100 ], default_sort: nil, default_direction: "desc")
       self.paginable_sortable          = sortable
       self.paginable_per_page          = per_page
       self.paginable_default_sort      = default_sort
@@ -43,6 +43,10 @@ module Paginable
   end
 
   def resolve_direction(default: :desc)
-    params[:direction] == "asc" ? :asc : default
+    case params[:direction]
+    when "asc"  then :asc
+    when "desc" then :desc
+    else             default.to_sym
+    end
   end
 end

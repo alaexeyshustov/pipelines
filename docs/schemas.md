@@ -105,7 +105,8 @@ An Orchestration pipeline definition.
 | id | INTEGER | NO | autoincrement | PK |
 | name | STRING | NO | — | |
 | description | TEXT | YES | — | |
-| schedule_interval | INTEGER | YES | — | Seconds between scheduled runs |
+| model | STRING | YES | — | Pipeline-level model override; when set, overrides action model and agent default |
+| cron_expression | STRING | YES | — | Standard 5-field cron expression; nil disables scheduled runs |
 | enabled | BOOLEAN | NO | `true` | |
 | created_at | DATETIME | NO | — | |
 | updated_at | DATETIME | NO | — | |
@@ -125,6 +126,7 @@ An ordered step within a pipeline.
 | name | STRING | NO | — | |
 | position | INTEGER | NO | — | Execution order within the pipeline |
 | input_mapping | JSON | YES | — | |
+| enabled | BOOLEAN | NO | `true` | When false, step is skipped during pipeline execution |
 | created_at | DATETIME | NO | — | |
 | updated_at | DATETIME | NO | — | |
 
@@ -148,10 +150,13 @@ A reusable agent configuration.
 | tools | JSON | YES | — | |
 | prompt | TEXT | YES | — | System prompt override |
 | params | JSON | YES | — | |
+| output_schema | JSON | YES | — | JSON Schema subset; validated after each run. `nil` = no validation |
 | created_at | DATETIME | NO | — | |
 | updated_at | DATETIME | NO | — | |
 
 **Associations:** `has_many :step_actions` (`dependent: :restrict_with_error` — cannot delete if referenced)
+
+**Output schema validation:** When `output_schema` is set, `Orchestration::OutputValidator` validates the action run's output after execution. If validation fails, the `ActionRun` is marked `failed` with the error message. Supported JSON Schema keywords: `type` (`object`, `array`, `string`, `number`, `integer`, `boolean`), `properties`, `required`, `items`. For LLM agent actions, the result content is parsed as JSON before storage when the content is valid JSON.
 
 ---
 

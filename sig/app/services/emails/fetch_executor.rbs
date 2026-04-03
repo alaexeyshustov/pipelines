@@ -1,0 +1,12 @@
+module Emails
+  type fetch_result = {
+    'emails' => Array[message],
+  }
+  class FetchExecutor
+    DEFAULT_DATE: String
+    DEFAULT_PROVIDERS: Array[String]
+
+    include Orchestration::Executable
+    def self.call: (Hash[String, untyped] input, ?Hash[String, untyped] params) -> fetch_result
+  end
+end

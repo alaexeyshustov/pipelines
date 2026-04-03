@@ -14,10 +14,13 @@ module Orchestration
       return if agent_class.blank?
 
       klass = agent_class.safe_constantize
-      if klass.nil?
-        errors.add(:agent_class, "must be an existing constant")
-      elsif !klass.ancestors.include?(RubyLLM::Agent)
-        errors.add(:agent_class, "must inherit from RubyLLM::Agent")
+      return errors.add(:agent_class, "must be an existing constant") if klass.nil?
+
+      is_agent      = klass.ancestors.include?(RubyLLM::Agent)
+      is_executable = klass.ancestors.include?(Orchestration::Executable)
+
+      unless is_agent || is_executable
+        errors.add(:agent_class, "must inherit from RubyLLM::Agent or include Orchestration::Executable")
       end
     end
   end

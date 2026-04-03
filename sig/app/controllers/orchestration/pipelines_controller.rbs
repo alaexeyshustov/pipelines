@@ -14,5 +14,6 @@ module Orchestration
 
     def set_pipeline: () -> void
     def pipeline_params: () -> ActionController::Parameters
+    def extract_initial_input: () -> Hash[String, untyped]?
   end
 end

@@ -43,13 +43,13 @@ CREATE INDEX "index_messages_on_role" ON "messages" ("role") /*application='Appl
 CREATE INDEX "index_messages_on_chat_id" ON "messages" ("chat_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_messages_on_model_id" ON "messages" ("model_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_messages_on_tool_call_id" ON "messages" ("tool_call_id") /*application='ApplicationPipeline'*/;
-CREATE TABLE IF NOT EXISTS "steps" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "pipeline_id" integer NOT NULL, "name" varchar NOT NULL, "position" integer NOT NULL, "input_mapping" json, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_bbcf3ea2ee"
+CREATE TABLE IF NOT EXISTS "steps" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "pipeline_id" integer NOT NULL, "name" varchar NOT NULL, "position" integer NOT NULL, "input_mapping" json, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "enabled" boolean DEFAULT TRUE NOT NULL /*application='ApplicationPipeline'*/, CONSTRAINT "fk_rails_bbcf3ea2ee"
 FOREIGN KEY ("pipeline_id")
   REFERENCES "pipelines" ("id")
 );
 CREATE INDEX "index_steps_on_pipeline_id" ON "steps" ("pipeline_id") /*application='ApplicationPipeline'*/;
 CREATE UNIQUE INDEX "index_steps_on_pipeline_id_and_position" ON "steps" ("pipeline_id", "position") /*application='ApplicationPipeline'*/;
-CREATE TABLE IF NOT EXISTS "actions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "agent_class" varchar NOT NULL, "description" text, "model" varchar, "tools" json, "prompt" text, "params" json, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE TABLE IF NOT EXISTS "actions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "agent_class" varchar NOT NULL, "description" text, "model" varchar, "tools" json, "prompt" text, "params" json, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "output_schema" json /*application='ApplicationPipeline'*/, "schema_class" varchar /*application='ApplicationPipeline'*/);
 CREATE TABLE IF NOT EXISTS "step_actions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "step_id" integer NOT NULL, "action_id" integer NOT NULL, "position" integer NOT NULL, "params" json, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_d9cf618a2f"
 FOREIGN KEY ("step_id")
   REFERENCES "steps" ("id")
@@ -60,7 +60,7 @@ FOREIGN KEY ("action_id")
 CREATE INDEX "index_step_actions_on_step_id" ON "step_actions" ("step_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_step_actions_on_action_id" ON "step_actions" ("action_id") /*application='ApplicationPipeline'*/;
 CREATE UNIQUE INDEX "index_step_actions_on_step_id_and_position" ON "step_actions" ("step_id", "position") /*application='ApplicationPipeline'*/;
-CREATE TABLE IF NOT EXISTS "pipeline_runs" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "pipeline_id" integer NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "triggered_by" varchar, "started_at" datetime(6), "finished_at" datetime(6), "error" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_7774d88070"
+CREATE TABLE IF NOT EXISTS "pipeline_runs" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "pipeline_id" integer NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "triggered_by" varchar, "started_at" datetime(6), "finished_at" datetime(6), "error" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "initial_input" json /*application='ApplicationPipeline'*/, CONSTRAINT "fk_rails_7774d88070"
 FOREIGN KEY ("pipeline_id")
   REFERENCES "pipelines" ("id")
 );
@@ -77,9 +77,15 @@ CREATE INDEX "index_action_runs_on_pipeline_run_id" ON "action_runs" ("pipeline_
 CREATE INDEX "index_action_runs_on_step_action_id" ON "action_runs" ("step_action_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_action_runs_on_status" ON "action_runs" ("status") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_pipeline_runs_on_pipeline_id_and_created_at" ON "pipeline_runs" ("pipeline_id", "created_at") /*application='ApplicationPipeline'*/;
-CREATE TABLE IF NOT EXISTS "pipelines" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "description" text, "enabled" boolean DEFAULT TRUE NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "cron_expression" varchar);
+CREATE TABLE IF NOT EXISTS "pipelines" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "description" text, "enabled" boolean DEFAULT TRUE NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "cron_expression" varchar, "model" varchar /*application='ApplicationPipeline'*/, "initial_input_schema" json /*application='ApplicationPipeline'*/);
 CREATE INDEX "index_pipelines_on_enabled_and_cron_expression" ON "pipelines" ("enabled", "cron_expression") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260403000002'),
+('20260403000001'),
+('20260402000004'),
+('20260402000003'),
+('20260402000002'),
+('20260402000001'),
 ('20260330160511'),
 ('20260330154456'),
 ('20260330145327'),

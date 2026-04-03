@@ -30,6 +30,7 @@ Rails.application.routes.draw do
         member do
           patch :move_up
           patch :move_down
+          patch :toggle
         end
         resources :step_actions, only: [ :create, :destroy ]
       end

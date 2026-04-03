@@ -1,6 +1,6 @@
 module Paginable
   module ClassMethods
-    def paginable: (?sortable: Array[String], ?per_page: Array[Integer], ?default_sort: String?, ?default_direction: Symbol) -> void
+    def paginable: (?sortable: Array[String], ?per_page: Array[Integer], ?default_sort: String?, ?default_direction: String) -> void
   end
 
   private

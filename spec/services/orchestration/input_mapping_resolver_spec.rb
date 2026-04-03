@@ -77,5 +77,35 @@ RSpec.describe Orchestration::InputMappingResolver do
         expect(resolver.resolve["last_count"]).to eq(2)
       end
     end
+
+    context 'with a static value' do
+      let(:input_mapping) do
+        {
+          "destination_table"    => { "value" => "application_mails" },
+          "columns_to_normalize" => { "value" => [ "company", "job_title" ] }
+        }
+      end
+
+      it 'returns the literal value without consulting previous_outputs' do
+        result = resolver.resolve
+        expect(result["destination_table"]).to eq("application_mails")
+        expect(result["columns_to_normalize"]).to eq([ "company", "job_title" ])
+      end
+    end
+
+    context 'with a dotted path' do
+      let(:previous_outputs) do
+        [
+          { "step_name" => "store", "output" => { "result" => { "ids" => [ 1, 2, 3 ] } } }
+        ]
+      end
+      let(:input_mapping) do
+        { "stored_ids" => { "from_step" => "store", "path" => "result.ids" } }
+      end
+
+      it 'digs into nested output keys' do
+        expect(resolver.resolve["stored_ids"]).to eq([ 1, 2, 3 ])
+      end
+    end
   end
 end

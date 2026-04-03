@@ -2,11 +2,11 @@ require 'rails_helper'
 
 RSpec.describe Emails::Adapters::GmailBodyExtractor do
   def make_body(data)
-    double('body', data: data)
+    instance_double(Google::Apis::GmailV1::MessagePartBody, data: data)
   end
 
   def make_part(mime_type:, data: nil, parts: nil)
-    double('part',
+    instance_double(Google::Apis::GmailV1::MessagePart,
       mime_type: mime_type,
       body:      make_body(data),
       parts:     parts
@@ -14,7 +14,7 @@ RSpec.describe Emails::Adapters::GmailBodyExtractor do
   end
 
   def make_payload(parts: nil, data: nil)
-    double('payload',
+    instance_double(Google::Apis::GmailV1::MessagePart,
       parts: parts,
       body:  make_body(data)
     )
@@ -59,9 +59,9 @@ RSpec.describe Emails::Adapters::GmailBodyExtractor do
     end
 
     context 'when payload is multipart with multiple text/plain parts' do
-      let(:part1)   { make_part(mime_type: 'text/plain', data: 'First part') }
-      let(:part2)   { make_part(mime_type: 'text/plain', data: 'Second part') }
-      let(:payload) { make_payload(parts: [ part1, part2 ]) }
+      let(:first_part)  { make_part(mime_type: 'text/plain', data: 'First part') }
+      let(:second_part) { make_part(mime_type: 'text/plain', data: 'Second part') }
+      let(:payload)     { make_payload(parts: [ first_part, second_part ]) }
 
       it 'joins all text/plain parts with double newlines' do
         expect(extractor.body).to eq("First part\n\nSecond part")
@@ -72,7 +72,7 @@ RSpec.describe Emails::Adapters::GmailBodyExtractor do
       let(:inner_plain) { make_part(mime_type: 'text/plain', data: 'Nested plain') }
       let(:inner_html)  { make_part(mime_type: 'text/html',  data: '<p>Nested HTML</p>') }
       let(:inner_multipart) do
-        double('inner_multipart',
+        instance_double(Google::Apis::GmailV1::MessagePart,
           mime_type: 'multipart/alternative',
           body:      make_body(nil),
           parts:     [ inner_plain, inner_html ]
@@ -87,7 +87,7 @@ RSpec.describe Emails::Adapters::GmailBodyExtractor do
 
     context 'when multipart payload has only non-text parts' do
       let(:attachment) do
-        double('attachment',
+        instance_double(Google::Apis::GmailV1::MessagePart,
           mime_type: 'application/pdf',
           body:      make_body(nil),
           parts:     nil

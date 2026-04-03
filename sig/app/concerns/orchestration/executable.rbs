@@ -1,0 +1,6 @@
+module Orchestration
+  module Executable
+    # Marker module. Includers must define:
+    #   .call(Hash[String, untyped], ?Hash[String, untyped]) -> Hash[String, untyped]
+  end
+end

@@ -6,10 +6,14 @@ module Orchestration
     def name=: (String?) -> String?
     def description: () -> String?
     def description=: (String?) -> String?
+    def model: () -> String?
+    def model=: (String?) -> String?
     def cron_expression: () -> String?
     def cron_expression=: (String?) -> String?
     def enabled: () -> bool
     def enabled=: (bool) -> bool
+    def initial_input_schema: () -> Hash[String, untyped]?
+    def initial_input_schema=: (Hash[String, untyped]?) -> Hash[String, untyped]?
 
     def next_run_at: (?from: Time) -> Time?
 

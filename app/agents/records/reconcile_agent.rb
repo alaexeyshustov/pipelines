@@ -13,7 +13,14 @@ module Records
       You are a job application lifecycle tracker. Update the <destination_table> records based on <emailsto_reconcile>.
       For each of the given <emailsto_reconcile>.
 
-      Status values: <statuses>
+      Input:
+        {
+          "statuses": ["list", "of", "allowed", "status", "values"],
+          "initial_status"": "The status to set for new records",
+          "destination_table": "The name of the database table for normalization.",
+          "matching_columns": ["list", "of", "columns", "to", "match"] (e.g. ["company", "job_title"]),
+          "emailsto_reconcile": ["list", "of", "columns", "to", "normalize"] (e.g. ["company", "job_title"]),
+        }
 
       Steps:
       2. Read the schema of the <destination_table> to understand its structure.
@@ -28,6 +35,11 @@ module Records
 
           If ALREADY in <destination_table> → update_rows (match on <matching_columns> via
             column_name: "<matching_columns>", then use data to set fields in schema, and update status based on changes
+
+      Date fallback rule:
+        If applied_at is missing or blank for a record, but any other date column is set
+        (e.g. rejected_at, first_interview_at, second_interview_at, etc.), set applied_at
+        to the earliest non-null date among those columns.
 
     INSTRUCTIONS
   end

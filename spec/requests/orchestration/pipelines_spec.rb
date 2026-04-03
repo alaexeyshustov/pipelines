@@ -312,6 +312,45 @@ RSpec.describe "Orchestration::Pipelines" do
   end
 
   describe "POST /orchestration/pipelines/:id/run" do
+    context "when the pipeline has an initial_input_schema" do
+      let(:schema) do
+        { "type" => "object", "required" => [ "date", "providers" ],
+          "properties" => {
+            "date"      => { "type" => "string" },
+            "providers" => { "type" => "array" }
+          } }
+      end
+      let(:pipeline) { create(:orchestration_pipeline, initial_input_schema: schema) }
+
+      it "stores initial_input on the created PipelineRun" do
+        allow(PipelineRunJob).to receive(:perform_later)
+        post run_orchestration_pipeline_path(pipeline), params: {
+          initial_input: { "date" => "2026-04-03", "providers" => [ "gmail" ] }
+        }
+        expect(Orchestration::PipelineRun.last.initial_input).to eq({ "date" => "2026-04-03", "providers" => [ "gmail" ] })
+      end
+
+      it "redirects with alert when initial_input is missing required fields" do
+        post run_orchestration_pipeline_path(pipeline), params: {
+          initial_input: { "date" => "2026-04-03" }
+        }
+        expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
+        follow_redirect!
+        expect(response.body).to include("missing required key")
+      end
+    end
+
+    context "when the pipeline has no initial_input_schema" do
+      it "creates a run ignoring any initial_input param" do
+        pipeline = create(:orchestration_pipeline)
+        allow(PipelineRunJob).to receive(:perform_later)
+        post run_orchestration_pipeline_path(pipeline), params: {
+          initial_input: { "anything" => "value" }
+        }
+        expect(Orchestration::PipelineRun.last.initial_input).to be_nil
+      end
+    end
+
     it "creates a PipelineRun with status pending and triggered_by manual" do
       pipeline = create(:orchestration_pipeline)
       allow(PipelineRunJob).to receive(:perform_later)

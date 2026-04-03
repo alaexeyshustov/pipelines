@@ -19,13 +19,15 @@ module Orchestration
 
     def resolve_explicit
       @input_mapping.transform_values do |spec|
+        next spec["value"] if spec.key?("value")
+
         step_name = spec["from_step"]
         path      = spec["path"]
         merge     = spec["merge"]
 
         values = @previous_outputs
           .select { |e| e["step_name"] == step_name }
-          .filter_map { |e| e.dig("output", path) }
+          .filter_map { |e| e.dig("output", *path.split(".")) }
 
         apply_merge(values, merge)
       end

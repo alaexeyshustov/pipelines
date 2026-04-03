@@ -1,7 +1,7 @@
 module Records
   class InsertRowsTool < RubyLLM::Tool
     def name: () -> String
-    def execute: (table: String, data: String) -> { status: String, rows_added: Integer, ids: Array[Integer], duplicate: Array[{ existing_id: Integer? }], invalid: Array[String] }
+    def execute: (table: String, data: String) -> { status: String, rows_added: Integer, ids: Array[Integer], duplicate: Array[{ existing_id: Integer? }], invalids: Array[String] }
 
     private
 
