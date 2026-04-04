@@ -2,7 +2,8 @@
 
 module ApplicationMails
   class BatchService
-    Result = Data.define(:ok, :message) do
+    Result = Data.define(:ok, :message)
+    class Result
       def ok? = ok
     end
 

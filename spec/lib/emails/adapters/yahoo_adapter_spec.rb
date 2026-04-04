@@ -206,7 +206,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     it 'returns uid, added, and removed' do
       result = adapter.modify_labels(101, add: [ 'job-applications' ], remove: [ 'archive' ])
 
-      expect(result).to eq(uid: 101, added: [ 'job-applications' ], removed: [ 'archive' ])
+      expect(result).to eq(message_id: 101, added: [ 'job-applications' ], removed: [ 'archive' ])
     end
   end
 

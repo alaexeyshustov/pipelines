@@ -3,7 +3,7 @@ module Orchestration
     Error: singleton(StandardError)
 
     def initialize: (Hash[String, untyped]? schema) -> void
-    def validate!: (untyped output) -> void
+    def validate!: (Hash[String, untyped] output) -> void
 
     private
 

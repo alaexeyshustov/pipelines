@@ -12,7 +12,7 @@ module Orchestration
         type = op.fetch("type")
         raise ArgumentError, "unknown operation type: #{type}" unless SUPPORTED_OPERATIONS.include?(type)
 
-        result = send(:"apply_#{type}", acc, op)
+        result = execute_operation(acc, op)
         acc.replace(result)
       end
     end
@@ -20,46 +20,60 @@ module Orchestration
     class << self
       private
 
+      def execute_operation(output, op)
+        case op.fetch("type")
+        when "filter_by_ids" then apply_filter_by_ids(output, op)
+        when "rename"        then apply_rename(output, op)
+        when "pick"          then apply_pick(output, op)
+        when "merge_by_index" then apply_merge_by_index(output, op)
+        end
+      end
+
       def apply_filter_by_ids(output, op)
         source   = op.fetch("source")
         ids_from = op.fetch("ids_from")
         dest     = op.fetch("output")
 
-        allowed_ids = dig_path(output, ids_from).then { |v| Array(v) }.map { |item| item["id"].to_s }.to_set
-        filtered    = Array(output.fetch(source, [])).select { |item| allowed_ids.include?(item["id"].to_s) }
+        id_items    = Array(dig_path(output, ids_from))
+        allowed_ids = id_items.filter_map { |item| item_id(item) }.to_set
+
+        source_items = Array(dig_path(output, source))
+        filtered     = source_items.select { |item| (id = item_id(item)) && allowed_ids.include?(id) }
 
         output.merge(dest => filtered)
       end
 
       def dig_path(hash, path)
-        keys = path.split(".")
-        keys.reduce(hash) { |acc, key| acc.is_a?(Hash) ? acc[key] : nil }
+        hash.dig(*path.split("."))
+      end
+
+      def item_id(item)
+        item.is_a?(Hash) ? item["id"].to_s : nil
       end
 
       def apply_rename(output, op)
-        from = op.fetch("from")
-        to   = op.fetch("to")
+        from = op.fetch("from").to_s
+        to   = op.fetch("to").to_s
 
         output.transform_keys { |k| k == from ? to : k }
       end
 
       def apply_pick(output, op)
-        keys = op.fetch("keys")
+        keys = Array(op.fetch("keys"))
         output.slice(*keys)
       end
 
       def apply_merge_by_index(output, op)
-        source  = op.fetch("source")
-        ids_key = op.fetch("ids")
-        inject  = op.fetch("inject")
-        dest    = op.fetch("output")
+        source  = op.fetch("source").to_s
+        ids_key = op.fetch("ids").to_s
+        inject  = op.fetch("inject").to_s
+        dest    = op.fetch("output").to_s
 
-        source_arr = Array(output.fetch(source, []))
+        source_arr = Array(output.fetch(source, [])) # : Array[json_object]
         ids_arr    = Array(output.fetch(ids_key, []))
+        count      = [ source_arr.size, ids_arr.size ].min
 
-        merged = source_arr.zip(ids_arr).take([ source_arr.length, ids_arr.length ].min).map do |item, id|
-          { inject => id }.merge(item)
-        end
+        merged = source_arr.first(count).map.with_index { |item, i| { inject => ids_arr[i] }.merge(item) }
 
         output.merge(dest => merged)
       end

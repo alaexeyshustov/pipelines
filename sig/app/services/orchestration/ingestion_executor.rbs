@@ -2,14 +2,16 @@ module Orchestration
   class IngestionExecutor
     SUPPORTED_OPERATIONS: Array[String]
 
-    include Orchestration::Executable
+    include Executable
 
-    def self.call: (Hash[String, untyped] input, ?Hash[String, untyped] params) -> Hash[String, untyped]
+    def self.call: (json_object input, ?Hash[String, untyped] params) -> Hash[String, untyped]
 
-    def self.apply_filter_by_ids: (Hash[String, untyped] output, Hash[String, untyped] op) -> Hash[String, untyped]
-    def self.apply_rename: (Hash[String, untyped] output, Hash[String, untyped] op) -> Hash[String, untyped]
-    def self.apply_pick: (Hash[String, untyped] output, Hash[String, untyped] op) -> Hash[String, untyped]
-    def self.apply_merge_by_index: (Hash[String, untyped] output, Hash[String, untyped] op) -> Hash[String, untyped]
-    def self.dig_path: (Hash[String, untyped] hash, String path) -> untyped
+    def self.execute_operation: (json_object output, Hash[String, untyped] op) -> untyped
+    def self.apply_filter_by_ids: (json_object output, Hash[String, untyped] op) -> Hash[String, untyped]
+    def self.apply_rename: (json_object output, Hash[String, untyped] op) -> json_object
+    def self.apply_pick: (json_object output, Hash[String, untyped] op) -> json_object
+    def self.apply_merge_by_index: (json_object output, Hash[String, untyped] op) -> json_object
+    def self.dig_path: (json_object hash, String path) -> json_object_value
+    def self.item_id: (json_object_value item) -> String?
   end
 end

@@ -1,8 +1,15 @@
 module RubyLLM
   class Agent
+    def self.create: () -> instance
+
+    def with_model: (String model) -> self
+    def with_schema: (untyped schema) -> self
+    def ask: (String prompt) -> untyped
   end
 
   class Tool
+    def self.description: (String desc) -> void
+    def self.param: (Symbol name, ?type: Symbol, ?desc: String, ?required: bool) -> void
   end
 
   class Schema

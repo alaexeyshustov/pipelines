@@ -1,31 +1,124 @@
+class TCPServer
+  def initialize: (String host, Integer port) -> void
+                | (Integer port) -> void
+  def addr: () -> Array[untyped]
+end
+
 module Net
   class IMAP
+    class MailboxData
+      def name: () -> String
+      def attr: () -> Array[untyped]
+    end
+
+    class FetchData
+      def attr: () -> Hash[String, untyped]
+    end
+
+    class NoResponseError < StandardError
+    end
+
+    class ByeResponseError < StandardError
+    end
+
+    def initialize: (String host, ?port: Integer, ?ssl: bool | Hash[Symbol, untyped]) -> void
+    def login: (String user, String password) -> untyped
+    def logout: () -> untyped
+    def disconnect: () -> void
+    def select: (String mailbox) -> untyped
+    def uid_search: (Array[untyped] criteria) -> Array[Integer]
+    def uid_fetch: (Integer uid, Array[String] | String fields) -> Array[FetchData]?
+    def uid_copy: (Integer uid, String mailbox) -> untyped
+    def uid_store: (Integer uid, String attr, Array[untyped] flags) -> untyped
+    def expunge: () -> untyped
+    def list: (String refname, String mailbox) -> Array[MailboxData]?
+    def status: (String mailbox, Array[String] attrs) -> untyped
+    def create: (String mailbox_name) -> untyped
   end
 end
 
 module Google
   module Apis
+    class ClientError < StandardError
+    end
+
     module GmailV1
       class GmailService
+        def client_options: () -> untyped
+        def authorization=: (untyped auth) -> void
+        def list_user_messages: (String user_id, *untyped, **untyped) -> ListMessagesResponse?
+        def get_user_message: (String user_id, String message_id, *untyped, **untyped) -> Message?
+        def list_user_labels: (String user_id) -> untyped
+        def get_user_label: (String user_id, String label_id) -> untyped
+        def modify_message: (String user_id, String message_id, ModifyMessageRequest request) -> Message?
+        def create_user_label: (String user_id, Label label) -> Label?
+        def get_user_profile: (String user_id) -> untyped
       end
 
       class Label
+        def initialize: (?name: String?) -> void
+        def name: () -> String?
+        def id: () -> String?
+        def type: () -> String?
       end
 
       class Message
+        def id: () -> String?
+        def payload: () -> MessagePart
+        def label_ids: () -> Array[String]?
+        def snippet: () -> String?
+        def thread_id: () -> String?
       end
 
       class MessagePart
+        def headers: () -> Array[MessagePartHeader]
+        def body: () -> MessagePartBody?
+        def parts: () -> Array[MessagePart]?
+        def mime_type: () -> String?
       end
 
       class MessagePartBody
+        def data: () -> String?
+        def attachment_id: () -> String?
       end
 
       class MessagePartHeader
+        def name: () -> String?
+        def value: () -> String?
       end
 
       class ListMessagesResponse
+        def messages: () -> Array[Message]?
+        def next_page_token: () -> String?
+        def result_size_estimate: () -> Integer?
+      end
+
+      class ModifyMessageRequest
+        def initialize: (?add_label_ids: Array[String]?, ?remove_label_ids: Array[String]?) -> void
       end
     end
   end
+
+  module Auth
+    class ClientId
+      def self.from_file: (String) -> instance
+    end
+
+    class UserAuthorizer
+      def initialize: (ClientId client_id, Array[String] scope, Stores::FileTokenStore token_store, ?legacy_callback_uri: String, ?callback_uri: String, ?code_verifier: String) -> void
+      def get_credentials: (String, ?Array[String]) -> untyped
+      def get_and_store_credentials_from_code: (Hash[Symbol, untyped]) -> untyped
+      def get_authorization_url: (Hash[Symbol, untyped]) -> String
+    end
+
+    module Stores
+      class FileTokenStore
+        def initialize: (file: String) -> void
+      end
+    end
+  end
+end
+
+module JSON
+  def self?.parse: (string source, ?options opts) -> json_object_value
 end

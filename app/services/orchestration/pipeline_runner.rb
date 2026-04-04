@@ -7,7 +7,7 @@ module Orchestration
     def call
       @pipeline_run.update!(status: "running", started_at: Time.current)
 
-      previous_outputs = []
+      previous_outputs = [] # : Array[Orchestration::InputMappingResolver::previous_output_entry]
       previous_outputs << { "step_name" => "initial", "output" => @pipeline_run.initial_input } if @pipeline_run.initial_input.present?
 
       @pipeline_run.pipeline.steps.where(enabled: true).order(:position).each do |step|
@@ -71,9 +71,10 @@ module Orchestration
 
     def run_agent(action_run)
       action = action_run.step_action.action
-      klass  = action.agent_class.constantize
-      input  = action_run.input
+      klass  = action.agent_class&.constantize
+      raise ArgumentError, "Agent class not found: #{action.agent_class}" unless klass
 
+      input  = action_run.input
       if klass.ancestors.include?(RubyLLM::Agent)
         params = (action.params || {}).merge(action_run.step_action.params || {})
         result = build_agent(action, params).ask(input.to_json)
@@ -101,9 +102,11 @@ module Orchestration
       tools        = action.tools
       prompt       = action.prompt
       schema_class = action.schema_class
+      agent_class  = action.agent_class
+      raise ArgumentError, "Agent class not found: #{agent_class}" unless agent_class.present?
 
-      # agent = action.agent_class.constantize.new
-      agent = action.agent_class.constantize.create
+      # agent = agent_class.constantize.new
+      agent = agent_class.constantize.create
       agent = agent.with_model(model)                    if model.present? && agent.respond_to?(:with_model)
       agent = agent.with_tools(*tools)                   if tools.present?
       agent = agent.with_schema(schema_class.constantize) if schema_class.present?

@@ -14,7 +14,9 @@ module Orchestration
     private
 
     def concatenate_all
-      @previous_outputs.reduce({}) { |acc, entry| acc.merge(entry["output"] || {}) }
+      # steep:ignore:start
+      @previous_outputs.reduce({}) { |acc, entry| acc.merge(entry["output"] || {}) } # Ruby::UnannotatedEmptyCollection
+      # steep:ignore:end
     end
 
     def resolve_explicit

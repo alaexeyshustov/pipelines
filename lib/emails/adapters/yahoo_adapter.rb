@@ -77,7 +77,7 @@ module Emails
         with_lock do
           ensure_mailbox(mailbox)
           mail = parse_mail(uid, FULL_FIELDS)
-          return { id: message_id, error: "Message not found" } unless mail
+          raise "Message not found: #{message_id}" unless mail
 
           YahooMessageParser.new(uid, mail, mailbox).to_h.merge(body: ImapBodyParser.new(mail).body)
         end
@@ -123,7 +123,7 @@ module Emails
           end
         end
 
-        { uid: uid, added: add, removed: remove }
+        { message_id: uid, added: add, removed: remove }
       end
 
       HEADER_FIELDS = %w[RFC822.HEADER FLAGS UID].freeze

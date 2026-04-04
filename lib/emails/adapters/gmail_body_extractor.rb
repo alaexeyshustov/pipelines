@@ -36,7 +36,7 @@ module Emails
         return [] unless parts
 
         parts.flat_map do |part|
-          results = []
+          results = [] # : Array[String]
           if part.respond_to?(:mime_type) && part.mime_type == mime_type && (body_data = part.body&.data)
             results << decode_body(body_data)
           end

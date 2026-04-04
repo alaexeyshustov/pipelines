@@ -23,5 +23,6 @@ module Interviews
     def ids_needed?: () -> bool
 
     def merge_records: () -> void
+    def collect_dates: (untyped records) -> Array[String]
   end
 end

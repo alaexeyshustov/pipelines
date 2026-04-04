@@ -21,13 +21,13 @@ module Emails
 
     tcp_server   = TCPServer.new("localhost", 0)
     port         = tcp_server.addr[1]
-    redirect_uri = "http://localhost:#{port}"
+    callback_uri = "http://localhost:#{port}"
 
-    authorizer = Google::Auth::UserAuthorizer.new(client_id, @scope, token_store, redirect_uri)
+    authorizer = Google::Auth::UserAuthorizer.new(client_id, @scope, token_store, callback_uri:)
     creds      = authorizer.get_credentials(USER_ID)
 
     if creds.nil?
-      url = authorizer.get_authorization_url(base_url: redirect_uri)
+      url = authorizer.get_authorization_url(base_url: callback_uri)
       @output.puts "Opening browser for authorization..."
       @output.puts url
       system("open", url, err: File::NULL) || system("xdg-open", url, err: File::NULL)
@@ -45,7 +45,7 @@ module Emails
 
       code  = CGI.unescape(match[1])
       creds = authorizer.get_and_store_credentials_from_code(
-        user_id: USER_ID, code: code, base_url: redirect_uri
+        user_id: USER_ID, code: code, base_url: callback_uri
       )
     else
       tcp_server.close

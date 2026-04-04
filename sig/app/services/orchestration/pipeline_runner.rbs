@@ -1,16 +1,16 @@
 module Orchestration
   class PipelineRunner
-    def initialize: (untyped pipeline_run) -> void
+    def initialize: (PipelineRun pipeline_run) -> void
     def call: () -> void
 
     private
 
-    def run_step: (untyped step, untyped resolved_input) -> Array[untyped]
-    def run_actions_in_parallel: (Array[untyped] action_runs) -> void
-    def execute_action: (untyped action_run) -> void
-    def run_agent: (untyped action_run) -> Hash[String, untyped]
+    def run_step: (Step step, Hash[String, untyped] resolved_input) -> Array[ActionRun]
+    def run_actions_in_parallel: (Array[ActionRun] action_runs) -> void
+    def execute_action: (ActionRun action_run) -> void
+    def run_agent: (ActionRun action_run) -> Hash[String, untyped]
     def parse_content: (String | untyped content) -> untyped
-    def validate_output!: (untyped action, Hash[String, untyped] output) -> void
-    def build_agent: (untyped action, untyped params) -> untyped
+    def validate_output!: (Action action, Hash[String, untyped] output) -> void
+    def build_agent: (Action action, Hash[String, untyped] params) -> untyped
   end
 end

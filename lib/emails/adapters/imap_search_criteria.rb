@@ -11,7 +11,7 @@ module Emails
       end
 
       def build
-        criteria = []
+        criteria = [] # : Array[String]
         criteria += [ "SINCE",  @after_date.strftime(IMAP_DATE_FORMAT)  ] if @after_date
         criteria += [ "BEFORE", @before_date.strftime(IMAP_DATE_FORMAT) ] if @before_date
         criteria << (@flagged ? "FLAGGED" : "UNFLAGGED") unless @flagged.nil?
@@ -22,8 +22,8 @@ module Emails
       private
 
       def parse_query_criteria(query)
-        criteria   = []
-        bare_words = []
+        criteria   = [] # : Array[String]
+        bare_words = [] # : Array[String]
 
         query.split(/\s+/).each do |token|
           case token
@@ -34,9 +34,9 @@ module Emails
           when /\Ais:read\z/i      then criteria << "SEEN"
           when /\Ais:flagged\z/i   then criteria << "FLAGGED"
           when /\Aafter:(\d{4}[-\/]\d{2}[-\/]\d{2})\z/i
-            criteria += [ "SINCE",  imap_date($1) ]
+            criteria += [ "SINCE",  imap_date($1.to_s) ]
           when /\Abefore:(\d{4}[-\/]\d{2}[-\/]\d{2})\z/i
-            criteria += [ "BEFORE", imap_date($1) ]
+            criteria += [ "BEFORE", imap_date($1.to_s) ]
           else
             bare_words << token
           end

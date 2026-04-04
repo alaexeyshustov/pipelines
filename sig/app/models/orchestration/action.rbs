@@ -6,6 +6,8 @@ module Orchestration
     def name=: (String?) -> String?
     def agent_class: () -> String?
     def agent_class=: (String?) -> String?
+    def schema_class: () -> String?
+    def schema_class=: (String?) -> String?
     def description: () -> String?
     def description=: (String?) -> String?
     def model: () -> String?
@@ -16,8 +18,10 @@ module Orchestration
     def prompt=: (String?) -> String?
     def params: () -> Hash[String, untyped]?
     def params=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def output_schema: () -> Hash[String, untyped]?
+    def output_schema=: (Hash[String, untyped]?) -> Hash[String, untyped]?
 
-    def step_actions: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::StepAction]
+    def step_actions: () -> ActiveRecord::Associations::CollectionProxy
 
     private
 

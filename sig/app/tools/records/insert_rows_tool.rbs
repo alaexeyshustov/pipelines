@@ -1,14 +1,16 @@
 module Records
   class InsertRowsTool < RubyLLM::Tool
+    include ModelResolver
+
     def name: () -> String
-    def execute: (table: String, data: String) -> { status: String, rows_added: Integer, ids: Array[Integer], duplicate: Array[{ existing_id: Integer? }], invalids: Array[String] }
+    def execute: (table: String, data: String) -> Hash[Symbol, untyped]
 
     private
 
-    def collect_results: (Array[untyped] records, untyped model) -> { ids: Array[Integer], duplicate: Array[untyped], invalids: Array[untyped] }
-    def insert_record: (untyped model, Hash[String, untyped] attrs) -> Hash[Symbol, untyped]
-    def find_duplicate_id: (untyped model, Hash[String, untyped] attrs) -> Integer?
-    def find_by_validator: (untyped validator, Hash[String, untyped] attrs, untyped model) -> untyped
-    def safe_parse_data: (String data) -> { status: String, records: Array[untyped] }
+    def collect_results: (Array[untyped] records, singleton(ApplicationRecord) model) -> Hash[Symbol, Array[untyped]]
+    def insert_record: (singleton(ApplicationRecord) model, Hash[String, untyped] attrs) -> Hash[Symbol, untyped]
+    def find_duplicate_id: (singleton(ApplicationRecord) model, Hash[String, untyped] attrs) -> Integer?
+    def find_by_validator: (ActiveRecord::Validations::UniquenessValidator validator, Hash[String, untyped] attrs, singleton(ApplicationRecord) model) -> untyped
+    def safe_parse_data: (String data) -> Hash[Symbol, untyped]
   end
 end

@@ -1,6 +1,8 @@
 module Records
   class ReadRowsTool < RubyLLM::Tool
+    include ModelResolver
+
     def name: () -> String
-    def execute: (table: String, ?column_name: String?, ?column_value: String?) -> { headers: Array[String], rows: Array[Hash[String, String?]], row_count: Integer }
+    def execute: (table: String, ?column_name: String?, ?column_value: String?) -> ({ headers: Array[String], rows: Array[Hash[String, String?]], row_count: Integer } | { error: String })
   end
 end

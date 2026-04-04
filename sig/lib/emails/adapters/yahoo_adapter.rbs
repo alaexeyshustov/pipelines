@@ -16,6 +16,8 @@ module Emails
       def self.from_env: (?username: String?, ?password: String?, ?host: String, ?port: Integer) -> YahooAdapter
 
       def initialize: (host: String, port: Integer, username: String, password: String) -> void
+      def get_message: (String | Integer message_id, ?label: String?) -> untyped
+      def modify_labels: (String | Integer message_uid, ?add: Array[String], ?remove: Array[String], ?source_mailbox: String) -> modify_result
 
       private
 

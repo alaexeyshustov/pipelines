@@ -1,0 +1,7 @@
+
+# rubocop:disable RBS/Lint/TopLevelTypeAlias
+type json_value = String | Integer | Float | bool | nil
+type json_array = Array[json_value]
+type json_object = Hash[String, json_value | json_array | json_object]
+type json_object_value = json_value | json_array | json_object
+# rubocop:enable RBS/Lint/TopLevelTypeAlias

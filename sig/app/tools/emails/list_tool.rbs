@@ -4,12 +4,10 @@ module Emails
     def execute: (
       provider: String,
       ?max_results: Integer,
-      ?query: String?,
       ?after_date: String?,
       ?before_date: String?,
       ?offset: Integer,
-      ?label: String?,
-      ?mailbox: String
+      ?label: String?
     ) -> untyped
   end
 end

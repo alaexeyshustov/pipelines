@@ -168,7 +168,7 @@ bundle exec brakeman --no-pager
 bundle exec rubycritic .
 
 # Type signatures
-bundle exec rbs validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**/**/*.rbs
+bundle exec rbs -r optparse validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**/**/*.rbs
 ```
 
 Tests use VCR cassettes for all external API calls — no live network traffic in CI.

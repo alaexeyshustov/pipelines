@@ -1,0 +1,13 @@
+module Emails
+  module Adapters
+    class GmailPaginator
+      def initialize: (Integer max_results, Integer offset) { (Integer page_size, String? page_token) -> Google::Apis::GmailV1::ListMessagesResponse? } -> void
+      def messages: () -> Array[Google::Apis::GmailV1::Message]
+
+      private
+
+      def skip_to_offset: () -> String?
+    end
+  end
+end
+

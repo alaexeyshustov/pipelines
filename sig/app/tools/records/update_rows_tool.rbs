@@ -1,6 +1,8 @@
 module Records
   class UpdateRowsTool < RubyLLM::Tool
+    include ModelResolver
+
     def name: () -> String
-    def execute: (table: String, id: String, data: String) -> { status: String }
+    def execute: (table: String, id: String, data: String) -> { ?error: String, status: String }
   end
 end

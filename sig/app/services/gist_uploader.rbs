@@ -1,0 +1,16 @@
+class GistUploader
+  GITHUB_API: String
+
+  class ApiError < StandardError
+  end
+
+  def self.from_env: (filename: String) -> GistUploader
+
+  def initialize: (token: String, ?gist_id: String?, filename: String) -> void
+  def upload: (String content) -> String?
+
+  private
+
+  def request: (Symbol method, String path, untyped body) -> untyped
+end
+

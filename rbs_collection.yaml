@@ -17,3 +17,11 @@ gems:
   # No RBS definitions available in gem_rbs_collection
   - name: random-formatter
     ignore: true
+  # pagy bundles Relation[T] (1 param) which conflicts with the collection's
+  # activerecord 8.0 that defines Relation with 0 params → GenericParameterMismatchError
+  - name: pagy
+    ignore: true
+#  - name: activerecord
+#    ignore: true
+#  - name: activestorage
+#    ignore: true

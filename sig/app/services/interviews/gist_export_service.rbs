@@ -10,7 +10,7 @@ module Interviews
       def ok?: () -> bool
     end
 
-    def initialize: (ids: Array[String] | Array[Integer], gist_id: String) -> void
+    def initialize: (ids: Array[String] | Array[Integer] | nil, gist_id: String) -> void
     def call: () -> Result
 
     private

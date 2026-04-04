@@ -30,7 +30,7 @@ class GistUploader
 
   def request(method, path, body)
     uri  = URI("#{GITHUB_API}#{path}")
-    http = Net::HTTP.new(uri.host, uri.port)
+    http = Net::HTTP.new(uri.hostname.to_s, uri.port)
     http.use_ssl = true
 
     klass = method == :post ? Net::HTTP::Post : Net::HTTP::Patch

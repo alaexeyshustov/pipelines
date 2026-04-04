@@ -124,7 +124,9 @@ module Emails
       rescue Google::Apis::ClientError => error
         raise error unless error.message.include?("Label name exists or conflicts")
 
+        # steep:ignore:start
         { id: message_id, labels: [] }
+        # steep:ignore:end
       end
 
       def create_label(name:)
@@ -141,7 +143,7 @@ module Emails
       private
 
       def fetch_messages(max_results, offset, &block)
-        GmailPaginator.new(max_results, offset, &block).messages.map { |msg| list_message(msg.id) }.compact
+        GmailPaginator.new(max_results, offset, &block).messages.map { |msg| list_message(msg.id.to_s) }.compact
       end
 
       def find_existing_label(name)
@@ -151,10 +153,12 @@ module Emails
       end
 
       def build_label_ids(label_ids)
+        # steep:ignore:start
         id_map = get_labels.each_with_object({}) do |lbl, map|
           id, name = lbl.values_at(:id, :name)
           map.merge!(id => id, name => id)
         end
+        # steep:ignore:end
         Array.wrap(label_ids).filter_map { |label| id_map[label] }
       end
 

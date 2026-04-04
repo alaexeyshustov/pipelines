@@ -1,13 +1,14 @@
 module Emails
   type message = {
-      id: Integer,
+      id: String | Integer | nil,
       provider: String,
       subject: String,
       from: String,
       to: String,
       date: String,
-      snippet: String,
-      body: String,
+      snippet: String | nil,
+      ?body: String,
+      ?thread_id: String | nil,
       labels: Array[String]
     }
   type label = { id: String, name: String, type: String }
@@ -20,10 +21,10 @@ module Emails
   def self.configure: (**untyped providers_config) -> void
   def self.search_messages: (String provider_name, String query, ?max_results: Integer, ?offset: Integer, ?label: String?) -> Array[message]
   def self.list_messages: (String provider_name, ?max_results: Integer, ?after_date: Date?, ?before_date: Date?, ?offset: Integer, ?label: String?) -> Array[message]
-  def self.get_message: (String provider_name, String | Integer message_id, ?mailbox: String?) -> message
+  def self.get_message: (String provider_name, String | Integer message_id, ?label: String?) -> message
   def self.get_labels: (String provider_name) -> Array[label]
   def self.get_unread_count: (String provider_name) -> Integer
-  def self.modify_labels: (String provider_name, String message_id, ?add: Array[String], ?remove: Array[String], ?mailbox: String?) -> modify_result
+  def self.modify_labels: (String provider_name, String message_id, ?add: Array[String], ?remove: Array[String]) -> modify_result
   def self.create_label: (String provider_name, name: String) -> label
 
   def self.registry: () -> ProviderRegistry

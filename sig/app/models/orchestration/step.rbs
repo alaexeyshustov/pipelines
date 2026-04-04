@@ -12,13 +12,13 @@ module Orchestration
     def enabled=: (bool) -> bool
     def enabled?: () -> bool
 
-    def swap_position_with: (Orchestration::Step other) -> void
+    def swap_position_with: (Step other) -> void
 
-    def self.derive_status: (Array[Orchestration::ActionRun] action_runs) -> String
+    def self.derive_status: (Array[ActionRun] action_runs) -> String
 
-    def pipeline: () -> Orchestration::Pipeline
-    def pipeline=: (Orchestration::Pipeline) -> Orchestration::Pipeline
-    def step_actions: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::StepAction]
-    def actions: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::Action]
+    def pipeline: () -> Pipeline
+    def pipeline=: (Pipeline) -> Pipeline
+    def step_actions: () -> ActiveRecord::Associations::CollectionProxy
+    def actions: () -> ActiveRecord::Associations::CollectionProxy
   end
 end

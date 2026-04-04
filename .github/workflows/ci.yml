@@ -38,7 +38,7 @@ jobs:
         run: bundle exec rbs collection install
 
       - name: Validate RBS signatures
-        run: bundle exec rbs validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**/**/*.rbs
+        run: bundle exec rbs  -r optparse validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**/**/*.rbs
 
       - name: Run Steep
         run: bundle exec steep check

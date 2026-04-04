@@ -7,7 +7,8 @@ module Interviews
   class GistExportService
     GITHUB_API_URI = "https://api.github.com"
 
-    Result = Data.define(:ok, :message) do
+    Result = Data.define(:ok, :message)
+    class Result
       def ok? = ok
     end
 
@@ -28,7 +29,7 @@ module Interviews
       if response.is_a?(Net::HTTPSuccess)
         Result.new(ok: true, message: "Interviews exported to gist #{@gist_id}.")
       else
-        body    = JSON.parse(response.body) rescue {}
+        body    = JSON.parse(response.body) rescue {} # : Hash[String, untyped]
         message = body["message"] || "GitHub API error (#{response.code})."
         Result.new(ok: false, message: message)
       end
@@ -38,7 +39,7 @@ module Interviews
 
     def patch_gist(token, csv_content)
       uri  = URI("#{GITHUB_API_URI}/gists/#{@gist_id}")
-      http = Net::HTTP.new(uri.host, uri.port)
+      http = Net::HTTP.new(uri.hostname.to_s, uri.port)
       http.use_ssl = true
 
       request = Net::HTTP::Patch.new(uri)

@@ -2,7 +2,8 @@
 
 module Interviews
   class BatchService
-    Result = Data.define(:ok, :message, :csv) do
+    Result = Data.define(:ok, :message, :csv)
+    class Result
       def initialize(ok:, message: nil, csv: nil) = super
       def ok? = ok
       def csv? = !csv.nil?

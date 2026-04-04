@@ -1,7 +1,9 @@
 module Records
   class SearchSimilarTool < RubyLLM::Tool
+    include ModelResolver
+
     def name: () -> String
-    def execute: (table: String, column: String, value: String) -> { matches: Array[{ value: String, ids: Array[Integer] }] }
+    def execute: (table: String, column: String, value: String) -> (Hash[Symbol, Array[Hash[Symbol, String | Array[Integer]]]] | { error: String })
 
     private
 

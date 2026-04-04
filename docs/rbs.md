@@ -21,7 +21,7 @@ sig/lib/emails/adapters/ ← BaseAdapter, GmailAdapter, YahooAdapter
 - When you **delete a method or class**: remove its declaration from the `.rbs`.
 - When you **rename** anything: update both the `.rb` and the `.rbs` together.
 
-Run `bundle exec rbs validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**/**/*.rbs` after any signature edit to confirm syntax is valid.
+Run `bundle exec rbs -r optparse validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**/**/*.rbs` after any signature edit to confirm syntax is valid.
 
 **Typing conventions used in this project:**
 

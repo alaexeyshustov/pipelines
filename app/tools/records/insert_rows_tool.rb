@@ -25,9 +25,11 @@ module Records
     private
 
     def collect_results(records, model)
-      results = { ids: [], duplicate: [], invalids: [] }
+      # steep:ignore:start
+      results = { ids: [], duplicate: [], invalids: [] } # Ruby::UnannotatedEmptyCollection
+      # steep:ignore:end
       records.each do |row|
-        attrs = row.is_a?(Hash) ? row.transform_keys(&:to_s).slice(*model::COLUMN_NAMES) : {}
+        attrs = row.is_a?(Hash) ? row.transform_keys(&:to_s).slice(*model::COLUMN_NAMES) : {} # : Hash[String, untyped]
         next if attrs.empty?
         result = insert_record(model, attrs)
         result.keys.each { |key| results[key] << result[key] }
@@ -56,7 +58,8 @@ module Records
     end
 
     def find_by_validator(validator, attrs, model)
-      key_cols  = (validator.attributes.map(&:to_s) + Array(validator.options[:scope]).map(&:to_s))
+      scope_opt = validator.options[:scope] # : Array[String] | String | Symbol
+      key_cols  = (validator.attributes.map(&:to_s) + Array(scope_opt).map(&:to_s))
       key_attrs = key_cols.index_with { |col| attrs[col] }.compact
       return nil if key_attrs.size < key_cols.size
 

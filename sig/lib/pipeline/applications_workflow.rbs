@@ -17,6 +17,7 @@ module Pipeline
 
     private
 
+    def step1: (provider: String, after: Date, before: Date) -> untyped
     def filter_emails: (Array[Hash[String, untyped]] all_emails) -> Array[Hash[String, untyped]]
     def results_from: (untyped response) -> Array[untyped]
     def map_and_store: (Array[Hash[String, untyped]] filtered_emails) -> Array[Hash[String, untyped]]?

@@ -20,7 +20,9 @@ module Orchestration
         columns ? attrs.slice(*columns) : attrs
       end
 
+      # steep:ignore:start
       { table => rows }
+      # steep:ignore:end
     rescue Records::ModelNotFound => error
       raise ArgumentError, error.message
     end
@@ -29,7 +31,7 @@ module Orchestration
       private
 
       def dig_path(hash, path)
-        path.split(".").reduce(hash) { |acc, key| acc.is_a?(Hash) ? acc[key] : nil }
+        hash.dig(*path.split("."))
       end
     end
   end

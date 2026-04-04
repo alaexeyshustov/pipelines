@@ -1,2 +1,8 @@
 class ApplicationRecord < ActiveRecord::Base
+  COLUMN_NAMES: Array[String]
+
+  def self.where: (*untyped) -> untyped
+  def self.create!: (*untyped) -> instance
+
+  def id: () -> Integer
 end

@@ -13,7 +13,8 @@ module Emails
         adapter_class = PROVIDERS.fetch(name) do
           raise ArgumentError, "Unknown provider '#{name}'. Available: #{PROVIDERS.keys.join(', ')}"
         end
-        @provider_registry.register(name, adapter_class.from_env(**(config || {})))
+        # @type var config: Hash[Symbol, untyped]
+        @provider_registry.register(name, adapter_class.from_env(**config))
       end
     end
 

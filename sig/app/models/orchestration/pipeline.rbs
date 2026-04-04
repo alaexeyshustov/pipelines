@@ -17,8 +17,8 @@ module Orchestration
 
     def next_run_at: (?from: Time) -> Time?
 
-    def steps: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::Step]
-    def pipeline_runs: () -> ActiveRecord::Associations::CollectionProxy[Orchestration::PipelineRun]
+    def steps: () -> ActiveRecord::Associations::CollectionProxy
+    def pipeline_runs: () -> ActiveRecord::Associations::CollectionProxy
 
     private
 

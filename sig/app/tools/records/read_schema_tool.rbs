@@ -1,6 +1,8 @@
 module Records
   class ReadSchemaTool < RubyLLM::Tool
+    include ModelResolver
+
     def name: () -> String
-    def execute: (table: String) -> { headers: Array[String] }
+    def execute: (table: String) -> ({ headers: Array[String] } | { error: String })
   end
 end

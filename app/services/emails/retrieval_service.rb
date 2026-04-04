@@ -9,7 +9,7 @@ module Emails
     end
 
     def call
-      emails = []
+      emails = [] # : Array[Hash[String, String]]
       offset = 0
 
       loop do

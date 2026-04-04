@@ -1,6 +1,8 @@
 module Emails
   class GetTool < RubyLLM::Tool
+    CACHE_DIR: Pathname
+
     def name: () -> String
-    def execute: (provider: String, message_id: String, ?mailbox: String) -> untyped
+    def execute: (provider: String, message_id: String, ?label: String?) -> untyped
   end
 end

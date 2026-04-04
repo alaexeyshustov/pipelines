@@ -43,6 +43,7 @@ module Pipeline
 
     def step3_filter_emails(emails:, tags:)
       tags_by_id = tags.index_by { |tag| tag["id"] }
+      # steep:ignore:start
       input = {
         topic: "job applications",
         emails: emails.map { |email|
@@ -50,6 +51,7 @@ module Pipeline
           email
         }
       }.to_json
+      # steep:ignore:end
 
       Emails::FilterAgent.create.with_model(@model).ask(input).content
     end
