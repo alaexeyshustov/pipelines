@@ -1,10 +1,10 @@
 # Application Pipeline
 
-A Rails 8.1 multi-agent pipeline that pulls emails from Gmail and Yahoo Mail, classifies them with an LLM, labels them in the provider, and maintains a local SQLite database of job applications and interview progress.
+A Rails 8.1 multi-agent pipeline management system. Integration with Gmail and Yahoo Mail, classifies them with an LLM, labels them in the provider, and maintains a local SQLite database of job applications and interview progress.
 
 ## Stack
 
-- **Ruby 4.0 / Rails 8.1** — API + web UI
+- **Ruby 4.0 / Rails 8.1**
 - **SQLite** + **sqlite-vec** — persistence and vector embeddings
 - **RubyLLM** — multi-provider LLM client (Mistral, OpenAI, Gemini, Anthropic)
 - **Async** — concurrent email fetching

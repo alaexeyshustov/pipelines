@@ -25,8 +25,9 @@ Run `bundle exec rbs -r optparse validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**
 
 **Typing conventions used in this project:**
 
-- Use `untyped` for RubyLLM / ActiveRecord meta-programmed return values that cannot be expressed statically.
+- Prefer not using `untyped` unless necessary.
+- Only use `untyped` for RubyLLM / ActiveRecord meta-programmed return values that cannot be expressed statically.
 - Tool `execute` methods return `untyped` unless the return shape is fully known.
-- Agent subclasses have minimal `.rbs` bodies (just `class Foo < RubyLLM::Agent; end`) because all behaviour is declared via DSL macros.
+- Agent subclasses have minimal `.rbs` bodies (just `class Foo < RubyLLM::Agent; end`) because all behavior is declared via DSL macros.
 - Hash shapes with known keys use inline literal types: `{ status: String, rows_added: Integer }`.
 - Prefer named type aliases (`type foo_result = ...`) over anonymous hashes when a shape is shared or complex.

@@ -2,8 +2,11 @@ Rails 8.1 / Ruby 4.0 application that runs a **multi-agent job-application track
 
 - Use TDD for new features and refactoring.
 - Use rubycritic for refactoring.
-- Testing Framework: RSpec (No Shoulda Matchers), VCR cassettes to stub API calls.
+- Testing Framework: RSpec, FactoryBot, VCR.
 - Use .rbs type signatures [rbs.md](docs/rbs.md). **After every code change, always update or create the matching `.rbs` file under `sig/` mirroring the source path.**
 - Schema Definition (keep synchronized) [schemas.md](docs/schemas.md)
 - Mutation testing: `bundle exec rake mutant:baseline` for a full-codebase baseline run. CI reports score for changed files only (`--since origin/main`). Target: 50%. Subjects configured in `.mutant.yml`.
+- Use .claude/rules for components-specific rules.
 - **Hard-won discoveries:** If something took significant effort to figure out (non-obvious gotcha, tricky integration, surprising behavior), add a brief note about it here so future agents don't repeat the work.
+  - **Secondary effects after structural changes (dev only):** After running `rails db:migrate`, `rails db:schema:load`, or `rails db:reset`, always: (1) restart the Rails server to clear stale attribute reflection caches, and (2) run `Rails.cache.clear` in the Rails console. Skipping this causes "unknown attribute" errors and broken UI. 
+  - **If you edited `db/seeds.rb` during the task (dev only):** run `rails db:seed` before finishing — modals and pipeline steps won't appear otherwise.
