@@ -29,10 +29,10 @@ module PipelineCLI
 
       def call(pipeline:, model:, watch:, log_level: "info", log_file: nil, date: Date.today, **)
         pipeline_class = case pipeline.downcase
-                         when "jobs"
-                           Pipeline::JobsWorkflow
+                         when "applications", "jobs"
+                           Pipeline::ApplicationsWorkflow
                          when 'test'
-                           Pipeline::TestWorkflow
+                           Pipeline::ApplicationsWorkflow # or define a proper test workflow
                          else
                            raise ArgumentError, "Unknown pipeline: #{pipeline}"
                          end

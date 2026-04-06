@@ -10,6 +10,8 @@ A Rails 8.1 multi-agent pipeline management system. Integration with Gmail and Y
 - **Async** — concurrent email fetching
 - **dry-cli** — CLI interface
 - **Falcon** — web server (replaces Puma due to Ruby 4.0 compatibility)
+- **AASM** — state management for interviews
+- **Tailwind CSS** + **Turbo** + **Stimulus** — frontend stack
 
 ---
 
@@ -123,15 +125,17 @@ bin/pipeline upload_gist --filename=jobs.csv
 ## How the pipeline works
 
 ```
-Step 1  InitDatabaseAgent        Read existing email IDs and latest date from DB
-Step 2  EmailFetchAgent          Fetch emails from Gmail + Yahoo concurrently (Async)
-Step 3  ClassifyAndFilterAgent   Filter down to job-related emails via LLM
-Step 4  LabelAndStoreAgent       Apply provider labels + write to application_mails
-                                 (batches of 15, concurrent)
-Step 5  ReconcileInterviewsAgent Update the interviews table from new application_mails
+Step 1  Fetch emails              Fetch emails from Gmail + Yahoo concurrently (Async)
+Step 2  Classify emails           Categorize emails as job-related or not
+Step 3  Filter emails             Filter to relevant job applications
+Step 4  Map emails                Extract structured data from filtered emails
+Step 5  Store mapped emails       Save emails to application_mails table
+Step 6  Normalize stored emails   Clean up company and job title fields
+Step 7  Reconcile to interviews   Update or create entries in the interviews table
+Step 8  Upload CSV to Gist        Export the interviews table to GitHub (if GIST_ID set)
 ```
 
-Rate limiting is handled automatically: after 2 consecutive 429s the workflow switches to the next model in the pool.
+Rate limiting is handled automatically within the workflow logic.
 
 ---
 
@@ -140,14 +144,18 @@ Rate limiting is handled automatically: after 2 consecutive 429s the workflow sw
 Start the server:
 
 ```bash
-bundle exec falcon serve   # or: bin/rails server
+bin/rails server
+# or: bundle exec falcon serve
 ```
 
 | Route | Description |
 |---|---|
-| `GET /` | Chat history list (paginated, 20/page) |
+| `GET /` | Chat history list |
 | `GET /chats/:id` | Chat detail — messages, tool calls, thinking tokens |
-| `GET /orchestration/actions` | Manage pipeline actions |
+| `GET /application_mails` | View all stored application emails |
+| `GET /interviews` | Track company/role status and progress |
+| `GET /orchestration/pipelines` | Configure and run automated pipelines |
+| `GET /orchestration/actions` | Manage atomic pipeline actions |
 | `GET /up` | Health check |
 
 ---
@@ -155,8 +163,14 @@ bundle exec falcon serve   # or: bin/rails server
 ## Development
 
 ```bash
+# Setup
+bin/setup
+
 # Lint
 bundle exec rubocop --parallel
+
+# Type checks
+bundle exec steep check
 
 # Tests
 bundle exec rspec
@@ -164,11 +178,8 @@ bundle exec rspec
 # Security scan
 bundle exec brakeman --no-pager
 
-# Code quality (score target: 90+)
+# Code quality
 bundle exec rubycritic .
-
-# Type signatures
-bundle exec rbs -r optparse validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**/**/*.rbs
 ```
 
 Tests use VCR cassettes for all external API calls — no live network traffic in CI.
@@ -184,24 +195,29 @@ app/
     interview.rb                 Company/role tracker
     email_vector.rb              Vector embedding wrapper (sqlite-vec)
     orchestration/               Pipeline, Step, Action, and run models
-    chat.rb / message.rb /       LLM conversation history (RubyLLM)
+    chat.rb / message.rb         LLM conversation history (RubyLLM)
     tool_call.rb / model.rb
   agents/                        RubyLLM::Agent subclasses
+    emails/                      Classify, Filter, Mapping
+    records/                     Store, Normalize, Reconcile
   tools/                         RubyLLM::Tool implementations
   controllers/
     chats_controller.rb
-    orchestration/actions_controller.rb
+    application_mails_controller.rb
+    interviews_controller.rb
+    orchestration/
+      pipelines_controller.rb
+      actions_controller.rb
 
 lib/
   emails/                        Gmail + Yahoo adapters, OAuth flow
   pipeline/
-    jobs_workflow.rb             Production 5-step workflow
-    test_workflow.rb             Lightweight dev workflow
-    logger.rb                   Stderr + file logger
+    applications_workflow.rb     The main 8-step workflow
+    logger.rb                    Stderr + file logger
 
 bin/pipeline                     CLI entry point (dry-cli)
 docs/
-  schemas.md                     DB schema quick reference (for AI agents)
+  schemas.md                     DB schema quick reference
   rbs.md                         RBS signature conventions
 sig/                             .rbs type signatures
 spec/                            RSpec test suite
