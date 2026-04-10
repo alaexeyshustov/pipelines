@@ -79,8 +79,11 @@ jobs:
       - name: Set up database
         run: bundle exec rails db:schema:load
 
+      - name: Install JS dependencies
+        run: corepack enable pnpm && pnpm install
+
       - name: Build assets
-        run: bundle exec rails tailwindcss:build
+        run: pnpm run build && bundle exec rails tailwindcss:build
 
       - name: Run RSpec
         run: bundle exec rspec

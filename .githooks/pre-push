@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+
+echo "Building JS assets before push..."
+pnpm run build
+
+echo "Building CSS assets before push..."
+bundle exec rails tailwindcss:build
