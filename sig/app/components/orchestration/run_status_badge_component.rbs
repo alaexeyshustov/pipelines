@@ -1,0 +1,7 @@
+module Orchestration
+  class RunStatusBadgeComponent < UI::StatusBadgeComponent
+    STATUS_VARIANTS: Hash[String, Symbol]
+
+    def initialize: (status: String) -> void
+  end
+end

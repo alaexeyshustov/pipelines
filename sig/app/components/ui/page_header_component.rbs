@@ -1,0 +1,12 @@
+module UI
+  class PageHeaderComponent < ViewComponent::Base
+    def initialize: (title: String, ?parent: { label: String, url: String }?, ?notice: String?, ?alert: String?) -> void
+
+    def badge: () -> UI::StatusBadgeComponent?
+    def badge?: () -> bool
+
+    def actions: () -> Array[UI::ActionComponent]
+    def actions?: () -> bool
+  end
+end
+

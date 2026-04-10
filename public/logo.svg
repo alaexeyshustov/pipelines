@@ -1,0 +1,29 @@
+<svg width="76" height="26" viewBox="0 0 76 26" xmlns="http://www.w3.org/2000/svg">
+  <!-- Node 1 — blue -->
+  <circle cx="13" cy="13" r="11" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.4"/>
+  <!-- Envelope icon -->
+  <rect x="7" y="9" width="12" height="9" rx="1.5" fill="none" stroke="#3B82F6" stroke-width="1.2"/>
+  <polyline points="7,10 13,15 19,10" fill="none" stroke="#3B82F6" stroke-width="1.2"/>
+
+  <!-- Arrow 1 -->
+  <line x1="24" y1="13" x2="26" y2="13" stroke="#6366F1" stroke-width="1.3"/>
+  <polygon points="24,11 27,13 24,15" fill="#6366F1"/>
+
+  <!-- Node 2 — indigo -->
+  <circle cx="38" cy="13" r="11" fill="#EEF2FF" stroke="#6366F1" stroke-width="1.4"/>
+  <!-- Lightning bolt -->
+  <path d="M39.5,5.5 L33,13 L37.5,13 L36.5,20.5 L44,12 L39,12 Z" fill="#6366F1"/>
+
+  <!-- Arrow 2 -->
+  <line x1="49" y1="13" x2="51" y2="13" stroke="#8B5CF6" stroke-width="1.3"/>
+  <polygon points="49,11 52,13 49,15" fill="#8B5CF6"/>
+
+  <!-- Node 3 — purple -->
+  <circle cx="63" cy="13" r="11" fill="#F5F3FF" stroke="#8B5CF6" stroke-width="1.4"/>
+  <!-- Database cylinder -->
+  <ellipse cx="63" cy="9" rx="5" ry="2" fill="none" stroke="#8B5CF6" stroke-width="1.2"/>
+  <line x1="58" y1="9" x2="58" y2="17" stroke="#8B5CF6" stroke-width="1.2"/>
+  <line x1="68" y1="9" x2="68" y2="17" stroke="#8B5CF6" stroke-width="1.2"/>
+  <ellipse cx="63" cy="17" rx="5" ry="2" fill="none" stroke="#8B5CF6" stroke-width="1.2"/>
+  <path d="M58,13 Q63,15 68,13" fill="none" stroke="#8B5CF6" stroke-width="1.2"/>
+</svg>

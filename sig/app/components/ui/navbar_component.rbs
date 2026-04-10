@@ -1,0 +1,15 @@
+module UI
+  class NavbarComponent < ViewComponent::Base
+    class NavItem
+      attr_reader name: String
+      attr_reader path: String
+
+      def initialize: (name: String, path: String) -> void
+    end
+
+    def initialize: (current_path: String) -> void
+    def nav_items: () -> Array[NavbarComponent::NavItem]
+    def active?: (String path) -> bool
+  end
+end
+

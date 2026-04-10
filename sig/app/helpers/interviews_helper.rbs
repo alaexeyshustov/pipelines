@@ -1,0 +1,6 @@
+module InterviewsHelper
+  STATUS_BADGE_CLASSES: Hash[String, String]
+
+  def interview_status_badge_class: (String? status) -> String
+end
+

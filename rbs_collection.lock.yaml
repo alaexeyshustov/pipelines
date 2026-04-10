@@ -333,6 +333,10 @@ gems:
     revision: 51d81561ecf995e18b12cd6bba44dba59f0c59ea
     remote: https://github.com/ruby/gem_rbs_collection.git
     repo_dir: gems
+- name: pathname
+  version: '0'
+  source:
+    type: stdlib
 - name: pp
   version: '0'
   source:

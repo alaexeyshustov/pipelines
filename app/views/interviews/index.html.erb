@@ -1,200 +1,51 @@
-<% content_for :title, "Interviews" %>
+<%= render UI::PageHeaderComponent.new(title: "Interviews", notice: notice, alert: alert) %>
 
-<div class="mb-6">
-  <h1 class="text-2xl font-bold text-gray-900">Interviews</h1>
-</div>
+<%= render Interviews::SearchFormComponent.new(
+      url: interviews_path,
+      query: @query,
+      clear_url: interviews_path
+    ) %>
 
-<% if notice.present? %>
-  <div class="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm"><%= notice %></div>
-<% end %>
-
-<% if alert.present? %>
-  <div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-800 rounded-lg text-sm"><%= alert %></div>
-<% end %>
-
-<%= form_with url: interviews_path, method: :get, class: "mb-4" do |f| %>
-  <div class="flex items-center gap-2">
-    <%= f.text_field :q, value: @query, placeholder: "Search by company or job title…",
-          class: "w-72 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" %>
-    <%= f.submit "Search", class: "px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 cursor-pointer" %>
-    <% if @query.present? %>
-      <%= link_to "Clear", interviews_path, class: "text-sm text-gray-500 hover:text-gray-700" %>
-    <% end %>
-  </div>
-<% end %>
-
-<div class="flex items-center gap-3 mb-4">
-  <button type="button" id="select-all-btn"
-          class="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-    Select all
-  </button>
-  <button type="button" onclick="batchSubmit('<%= batch_interviews_path %>', 'delete', 'Delete selected interviews?')"
-          class="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors">
-    Delete
-  </button>
-  <button type="button" onclick="batchSubmit('<%= batch_interviews_path %>', 'merge', 'Merge selected interviews into one?')"
-          class="px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors">
-    Merge
-  </button>
-  <button type="button" onclick="batchSubmit('<%= batch_interviews_path %>', 'export', null, false)"
-          class="px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors">
-    Export CSV
-  </button>
-  <button type="button" onclick="openGistModal()"
-          class="px-3 py-1.5 text-xs font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 transition-colors">
-    Export to Gist
-  </button>
-
-  <div class="ml-auto flex items-center gap-2 text-xs text-gray-500">
-    <span>Per page:</span>
-    <% @per_page_options.each do |n| %>
-      <%= link_to n, interviews_path(sort: @sort, direction: @direction, per_page: n),
-            class: "px-2 py-1 rounded border #{@pagy.limit == n ? 'bg-gray-200 border-gray-400 font-semibold text-gray-800' : 'border-gray-300 hover:bg-gray-50 text-gray-600'}" %>
-    <% end %>
-  </div>
-</div>
-
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-  <table class="w-full text-sm">
-    <thead class="bg-gray-50 border-b border-gray-200">
-      <tr>
-        <th class="px-4 py-3 w-8"></th>
-        <% [["company", "Company"], ["job_title", "Job Title"], ["status", "Status"], ["applied_at", "Applied"]].each do |col, label| %>
-          <% next_dir = (@sort == col && @direction == "desc") ? "asc" : "desc" %>
-          <th class="px-4 py-3 text-left font-medium text-gray-600">
-            <%= link_to interviews_path(sort: col, direction: next_dir, per_page: @pagy.limit),
-                  class: "inline-flex items-center gap-1 hover:text-gray-900 #{@sort == col ? 'text-gray-900' : ''}" do %>
-              <%= label %>
-              <% if @sort == col %>
-                <span class="text-gray-400"><%= @direction == "asc" ? "↑" : "↓" %></span>
-              <% end %>
-            <% end %>
-          </th>
-        <% end %>
-        <th class="px-4 py-3"></th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-100">
-      <% if @interviews.empty? %>
-        <tr>
-          <td colspan="6" class="px-4 py-10 text-center text-gray-400">No interviews found.</td>
-        </tr>
-      <% else %>
-        <% @interviews.each do |interview| %>
-          <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-4 py-3">
-              <input type="checkbox" value="<%= interview.id %>"
-                     class="row-checkbox h-4 w-4 rounded border-gray-300 text-indigo-600 cursor-pointer">
-            </td>
-            <td class="px-4 py-3 font-medium text-gray-900"><%= interview.company %></td>
-            <td class="px-4 py-3 text-gray-600"><%= interview.job_title %></td>
-            <td class="px-4 py-3">
-              <% badge_class = case interview.status
-                when "pending_reply"      then "bg-yellow-50 text-yellow-700"
-                when "having_interviews"  then "bg-blue-50 text-blue-700"
-                when "rejected"           then "bg-red-50 text-red-700"
-                when "offer_received"     then "bg-green-50 text-green-700"
-                else                           "bg-gray-50 text-gray-700"
-                end %>
-              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium <%= badge_class %>">
-                <%= interview.status&.humanize || "—" %>
-              </span>
-            </td>
-            <td class="px-4 py-3 text-gray-500 tabular-nums"><%= interview.applied_at || "—" %></td>
-            <td class="px-4 py-3 text-right flex items-center justify-end gap-3">
-              <%= link_to "View", interview_path(interview), class: "text-gray-500 hover:text-gray-700 font-medium" %>
-              <%= link_to "Edit", edit_interview_path(interview), class: "text-indigo-600 hover:text-indigo-800 font-medium" %>
-              <%= button_to "Delete", interview_path(interview), method: :delete,
-                    form: { data: { turbo_confirm: "Delete this interview record?" } },
-                    class: "text-red-500 hover:text-red-700 font-medium bg-transparent border-0 cursor-pointer p-0" %>
-            </td>
-          </tr>
-        <% end %>
-      <% end %>
-    </tbody>
-  </table>
-</div>
-
-<%== @pagy.series_nav %>
-
-<dialog id="gist-modal" class="rounded-xl shadow-xl border border-gray-200 p-0 backdrop:bg-black/40 w-full max-w-sm">
-  <form method="post" action="<%= export_gist_interviews_path %>" id="gist-export-form">
-    <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
-    <div id="gist-modal-ids"></div>
-    <div class="px-6 py-5">
-      <h2 class="text-base font-semibold text-gray-900 mb-4">Export to GitHub Gist</h2>
+<div data-controller="batch">
+  <%= render UI::TableComponent.new(
+        collection: @interviews,
+        selectable: true,
+        pagy: @pagy,
+        filters: @filters
+      ) do |table| %>
+    <% table.with_batch_actions([
+      { label: "Delete",     url: batch_interviews_path, action: "delete", variant: :danger,     confirm: "Delete selected interviews?" },
+      { label: "Merge",      url: batch_interviews_path, action: "merge",  variant: :secondary,  confirm: "Merge selected interviews into one?" },
+      { label: "Export CSV", url: batch_interviews_path, action: "export", variant: :success, require_selection: false }
+    ]) %>
+    <% table.with_batch_action(
+         type: :dialog,
+         label: "Export to Gist",
+         dialog_title: "Export to GitHub Gist",
+         url: export_gist_interviews_path,
+         action: "export_gist",
+         confirm: "Export",
+         variant: :secondary
+       ) do %>
       <label class="block text-sm text-gray-700 mb-1" for="gist-id-input">Gist ID</label>
       <input type="text" name="gist_id" id="gist-id-input" required
              placeholder="e.g. 6cad326836d38bd3a7ae"
              class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-300 mb-4">
-      <div class="flex justify-end gap-2">
-        <button type="button" onclick="document.getElementById('gist-modal').close()"
-                class="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
-          Cancel
-        </button>
-        <button type="submit"
-                class="px-3 py-1.5 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
-          Export
-        </button>
-      </div>
-    </div>
-  </form>
-</dialog>
-
-<script>
-  document.getElementById("select-all-btn").addEventListener("click", function () {
-    const checkboxes = document.querySelectorAll(".row-checkbox");
-    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-    checkboxes.forEach(cb => cb.checked = !allChecked);
-    this.textContent = allChecked ? "Select all" : "Deselect all";
-  });
-
-  function batchSubmit(url, actionName, confirmMsg, requireSelection = true) {
-    const checked = Array.from(document.querySelectorAll(".row-checkbox:checked"));
-    if (requireSelection && checked.length === 0) {
-      alert("Please select at least one record.");
-      return;
-    }
-    if (confirmMsg && !confirm(confirmMsg)) return;
-
-    const form = document.createElement("form");
-    form.method = "post";
-    form.action = url;
-
-    const csrf = document.createElement("input");
-    csrf.type = "hidden";
-    csrf.name = "authenticity_token";
-    csrf.value = document.querySelector('meta[name="csrf-token"]').content;
-    form.appendChild(csrf);
-
-    const batchAction = document.createElement("input");
-    batchAction.type = "hidden";
-    batchAction.name = "batch_action";
-    batchAction.value = actionName;
-    form.appendChild(batchAction);
-
-    checked.forEach(cb => {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = "ids[]";
-      input.value = cb.value;
-      form.appendChild(input);
-    });
-
-    document.body.appendChild(form);
-    form.submit();
-  }
-
-  function openGistModal() {
-    const container = document.getElementById("gist-modal-ids");
-    container.innerHTML = "";
-    Array.from(document.querySelectorAll(".row-checkbox:checked")).forEach(cb => {
-      const input = document.createElement("input");
-      input.type  = "hidden";
-      input.name  = "ids[]";
-      input.value = cb.value;
-      container.appendChild(input);
-    });
-    document.getElementById("gist-modal").showModal();
-  }
-</script>
+    <% end %>
+    <% table.with_columns([
+      { key: "company",   label: "Company" },
+      { key: "job_title", label: "Job Title" },
+      { key: "status",    label: "Status", badge: Interviews::StatusBadgeComponent },
+      { key: "applied_at", label: "Applied" }
+    ]) %>
+    <% table.with_action_column(
+      actions: ->(interview) {
+        [
+          { label: "View", url: interview_path(interview), variant: :neutral },
+          { label: "Edit", url: edit_interview_path(interview), variant: :primary },
+          { label: "Delete", url: interview_path(interview), method: :delete, variant: :danger, confirm: "Delete this interview record?" }
+        ]
+      }
+    ) %>
+  <% end %>
+</div>

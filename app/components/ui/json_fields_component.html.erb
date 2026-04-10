@@ -1,0 +1,56 @@
+<% fields.each do |field| %>
+  <% field_id = "field_#{field[:name]}" %>
+  <div class="mb-4">
+    <label for="<%= field_id %>" class="<%= UI::JsonFieldsComponent::LABEL_CLASSES %>">
+      <%= field[:name].humanize %>
+      <% if field[:required] %><abbr title="required" class="text-red-500 ml-0.5 no-underline">*</abbr><% end %>
+    </label>
+
+    <% if field[:kind] == :checkboxes %>
+      <div id="<%= field_id %>" class="flex flex-wrap gap-3">
+        <% field[:schema]["items"]["enum"].each do |option| %>
+          <label class="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox"
+                   name="<%= input_name(field[:name], array: true) %>"
+                   value="<%= option %>"
+                   class="<%= UI::JsonFieldsComponent::CHECKBOX_CLASSES %>">
+            <%= option.humanize %>
+          </label>
+        <% end %>
+      </div>
+    <% elsif field[:kind] == :date %>
+      <input id="<%= field_id %>"
+             type="date"
+             name="<%= input_name(field[:name]) %>"
+             class="<%= UI::JsonFieldsComponent::INPUT_CLASSES %>">
+    <% elsif field[:kind] == :select %>
+      <select id="<%= field_id %>"
+              name="<%= input_name(field[:name]) %>"
+              class="<%= UI::JsonFieldsComponent::INPUT_CLASSES %>">
+        <option value="">— select —</option>
+        <% field[:schema]["enum"].each do |option| %>
+          <option value="<%= option %>"><%= option.humanize %></option>
+        <% end %>
+      </select>
+    <% elsif field[:kind] == :boolean %>
+      <div class="flex items-center gap-2 mt-1">
+        <input id="<%= field_id %>"
+               type="checkbox"
+               name="<%= input_name(field[:name]) %>"
+               value="1"
+               class="<%= UI::JsonFieldsComponent::CHECKBOX_CLASSES %>">
+        <span class="text-sm text-gray-600"><%= field[:name].humanize %></span>
+      </div>
+    <% elsif field[:kind] == :number %>
+      <input id="<%= field_id %>"
+             type="number"
+             name="<%= input_name(field[:name]) %>"
+             class="<%= UI::JsonFieldsComponent::INPUT_CLASSES %>">
+    <% else %>
+      <input id="<%= field_id %>"
+             type="text"
+             name="<%= input_name(field[:name]) %>"
+             class="<%= UI::JsonFieldsComponent::INPUT_CLASSES %>">
+    <% end %>
+  </div>
+<% end %>

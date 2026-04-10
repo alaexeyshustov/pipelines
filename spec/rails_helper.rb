@@ -37,6 +37,7 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
+  config.include ViewComponent::TestHelpers, type: :component
 
   config.fixture_paths = [
     Rails.root.join('spec/fixtures')

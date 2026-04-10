@@ -1,0 +1,15 @@
+module Orchestration
+  class StepComponent < ViewComponent::Base
+    def initialize: (step: Step, step_counter: Integer, step_iteration: untyped, pipeline: Pipeline, actions: untyped) -> void
+    def before_render: () -> void
+    def move_up?: () -> bool
+    def move_down?: () -> bool
+    def name_classes: () -> String
+    def toggle_label: () -> String
+    def toggle_button_classes: () -> String
+    def actions_select_options: () -> Array[[String, Integer]]
+    def detach_buttons: () -> Array[UI::DialogComponent]
+    def remove_button: () -> UI::DialogComponent?
+  end
+end
+

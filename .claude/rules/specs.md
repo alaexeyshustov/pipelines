@@ -16,6 +16,7 @@ Tests verify behavior through public interfaces. Prefer realistic data, clear fa
 4. **All failures are your responsibility** – Treat failing specs, even pre-existing ones, as actionable until understood.
 5. **System specs test through the UI** – See the System Specs section below.
 6. **Prefer explicit expectations** – Matcher-heavy one-liners (including many shoulda-style assertions) often hide intent and failure context.
+7. **Do not use `double()`** – Stub external boundaries, not the behavior you are trying to verify. Use real objects or test doubles that mimic real behavior (e.g., `instance_double` with verified methods).
 
 ## Spec Types
 

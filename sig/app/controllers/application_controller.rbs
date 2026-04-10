@@ -1,2 +1,29 @@
 class ApplicationController < ActionController::Base
+  type flash = {
+    notice: String?,
+    alert: String?,
+    error: String?,
+  }
+
+  class Filters
+    attr_reader path: String?
+    attr_reader q: String?
+    attr_reader per_page: String?
+    attr_reader page: String?
+    attr_reader sort: String?
+    attr_reader direction: String?
+    attr_reader per_page_options: Array[Integer]?
+
+    def initialize: (path: String?, q: String?, per_page: String?, page: String?, sort: String?, direction: String?, ?per_page_options: Array[Integer]?) -> void
+
+    def to_full_path: (params: Hash[Symbol, untyped]) -> String
+  end
+
+  @filters: Filters
+
+  private
+
+  def filters: () -> Filters
+
+  def flash_for: () -> flash
 end

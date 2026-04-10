@@ -1,12 +1,5 @@
-<% content_for :title, "New Interview" %>
-
-<div class="mb-6 flex items-center gap-2 text-sm text-gray-500">
-  <%= link_to "Interviews", interviews_path, class: "hover:text-gray-700" %>
-  <span>›</span>
-  <span class="text-gray-900">New Interview</span>
-</div>
+<%= render UI::PageHeaderComponent.new(title: "New Interview", parent: { label: "Interviews", url: interviews_path }) %>
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
-  <h1 class="text-xl font-bold text-gray-900 mb-6">New Interview</h1>
   <%= render "form", interview: @interview %>
 </div>

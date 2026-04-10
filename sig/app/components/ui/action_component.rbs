@@ -1,0 +1,85 @@
+module UI
+  class ActionComponent < ViewComponent::Base
+    type action_type = :link | :button | :delete | :dialog | :raw
+    type action_variant = :primary | :secondary | :neutral | :danger | :success | :ghost
+
+    TYPES: Array[Symbol]
+    VARIANT_CLASSES: Hash[Symbol, String]
+    CONFIRM_VARIANT_CLASSES: Hash[Symbol, String]
+    BASE_CLASSES: String
+    LINK_CLASSES: String
+    BUTTON_CLASSES: String
+    DELETE_CLASSES: String
+
+    def initialize: (
+      ?type: action_type,
+      ?label: String?,
+      ?url: String?,
+      ?confirm: String?,
+      ?method: Symbol?,
+      ?variant: action_variant?,
+      ?dialog_title: String?,
+      ?confirm_label: String?,
+      ?size: :sm | :md,
+      ?body_component: Class?,
+      ?body_options: Hash[Symbol, untyped]
+    ) -> void
+
+    def call: () -> String
+
+    private
+
+    def subcomponent: () -> ViewComponent::Base
+  end
+
+  class ActionComponent::LinkComponent < ViewComponent::Base
+    def initialize: (label: String?, url: String?, ?variant: ActionComponent::action_variant?) -> void
+    def link_classes: () -> String
+  end
+
+  class ActionComponent::ButtonComponent < ViewComponent::Base
+    def initialize: (
+      label: String?,
+      url: String?,
+      ?method: Symbol,
+      ?variant: ActionComponent::action_variant?,
+      ?confirm: String?,
+      ?data: Hash[Symbol | String, untyped]
+    ) -> void
+
+    def button_classes: () -> String
+    def button_data: () -> Hash[Symbol | String, untyped]
+  end
+
+  class ActionComponent::DeleteComponent < ViewComponent::Base
+    def initialize: (label: String?, url: String?, ?confirm: String?) -> void
+    def css_classes: () -> String
+  end
+
+  class ActionComponent::DialogComponent < ViewComponent::Base
+    def initialize: (
+      label: String?,
+      dialog_title: String?,
+      url: String?,
+      ?method: Symbol,
+      ?confirm_label: String,
+      ?variant: ActionComponent::action_variant?,
+      ?size: :sm | :md,
+      ?body_component: Class?,
+      ?body_options: Hash[Symbol, untyped]
+    ) -> void
+
+    def with_body: () { (ActionView::Helpers::FormBuilder) -> void } -> self
+    def body?: () -> bool
+    def render_body: (?ActionView::Helpers::FormBuilder?) -> String
+
+    def trigger_classes: () -> String
+    def cancel_classes: () -> String
+    def confirm_classes: () -> String
+    def dialog_css: () -> String
+  end
+
+  class ActionComponent::RawComponent < ViewComponent::Base
+    def call: () -> String
+  end
+end

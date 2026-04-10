@@ -1,0 +1,10 @@
+<div class="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
+  <%= form_with url: orchestration_pipeline_steps_path(@pipeline), method: :post,
+                class: "flex items-center gap-2" do |f| %>
+    <%= f.text_field :name, placeholder: "New step name",
+          name: "orchestration_step[name]",
+          class: "flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
+    <%= f.submit "Add Step", class: "px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer" %>
+  <% end %>
+</div>
+

@@ -1,0 +1,65 @@
+<% if selectable? %>
+  <div class="flex items-center gap-3 mb-4">
+    <button type="button"
+            data-batch-target="selectAllBtn"
+            data-action="batch#toggleSelectAll"
+            class="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+      Select all
+    </button>
+
+    <% batch_actions.each do |action| %>
+      <%= action %>
+    <% end %>
+
+    <% if per_page_options %>
+      <div class="ml-auto flex items-center gap-2 text-xs text-gray-500">
+        <span>Per page:</span>
+        <% per_page_options.each do |n| %>
+          <%= link_to n, per_page_url_for(n), class: per_page_link_class(n) %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <% if selectable? %>
+          <th class="px-4 py-3 w-8"></th>
+        <% end %>
+        <% columns.each do |column| %>
+          <%= column %>
+        <% end %>
+        <% if action_column? %>
+          <%= action_column %>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% if empty? %>
+        <tr>
+          <td colspan="<%= total_columns %>" class="px-4 py-10 text-center text-gray-400"><%= @empty_message %></td>
+        </tr>
+      <% else %>
+        <% @collection.each do |record| %>
+          <tr class="hover:bg-gray-50 transition-colors">
+            <% if selectable? %>
+              <td class="px-4 py-3">
+                <input type="checkbox" value="<%= record.id %>"
+                       data-batch-target="checkbox"
+                       class="h-4 w-4 rounded border-gray-300 text-indigo-600 cursor-pointer">
+              </td>
+            <% end %>
+            <% columns.each do |col| %><%= col.render_cell(record) %><% end %>
+            <% if action_column? %><%= action_column.render_cell(record) %><% end %>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+  <% if pagination? %>
+    <%= pagination %>
+  <% end %>
+</div>

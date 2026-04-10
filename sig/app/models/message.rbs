@@ -1,0 +1,13 @@
+class Message < ApplicationRecord
+  COLUMN_NAMES: Array[String]
+  type role = :user | :assistant | :system
+
+  def role: () -> role?
+  def role=: (role?) -> role?
+  def content: () -> String?
+  def content=: (String?) -> String?
+  def chat_id: () -> Integer?
+  def chat_id=: (Integer?) -> Integer?
+  def model_id: () -> Integer?
+  def model_id=: (Integer?) -> Integer?
+end

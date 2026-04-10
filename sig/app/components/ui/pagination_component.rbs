@@ -1,0 +1,7 @@
+module UI
+  class PaginationComponent < ViewComponent::Base
+    def initialize: (pagy: Pagy) -> void
+    def render?: () -> bool
+    def call: () -> ActiveSupport::SafeBuffer
+  end
+end

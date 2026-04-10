@@ -1,0 +1,6 @@
+module Interviews
+  class SearchFormComponent < UI::SearchFormComponent
+    def initialize: (url: String, query: String?, clear_url: String) -> void
+  end
+end
+

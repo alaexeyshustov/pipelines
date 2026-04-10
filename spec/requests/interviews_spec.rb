@@ -19,7 +19,7 @@ RSpec.describe "Interviews" do
     it "returns 200 with empty state" do
       get interviews_path
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("No interviews found")
+      expect(response.body).to include("No records found.")
     end
 
     it "lists existing records" do

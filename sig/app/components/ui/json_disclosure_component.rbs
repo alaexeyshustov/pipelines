@@ -1,0 +1,7 @@
+module UI
+  class JsonDisclosureComponent < ViewComponent::Base
+    def initialize: (label: String, data: untyped) -> void
+    def render?: () -> bool
+    def pretty_json: () -> String
+  end
+end

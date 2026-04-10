@@ -1,0 +1,20 @@
+<div data-controller="dialog">
+  <button type="button" data-action="dialog#open" class="<%= trigger_classes %>">
+    <%= @label %>
+  </button>
+
+  <dialog data-dialog-target="dialog" class="rounded-xl shadow-lg border border-gray-200 p-6 w-full max-w-sm fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 backdrop:bg-black/30">
+    <p class="dialog-title text-sm text-gray-700 mb-6"><%= @dialog_title %></p>
+
+    <% if body? %>
+      <div class="mb-4"><%= body %></div>
+    <% end %>
+
+    <div class="flex justify-end gap-3">
+      <button type="button" data-action="dialog#close" class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+        <%= @cancel_label %>
+      </button>
+      <%= confirm_action %>
+    </div>
+  </dialog>
+</div>

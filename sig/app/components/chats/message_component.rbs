@@ -1,0 +1,16 @@
+module Chats
+  class MessageComponent < ViewComponent::Base
+    ROLE_CONTAINER_CLASSES: Hash[String, String]
+    ROLE_BADGE_CLASSES: Hash[String, String]
+    DEFAULT_CONTAINER_CLASSES: String
+    DEFAULT_BADGE_CLASSES: String
+
+    def initialize: (message: Message) -> void
+    def role_container_classes: () -> String
+    def role_badge_classes: () -> String
+    def formatted_time: () -> String
+    def show_input_tokens?: () -> bool
+    def show_output_tokens?: () -> bool
+    def show_cached_tokens?: () -> bool
+  end
+end

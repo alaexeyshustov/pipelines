@@ -1,0 +1,9 @@
+module Orchestration
+  class StepRunComponent < ViewComponent::Base
+    def initialize: (entry: { step: Step, action_runs: Array[ActionRun], derived_status: String }) -> void
+    def before_render: () -> void
+    def status_badge: () -> RunStatusBadgeComponent?
+    def action_run_items: () -> Array[ActionRunComponent]
+  end
+end
+

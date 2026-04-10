@@ -1,0 +1,36 @@
+<div class="mb-6 bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4" data-testid="run-detail-card">
+  <dl class="grid grid-cols-2 gap-4 sm:grid-cols-4 text-sm">
+    <div>
+      <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Triggered by</dt>
+      <dd class="mt-1 text-gray-900"><%= @run.triggered_by || "—" %></dd>
+    </div>
+    <div>
+      <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Started</dt>
+      <dd class="mt-1 text-gray-900 tabular-nums"><%= formatted_started_at %></dd>
+    </div>
+    <div>
+      <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Finished</dt>
+      <dd class="mt-1 text-gray-900 tabular-nums"><%= formatted_finished_at %></dd>
+    </div>
+    <div>
+      <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</dt>
+      <dd class="mt-1 text-gray-900"><%= duration %></dd>
+    </div>
+  </dl>
+
+  <% if @run.initial_input.present? %>
+    <div class="mt-4">
+      <details>
+        <summary class="text-xs font-medium text-gray-500 cursor-pointer hover:text-gray-700">Initial Input</summary>
+        <pre class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded text-xs font-mono overflow-x-auto"><%= JSON.pretty_generate(@run.initial_input) %></pre>
+      </details>
+    </div>
+  <% end %>
+
+  <% if @run.error.present? %>
+    <div class="mt-4 px-4 py-3 bg-red-50 border border-red-200 text-red-800 rounded-lg text-sm" data-testid="run-error">
+      <%= @run.error %>
+    </div>
+  <% end %>
+</div>
+

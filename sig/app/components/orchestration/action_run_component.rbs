@@ -1,0 +1,13 @@
+module Orchestration
+  class ActionRunComponent < ViewComponent::Base
+    def initialize: (action_run: ActionRun) -> void
+    def before_render: () -> void
+    def action_name: () -> String
+    def formatted_started_at: () -> String?
+    def formatted_finished_at: () -> String?
+    def status_badge: () -> RunStatusBadgeComponent?
+    def input_disclosure: () -> UI::JsonDisclosureComponent?
+    def output_disclosure: () -> UI::JsonDisclosureComponent?
+  end
+end
+

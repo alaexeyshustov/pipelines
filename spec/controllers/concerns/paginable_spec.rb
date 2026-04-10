@@ -19,6 +19,12 @@ RSpec.describe Paginable do
       def params
         @params ||= ActionController::Parameters.new({})
       end
+
+      def initialize
+        @filters = ApplicationController::Filters.new(
+          path: "/items", q: nil, per_page: nil, page: nil, sort: nil, direction: nil
+        )
+      end
     end
   end
 

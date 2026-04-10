@@ -1,0 +1,46 @@
+<div class="rounded-xl border <%= role_container_classes %> overflow-hidden" data-testid="chat-message">
+  <div class="flex items-center justify-between px-4 py-2 border-b <%= role_container_classes %> gap-4">
+    <div class="flex items-center gap-2">
+      <span class="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full <%= role_badge_classes %>" data-testid="message-role">
+        <%= @message.role %>
+      </span>
+      <span class="text-xs text-gray-400">#<%= @message.id %></span>
+    </div>
+    <div class="flex items-center gap-4 text-xs text-gray-400">
+      <% if show_input_tokens? %>
+        <span>in: <%= @message.input_tokens %></span>
+      <% end %>
+      <% if show_output_tokens? %>
+        <span>out: <%= @message.output_tokens %></span>
+      <% end %>
+      <% if show_cached_tokens? %>
+        <span>cached: <%= @message.cached_tokens %></span>
+      <% end %>
+      <span><%= formatted_time %></span>
+    </div>
+  </div>
+
+  <div class="px-4 py-3">
+    <% if @message.thinking_text.present? %>
+      <details class="mb-3 text-xs text-gray-500">
+        <summary class="cursor-pointer hover:text-gray-700 font-medium">Thinking</summary>
+        <pre class="mt-2 whitespace-pre-wrap font-mono text-xs text-gray-600 bg-gray-50 rounded p-3 overflow-x-auto"><%= @message.thinking_text %></pre>
+      </details>
+    <% end %>
+
+    <% if @message.content.present? %>
+      <pre class="whitespace-pre-wrap text-sm text-gray-800 font-sans"><%= @message.content %></pre>
+    <% else %>
+      <span class="text-xs text-gray-400 italic">No text content</span>
+    <% end %>
+  </div>
+
+  <% if @message.tool_calls.any? %>
+    <div class="border-t border-dashed border-gray-200 px-4 py-3 space-y-2">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tool Calls</p>
+      <% @message.tool_calls.each do |tc| %>
+        <%= render UI::JsonDisclosureComponent.new(label: "#{tc.name} · #{tc.tool_call_id}", data: tc.arguments) %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

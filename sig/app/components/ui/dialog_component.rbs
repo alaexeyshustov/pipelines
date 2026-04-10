@@ -1,0 +1,8 @@
+module UI
+  class DialogComponent < ViewComponent::Base
+    VARIANTS: Hash[Symbol, String]
+
+    def initialize: (label: String, dialog_title: String, ?variant: Symbol, ?cancel_label: String, ?button_class: String?) -> void
+    def trigger_classes: () -> String
+  end
+end

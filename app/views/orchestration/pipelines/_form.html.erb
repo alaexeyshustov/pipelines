@@ -1,14 +1,5 @@
 <%= form_with model: pipeline, url: pipeline.new_record? ? orchestration_pipelines_path : orchestration_pipeline_path(pipeline), class: "space-y-6" do |f| %>
-  <% if pipeline.errors.any? %>
-    <div class="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
-      <p class="font-medium mb-1">Please fix the following errors:</p>
-      <ul class="list-disc list-inside space-y-0.5">
-        <% pipeline.errors.full_messages.each do |msg| %>
-          <li><%= msg %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
+  <%= render UI::ErrorMessagesComponent.new(errors: pipeline.errors) %>
 
   <div>
     <%= f.label :name, class: "block text-sm font-medium text-gray-700 mb-1" %>

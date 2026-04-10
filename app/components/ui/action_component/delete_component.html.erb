@@ -1,0 +1,4 @@
+<%= button_to @label, @url, method: :delete,
+      form: { data: { turbo_confirm: @confirm } },
+      class: css_classes %>
+

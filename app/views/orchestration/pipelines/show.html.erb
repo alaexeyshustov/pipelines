@@ -1,114 +1,73 @@
-<% content_for :title, @pipeline.name %>
+<%= render UI::PageHeaderComponent.new(
+      title: @pipeline.name,
+      parent: { label: "Pipelines", url: orchestration_pipelines_path },
+      notice: notice,
+      alert: alert
+    ) do |header| %>
+  <% header.with_badge(label: @pipeline.enabled? ? "Enabled" : "Disabled", variant: @pipeline.enabled? ? :success : :neutral) %>
 
-<div class="flex items-center justify-between mb-6">
-  <div>
-    <div class="flex items-center gap-3">
-      <h1 class="text-2xl font-bold text-gray-900"><%= @pipeline.name %></h1>
-      <% if @pipeline.enabled? %>
-        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Enabled</span>
-      <% else %>
-        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">Disabled</span>
-      <% end %>
-    </div>
-    <% if @pipeline.description.present? %>
-      <p class="mt-1 text-sm text-gray-500"><%= @pipeline.description %></p>
-    <% end %>
-    <% if @pipeline.cron_expression.present? %>
-      <p class="mt-1 text-xs text-gray-400 font-mono">Schedule: <%= @pipeline.cron_expression %></p>
-    <% end %>
-  </div>
-  <div class="flex items-center gap-3">
-    <% if @pipeline.initial_input_schema.present? %>
-      <button type="button" onclick="document.getElementById('run-dialog-<%= @pipeline.id %>').showModal()"
-              class="px-4 py-2 text-sm text-white font-medium bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer">
-        Run now
-      </button>
+  <% if @pipeline.initial_input_schema.present? %>
+    <% header.with_action(type: :dialog,
+                          label: "Run now",
+                          dialog_title: "Run \"#{@pipeline.name}\"",
+                          url: run_orchestration_pipeline_path(@pipeline),
+                          method: :post,
+                          confirm_label: "Run",
+                          variant: :primary,
+                          size: :md,
+                          body_component: UI::JsonFieldsComponent,
+                          body_options: { schema: @pipeline.initial_input_schema, name_prefix: "initial_input" }) %>
+  <% else %>
+    <% header.with_action(type: :button, label: "Run now",
+                          url: run_orchestration_pipeline_path(@pipeline),
+                          method: :post, variant: :primary) %>
+  <% end %>
 
-      <dialog id="run-dialog-<%= @pipeline.id %>"
-              class="rounded-xl shadow-lg border border-gray-200 p-6 w-full max-w-md fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 backdrop:bg-black/30">
-        <h2 class="text-base font-semibold text-gray-900 mb-4">Run "<%= @pipeline.name %>"</h2>
-        <%= form_with url: run_orchestration_pipeline_path(@pipeline), method: :post do |f| %>
-          <% @pipeline.initial_input_schema["properties"].each do |field_name, field_schema| %>
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1 capitalize"><%= field_name.humanize %></label>
-              <% if field_schema["type"] == "array" && field_schema.dig("items", "enum").present? %>
-                <div class="flex flex-wrap gap-3">
-                  <% field_schema["items"]["enum"].each do |option| %>
-                    <label class="flex items-center gap-2 text-sm text-gray-700">
-                      <input type="checkbox" name="initial_input[<%= field_name %>][]" value="<%= option %>"
-                             class="rounded border-gray-300 text-indigo-600">
-                      <%= option.capitalize %>
-                    </label>
-                  <% end %>
-                </div>
-              <% elsif field_schema["format"] == "date" %>
-                <input type="date" name="initial_input[<%= field_name %>]"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <% else %>
-                <input type="text" name="initial_input[<%= field_name %>]"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <% end %>
-            </div>
-          <% end %>
-          <div class="flex justify-end gap-3 mt-6">
-            <button type="button" onclick="document.getElementById('run-dialog-<%= @pipeline.id %>').close()"
-                    class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-              Cancel
-            </button>
-            <%= f.submit "Run", class: "px-4 py-2 text-sm text-white font-medium bg-indigo-600 rounded-lg hover:bg-indigo-700 cursor-pointer" %>
-          </div>
-        <% end %>
-      </dialog>
-    <% else %>
-      <%= button_to "Run now", run_orchestration_pipeline_path(@pipeline), method: :post,
-            class: "px-4 py-2 text-sm text-white font-medium bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer" %>
-    <% end %>
-    <%= button_to @pipeline.enabled? ? "Disable" : "Enable", toggle_orchestration_pipeline_path(@pipeline), method: :patch,
-          class: "px-4 py-2 text-sm font-medium border rounded-lg transition-colors bg-transparent cursor-pointer #{@pipeline.enabled? ? 'text-gray-600 border-gray-200 hover:bg-gray-50' : 'text-green-600 border-green-200 hover:bg-green-50'}" %>
-    <%= link_to "Edit", edit_orchestration_pipeline_path(@pipeline), class: "px-4 py-2 text-sm text-indigo-600 hover:text-indigo-800 font-medium border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors" %>
-    <button type="button"
-            onclick="document.getElementById('confirm-delete-pipeline-<%= @pipeline.id %>').showModal()"
-            class="px-4 py-2 text-sm text-red-600 hover:text-red-800 font-medium border border-red-200 rounded-lg hover:bg-red-50 transition-colors bg-transparent cursor-pointer">
-      Delete
-    </button>
-    <dialog id="confirm-delete-pipeline-<%= @pipeline.id %>"
-            class="rounded-xl shadow-lg border border-gray-200 p-6 w-full max-w-sm backdrop:bg-black/30">
-      <p class="text-sm text-gray-700 mb-6">Delete pipeline "<%= @pipeline.name %>"? This will also delete all steps and step-actions.</p>
-      <div class="flex justify-end gap-3">
-        <button type="button"
-                onclick="document.getElementById('confirm-delete-pipeline-<%= @pipeline.id %>').close()"
-                class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-          Cancel
-        </button>
-        <%= button_to "Yes, delete", orchestration_pipeline_path(@pipeline), method: :delete,
-              class: "px-4 py-2 text-sm text-white font-medium bg-red-600 rounded-lg hover:bg-red-700 cursor-pointer" %>
-      </div>
-    </dialog>
-    <%= link_to "Run History", orchestration_pipeline_pipeline_runs_path(@pipeline), class: "text-sm text-gray-500 hover:text-gray-700" %>
-    <%= link_to "All Pipelines", orchestration_pipelines_path, class: "text-sm text-gray-500 hover:text-gray-700" %>
-  </div>
+  <% header.with_action(type: :button,
+                        label: @pipeline.enabled? ? "Disable" : "Enable",
+                        url: toggle_orchestration_pipeline_path(@pipeline),
+                        method: :patch,
+                        variant: @pipeline.enabled? ? :neutral : :success) %>
+  <% header.with_action(type: :link, label: "Edit",
+                        url: edit_orchestration_pipeline_path(@pipeline),
+                        variant: :secondary) %>
+  <% header.with_action(type: :dialog,
+                        label: "Delete",
+                        dialog_title: "Delete pipeline \"#{@pipeline.name}\"? This will also delete all steps and step-actions.",
+                        url: orchestration_pipeline_path(@pipeline),
+                        method: :delete,
+                        confirm_label: "Yes, delete",
+                        variant: :danger) %>
+  <% header.with_action(type: :link, label: "Run History",
+                        url: orchestration_pipeline_pipeline_runs_path(@pipeline),
+                        variant: :ghost) %>
+<% end %>
+
+<div class="mb-4">
+  <%= render UI::DetailCardComponent.new(
+    entity: @pipeline,
+    attributes: [
+      *([{ label: "Description", attribute: :description }] if @pipeline.description.present?),
+      *([{ label: "Schedule",    attribute: :cron_expression, type: :mono }] if @pipeline.cron_expression.present?)
+    ]
+  ) %>
 </div>
 
-<% if notice.present? %>
-  <div class="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm"><%= notice %></div>
-<% end %>
-
-<% if alert.present? %>
-  <div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-800 rounded-lg text-sm"><%= alert %></div>
-<% end %>
-
 <% if @latest_run %>
-  <div class="mb-4 px-4 py-3 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg text-sm">
-    Latest run: <span class="font-medium"><%= @latest_run.status %></span>
-    <% if @latest_run.started_at %>
-      &middot; started <%= @latest_run.started_at.strftime("%Y-%m-%d %H:%M:%S") %>
-    <% end %>
-    <% if @latest_run.finished_at %>
-      &middot; finished <%= @latest_run.finished_at.strftime("%Y-%m-%d %H:%M:%S") %>
-    <% end %>
-    <% if @latest_run.error.present? %>
-      &middot; <span class="text-red-600"><%= @latest_run.error %></span>
-    <% end %>
+  <div class="mb-4">
+    <h3 class="text-sm font-medium text-gray-500 mb-2">Latest Run</h3>
+    <%= render UI::DetailCardComponent.new(
+          entity: @latest_run,
+          attributes: [
+            { label: "Status",   attribute: :status, type: :badge,
+              variant_map: { "pending" => :neutral, "running" => :info,
+                             "completed" => :success, "failed" => :danger } },
+            { label: "Started",  attribute: :started_at,  type: :date },
+            { label: "Finished", attribute: :finished_at, type: :date },
+            { label: "Error",    attribute: :error },
+            *([{ label: "Input Parameters", attribute: :initial_input, type: :json }] if @latest_run.initial_input.present?)
+          ]
+        ) %>
   </div>
 <% end %>
 
@@ -124,125 +83,11 @@
         <p class="px-6 py-8 text-center text-gray-400 text-sm">No steps yet. Add a step below.</p>
       <% else %>
         <div class="divide-y divide-gray-100">
-          <% @steps.each_with_index do |step, idx| %>
-            <div class="px-6 py-4">
-              <div class="flex items-start justify-between gap-4">
-                <div class="flex items-start gap-3 flex-1 min-w-0">
-                  <span class="mt-0.5 flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full flex items-center justify-center"><%= step.position %></span>
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2">
-                      <p class="font-medium <%= step.enabled? ? 'text-gray-900' : 'text-gray-400' %>"><%= step.name %></p>
-                      <% unless step.enabled? %>
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">disabled</span>
-                      <% end %>
-                    </div>
-
-                    <% if step.step_actions.any? %>
-                      <div class="mt-2 flex flex-wrap gap-2">
-                        <% step.step_actions.each do |sa| %>
-                          <div class="flex items-center gap-1 bg-gray-100 rounded-lg px-2 py-1 text-xs">
-                            <span class="font-medium text-gray-700"><%= sa.action.name %></span>
-                            <% if sa.params.present? %>
-                              <span class="text-gray-500 font-mono"><%= sa.params.to_json %></span>
-                            <% end %>
-                            <button type="button"
-                                    onclick="document.getElementById('confirm-detach-sa-<%= sa.id %>').showModal()"
-                                    class="ml-1 text-gray-400 hover:text-red-500 bg-transparent border-0 cursor-pointer p-0 font-bold">
-                              ×
-                            </button>
-                            <dialog id="confirm-detach-sa-<%= sa.id %>"
-                                    class="rounded-xl shadow-lg border border-gray-200 p-6 w-full max-w-sm fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 backdrop:bg-black/30">
-                              <p class="text-sm text-gray-700 mb-6">Detach action "<%= sa.action.name %>"?</p>
-                              <div class="flex justify-end gap-3">
-                                <button type="button"
-                                        onclick="document.getElementById('confirm-detach-sa-<%= sa.id %>').close()"
-                                        class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                                  Cancel
-                                </button>
-                                <%= button_to "Yes, detach", orchestration_pipeline_step_step_action_path(@pipeline, step, sa), method: :delete,
-                                      class: "px-4 py-2 text-sm text-white font-medium bg-red-600 rounded-lg hover:bg-red-700 cursor-pointer" %>
-                              </div>
-                            </dialog>
-                          </div>
-                        <% end %>
-                      </div>
-                    <% end %>
-
-                    <% if step.input_mapping.present? %>
-                      <div class="mt-2">
-                        <span class="text-xs text-gray-400">Input mapping: </span>
-                        <code class="text-xs text-gray-600 font-mono"><%= step.input_mapping.to_json %></code>
-                      </div>
-                    <% end %>
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-2 flex-shrink-0">
-                  <% unless idx == 0 %>
-                    <%= button_to "↑", move_up_orchestration_pipeline_step_path(@pipeline, step),
-                          method: :patch,
-                          class: "text-gray-400 hover:text-gray-600 bg-transparent border border-gray-200 rounded px-2 py-1 text-xs cursor-pointer hover:bg-gray-50 transition-colors" %>
-                  <% end %>
-                  <% unless idx == @steps.length - 1 %>
-                    <%= button_to "↓", move_down_orchestration_pipeline_step_path(@pipeline, step),
-                          method: :patch,
-                          class: "text-gray-400 hover:text-gray-600 bg-transparent border border-gray-200 rounded px-2 py-1 text-xs cursor-pointer hover:bg-gray-50 transition-colors" %>
-                  <% end %>
-                  <%= button_to step.enabled? ? "Disable" : "Enable",
-                        toggle_orchestration_pipeline_step_path(@pipeline, step),
-                        method: :patch,
-                        class: "bg-transparent border rounded px-2 py-1 text-xs cursor-pointer transition-colors #{step.enabled? ? 'text-gray-500 border-gray-200 hover:bg-gray-50' : 'text-green-600 border-green-200 hover:bg-green-50'}" %>
-                  <button type="button"
-                          onclick="document.getElementById('confirm-remove-step-<%= step.id %>').showModal()"
-                          class="text-red-500 hover:text-red-700 bg-transparent border-0 cursor-pointer p-0 text-xs font-medium">
-                    Remove
-                  </button>
-                  <dialog id="confirm-remove-step-<%= step.id %>"
-                          class="rounded-xl shadow-lg border border-gray-200 p-6 w-full max-w-sm fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 backdrop:bg-black/30">
-                    <p class="text-sm text-gray-700 mb-6">Remove step "<%= step.name %>"?</p>
-                    <div class="flex justify-end gap-3">
-                      <button type="button"
-                              onclick="document.getElementById('confirm-remove-step-<%= step.id %>').close()"
-                              class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                        Cancel
-                      </button>
-                      <%= button_to "Yes, remove", orchestration_pipeline_step_path(@pipeline, step), method: :delete,
-                            class: "px-4 py-2 text-sm text-white font-medium bg-red-600 rounded-lg hover:bg-red-700 cursor-pointer" %>
-                    </div>
-                  </dialog>
-                </div>
-              </div>
-
-              <%# Attach action form %>
-              <div class="mt-3 pt-3 border-t border-gray-100">
-                <%= form_with url: orchestration_pipeline_step_step_actions_path(@pipeline, step),
-                              method: :post, class: "flex items-center gap-2" do |f| %>
-                  <%= f.select :orchestration_step_action_action_id,
-                        options_for_select(@actions.map { |a| [a.name, a.id] }),
-                        { include_blank: "— attach action —" },
-                        name: "orchestration_step_action[action_id]",
-                        class: "flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
-                  <%= f.text_field :params_override, placeholder: '{"key":"val"} optional',
-                        name: "orchestration_step_action[params]",
-                        class: "w-40 border border-gray-300 rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
-                  <%= f.submit "Attach", class: "px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer" %>
-                <% end %>
-              </div>
-            </div>
-          <% end %>
+          <%= render Orchestration::StepComponent.with_collection(@steps, pipeline: @pipeline, actions: @actions) %>
         </div>
       <% end %>
 
-      <%# Add step form %>
-      <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-        <%= form_with url: orchestration_pipeline_steps_path(@pipeline), method: :post,
-                      class: "flex items-center gap-2" do |f| %>
-          <%= f.text_field :name, placeholder: "New step name",
-                name: "orchestration_step[name]",
-                class: "flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
-          <%= f.submit "Add Step", class: "px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer" %>
-        <% end %>
-      </div>
+      <%= render Orchestration::NewStepComponent.new(pipeline: @pipeline) %>
     </div>
   </turbo-frame>
 </div>

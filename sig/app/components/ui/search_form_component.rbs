@@ -1,0 +1,12 @@
+module UI
+  class SearchFormComponent < ViewComponent::Base
+    @url: String
+    @query: String?
+    @clear_url: String
+    @placeholder: String
+
+    def initialize: (url: String, query: String?, clear_url: String, ?placeholder: String) -> void
+    def query_present?: () -> bool
+  end
+end
+

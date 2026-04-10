@@ -1,14 +1,5 @@
 <%= form_with model: interview, class: "space-y-6" do |f| %>
-  <% if interview.errors.any? %>
-    <div class="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
-      <p class="font-medium mb-1">Please fix the following errors:</p>
-      <ul class="list-disc list-inside space-y-0.5">
-        <% interview.errors.full_messages.each do |msg| %>
-          <li><%= msg %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
+  <%= render UI::ErrorMessagesComponent.new(errors: interview.errors) %>
 
   <div class="grid grid-cols-2 gap-4">
     <div>

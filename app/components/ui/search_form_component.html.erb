@@ -1,0 +1,11 @@
+<%= form_with url: @url, method: :get, class: "mb-4" do |f| %>
+  <div class="flex items-center gap-2">
+    <%= f.text_field :q, value: @query, placeholder: @placeholder,
+          class: "w-72 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" %>
+    <%= f.submit "Search", class: "px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 cursor-pointer" %>
+    <% if query_present? %>
+      <%= link_to "Clear", @clear_url, class: "text-sm text-gray-500 hover:text-gray-700" %>
+    <% end %>
+  </div>
+<% end %>
+

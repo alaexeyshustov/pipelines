@@ -23,10 +23,15 @@ module Paginable
   private
 
   def set_pagination_params
-    @sort             = resolve_sort(paginable_sortable, default: paginable_default_sort)
-    @direction        = resolve_direction(default: paginable_default_direction)
-    @per_page         = resolve_per_page(paginable_per_page)
-    @per_page_options = paginable_per_page
+    @sort      = resolve_sort(paginable_sortable, default: paginable_default_sort)
+    @direction = resolve_direction(default: paginable_default_direction)
+    @per_page  = resolve_per_page(paginable_per_page)
+    @filters   = @filters.with(
+      sort: @sort.to_s,
+      direction: @direction.to_s,
+      per_page: @per_page.to_s,
+      per_page_options: paginable_per_page
+    )
   end
 
   def paginate(collection)

@@ -1,0 +1,9 @@
+module Chats
+  class DetailCardComponent < ViewComponent::Base
+    def initialize: (chat: Chat) -> void
+    def model_name_value: () -> String
+    def message_count: () -> Integer
+    def formatted_created_at: () -> String
+    def formatted_updated_at: () -> String
+  end
+end

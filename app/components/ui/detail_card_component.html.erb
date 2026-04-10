@@ -1,0 +1,21 @@
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl" data-testid="detail-card">
+  <dl class="space-y-4">
+    <% @attributes.each do |attr| %>
+      <% val = value_for(attr) %>
+      <div class="flex gap-4">
+        <dt class="w-40 text-sm font-medium text-gray-500 shrink-0"><%= attr.label %></dt>
+        <dd>
+          <% if attr.type == :badge %>
+            <% with_status_badge(label: val&.humanize || "—", variant: variant_for(attr, val)) %>
+            <%= status_badge %>
+          <% elsif attr.type == :json %>
+            <pre class="text-sm font-mono text-gray-900 whitespace-pre-wrap"><%= json_display(val) %></pre>
+          <% else %>
+            <span class="<%= text_classes_for(attr) %>"><%= val || "—" %></span>
+          <% end %>
+        </dd>
+      </div>
+    <% end %>
+  </dl>
+</div>
+

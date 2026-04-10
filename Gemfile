@@ -5,7 +5,7 @@ gem "sqlite3", ">= 2.1"
 gem "sqlite-vec"
 
 gem "aasm", "~> 5.5"
-gem "view_components", "~> 0.1.0"
+gem "view_component", "~> 4.6"
 
 # LLM
 gem "ruby_llm", github: "crmne/ruby_llm", branch: "main"
@@ -26,9 +26,10 @@ gem "csv"
 
 # Assets
 gem "propshaft"
+gem "jsbundling-rails"
 gem "tailwindcss-rails"
-gem "turbo-rails", "~> 2.0"
-gem "stimulus-rails", "~> 1.3"
+gem "turbo-rails"
+gem "stimulus-rails"
 
 # Pipeline
 gem "async"

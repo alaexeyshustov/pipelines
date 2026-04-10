@@ -1,0 +1,29 @@
+module UI
+  class BatchActionComponent < ViewComponent::Base
+    type batch_action_type = :button | :dialog | :raw
+    type batch_action_variant = :primary | :secondary | :neutral | :danger | :success
+
+    TYPES: Array[Symbol]
+
+    def initialize: (
+      ?type: batch_action_type,
+      ?label: String?,
+      ?url: String?,
+      ?action: String?,
+      ?variant: batch_action_variant?,
+      ?confirm: String?,
+      ?dialog_title: String?,
+      ?require_selection: bool
+    ) -> void
+
+    def call: () -> String
+
+    private
+
+    def subcomponent: () -> ViewComponent::Base
+  end
+
+  # BatchActionComponent::ButtonComponent delegates to ActionComponent::ButtonComponent
+  # BatchActionComponent::RawComponent is an alias for ActionComponent::RawComponent
+  # BatchActionComponent::DialogComponent is an alias for ActionComponent::DialogComponent
+end

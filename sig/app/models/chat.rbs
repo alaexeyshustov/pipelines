@@ -1,0 +1,8 @@
+class Chat < ApplicationRecord
+  COLUMN_NAMES: Array[String]
+
+  def model_id: () -> Integer?
+  def model_id=: (Integer?) -> Integer?
+  def model: () -> Model?
+  def model=: (Model?) -> Model?
+end

@@ -1,0 +1,34 @@
+<div data-controller="dialog">
+  <button type="button" data-action="dialog#open" class="<%= trigger_classes %>">
+    <%= @label %>
+  </button>
+
+  <dialog data-dialog-target="dialog" class="<%= dialog_css %>">
+    <h2 class="dialog-title text-base font-semibold text-gray-900 mb-4"><%= @dialog_title %></h2>
+
+    <% if @method == :post %>
+      <%= form_with url: @url, method: :post do |f| %>
+        <% if body? %>
+          <div class="mb-4"><%= render_body(f) %></div>
+        <% end %>
+        <div class="flex justify-end gap-3">
+          <button type="button" data-action="dialog#close" class="<%= cancel_classes %>">
+            Cancel
+          </button>
+          <%= f.button @confirm_label, type: :submit, class: confirm_classes %>
+        </div>
+      <% end %>
+    <% else %>
+      <% if body? %>
+        <div class="mb-4"><%= render_body %></div>
+      <% end %>
+      <div class="flex justify-end gap-3">
+        <button type="button" data-action="dialog#close" class="<%= cancel_classes %>">
+          Cancel
+        </button>
+        <%= button_to @confirm_label, @url, method: @method, class: confirm_classes %>
+      </div>
+    <% end %>
+  </dialog>
+</div>
+

@@ -1,0 +1,4 @@
+module ChatsHelper
+  def message_role_styles: (String role) -> String
+  def message_role_badge: (String role) -> String
+end

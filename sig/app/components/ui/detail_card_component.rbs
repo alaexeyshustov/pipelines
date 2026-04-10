@@ -1,0 +1,23 @@
+module UI
+  class DetailCardComponent < ViewComponent::Base
+    class Attribute
+      attr_reader label: String
+      attr_reader attribute: Symbol
+      attr_reader type: Symbol
+      attr_reader variant_map: Hash[String, Symbol]
+
+      def self.from: (Hash[Symbol, untyped] hash) -> Attribute
+    end
+
+    def initialize: (entity: untyped, attributes: Array[Hash[Symbol, untyped]]) -> void
+    def value_for: (Attribute attr) -> untyped
+    def variant_for: (Attribute attr, untyped value) -> Symbol
+    def text_classes_for: (Attribute attr) -> String
+    def json_display: (untyped val) -> String
+
+    def with_status_badge: (label: String, ?variant: Symbol) -> StatusBadgeComponent
+    def status_badge: () -> String?
+    def status_badge?: () -> bool
+  end
+end
+

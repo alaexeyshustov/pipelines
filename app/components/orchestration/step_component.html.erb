@@ -1,0 +1,71 @@
+<div class="px-6 py-4">
+  <div class="flex items-start justify-between gap-4">
+    <div class="flex items-start gap-3 flex-1 min-w-0">
+      <span class="mt-0.5 flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full flex items-center justify-center"><%= @step.position %></span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <p class="<%= name_classes %>"><%= @step.name %></p>
+          <% unless @step.enabled? %>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">disabled</span>
+          <% end %>
+        </div>
+
+        <% if @step.step_actions.any? %>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <% @step.step_actions.zip(detach_buttons).each do |sa, btn| %>
+              <div class="flex items-center gap-1 bg-gray-100 rounded-lg px-2 py-1 text-xs">
+                <span class="font-medium text-gray-700"><%= sa.action.name %></span>
+                <% if sa.params.present? %>
+                  <span class="text-gray-500 font-mono"><%= sa.params.to_json %></span>
+                <% end %>
+                <%= btn %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <% if @step.input_mapping.present? %>
+          <div class="mt-2">
+            <span class="text-xs text-gray-400">Input mapping: </span>
+            <code class="text-xs text-gray-600 font-mono"><%= @step.input_mapping.to_json %></code>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <% if move_up? %>
+        <%= button_to "↑", move_up_orchestration_pipeline_step_path(@pipeline, @step),
+              method: :patch,
+              class: "text-gray-400 hover:text-gray-600 bg-transparent border border-gray-200 rounded px-2 py-1 text-xs cursor-pointer hover:bg-gray-50 transition-colors" %>
+      <% end %>
+      <% if move_down? %>
+        <%= button_to "↓", move_down_orchestration_pipeline_step_path(@pipeline, @step),
+              method: :patch,
+              class: "text-gray-400 hover:text-gray-600 bg-transparent border border-gray-200 rounded px-2 py-1 text-xs cursor-pointer hover:bg-gray-50 transition-colors" %>
+      <% end %>
+      <%= button_to toggle_label,
+            toggle_orchestration_pipeline_step_path(@pipeline, @step),
+            method: :patch,
+            class: toggle_button_classes %>
+      <%= remove_button %>
+    </div>
+  </div>
+
+  <%# Attach action form %>
+  <div class="mt-3 pt-3 border-t border-gray-100">
+    <%= form_with url: orchestration_pipeline_step_step_actions_path(@pipeline, @step),
+                  method: :post, class: "flex items-center gap-2" do |f| %>
+      <%= f.select :orchestration_step_action_action_id,
+            options_for_select(actions_select_options),
+            { include_blank: "— attach action —" },
+            name: "orchestration_step_action[action_id]",
+            class: "flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
+      <%= f.text_field :params_override, placeholder: '{"key":"val"} optional',
+            name: "orchestration_step_action[params]",
+            class: "w-40 border border-gray-300 rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
+      <%= f.submit "Attach", class: "px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer" %>
+    <% end %>
+  </div>
+</div>
+

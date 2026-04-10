@@ -1,0 +1,22 @@
+{
+  "name": "application_pipeline",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild app/javascript/application.ts --bundle --sourcemap --outdir=app/assets/builds --public-path=/assets",
+    "build:watch": "esbuild app/javascript/application.ts --bundle --sourcemap --outdir=app/assets/builds --public-path=/assets --watch"
+  },
+  "dependencies": {
+    "@hotwired/stimulus": "^3.2.2",
+    "@hotwired/turbo-rails": "^8.0.12",
+    "@stimulus-components/dialog": "^1.0.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  }
+}
+

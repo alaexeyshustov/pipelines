@@ -1,0 +1,26 @@
+<div class="px-6 py-4" data-testid="action-run">
+  <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center gap-3">
+      <span class="font-medium text-sm text-gray-900"><%= action_name %></span>
+      <%= status_badge %>
+    </div>
+    <div class="text-xs text-gray-500" data-testid="action-run-timestamps">
+      <% if formatted_started_at %>
+        <%= formatted_started_at %>
+        <% if formatted_finished_at %>
+          &rarr; <%= formatted_finished_at %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @action_run.error.present? %>
+    <div class="mb-3 px-3 py-2 bg-red-50 border border-red-200 text-red-700 rounded text-xs" data-testid="action-run-error">
+      <%= @action_run.error %>
+    </div>
+  <% end %>
+
+  <%= input_disclosure %>
+  <%= output_disclosure %>
+</div>
+

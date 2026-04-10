@@ -1,65 +1,20 @@
-<% content_for :title, "Actions" %>
-
-<div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-bold text-gray-900">Action Library</h1>
-  <%= link_to "New Action", new_orchestration_action_path, class: "px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors" %>
-</div>
-
-<% if notice.present? %>
-  <div class="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-800 rounded-lg text-sm"><%= notice %></div>
+<%= render UI::PageHeaderComponent.new(title: "Action Library", notice: notice, alert: alert) do |header| %>
+  <% header.with_action(type: :link, label: "New Action", url: new_orchestration_action_path) %>
 <% end %>
 
-<% if alert.present? %>
-  <div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-800 rounded-lg text-sm"><%= alert %></div>
+<%= render UI::TableComponent.new(collection: @actions, empty_message: "No actions found.") do |table| %>
+  <% table.with_columns([
+    { key: "name",           label: "Name" },
+    { key: "agent_class",    label: "Agent Class", classes: "px-4 py-3 font-mono text-gray-600 text-xs" },
+    { key: "model",          label: "Model",     variant: :muted, cell: ->(action) { action.model || "—" } },
+    { key: "pipeline_count", label: "Pipelines", variant: :muted }
+  ]) %>
+  <% table.with_action_column(
+    actions: ->(action) {
+      [
+        { label: "Edit", url: edit_orchestration_action_path(action), variant: :primary },
+        { label: "Delete", url: orchestration_action_path(action), method: :delete, variant: :danger, confirm: "Delete action \"#{action.name}\"?" }
+      ]
+    }
+  ) %>
 <% end %>
-
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-  <table class="w-full text-sm">
-    <thead class="bg-gray-50 border-b border-gray-200">
-      <tr>
-        <th class="px-4 py-3 text-left font-medium text-gray-600">Name</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-600">Agent Class</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-600">Model</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-600">Pipelines</th>
-        <th class="px-4 py-3"></th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-100">
-      <% if @actions.empty? %>
-        <tr>
-          <td colspan="5" class="px-4 py-10 text-center text-gray-400">No actions found.</td>
-        </tr>
-      <% else %>
-        <% @actions.each do |action| %>
-          <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-4 py-3 font-medium text-gray-900"><%= action.name %></td>
-            <td class="px-4 py-3 font-mono text-gray-600 text-xs"><%= action.agent_class %></td>
-            <td class="px-4 py-3 text-gray-500"><%= action.model || "—" %></td>
-            <td class="px-4 py-3 text-gray-500"><%= action.pipeline_count %></td>
-            <td class="px-4 py-3 text-right flex items-center justify-end gap-3">
-              <%= link_to "Edit", edit_orchestration_action_path(action), class: "text-indigo-600 hover:text-indigo-800 font-medium" %>
-              <button type="button"
-                      onclick="document.getElementById('confirm-delete-action-<%= action.id %>').showModal()"
-                      class="text-red-500 hover:text-red-700 font-medium bg-transparent border-0 cursor-pointer p-0">
-                Delete
-              </button>
-              <dialog id="confirm-delete-action-<%= action.id %>"
-                      class="rounded-xl shadow-lg border border-gray-200 p-6 w-full max-w-sm fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 backdrop:bg-black/30">
-                <p class="text-sm text-gray-700 mb-6">Delete action "<%= action.name %>"?</p>
-                <div class="flex justify-end gap-3">
-                  <button type="button"
-                          onclick="document.getElementById('confirm-delete-action-<%= action.id %>').close()"
-                          class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                    Cancel
-                  </button>
-                  <%= button_to "Yes, delete", orchestration_action_path(action), method: :delete,
-                        class: "px-4 py-2 text-sm text-white font-medium bg-red-600 rounded-lg hover:bg-red-700 cursor-pointer" %>
-                </div>
-              </dialog>
-            </td>
-          </tr>
-        <% end %>
-      <% end %>
-    </tbody>
-  </table>
-</div>

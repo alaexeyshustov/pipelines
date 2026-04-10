@@ -1,0 +1,7 @@
+module ApplicationMails
+  class ProviderBadgeComponent < UI::StatusBadgeComponent
+    PROVIDER_VARIANTS: Hash[String, Symbol]
+
+    def initialize: (status: String) -> void
+  end
+end

@@ -122,3 +122,13 @@ end
 module JSON
   def self?.parse: (string source, ?options opts) -> json_object_value
 end
+
+module ViewComponent
+  class Base
+    def render_in: (view_context: ActionView::Base) -> String
+    def render: () -> String
+  end
+end
+
+class Pagy
+end

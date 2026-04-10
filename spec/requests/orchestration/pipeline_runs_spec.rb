@@ -13,7 +13,7 @@ RSpec.describe "Orchestration::PipelineRuns" do
       get orchestration_pipeline_pipeline_runs_path(pipeline)
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("completed")
+      expect(response.body).to include("Completed")
       expect(response.body).to include("manual")
     end
 
@@ -36,7 +36,7 @@ RSpec.describe "Orchestration::PipelineRuns" do
       get orchestration_pipeline_pipeline_runs_path(pipeline)
 
       expect(response).to have_http_status(:ok)
-      expect(response.body.index("failed")).to be < response.body.index("completed")
+      expect(response.body.index("Failed")).to be < response.body.index("Completed")
     end
   end
 
@@ -54,7 +54,7 @@ RSpec.describe "Orchestration::PipelineRuns" do
       get orchestration_pipeline_pipeline_run_path(pipeline, run)
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("completed")
+      expect(response.body).to include("Completed")
       expect(response.body).to include("manual")
     end
 

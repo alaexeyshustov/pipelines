@@ -1,0 +1,10 @@
+class Model < ApplicationRecord
+  COLUMN_NAMES: Array[String]
+
+  def model_id: () -> String?
+  def model_id=: (String?) -> String?
+  def name: () -> String?
+  def name=: (String?) -> String?
+  def provider: () -> String?
+  def provider=: (String?) -> String?
+end

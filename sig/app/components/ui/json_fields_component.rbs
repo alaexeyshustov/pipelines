@@ -1,0 +1,26 @@
+module UI
+  class JsonFieldsComponent < ViewComponent::Base
+    INPUT_CLASSES: String
+    CHECKBOX_CLASSES: String
+    LABEL_CLASSES: String
+
+    def initialize: (
+      form: ActionView::Helpers::FormBuilder,
+      schema: Hash[String, untyped],
+      ?name_prefix: String?
+    ) -> void
+
+    def fields: () -> Array[{ name: String, schema: Hash[String, untyped], kind: Symbol, required: bool }]
+
+    def input_name: (String field_name, ?array: bool) -> String
+
+    private
+
+    def properties: () -> Hash[String, untyped]
+
+    def required_fields: () -> Array[String]
+
+    def field_kind: (Hash[String, untyped] schema) -> Symbol
+  end
+end
+

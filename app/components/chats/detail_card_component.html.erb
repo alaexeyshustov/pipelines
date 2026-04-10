@@ -1,0 +1,20 @@
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8" data-testid="chat-detail-card">
+  <dl class="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+    <div class="flex gap-2">
+      <dt class="text-gray-500 font-medium">Model:</dt>
+      <dd class="text-gray-800"><%= model_name_value %></dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="text-gray-500 font-medium">Messages:</dt>
+      <dd class="text-gray-800"><%= message_count %></dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="text-gray-500 font-medium">Created:</dt>
+      <dd class="text-gray-800"><%= formatted_created_at %></dd>
+    </div>
+    <div class="flex gap-2">
+      <dt class="text-gray-500 font-medium">Updated:</dt>
+      <dd class="text-gray-800"><%= formatted_updated_at %></dd>
+    </div>
+  </dl>
+</div>

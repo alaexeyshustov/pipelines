@@ -100,7 +100,7 @@ RSpec.describe "Orchestration::Pipelines" do
       get orchestration_pipeline_path(pipeline)
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("completed")
+      expect(response.body).to include("Completed")
     end
   end
 

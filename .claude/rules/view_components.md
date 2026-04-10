@@ -13,20 +13,22 @@ ViewComponents encapsulate UI rendering logic. They replace complex helper metho
 1. **Ruby for Logic, ERB for Markup** – Templates must be "dumb". Any complex conditionals, iterations, or string formatting belongs in the Ruby class.
 2. **No Database Queries** – Components must never execute ActiveRecord queries. They receive fully instantiated models or primitive data in their initializer. 
 3. **No Global State** – Components should not rely on `session`, `request`, `params`, or `Current.user`. If a component needs the current user, it must be explicitly passed in.
-4. **Composability via Slots** – Use slots (`renders_one`, `renders_many`) to yield structured content to the component instead of relying on complex configuration hashes or messy `content_tag` nesting.
+4. **Composability via Slots** – Use slots (`renders_one`, `renders_many`). When the size of a collection is known at render time, use `.with_slots([...items...])` instead of passing raw HTML.
 5. **Sidecar Isolation** – Keep the `.rb` class, `.html.erb` template, and (if applicable) `.css`/`.js` files grouped together in the same directory.
 
 ## Clean Interfaces and Logic
 
 Shift formatting and conditional logic out of the template to make the markup highly readable.
 
-```ruby
-# WRONG - Logic in the template
-# app/components/status_badge_component.html.erb
+[//]: # (# app/components/status_badge_component.html.erb)
+[//]: # (WRING)
+```erb
 <span class="<%= @status == 'active' ? 'bg-green text-white' : 'bg-gray text-black' %>">
   <%= @status.capitalize %>
 </span>
+```
 
+```ruby
 # RIGHT - Logic in the Ruby class
 # app/components/status_badge_component.rb
 class StatusBadgeComponent < ViewComponent::Base
@@ -45,55 +47,13 @@ class StatusBadgeComponent < ViewComponent::Base
     @status.to_s.capitalize
   end
 end
-
-# app/components/status_badge_component.html.erb
-<span class="<%= classes %>">
-  <%= label %>
-</span>
 ```
 
-## Composability (Slots)
-
-When building structural components (Cards, Modals, Layouts), do not force users to pass HTML strings or giant hashes into the initializer. Use Slots.
-
-```ruby
-# app/components/ui/card_component.rb
-module UI
-  class CardComponent < ViewComponent::Base
-    renders_one :header
-    renders_one :footer
-    renders_many :actions, "ActionComponent"
-
-    def initialize(title: nil)
-      @title = title
-    end
-
-    class ActionComponent < ViewComponent::Base
-      def initialize(label:, url:)
-        @label = label
-        @url = url
-      end
-
-      def call
-        link_to @label, @url, class: "btn-sm"
-      end
-    end
-  end
-end
-```
-
-**Usage in a view:**
+[//]: # # app/components/status_badge_component.html.erb()
 ```erb
-<%= render UI::CardComponent.new(title: "Account Settings") do |c| %>
-  <% c.with_header do %>
-    <h2 class="text-xl">Danger Zone</h2>
-  <% end %>
-
-  <p>Are you sure you want to delete your account?</p>
-
-  <% c.with_action(label: "Cancel", url: back_path) %>
-  <% c.with_action(label: "Delete", url: delete_account_path) %>
-<% end %>
+<span class="<%= classes %>">
+<%= label %>
+</span>
 ```
 
 ## Organization

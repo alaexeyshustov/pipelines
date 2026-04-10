@@ -1,0 +1,16 @@
+<div class="bg-white rounded-xl shadow-sm border border-gray-200" data-testid="step-run">
+  <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-3">
+    <span class="flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full flex items-center justify-center" data-testid="step-position"><%= @step.position %></span>
+    <h2 class="text-base font-semibold text-gray-900 flex-1" data-testid="step-name"><%= @step.name %></h2>
+    <%= status_badge %>
+  </div>
+
+  <% if @action_run_records.empty? %>
+    <p class="px-6 py-4 text-sm text-gray-400" data-testid="no-action-runs">No action runs recorded for this step.</p>
+  <% else %>
+    <div class="divide-y divide-gray-100">
+      <% action_run_items.each do |item| %><%= item %><% end %>
+    </div>
+  <% end %>
+</div>
+

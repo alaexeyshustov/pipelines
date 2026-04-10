@@ -1,0 +1,9 @@
+module Orchestration
+  class RunDetailCardComponent < ViewComponent::Base
+    def initialize: (run: PipelineRun) -> void
+    def formatted_started_at: () -> String
+    def formatted_finished_at: () -> String
+    def duration: () -> String
+  end
+end
+

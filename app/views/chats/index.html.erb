@@ -1,42 +1,22 @@
-<% content_for :title, "Chats" %>
+<%= render UI::PageHeaderComponent.new(title: "Chats") %>
 
-<div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-bold text-gray-900">Chats</h1>
-  <span class="text-sm text-gray-500"><%= @pagy.count %> total</span>
-</div>
+<% if @pagy.count > 0 %>
+  <p class="mb-2 text-xs text-gray-500"><%= @pagy.count %> total</p>
+<% end %>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-  <table class="w-full text-sm">
-    <thead class="bg-gray-50 border-b border-gray-200">
-      <tr>
-        <th class="px-4 py-3 text-left font-medium text-gray-600">ID</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-600">Model</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-600">Created</th>
-        <th class="px-4 py-3 text-left font-medium text-gray-600">Updated</th>
-        <th class="px-4 py-3"></th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-100">
-      <% if @chats.empty? %>
-        <tr>
-          <td colspan="5" class="px-4 py-10 text-center text-gray-400">No chats found.</td>
-        </tr>
-      <% else %>
-        <% @chats.each do |chat| %>
-          <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-4 py-3 font-mono text-gray-500">#<%= chat.id %></td>
-            <td class="px-4 py-3 text-gray-700"><%= chat.model&.name || "—" %></td>
-            <td class="px-4 py-3 text-gray-500"><%= chat.created_at.strftime("%b %-d, %Y %H:%M") %></td>
-            <td class="px-4 py-3 text-gray-500"><%= chat.updated_at.strftime("%b %-d, %Y %H:%M") %></td>
-            <td class="px-4 py-3 text-right flex items-center justify-end gap-3">
-              <%= link_to "View", chat_path(chat), class: "text-indigo-600 hover:text-indigo-800 font-medium" %>
-              <%= button_to "Delete", chat_path(chat), method: :delete, form: { data: { turbo_confirm: "Delete chat ##{chat.id}?" } }, class: "text-red-500 hover:text-red-700 font-medium bg-transparent border-0 cursor-pointer p-0" %>
-            </td>
-          </tr>
-        <% end %>
-      <% end %>
-    </tbody>
-  </table>
-</div>
-
-<%== @pagy.series_nav %>
+<%= render UI::TableComponent.new(collection: @chats, empty_message: "No chats found.", pagy: @pagy) do |table| %>
+  <% table.with_columns([
+    { key: "id",         label: "ID",      variant: :mono,   cell: ->(chat) { "##{chat.id}" } },
+    { key: "model",      label: "Model",   variant: :subtle, cell: ->(chat) { chat.model&.name || "—" } },
+    { key: "created_at", label: "Created", variant: :subtle, cell: ->(chat) { chat.created_at.strftime("%b %-d, %Y %H:%M") } },
+    { key: "updated_at", label: "Updated", variant: :subtle, cell: ->(chat) { chat.updated_at.strftime("%b %-d, %Y %H:%M") } }
+  ]) %>
+  <% table.with_action_column(
+    actions: ->(chat) {
+      [
+        { label: "View",   url: chat_path(chat),   variant: :primary },
+        { label: "Delete", url: chat_path(chat),   method: :delete,  variant: :danger, confirm: "Delete chat ##{chat.id}?" }
+      ]
+    }
+  ) %>
+<% end %>
