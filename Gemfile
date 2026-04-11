@@ -9,6 +9,7 @@ gem "view_component", "~> 4.6"
 
 # LLM
 gem "ruby_llm", github: "crmne/ruby_llm", branch: "main"
+gem "ruby_llm-monitoring"
 
 # Email providers
 gem "google-apis-gmail_v1"

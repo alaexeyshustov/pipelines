@@ -2,4 +2,5 @@ class ChatsController < ApplicationController
   def index: () -> void
   def show: () -> void
   def destroy: () -> void
+  def batch: -> void
 end

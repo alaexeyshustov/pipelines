@@ -14,7 +14,8 @@ module UI
         NavItem.new(label: "Pipelines", path: helpers.orchestration_pipelines_path),
         NavItem.new(label: "Actions",   path: helpers.orchestration_actions_path),
         NavItem.new(label: "Emails",    path: helpers.application_mails_path),
-        NavItem.new(label: "Interviews", path: helpers.interviews_path)
+        NavItem.new(label: "Interviews", path: helpers.interviews_path),
+        NavItem.new(label: "Monitoring", path: "/monitoring")
       ]
     end
 

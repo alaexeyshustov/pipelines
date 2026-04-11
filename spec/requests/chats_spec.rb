@@ -62,4 +62,27 @@ RSpec.describe "Chats" do
       expect(response).to redirect_to(chats_path)
     end
   end
+
+  describe "POST /chats/batch" do
+    it "destroys selected chats" do
+      chats = create_list(:chat, 2)
+      post batch_chats_path, params: { ids: chats.map(&:id), batch_action: "delete" }
+      expect(response).to redirect_to(chats_path)
+      expect(flash[:notice]).to eq("Deleted 2 chat(s).")
+      expect(Chat.where(id: chats.map(&:id)).count).to eq(0)
+    end
+
+    it "redirects with alert if no ids provided" do
+      post batch_chats_path, params: { batch_action: "delete" }
+      expect(response).to redirect_to(chats_path)
+      expect(flash[:alert]).to eq("No chats selected.")
+    end
+
+    it "redirects with alert for unknown action" do
+      chat = create(:chat)
+      post batch_chats_path, params: { ids: [ chat.id ], batch_action: "unknown" }
+      expect(response).to redirect_to(chats_path)
+      expect(flash[:alert]).to eq("Unknown batch action.")
+    end
+  end
 end

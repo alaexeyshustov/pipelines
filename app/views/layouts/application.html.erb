@@ -27,6 +27,7 @@
   <body class="bg-gray-50 text-gray-900 antialiased">
     <%= render UI::NavbarComponent.new(current_path: request.path) %>
     <main class="max-w-6xl mx-auto px-6 py-8">
+      <%= render UI::FlashComponent.new(flash: flash) %>
       <%= yield %>
     </main>
   </body>

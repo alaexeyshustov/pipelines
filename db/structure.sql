@@ -79,7 +79,10 @@ CREATE INDEX "index_action_runs_on_status" ON "action_runs" ("status") /*applica
 CREATE INDEX "index_pipeline_runs_on_pipeline_id_and_created_at" ON "pipeline_runs" ("pipeline_id", "created_at") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "pipelines" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "description" text, "enabled" boolean DEFAULT TRUE NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "cron_expression" varchar, "model" varchar /*application='ApplicationPipeline'*/, "initial_input_schema" json /*application='ApplicationPipeline'*/);
 CREATE INDEX "index_pipelines_on_enabled_and_cron_expression" ON "pipelines" ("enabled", "cron_expression") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "ruby_llm_monitoring_events" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "allocations" integer, "cost" float, "cpu_time" float, "duration" float, "end" float, "gc_time" float, "idle_time" float, "name" varchar, "payload" json, "time" float, "transaction_id" varchar, "provider" varchar GENERATED ALWAYS AS (payload->>'provider') STORED, "model" varchar GENERATED ALWAYS AS (payload->>'model') STORED, "input_tokens" integer GENERATED ALWAYS AS (CAST(payload->>'input_tokens' AS INTEGER)) STORED, "output_tokens" integer GENERATED ALWAYS AS (CAST(payload->>'output_tokens' AS INTEGER)) STORED, "exception_class" varchar GENERATED ALWAYS AS (json_extract(payload, '$.exception[0]')) STORED, "exception_message" varchar GENERATED ALWAYS AS (json_extract(payload, '$.exception[1]')) STORED, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "thinking_tokens" integer GENERATED ALWAYS AS (CAST(payload->>'thinking_tokens' AS INTEGER)) STORED);
 INSERT INTO "schema_migrations" (version) VALUES
+('20260410145544'),
+('20260410145543'),
 ('20260403000002'),
 ('20260403000001'),
 ('20260402000004'),
