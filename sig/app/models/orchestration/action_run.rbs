@@ -21,5 +21,9 @@ module Orchestration
     def pipeline_run=: (Orchestration::PipelineRun) -> Orchestration::PipelineRun
     def step_action: () -> Orchestration::StepAction
     def step_action=: (Orchestration::StepAction) -> Orchestration::StepAction
+    def chat: () -> Chat?
+    def chat=: (Chat?) -> Chat?
+    def chat_id: () -> Integer?
+    def chat_id=: (Integer?) -> Integer?
   end
 end

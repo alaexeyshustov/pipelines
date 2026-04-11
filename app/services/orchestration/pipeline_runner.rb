@@ -77,7 +77,10 @@ module Orchestration
       input  = action_run.input
       if klass.ancestors.include?(RubyLLM::Agent)
         params = (action.params || {}).merge(action_run.step_action.params || {})
-        result = build_agent(action, params).ask(input.to_json)
+        agent = build_agent(action, params)
+        chat_id = agent.respond_to?(:chat) ? agent.chat&.id : agent.id
+        action_run.update_column(:chat_id, chat_id)
+        result = agent.ask(input.to_json)
         { "result" => parse_content(result.content) }
       else
         params = (action.params || {}).merge(action_run.step_action.params || {})

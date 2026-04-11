@@ -22,5 +22,16 @@ RSpec.describe Orchestration::ActionRun do
       expect(action_run.pipeline_run).to be_a(Orchestration::PipelineRun)
       expect(action_run.step_action).to be_a(Orchestration::StepAction)
     end
+
+    it 'optionally belongs to a chat' do
+      action_run = create(:orchestration_action_run)
+      expect(action_run.chat).to be_nil
+    end
+
+    it 'accepts a chat association' do
+      chat = create(:chat)
+      action_run = create(:orchestration_action_run, chat: chat)
+      expect(action_run.chat).to eq(chat)
+    end
   end
 end
