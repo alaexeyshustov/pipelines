@@ -4,6 +4,7 @@
   <p class="mb-2 text-xs text-gray-500"><%= @pagy.count %> total</p>
 <% end %>
 
+<div data-controller="batch">
 <%= render UI::TableComponent.new(collection: @chats, empty_message: "No chats found.", pagy: @pagy, selectable: true) do |table| %>
   <% table.with_batch_action(label: "Delete Selected", action: "delete", url: batch_chats_path, variant: :danger, confirm: "Delete selected chats?") %>
   <% table.with_columns([
@@ -21,3 +22,4 @@
     }
   ) %>
 <% end %>
+</div>

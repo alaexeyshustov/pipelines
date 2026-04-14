@@ -9,8 +9,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
   before do
     allow(Emails::ClassifyAgent).to receive(:create).and_return(stub_agent)
-    allow(stub_agent).to receive(:ask)
-      .and_return(instance_double(RubyLLM::Message, content: "classification result"))
+    allow(stub_agent).to receive_messages(ask: instance_double(RubyLLM::Message, content: "classification result"), chat: instance_double(Chat, id: nil))
   end
 
   describe '#call' do
@@ -32,6 +31,14 @@ RSpec.describe Orchestration::PipelineRunner do
         action_run = Orchestration::ActionRun.last
         expect(action_run.status).to eq("completed")
         expect(action_run.output).to eq({ "result" => "classification result" })
+      end
+
+      it 'stores the chat_id on the ActionRun after building the agent' do
+        chat = create(:chat)
+        allow(stub_agent).to receive(:chat).and_return(chat)
+        described_class.new(pipeline_run).call
+        action_run = Orchestration::ActionRun.last
+        expect(action_run.chat_id).to eq(chat.id)
       end
     end
 

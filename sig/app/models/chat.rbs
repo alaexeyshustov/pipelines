@@ -5,4 +5,6 @@ class Chat < ApplicationRecord
   def model_id=: (Integer?) -> Integer?
   def model: () -> Model?
   def model=: (Model?) -> Model?
+
+  def action_runs: () -> ActiveRecord::Associations::CollectionProxy
 end

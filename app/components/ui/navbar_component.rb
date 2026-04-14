@@ -15,7 +15,7 @@ module UI
         NavItem.new(label: "Actions",   path: helpers.orchestration_actions_path),
         NavItem.new(label: "Emails",    path: helpers.application_mails_path),
         NavItem.new(label: "Interviews", path: helpers.interviews_path),
-        NavItem.new(label: "Monitoring", path: "/monitoring")
+        NavItem.new(label: "Monitoring", path: helpers.ruby_llm_monitoring.root_path)
       ]
     end
 
