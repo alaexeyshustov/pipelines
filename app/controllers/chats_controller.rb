@@ -13,12 +13,12 @@ class ChatsController < ApplicationController
     Chat.find(params[:id]).destroy
     redirect_to chats_path, status: :see_other
   end
-  
+
   def batch
     ids = params[:ids]
     batch_action = params[:batch_action]
 
-    result = Chats::BatchService.new(ids: ids.to_a, batch_action: batch_action.to_s).call
+    result = Chats::BatchService.call(ids: ids.to_a, batch_action: batch_action.to_s)
     redirect_to chats_path, **flash_for(result)
   end
 end

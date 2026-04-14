@@ -8,6 +8,10 @@ module Chats
       def ok? = ok
     end
 
+    def self.call(ids:, batch_action:)
+      new(ids:, batch_action:).call
+    end
+
     def initialize(ids:, batch_action:)
       @ids = ids
       @batch_action = batch_action

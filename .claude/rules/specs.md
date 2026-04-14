@@ -17,6 +17,8 @@ Tests verify behavior through public interfaces. Prefer realistic data, clear fa
 5. **System specs test through the UI** – See the System Specs section below.
 6. **Prefer explicit expectations** – Matcher-heavy one-liners (including many shoulda-style assertions) often hide intent and failure context.
 7. **Do not use `double()`** – Stub external boundaries, not the behavior you are trying to verify. Use real objects or test doubles that mimic real behavior (e.g., `instance_double` with verified methods).
+8. **Use `stub_const` for anonymous/dynamic classes in tests** - never inline anonymous classes that need deserialization
+9. **When setting up specs with doubles/spies, verify keyword arguments match the actual method signatures**
 
 ## Spec Types
 

@@ -1,0 +1,18 @@
+module Chats
+  class BatchService
+    class Result
+      attr_reader ok: bool
+      attr_reader message: String
+
+      def initialize: (ok: bool, message: String) -> void
+      def ok?: () -> bool
+    end
+
+    @ids: Array[String] | Array[Integer]
+    @batch_action: String
+
+    def self.call: (ids: Array[String] | Array[Integer], batch_action: String) -> Result
+    def initialize: (ids: Array[String] | Array[Integer], batch_action: String) -> void
+    def call: () -> Result
+  end
+end
