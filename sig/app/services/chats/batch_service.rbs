@@ -2,9 +2,9 @@ module Chats
   class BatchService
     class Result
       attr_reader ok: bool
-      attr_reader message: String
+      attr_reader message: String?
 
-      def initialize: (ok: bool, message: String) -> void
+      def initialize: (ok: bool, ?message: String?) -> void
       def ok?: () -> bool
     end
 

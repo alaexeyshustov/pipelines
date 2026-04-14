@@ -79,6 +79,7 @@ module Orchestration
         params = (action.params || {}).merge(action_run.step_action.params || {})
         agent = build_agent(action, params)
         chat_id = agent.respond_to?(:chat) ? agent.chat&.id : agent.id
+        # Persist before ask so chat_id is saved even if the agent raises
         action_run.update_column(:chat_id, chat_id)
         result = agent.ask(input.to_json)
         { "result" => parse_content(result.content) }
@@ -113,7 +114,7 @@ module Orchestration
       agent = agent.with_model(model)                    if model.present? && agent.respond_to?(:with_model)
       agent = agent.with_tools(*tools)                   if tools.present?
       agent = agent.with_schema(schema_class.constantize) if schema_class.present?
-      agent.chat.with_instructions(prompt)               if prompt.present?
+      agent.chat.with_instructions(prompt)               if prompt.present? && agent.respond_to?(:chat)
       agent
     end
   end

@@ -79,6 +79,7 @@ FOREIGN KEY ("pipeline_run_id")
 , CONSTRAINT "fk_rails_2f2096f1b1"
 FOREIGN KEY ("chat_id")
   REFERENCES "chats" ("id")
+ ON DELETE SET NULL
 );
 CREATE INDEX "index_action_runs_on_pipeline_run_id" ON "action_runs" ("pipeline_run_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_action_runs_on_step_action_id" ON "action_runs" ("step_action_id") /*application='ApplicationPipeline'*/;
