@@ -79,13 +79,72 @@ FOREIGN KEY ("pipeline_run_id")
 , CONSTRAINT "fk_rails_2f2096f1b1"
 FOREIGN KEY ("chat_id")
   REFERENCES "chats" ("id")
- ON DELETE SET NULL
 );
 CREATE INDEX "index_action_runs_on_pipeline_run_id" ON "action_runs" ("pipeline_run_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_action_runs_on_step_action_id" ON "action_runs" ("step_action_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_action_runs_on_status" ON "action_runs" ("status") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_action_runs_on_chat_id" ON "action_runs" ("chat_id") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "leva_datasets" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "description" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE TABLE IF NOT EXISTS "leva_dataset_records" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "dataset_id" integer NOT NULL, "recordable_type" varchar NOT NULL, "recordable_id" integer NOT NULL, "actual_result" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_a0599aa621"
+FOREIGN KEY ("dataset_id")
+  REFERENCES "leva_datasets" ("id")
+);
+CREATE INDEX "index_leva_dataset_records_on_dataset_id" ON "leva_dataset_records" ("dataset_id") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_leva_dataset_records_on_recordable" ON "leva_dataset_records" ("recordable_type", "recordable_id") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "leva_prompts" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "version" integer, "system_prompt" text, "user_prompt" text, "metadata" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE TABLE IF NOT EXISTS "leva_experiments" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "description" text, "dataset_id" integer NOT NULL, "prompt_id" integer, "status" integer, "metadata" text, "runner_class" varchar, "evaluator_classes" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_067bfa5025"
+FOREIGN KEY ("dataset_id")
+  REFERENCES "leva_datasets" ("id")
+, CONSTRAINT "fk_rails_4aa77a56d1"
+FOREIGN KEY ("prompt_id")
+  REFERENCES "leva_prompts" ("id")
+);
+CREATE INDEX "index_leva_experiments_on_dataset_id" ON "leva_experiments" ("dataset_id") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_leva_experiments_on_prompt_id" ON "leva_experiments" ("prompt_id") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "leva_runner_results" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "experiment_id" integer, "dataset_record_id" integer NOT NULL, "prompt_id" integer NOT NULL, "prompt_version" integer, "prediction" text, "runner_class" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_abd1d29b91"
+FOREIGN KEY ("experiment_id")
+  REFERENCES "leva_experiments" ("id")
+, CONSTRAINT "fk_rails_bbc5ca9d18"
+FOREIGN KEY ("dataset_record_id")
+  REFERENCES "leva_dataset_records" ("id")
+, CONSTRAINT "fk_rails_919dd5b17f"
+FOREIGN KEY ("prompt_id")
+  REFERENCES "leva_prompts" ("id")
+);
+CREATE INDEX "index_leva_runner_results_on_experiment_id" ON "leva_runner_results" ("experiment_id") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_leva_runner_results_on_dataset_record_id" ON "leva_runner_results" ("dataset_record_id") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_leva_runner_results_on_prompt_id" ON "leva_runner_results" ("prompt_id") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "leva_evaluation_results" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "experiment_id" integer, "dataset_record_id" integer NOT NULL, "runner_result_id" integer NOT NULL, "evaluator_class" varchar NOT NULL, "score" float, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_54593eaaa5"
+FOREIGN KEY ("experiment_id")
+  REFERENCES "leva_experiments" ("id")
+, CONSTRAINT "fk_rails_e225e3559f"
+FOREIGN KEY ("dataset_record_id")
+  REFERENCES "leva_dataset_records" ("id")
+, CONSTRAINT "fk_rails_706698fcd9"
+FOREIGN KEY ("runner_result_id")
+  REFERENCES "leva_runner_results" ("id")
+);
+CREATE INDEX "index_leva_evaluation_results_on_experiment_id" ON "leva_evaluation_results" ("experiment_id") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_leva_evaluation_results_on_dataset_record_id" ON "leva_evaluation_results" ("dataset_record_id") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_leva_evaluation_results_on_runner_result_id" ON "leva_evaluation_results" ("runner_result_id") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "leva_optimization_runs" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "dataset_id" integer NOT NULL, "prompt_id" integer, "status" varchar DEFAULT 'pending' NOT NULL, "current_step" varchar, "progress" integer DEFAULT 0 NOT NULL, "examples_processed" integer DEFAULT 0, "total_examples" integer, "prompt_name" varchar NOT NULL, "mode" varchar DEFAULT 'light' NOT NULL, "error_message" text, "metadata" json, "model" varchar, "optimizer" varchar DEFAULT 'bootstrap' NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_7f27bdc0a6"
+FOREIGN KEY ("dataset_id")
+  REFERENCES "leva_datasets" ("id")
+, CONSTRAINT "fk_rails_b09005ac77"
+FOREIGN KEY ("prompt_id")
+  REFERENCES "leva_prompts" ("id")
+);
+CREATE INDEX "index_leva_optimization_runs_on_dataset_id" ON "leva_optimization_runs" ("dataset_id") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_leva_optimization_runs_on_prompt_id" ON "leva_optimization_runs" ("prompt_id") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_leva_optimization_runs_on_status" ON "leva_optimization_runs" ("status") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260414120027'),
+('20260414120026'),
+('20260414120025'),
+('20260414120024'),
+('20260414120023'),
+('20260414120022'),
+('20260414120021'),
 ('20260411074607'),
 ('20260410145544'),
 ('20260410145543'),

@@ -16,7 +16,7 @@ RSpec.describe UI::NavbarComponent, type: :component do
   it "renders all nav items" do
     items = rendered.css("[data-testid='navbar-item']")
     labels = items.map { |n| n.text.strip }
-    expect(labels).to eq(%w[Chats Pipelines Actions Emails Interviews Monitoring])
+    expect(labels).to eq(%w[Chats Pipelines Actions Emails Interviews Monitoring Evaluation])
   end
 
   it "renders a nav element" do

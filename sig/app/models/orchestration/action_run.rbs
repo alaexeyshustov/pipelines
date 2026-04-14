@@ -25,5 +25,10 @@ module Orchestration
     def chat=: (Chat?) -> Chat?
     def chat_id: () -> Integer?
     def chat_id=: (Integer?) -> Integer?
+
+    def ground_truth: () -> String?
+    def index_attributes: () -> Hash[Symbol, untyped]
+    def show_attributes: () -> Hash[Symbol, untyped]
+    def to_llm_context: () -> Hash[Symbol, untyped]
   end
 end
