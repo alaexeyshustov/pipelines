@@ -1,0 +1,17 @@
+# This migration comes from leva (originally 20240813173035)
+class CreateLevaExperiments < ActiveRecord::Migration[7.2]
+  def change
+    create_table :leva_experiments do |t|
+      t.string :name
+      t.text :description
+      t.references :dataset, null: false, foreign_key: { to_table: :leva_datasets }
+      t.references :prompt, null: true, foreign_key: { to_table: :leva_prompts }
+      t.integer :status
+      t.text :metadata
+      t.string :runner_class
+      t.text :evaluator_classes
+
+      t.timestamps
+    end
+  end
+end

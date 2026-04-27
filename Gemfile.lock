@@ -316,7 +316,13 @@ GEM
       addressable (~> 2.8)
       childprocess (~> 5.0)
       logger (~> 1.6)
+    leva (0.3.4)
+      liquid (~> 5.5)
+      rails (>= 7.2.0)
     lint_roller (1.1.0)
+    liquid (5.12.0)
+      bigdecimal
+      strscan (>= 3.1.1)
     listen (3.10.0)
       logger
       rb-fsevent (~> 0.10, >= 0.10.3)
@@ -701,6 +707,8 @@ DEPENDENCIES
   google-apis-gmail_v1
   googleauth
   jsbundling-rails
+  leva
+  liquid
   mail (~> 2.8)
   mutant
   mutant-rspec
@@ -835,7 +843,9 @@ CHECKSUMS
   jwt (3.1.2) sha256=af6991f19a6bb4060d618d9add7a66f0eeb005ac0bc017cd01f63b42e122d535
   language_server-protocol (3.17.0.5) sha256=fd1e39a51a28bf3eec959379985a72e296e9f9acfce46f6a79d31ca8760803cc
   launchy (3.1.1) sha256=72b847b5cc961589dde2c395af0108c86ff0119f42d4648d25b5440ebb10059e
+  leva (0.3.4) sha256=75c6e0b855e23f7ea37b1eba1c4c4839600f2d61cd501f77527f603bfec62cf5
   lint_roller (1.1.0) sha256=2c0c845b632a7d172cb849cc90c1bce937a28c5c8ccccb50dfd46a485003cc87
+  liquid (5.12.0) sha256=5a3c2c2430cd925d21c53e4ed9abea52cd0a9da53b541422f81dee79aca2a673
   listen (3.10.0) sha256=c6e182db62143aeccc2e1960033bebe7445309c7272061979bb098d03760c9d2
   localhost (1.7.0) sha256=09b32819537f914ccdf0a7c595fab162517401b6ef644a2afd3708d943c4547f
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
