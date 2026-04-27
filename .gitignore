@@ -47,5 +47,7 @@ coverage/
 
 node_modules/
 
+.claude/worktrees/
+.claude/settings.local.json
 
 .gem_rbs_collection/

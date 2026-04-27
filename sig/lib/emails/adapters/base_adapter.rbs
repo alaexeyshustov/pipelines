@@ -13,7 +13,7 @@ module Emails
       def get_message: (String | Integer message_id, ?label: String?) -> message
       def get_labels: () -> Array[label]
       def get_unread_count: () -> Integer
-      def modify_labels: (String message_id, ?add: Array[String], ?remove: Array[String]) -> modify_result
+      def modify_labels: (String | Integer message_id, ?add: Array[String], ?remove: Array[String], ?source_mailbox: String?) -> modify_result
       def create_label: (name: String) -> label
     end
   end

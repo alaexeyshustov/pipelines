@@ -32,7 +32,7 @@ module Emails
         raise NotImplementedError, "#{self.class}#get_unread_count is not implemented"
       end
 
-      def modify_labels(message_id, add: [], remove: [])
+      def modify_labels(message_id, add: [], remove: [], source_mailbox: nil)
         raise NotImplementedError, "#{self.class}#modify_labels is not implemented"
       end
 

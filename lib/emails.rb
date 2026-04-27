@@ -38,8 +38,8 @@ module Emails
       fetch(provider_name).get_unread_count
     end
 
-    def modify_labels(provider_name, message_id, add: [], remove: [])
-      fetch(provider_name).modify_labels(message_id, add: add, remove: remove)
+    def modify_labels(provider_name, message_id, add: [], remove: [], source_mailbox: nil)
+      fetch(provider_name).modify_labels(message_id, add: add, remove: remove, source_mailbox: source_mailbox)
     end
 
     def create_label(provider_name, name:)

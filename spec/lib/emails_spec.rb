@@ -76,14 +76,27 @@ RSpec.describe Emails do
 
   describe '.modify_labels' do
     it 'delegates to the matching adapter with add/remove lists' do
-      allow(adapter).to receive(:modify_labels).with('msg_1', add: [ 'JOBS' ], remove: [ 'INBOX' ]).and_return(true)
+      allow(adapter).to receive(:modify_labels)
+        .with('msg_1', add: [ 'JOBS' ], remove: [ 'INBOX' ], source_mailbox: nil)
+        .and_return(true)
       expect(described_class.modify_labels('gmail', 'msg_1', add: [ 'JOBS' ], remove: [ 'INBOX' ])).to be(true)
     end
 
     it 'defaults add and remove to empty arrays' do
-      allow(adapter).to receive(:modify_labels).with('msg_1', add: [], remove: []).and_return(true)
+      allow(adapter).to receive(:modify_labels).with('msg_1', add: [], remove: [], source_mailbox: nil).and_return(true)
       described_class.modify_labels('gmail', 'msg_1')
-      expect(adapter).to have_received(:modify_labels).with('msg_1', add: [], remove: [])
+      expect(adapter).to have_received(:modify_labels).with('msg_1', add: [], remove: [], source_mailbox: nil)
+    end
+
+    it 'forwards the source mailbox when provided' do
+      allow(adapter).to receive(:modify_labels)
+        .with('msg_1', add: [ '\\Flagged' ], remove: [], source_mailbox: 'Inbox')
+        .and_return(true)
+
+      described_class.modify_labels('gmail', 'msg_1', add: [ '\\Flagged' ], source_mailbox: 'Inbox')
+
+      expect(adapter).to have_received(:modify_labels)
+        .with('msg_1', add: [ '\\Flagged' ], remove: [], source_mailbox: 'Inbox')
     end
   end
 

@@ -12,7 +12,7 @@ module Emails
     def name = "add_labels"
 
     def execute(provider:, message_id:, label_ids:, mailbox: "INBOX")
-      Emails.modify_labels(provider, message_id, add: label_ids)
+      Emails.modify_labels(provider, message_id, add: label_ids, source_mailbox: mailbox)
     end
   end
 end

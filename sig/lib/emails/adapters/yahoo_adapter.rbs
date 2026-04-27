@@ -23,6 +23,7 @@ module Emails
 
       def imap: () -> Net::IMAP
       def ensure_mailbox: (String mailbox) -> void
+      def imap_flag?: (String label) -> bool
 
       HEADER_FIELDS: Array[String]
       FULL_FIELDS: Array[String]

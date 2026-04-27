@@ -162,6 +162,14 @@ RSpec.describe Emails::Adapters::YahooAdapter do
       expect(imap).to have_received(:uid_copy).with(101, 'job-applications')
     end
 
+    it 'adds IMAP flags in the source mailbox when adding Yahoo flags' do
+      adapter.modify_labels(101, add: [ '\\Flagged' ], source_mailbox: 'Inbox')
+
+      expect(imap).to have_received(:select).with('Inbox')
+      expect(imap).to have_received(:uid_store).with(101, '+FLAGS', [ '\\Flagged' ])
+      expect(imap).not_to have_received(:uid_copy).with(101, '\\Flagged')
+    end
+
     it 'copies from INBOX by default when adding a label' do
       adapter.modify_labels(101, add: [ 'job-applications' ])
 
@@ -187,6 +195,14 @@ RSpec.describe Emails::Adapters::YahooAdapter do
       expect(imap).to have_received(:select).with('job-applications')
       expect(imap).to have_received(:uid_store).with(101, '+FLAGS', [ :Deleted ])
       expect(imap).to have_received(:expunge)
+    end
+
+    it 'removes IMAP flags from the source mailbox when removing Yahoo flags' do
+      adapter.modify_labels(101, remove: [ '\\Flagged' ], source_mailbox: 'Inbox')
+
+      expect(imap).to have_received(:select).with('Inbox')
+      expect(imap).to have_received(:uid_store).with(101, '-FLAGS', [ '\\Flagged' ])
+      expect(imap).not_to have_received(:expunge)
     end
 
     it 'selects each folder when removing from multiple folders' do

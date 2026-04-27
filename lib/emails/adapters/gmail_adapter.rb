@@ -112,7 +112,8 @@ module Emails
         end
       end
 
-      def modify_labels(message_id, add: [], remove: [])
+      def modify_labels(message_id, add: [], remove: [], source_mailbox: nil)
+        _source_mailbox = source_mailbox
         request = Google::Apis::GmailV1::ModifyMessageRequest.new(
           add_label_ids: add,
           remove_label_ids: remove

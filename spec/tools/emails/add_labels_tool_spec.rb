@@ -27,4 +27,13 @@ RSpec.describe Emails::AddLabelsTool do
       }
     ).to have_been_made
   end
+
+  it 'forwards Yahoo mailbox context when adding IMAP flags' do
+    allow(Emails).to receive(:modify_labels).and_return(message_id: 101, added: [ '\\Flagged' ], removed: [])
+
+    tool.execute(provider: 'yahoo', message_id: '101', label_ids: [ '\\Flagged' ], mailbox: 'Inbox')
+
+    expect(Emails).to have_received(:modify_labels)
+      .with('yahoo', '101', add: [ '\\Flagged' ], source_mailbox: 'Inbox')
+  end
 end

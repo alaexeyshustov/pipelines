@@ -111,15 +111,26 @@ module Emails
         unless add.empty?
           with_lock do
             ensure_mailbox(source_mailbox)
-            add.each { |folder| imap.uid_copy(uid, folder) }
+            add.each do |label|
+              if imap_flag?(label)
+                imap.uid_store(uid, "+FLAGS", [ label ])
+              else
+                imap.uid_copy(uid, label)
+              end
+            end
           end
         end
 
-        remove.each do |folder|
+        remove.each do |label|
           with_lock do
-            ensure_mailbox(folder)
-            imap.uid_store(uid, "+FLAGS", [ :Deleted ])
-            imap.expunge
+            if imap_flag?(label)
+              ensure_mailbox(source_mailbox)
+              imap.uid_store(uid, "-FLAGS", [ label ])
+            else
+              ensure_mailbox(label)
+              imap.uid_store(uid, "+FLAGS", [ :Deleted ])
+              imap.expunge
+            end
           end
         end
 
@@ -179,7 +190,17 @@ module Emails
       end
 
       def build_mailbox(label)
-        label && get_labels.find { |lbl| lbl[:id] == label }&.dig(:name) || "INBOX"
+        return "INBOX" if label.blank?
+
+        match = get_labels.find do |lbl|
+          [ lbl[:id], lbl[:name] ].compact.any? { |value| value.casecmp?(label) }
+        end
+
+        match&.dig(:name) || label
+      end
+
+      def imap_flag?(label)
+        label.start_with?("\\")
       end
     end
   end
