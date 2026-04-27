@@ -98,7 +98,10 @@ RSpec.describe Orchestration::PipelineRunner do
     end
 
     context 'when a Leva::Prompt exists for the agent class' do
+      let(:chat) { instance_spy(Chat, id: nil) }
+
       before do
+        allow(stub_agent).to receive(:chat).and_return(chat)
         Leva::Prompt.create!(
           name: "Emails::ClassifyAgent",
           system_prompt: "Custom Leva prompt for classifier",
@@ -108,15 +111,16 @@ RSpec.describe Orchestration::PipelineRunner do
       end
 
       it 'applies the Leva system_prompt as instructions' do
-        chat = instance_spy(Chat, id: nil)
-        allow(stub_agent).to receive(:chat).and_return(chat)
         described_class.new(pipeline_run).call
         expect(chat).to have_received(:with_instructions).with("Custom Leva prompt for classifier")
       end
     end
 
     context 'when a Leva::Prompt exists and action also has a prompt' do
+      let(:chat) { instance_spy(Chat, id: nil) }
+
       before do
+        allow(stub_agent).to receive(:chat).and_return(chat)
         Leva::Prompt.create!(
           name: "Emails::ClassifyAgent",
           system_prompt: "Leva wins over action prompt",
@@ -127,37 +131,36 @@ RSpec.describe Orchestration::PipelineRunner do
       end
 
       it 'prefers the Leva prompt over the action prompt' do
-        chat = instance_spy(Chat, id: nil)
-        allow(stub_agent).to receive(:chat).and_return(chat)
         described_class.new(pipeline_run).call
         expect(chat).to have_received(:with_instructions).with("Leva wins over action prompt")
       end
     end
 
     context 'when no Leva::Prompt exists but the action has a prompt' do
+      let(:chat) { instance_spy(Chat, id: nil) }
+
       before do
+        allow(stub_agent).to receive(:chat).and_return(chat)
         action.update!(prompt: "Action-level fallback prompt")
         create(:orchestration_step_action, step: step1, action: action, position: 1)
       end
 
       it 'falls back to the action prompt' do
-        chat = instance_spy(Chat, id: nil)
-        allow(stub_agent).to receive(:chat).and_return(chat)
         described_class.new(pipeline_run).call
         expect(chat).to have_received(:with_instructions).with("Action-level fallback prompt")
       end
     end
 
     context 'when no Leva::Prompt and no action prompt' do
+      let(:chat) { instance_spy(Chat, id: nil) }
+
       before do
+        allow(stub_agent).to receive(:chat).and_return(chat)
         action.update!(prompt: nil)
         create(:orchestration_step_action, step: step1, action: action, position: 1)
       end
 
       it 'does not call with_instructions on the chat' do
-        chat = instance_double(Chat, id: nil)
-        allow(stub_agent).to receive(:chat).and_return(chat)
-        allow(chat).to receive(:with_instructions)
         described_class.new(pipeline_run).call
         expect(chat).not_to have_received(:with_instructions)
       end

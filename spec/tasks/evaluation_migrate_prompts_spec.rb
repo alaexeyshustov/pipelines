@@ -22,7 +22,7 @@ RSpec.describe "evaluation:migrate_prompts rake task" do # rubocop:disable RSpec
 
   it "creates one Leva::Prompt per agent class" do
     expect { Rake::Task[task_name].invoke }
-      .to change(Leva::Prompt, :count).by(7)
+      .to change(Leva::Prompt, :count).by(agent_classes.size)
   end
 
   it "creates prompts named after each agent class" do
@@ -33,10 +33,12 @@ RSpec.describe "evaluation:migrate_prompts rake task" do # rubocop:disable RSpec
 
   it "sets system_prompt from the agent's inline instructions" do
     Rake::Task[task_name].invoke
-    agent_classes.each do |agent_class|
-      prompt = Leva::Prompt.find_by!(name: agent_class)
-      expected = agent_class.constantize.instructions
-      expect(prompt.system_prompt).to eq(expected)
+    aggregate_failures do
+      agent_classes.each do |agent_class|
+        prompt = Leva::Prompt.find_by!(name: agent_class)
+        expected = agent_class.constantize.instructions
+        expect(prompt.system_prompt).to eq(expected)
+      end
     end
   end
 

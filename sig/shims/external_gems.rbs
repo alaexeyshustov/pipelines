@@ -136,9 +136,28 @@ end
 module Leva
   class Prompt
     def self.find_by: (**untyped attrs) -> Prompt?
+    def self.find_by!: (**untyped attrs) -> Prompt
+    def self.find_or_initialize_by: (**untyped attrs) -> Prompt
+    def self.create!: (**untyped attrs) -> Prompt
+    def self.where: (**untyped attrs) -> PromptRelation
+    def self.order: (**untyped attrs) -> PromptRelation
+
+    def name: () -> String?
+    def name=: (String value) -> String
     def system_prompt: () -> String?
     def system_prompt=: (String value) -> String
     def user_prompt: () -> String?
     def user_prompt=: (String value) -> String
+    def save!: () -> Prompt
+    def update!: (**untyped attrs) -> Prompt
+    def reload: () -> Prompt
+  end
+
+  class PromptRelation
+    def order: (**untyped attrs) -> PromptRelation
+    def first: () -> Prompt?
+    def pluck: (*untyped columns) -> Array[untyped]
+    def count: () -> Integer
+    def index_by: () { (Prompt) -> String } -> Hash[String, Prompt]
   end
 end
