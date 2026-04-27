@@ -132,3 +132,13 @@ end
 
 class Pagy
 end
+
+module Leva
+  class Prompt
+    def self.find_by: (**untyped attrs) -> Prompt?
+    def system_prompt: () -> String?
+    def system_prompt=: (String value) -> String
+    def user_prompt: () -> String?
+    def user_prompt=: (String value) -> String
+  end
+end
