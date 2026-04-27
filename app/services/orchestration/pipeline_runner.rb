@@ -104,10 +104,10 @@ module Orchestration
     def build_agent(action, _params)
       model        = @pipeline_run.pipeline.model.presence || action.model
       tools        = action.tools
-      prompt       = action.prompt
+      prompt       = leva_prompt_for(action.agent_class) || action.prompt
       schema_class = action.schema_class
       agent_class  = action.agent_class
-      raise ArgumentError, "Agent class not found: #{agent_class}" unless agent_class.present?
+      raise ArgumentError, "Agent class not found: #{agent_class}" unless agent_class
 
       # agent = agent_class.constantize.new
       agent = agent_class.constantize.create
@@ -116,6 +116,17 @@ module Orchestration
       agent = agent.with_schema(schema_class.constantize) if schema_class.present?
       agent.chat.with_instructions(prompt)               if prompt.present? && agent.respond_to?(:chat)
       agent
+    end
+
+    def leva_prompt_for(agent_class)
+      @prompt_cache ||= {} # : Hash[String?, String?]
+      return @prompt_cache[agent_class] if @prompt_cache.key?(agent_class)
+
+      @prompt_cache[agent_class] = Leva::Prompt
+        .where(name: agent_class)
+        .order(version: :desc, id: :desc)
+        .first
+        &.system_prompt
     end
   end
 end

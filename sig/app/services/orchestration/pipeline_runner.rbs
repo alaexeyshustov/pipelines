@@ -12,5 +12,6 @@ module Orchestration
     def parse_content: (String | untyped content) -> untyped
     def validate_output!: (Action action, Hash[String, untyped] output) -> void
     def build_agent: (Action action, Hash[String, untyped] params) -> untyped
+    def leva_prompt_for: (String? agent_class) -> String?
   end
 end
