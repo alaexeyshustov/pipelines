@@ -1,0 +1,8 @@
+module Evaluation
+  class MetricExtractor
+    SYSTEM_PROMPT: String
+
+    def initialize: (String agent_name) -> void
+    def call: () -> Array[Hash[String, String]]
+  end
+end

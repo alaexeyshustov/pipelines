@@ -7,6 +7,8 @@ plugins:
 
 AllCops:
   NewCops: enable
+  Exclude:
+    - ".gem_rbs_collection/**/*"
 
 RSpec/MultipleExpectations:
   Max: 3

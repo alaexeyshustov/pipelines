@@ -29,13 +29,13 @@ module PipelineCLI
 
       def call(pipeline:, model:, watch:, log_level: "info", log_file: nil, date: Date.today, **)
         pipeline_class = case pipeline.downcase
-                         when "applications", "jobs"
+        when "applications", "jobs"
                            Pipeline::ApplicationsWorkflow
-                         when 'test'
+        when 'test'
                            Pipeline::ApplicationsWorkflow # or define a proper test workflow
-                         else
+        else
                            raise ArgumentError, "Unknown pipeline: #{pipeline}"
-                         end
+        end
 
         log_path = log_file || Rails.root.join("log/pipeline.log").to_s
         FileUtils.mkdir_p(File.dirname(log_path))

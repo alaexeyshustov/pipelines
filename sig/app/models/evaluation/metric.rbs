@@ -1,0 +1,18 @@
+module Evaluation
+  class Metric < ApplicationRecord
+    def self.table_name: () -> String
+    def self.for_agent: (String agent_name) -> ActiveRecord::Relation
+    def self.active: () -> ActiveRecord::Relation
+
+    def agent_name: () -> String?
+    def agent_name=: (String?) -> String?
+    def name: () -> String?
+    def name=: (String?) -> String?
+    def description: () -> String?
+    def description=: (String?) -> String?
+    def weight: () -> BigDecimal?
+    def weight=: (BigDecimal | Float | String | nil) -> (BigDecimal | Float | String | nil)
+    def active: () -> bool
+    def active=: (bool) -> bool
+  end
+end
