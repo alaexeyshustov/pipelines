@@ -1,0 +1,11 @@
+module Evaluation
+  class StubbedAgentRun < Leva::BaseRun
+    def execute: (Orchestration::ActionRun record) -> String
+
+    private
+
+    def extract_tool_calls_from: (Chat? chat) -> Array[SampleCollector::tool_call_entry]
+    def stub_tool: (Class tool_class, ToolStubRegistry registry) -> Class
+    def build_prediction: (untyped agent, untyped result) -> String
+  end
+end
