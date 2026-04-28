@@ -1,4 +1,13 @@
 module RubyLLM
+  class Message
+    def content: () -> String
+  end
+
+  class Chat
+    def with_instructions: (String instructions) -> self
+    def ask: (String prompt) -> Message
+  end
+
   class Agent
     def self.create: () -> instance
 
@@ -14,4 +23,6 @@ module RubyLLM
 
   class Schema
   end
+
+  def self.chat: (?model: String) -> Chat
 end

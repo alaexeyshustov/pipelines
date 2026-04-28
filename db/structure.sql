@@ -138,7 +138,10 @@ CREATE INDEX "index_leva_optimization_runs_on_dataset_id" ON "leva_optimization_
 CREATE INDEX "index_leva_optimization_runs_on_prompt_id" ON "leva_optimization_runs" ("prompt_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_leva_optimization_runs_on_status" ON "leva_optimization_runs" ("status") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_leva_prompts_on_name" ON "leva_prompts" ("name") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "evaluation_metrics" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "agent_name" varchar NOT NULL, "name" varchar NOT NULL, "description" text NOT NULL, "weight" decimal DEFAULT 1.0 NOT NULL, "active" boolean DEFAULT TRUE NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE UNIQUE INDEX "index_evaluation_metrics_on_agent_name_and_name" ON "evaluation_metrics" ("agent_name", "name");
 INSERT INTO "schema_migrations" (version) VALUES
+('20260427135859'),
 ('20260427000001'),
 ('20260414120027'),
 ('20260414120026'),

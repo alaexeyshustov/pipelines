@@ -1,0 +1,17 @@
+module Evaluation
+  class MetricExtractor
+    SYSTEM_PROMPT: String
+    DEFAULT_MODEL: String
+
+    def self.call: (String agent_name) -> Array[Hash[String, String]]
+
+    def initialize: (String agent_name) -> void
+    def call: () -> Array[Hash[String, String]]
+
+    private
+
+    def parse_metrics: (String content) -> Array[Hash[String, String]]
+    def validate_metrics!: (untyped metrics) -> void
+    def truncate: (String content, ?Integer limit) -> String
+  end
+end

@@ -1,4 +1,31 @@
 namespace :evaluation do
+  desc "Print candidate metrics for an agent without persisting (e.g. rake evaluation:extract_metrics[Emails::ClassifyAgent])"
+  task :extract_metrics, [ :agent_name ] => :environment do |_, args|
+    agent_name = args[:agent_name] or raise ArgumentError, "Usage: rake evaluation:extract_metrics[AgentName]"
+    candidates = Evaluation::MetricExtractor.call(agent_name)
+    candidates.each do |metric|
+      puts "name: #{metric['name']}"
+      puts "description: #{metric['description']}"
+      puts "---"
+    end
+  end
+
+  desc "Persist extracted metrics for an agent (e.g. rake evaluation:seed_metrics[Emails::ClassifyAgent])"
+  task :seed_metrics, [ :agent_name ] => :environment do |_, args|
+    agent_name = args[:agent_name] or raise ArgumentError, "Usage: rake evaluation:seed_metrics[AgentName]"
+    candidates = Evaluation::MetricExtractor.call(agent_name)
+    created = 0
+    updated = 0
+    candidates.each do |metric|
+      record = Evaluation::Metric.find_or_initialize_by(agent_name: agent_name, name: metric["name"])
+      was_new = record.new_record?
+      record.description = metric["description"]
+      record.save!
+      was_new ? created += 1 : updated += 1
+    end
+    puts "Seeded metrics for #{agent_name}: #{created} created, #{updated} updated."
+  end
+
   desc "Migrate hardcoded agent instructions into Leva::Prompt records"
   task migrate_prompts: :environment do
     agent_classes = %w[
