@@ -27,6 +27,7 @@ module Evaluation
       # steep:ignore:start
       Orchestration::ActionRun
         .joins(step_action: :action)
+        .includes(chat: { messages: :parent_tool_call })
         .where(status: "completed")
         .where.not(chat_id: nil)
         .where(actions: { agent_class: @agent_name })
@@ -36,18 +37,7 @@ module Evaluation
     end
 
     def extract_tool_calls(chat)
-      return [] if chat.nil?
-
-      # steep:ignore:start
-      chat.messages
-          .includes(:parent_tool_call)
-          .where(role: "tool")
-          .order(:id)
-          .filter_map do |msg|
-            tc = msg.parent_tool_call
-            tc && { tool_name: tc.name, arguments: tc.arguments, result: msg.content }
-          end
-      # steep:ignore:end
+      ToolCallExtractor.call(chat)
     end
   end
 end

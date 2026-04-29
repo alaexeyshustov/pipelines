@@ -1,18 +1,22 @@
 module Evaluation
   class StubbedAgentRun < Leva::BaseRun
     def execute(record)
-      expected_tool_calls = extract_tool_calls_from(record.chat)
+      expected_tool_calls = ToolCallExtractor.call(record.chat)
       registry = Evaluation::ToolStubRegistry.new(expected_tool_calls)
 
       # steep:ignore:start
-      agent_class_name = record.step_action.action.agent_class
+      action = record.step_action.action
+      agent_class_name = action.agent_class
       raise ArgumentError, "agent_class is nil for action_run #{record.id}" unless agent_class_name
 
-      agent_class = agent_class_name.constantize
-      stubbed_tools = agent_class.tools.map { |tool_class| stub_tool(tool_class, registry) }
+      agent_class = agent_class_name.safe_constantize
+      raise ArgumentError, "agent_class #{agent_class_name.inspect} could not be resolved for action_run #{record.id}" unless agent_class
+
+      tool_classes = resolve_tools(action, agent_class)
+      stubbed_tools = tool_classes.map { |tool_class| stub_tool(tool_class, registry) }
 
       agent = agent_class.create
-      agent.with_tools(*stubbed_tools, replace: true)
+      agent = agent.with_tools(*stubbed_tools, replace: true)
 
       result = agent.ask(record.input.to_json)
       # steep:ignore:end
@@ -22,18 +26,12 @@ module Evaluation
 
     private
 
-    def extract_tool_calls_from(chat)
-      return [] if chat.nil?
-
+    def resolve_tools(action, agent_class)
       # steep:ignore:start
-      chat.messages
-          .includes(:parent_tool_call)
-          .where(role: "tool")
-          .order(:id)
-          .filter_map do |msg|
-            tc = msg.parent_tool_call
-            tc && { tool_name: tc.name, arguments: tc.arguments, result: msg.content }
-          end
+      configured = action.tools.presence
+      return configured.map(&:constantize) if configured
+
+      agent_class.tools
       # steep:ignore:end
     end
 
@@ -59,8 +57,7 @@ module Evaluation
                         end
       # steep:ignore:end
 
-      output = result.content.is_a?(String) ? result.content : result.content.to_json
-      { tool_calls: tool_calls, output: output }.to_json
+      { tool_calls: tool_calls, output: result.content }.to_json
     end
   end
 end

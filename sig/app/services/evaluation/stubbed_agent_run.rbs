@@ -4,7 +4,7 @@ module Evaluation
 
     private
 
-    def extract_tool_calls_from: (Chat? chat) -> Array[SampleCollector::tool_call_entry]
+    def resolve_tools: (Orchestration::Action action, Class agent_class) -> Array[Class]
     def stub_tool: (Class tool_class, ToolStubRegistry registry) -> Class
     def build_prediction: (untyped agent, untyped result) -> String
   end

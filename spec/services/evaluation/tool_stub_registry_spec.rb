@@ -50,22 +50,16 @@ RSpec.describe Evaluation::ToolStubRegistry do
       expect(Rails.logger).to have_received(:warn).with(/mismatch/i)
     end
 
-    it "logs a warning and returns nil when queue is empty" do
-      allow(Rails.logger).to receive(:warn)
-
+    it "raises ToolStubError when queue is empty" do
       registry.lookup(tool_name: "get_email", arguments: {})
-      result = registry.lookup(tool_name: "get_email", arguments: {})
 
-      expect(result).to be_nil
-      expect(Rails.logger).to have_received(:warn).with(/no expected call/i)
+      expect { registry.lookup(tool_name: "get_email", arguments: {}) }
+        .to raise_error(Evaluation::ToolStubRegistry::ToolStubError, /no expected call/i)
     end
 
-    it "returns nil for unknown tool names" do
-      allow(Rails.logger).to receive(:warn)
-
-      result = registry.lookup(tool_name: "unknown_tool", arguments: {})
-
-      expect(result).to be_nil
+    it "raises ToolStubError for unknown tool names" do
+      expect { registry.lookup(tool_name: "unknown_tool", arguments: {}) }
+        .to raise_error(Evaluation::ToolStubRegistry::ToolStubError, /no expected call/i)
     end
   end
 end

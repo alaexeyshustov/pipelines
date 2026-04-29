@@ -1,0 +1,5 @@
+module Evaluation
+  class ToolCallExtractor
+    def self.call: (Chat? chat) -> Array[SampleCollector::tool_call_entry]
+  end
+end

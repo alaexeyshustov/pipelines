@@ -87,11 +87,18 @@ RSpec.describe Evaluation::StubbedAgentRun do # rubocop:disable RSpec/MultipleMe
       result = runner.execute(action_run)
       parsed = JSON.parse(result)
 
-      expect(JSON.parse(parsed["output"])).to eq(JSON.parse(final_output))
+      expect(parsed["output"]).to eq(JSON.parse(final_output))
     end
 
     it "uses stubbed tools so no real filesystem or network calls are made" do
-      expect { runner.execute(action_run) }.not_to raise_error
+      # rubocop:disable RSpec/AnyInstance
+      expect_any_instance_of(Evaluation::ToolStubRegistry)
+        .to receive(:lookup)
+        .with(tool_name: "temp_file", arguments: hash_including("action" => "read", "filename" => "emails.txt"))
+        .and_call_original
+      # rubocop:enable RSpec/AnyInstance
+
+      runner.execute(action_run)
     end
   end
 
