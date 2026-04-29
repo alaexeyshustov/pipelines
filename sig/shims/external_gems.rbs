@@ -139,6 +139,26 @@ module Leva
     def execute_and_store: (untyped experiment, untyped dataset_record, untyped prompt) -> untyped
   end
 
+  class BaseEval
+    def evaluate: (RunnerResult runner_result, untyped recordable) -> untyped
+    def evaluate_and_store: (untyped experiment, RunnerResult runner_result) -> untyped
+  end
+
+  class RunnerResult
+    def prediction: () -> String
+    def dataset_record: () -> DatasetRecord
+  end
+
+  class DatasetRecord
+    def recordable: () -> untyped
+  end
+
+  class EvaluationResult
+    def self.create!: (**untyped attrs) -> EvaluationResult
+    def score: () -> Float?
+    def evaluator_class: () -> String
+  end
+
   class Prompt
     def self.find_by: (**untyped attrs) -> Prompt?
     def self.find_by!: (**untyped attrs) -> Prompt
