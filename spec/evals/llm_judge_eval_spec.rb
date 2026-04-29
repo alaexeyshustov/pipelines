@@ -87,6 +87,33 @@ RSpec.describe LLMJudgeEval do
       end
     end
 
+    context "when prediction is nil" do
+      let(:runner_result) do
+        instance_double(
+          Leva::RunnerResult,
+          prediction: nil,
+          dataset_record: instance_double(Leva::DatasetRecord, recordable: recordable)
+        )
+      end
+
+      it "returns an empty array without raising" do
+        expect(eval_instance.evaluate(runner_result, recordable)).to eq([])
+      end
+    end
+
+    context "when the LLM returns a score outside 1–5" do
+      let(:llm_response_body) do
+        scores = JSON.generate([
+          { "metric_name" => "tool_call_accuracy", "score" => 10, "justification" => "Way off." }
+        ])
+        { id: "msg_03", type: "message", role: "assistant", content: [ { type: "text", text: scores } ], model: "claude-sonnet-4-6", stop_reason: "end_turn", usage: { input_tokens: 10, output_tokens: 5 } }.to_json
+      end
+
+      it "drops the invalid entry and returns an empty array" do
+        expect(eval_instance.evaluate(runner_result, recordable)).to eq([])
+      end
+    end
+
     context "when no active metrics exist" do
       before { Evaluation::Metric.update_all(active: false) }
 

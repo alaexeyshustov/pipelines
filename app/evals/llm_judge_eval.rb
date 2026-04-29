@@ -21,6 +21,11 @@ class LLMJudgeEval < Leva::BaseEval
     metrics = Evaluation::Metric.for_agent(agent_name(recordable)).active
     return [] if metrics.none?
 
+    if runner_result.prediction.blank?
+      Rails.logger.error("LLMJudgeEval: prediction is blank")
+      return []
+    end
+
     prompt_text = fetch_instructions(agent_name(recordable))
     prediction = JSON.parse(runner_result.prediction)
     expected_tool_calls = Evaluation::ToolCallExtractor.call(recordable.chat)
@@ -33,32 +38,31 @@ class LLMJudgeEval < Leva::BaseEval
       output: prediction.fetch("output", ""),
       metrics: metrics
     )
-  rescue JSON::ParserError => e
-    Rails.logger.error("LlmJudgeEval: failed to parse prediction JSON: #{e.message}")
+  rescue JSON::ParserError, TypeError => e
+    Rails.logger.error("LLMJudgeEval: failed to parse prediction JSON: #{e.message}")
     []
   end
 
   def evaluate_and_store(experiment, runner_result)
-    @experiment = experiment
-    @runner_result = runner_result
-
     recordable = runner_result.dataset_record.recordable
     results = evaluate(runner_result, recordable)
 
     results.map do |metric_result|
-      eval_result = Leva::EvaluationResult.create!(
-        experiment: experiment,
-        dataset_record: runner_result.dataset_record,
-        runner_result: runner_result,
-        score: metric_result[:score].to_f,
-        evaluator_class: self.class.name
-      )
-      Evaluation::Justification.create!(
-        evaluation_result: eval_result,
-        metric_name: metric_result[:metric_name],
-        justification: metric_result[:justification]
-      )
-      eval_result
+      ActiveRecord::Base.transaction do
+        eval_result = Leva::EvaluationResult.create!(
+          experiment: experiment,
+          dataset_record: runner_result.dataset_record,
+          runner_result: runner_result,
+          score: metric_result[:score].to_f,
+          evaluator_class: self.class.name
+        )
+        Evaluation::Justification.create!(
+          evaluation_result: eval_result,
+          metric_name: metric_result[:metric_name],
+          justification: metric_result[:justification]
+        )
+        eval_result
+      end
     end
   end
 
@@ -93,7 +97,7 @@ class LLMJudgeEval < Leva::BaseEval
 
     parse_judge_response(response.content)
   rescue StandardError => e
-    Rails.logger.error("LlmJudgeEval: judge call failed: #{e.message}")
+    Rails.logger.error("LLMJudgeEval: judge call failed: #{e.message}")
     []
   end
 
@@ -125,15 +129,25 @@ class LLMJudgeEval < Leva::BaseEval
     parsed = JSON.parse(content)
     raise ArgumentError, "expected Array" unless parsed.is_a?(Array)
 
-    parsed.map do |entry|
-      {
-        metric_name: entry["metric_name"].to_s,
-        score: entry["score"].to_f,
-        justification: entry["justification"].to_s
-      }
-    end
+    parsed.each_with_index.filter_map { |entry, i| normalize_entry(entry, i) }
   rescue JSON::ParserError, ArgumentError => e
-    Rails.logger.error("LlmJudgeEval: failed to parse judge response: #{e.message}")
+    Rails.logger.error("LLMJudgeEval: failed to parse judge response: #{e.message}")
     []
+  end
+
+  def normalize_entry(entry, index)
+    score = Float(entry["score"])
+    metric_name = entry["metric_name"].to_s.strip
+    justification = entry["justification"].to_s.strip
+
+    unless score.between?(1.0, 5.0) && metric_name.present? && justification.present?
+      Rails.logger.warn("LLMJudgeEval: dropping entry #{index}: score out of range or missing fields")
+      return nil
+    end
+
+    { metric_name: metric_name, score: score, justification: justification }
+  rescue ArgumentError, TypeError
+    Rails.logger.warn("LLMJudgeEval: dropping entry #{index}: unparseable score #{entry['score'].inspect}")
+    nil
   end
 end
