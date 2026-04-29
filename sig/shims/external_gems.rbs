@@ -134,6 +134,11 @@ class Pagy
 end
 
 module Leva
+  class BaseRun
+    def execute: (untyped record) -> untyped
+    def execute_and_store: (untyped experiment, untyped dataset_record, untyped prompt) -> untyped
+  end
+
   class Prompt
     def self.find_by: (**untyped attrs) -> Prompt?
     def self.find_by!: (**untyped attrs) -> Prompt

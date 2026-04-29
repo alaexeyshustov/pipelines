@@ -1,0 +1,14 @@
+module Evaluation
+  class ToolStubRegistry
+    type tool_call_entry = { tool_name: String, arguments: Hash[String, untyped], result: String? }
+
+    ToolStubError: singleton(StandardError)
+
+    def initialize: (Array[tool_call_entry] expected_tool_calls) -> void
+    def lookup: (tool_name: String, arguments: Hash[untyped, untyped]) -> String?
+
+    private
+
+    def normalize: (Hash[untyped, untyped]? args) -> Hash[String, untyped]
+  end
+end

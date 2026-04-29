@@ -1,0 +1,23 @@
+module Evaluation
+  class SampleCollector
+    type tool_call_entry = { tool_name: String, arguments: Hash[String, untyped], result: String? }
+
+    class Sample
+      attr_reader action_run_id: Integer
+      attr_reader input: Hash[String, untyped]?
+      attr_reader expected_tool_calls: Array[tool_call_entry]
+
+      def self.new: (action_run_id: Integer, input: Hash[String, untyped]?, expected_tool_calls: Array[tool_call_entry]) -> Sample
+    end
+
+    def self.call: (agent_name: String, sample_size: Integer) -> Array[Sample]
+
+    def initialize: (agent_name: String, sample_size: Integer) -> void
+    def call: () -> Array[Sample]
+
+    private
+
+    def action_runs: () -> ActiveRecord::Relation
+    def extract_tool_calls: (Chat? chat) -> Array[tool_call_entry]
+  end
+end
