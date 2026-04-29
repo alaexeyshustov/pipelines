@@ -153,8 +153,16 @@ module Leva
     def recordable: () -> untyped
   end
 
+  class Experiment
+    def id: () -> Integer
+    def name: () -> String
+  end
+
   class EvaluationResult
     def self.create!: (**untyped attrs) -> EvaluationResult
+    def self.joins: (String sql) -> untyped
+    def self.where: (**untyped attrs) -> untyped
+    def self.average: (Symbol column) -> Float?
     def score: () -> Float?
     def evaluator_class: () -> String
   end
