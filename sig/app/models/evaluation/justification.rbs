@@ -1,0 +1,7 @@
+module Evaluation
+  class Justification < ApplicationRecord
+    def evaluation_result: () -> Leva::EvaluationResult
+    def metric_name: () -> String
+    def justification: () -> String
+  end
+end
