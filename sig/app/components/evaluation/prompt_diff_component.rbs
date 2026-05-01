@@ -1,0 +1,19 @@
+module Evaluation
+  class PromptDiffComponent < ViewComponent::Base
+    Line: Data
+
+    def initialize: (prompt_a: untyped, prompt_b: untyped) -> void
+    def system_prompt_diff: () -> Array[untyped]
+    def user_prompt_diff: () -> Array[untyped]
+    def line_class: (untyped line) -> String
+    def line_prefix: (untyped line) -> String
+    def version_a: () -> String
+    def version_b: () -> String
+
+    private
+
+    def diff_lines: (String text_a, String text_b) -> Array[untyped]
+    def longest_common_subsequence: (Array[String] a, Array[String] b) -> Array[Array[Integer]]
+    def build_diff: (Array[String] a, Array[String] b, Array[Array[Integer]] dp) -> Array[untyped]
+  end
+end

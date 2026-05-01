@@ -1,0 +1,13 @@
+<%= render UI::TableComponent.new(collection: @metrics, empty_message: "No metrics found.") do |table| %>
+  <% table.with_columns([
+    { key: "name",        label: "Name",        variant: :mono },
+    { key: "description", label: "Description", cell: ->(m) { m.description } },
+    { key: "weight",      label: "Weight",      variant: :subtle, cell: ->(m) { m.weight.to_s } },
+    { key: "active",      label: "Active",      cell: ->(m) { m.active? ? "Yes" : "No" } }
+  ]) %>
+  <% table.with_action_column(
+    actions: ->(metric) {
+      [{ label: "Edit", url: edit_evaluation_metric_path(metric), variant: :primary }]
+    }
+  ) %>
+<% end %>

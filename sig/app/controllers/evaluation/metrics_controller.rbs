@@ -1,0 +1,12 @@
+module Evaluation
+  class MetricsController < ApplicationController
+    def index: () -> void
+    def edit: () -> void
+    def update: () -> void
+
+    private
+
+    def set_metric: () -> void
+    def metric_params: () -> ActionController::Parameters
+  end
+end
