@@ -163,6 +163,8 @@ module Leva
     def self.joins: (String sql) -> untyped
     def self.where: (**untyped attrs) -> untyped
     def self.average: (Symbol column) -> Float?
+    def self.connection: () -> untyped
+    def self.table_name: () -> String
     def score: () -> Float?
     def evaluator_class: () -> String
   end

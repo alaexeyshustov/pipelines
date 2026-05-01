@@ -39,11 +39,18 @@ module Evaluation
     private
 
     def per_metric_averages(experiment)
+      conn = Leva::EvaluationResult.connection
+      results_table       = conn.quote_table_name(Leva::EvaluationResult.table_name)
+      justifications_table = conn.quote_table_name(Evaluation::Justification.table_name)
+
       Leva::EvaluationResult
-        .joins("INNER JOIN evaluation_justifications ON evaluation_justifications.evaluation_result_id = leva_evaluation_results.id")
+        .joins(
+          "INNER JOIN #{justifications_table} " \
+          "ON #{justifications_table}.evaluation_result_id = #{results_table}.id"
+        )
         .where(experiment: experiment)
-        .group("evaluation_justifications.metric_name")
-        .average(:score)
+        .group("#{justifications_table}.metric_name")
+        .average("#{results_table}.score")
         .transform_keys(&:to_s)
     end
 
