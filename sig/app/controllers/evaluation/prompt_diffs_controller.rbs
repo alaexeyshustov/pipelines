@@ -1,0 +1,5 @@
+module Evaluation
+  class PromptDiffsController < ApplicationController
+    def show: () -> void
+  end
+end

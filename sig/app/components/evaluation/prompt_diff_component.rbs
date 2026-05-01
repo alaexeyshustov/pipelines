@@ -1,0 +1,11 @@
+module Evaluation
+  class PromptDiffComponent < ViewComponent::Base
+    def initialize: (prompt_a: untyped, prompt_b: untyped) -> void
+    def system_prompt_diff: () -> Array[Evaluation::PromptDiffer::Line]
+    def user_prompt_diff: () -> Array[Evaluation::PromptDiffer::Line]
+    def line_class: (Evaluation::PromptDiffer::Line line) -> String
+    def line_prefix: (Evaluation::PromptDiffer::Line line) -> String
+    def version_a: () -> String
+    def version_b: () -> String
+  end
+end

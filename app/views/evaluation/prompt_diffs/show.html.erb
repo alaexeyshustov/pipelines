@@ -1,0 +1,12 @@
+<%= render UI::PageHeaderComponent.new(
+  title: html_escape("Prompt Diff: #{@prompt.name}"),
+  parent: { label: "Prompts", url: leva.prompts_path }
+) %>
+
+<% if @other_version %>
+  <div class="max-w-4xl">
+    <%= render Evaluation::PromptDiffComponent.new(prompt_a: @other_version, prompt_b: @prompt) %>
+  </div>
+<% else %>
+  <p class="text-sm text-gray-400">No other version available to compare.</p>
+<% end %>

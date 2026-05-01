@@ -1,0 +1,12 @@
+<%= render UI::PageHeaderComponent.new(title: "Metrics") %>
+
+<% if @metrics_by_agent.any? %>
+  <% @metrics_by_agent.each do |agent_name, metrics| %>
+    <div class="mb-8">
+      <h2 class="text-base font-semibold text-gray-700 mb-3"><%= agent_name %></h2>
+      <%= render Evaluation::MetricListComponent.new(metrics: metrics) %>
+    </div>
+  <% end %>
+<% else %>
+  <p class="text-gray-400 text-sm">No metrics found.</p>
+<% end %>

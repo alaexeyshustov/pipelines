@@ -25,6 +25,11 @@ Rails.application.routes.draw do
     end
   end
 
+  namespace :evaluation do
+    resources :metrics, only: [ :index, :edit, :update ]
+    get "prompts/:id/diff", to: "prompt_diffs#show", as: :prompt_diff
+  end
+
   namespace :orchestration do
     resources :actions
     resources :pipelines do
