@@ -1,0 +1,38 @@
+module Evaluation
+  class Comparison
+    class ComparisonResult
+      attr_reader baseline_score: Float?
+      attr_reader candidate_score: Float?
+      attr_reader baseline_metrics: Hash[String, Float]
+      attr_reader candidate_metrics: Hash[String, Float]
+      attr_reader metric_deltas: Hash[String, Float?]
+      attr_reader overall_delta: Float?
+
+      def initialize: (
+        baseline_score: Float?,
+        candidate_score: Float?,
+        baseline_metrics: Hash[String, Float],
+        candidate_metrics: Hash[String, Float],
+        metric_deltas: Hash[String, Float?],
+        overall_delta: Float?
+      ) -> void
+    end
+
+    def self.call: (
+      baseline_experiment: Leva::Experiment,
+      candidate_experiment: Leva::Experiment
+    ) -> ComparisonResult
+
+    def initialize: (
+      baseline_experiment: Leva::Experiment,
+      candidate_experiment: Leva::Experiment
+    ) -> void
+
+    def call: () -> ComparisonResult
+
+    private
+
+    def per_metric_averages: (Leva::Experiment experiment) -> Hash[String, Float]
+    def overall_average: (Leva::Experiment experiment) -> Float?
+  end
+end

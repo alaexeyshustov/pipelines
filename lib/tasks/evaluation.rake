@@ -51,4 +51,38 @@ namespace :evaluation do
     end
     Rails.logger.info "Migrated #{agent_classes.size} agent prompts to Leva::Prompt."
   end
+
+  desc "Compare two experiments and print per-metric deltas (e.g. rake evaluation:compare[1,2])"
+  task :compare, [ :baseline_id, :candidate_id ] => :environment do |_, args|
+    baseline_id  = args[:baseline_id]  or raise ArgumentError, "Usage: rake evaluation:compare[baseline_id,candidate_id]"
+    candidate_id = args[:candidate_id] or raise ArgumentError, "Usage: rake evaluation:compare[baseline_id,candidate_id]"
+
+    baseline  = Leva::Experiment.find(baseline_id)
+    candidate = Leva::Experiment.find(candidate_id)
+
+    result = Evaluation::Comparison.call(baseline_experiment: baseline, candidate_experiment: candidate)
+
+    puts "Experiment comparison"
+    puts "  Baseline:  ##{baseline.id} — #{baseline.name}"
+    puts "  Candidate: ##{candidate.id} — #{candidate.name}"
+    puts ""
+    puts format("%-30s %8s %8s %10s", "Metric", "Baseline", "Candidate", "Delta")
+    puts "-" * 60
+
+    result.metric_deltas.each do |metric_name, delta|
+      b_avg     = result.baseline_metrics[metric_name]
+      c_avg     = result.candidate_metrics[metric_name]
+      b_str     = b_avg ? format("%.2f", b_avg) : "n/a"
+      c_str     = c_avg ? format("%.2f", c_avg) : "n/a"
+      delta_str = delta  ? format("%+.2f", delta) : "n/a"
+
+      puts format("%-30s %8s %8s %10s", metric_name, b_str, c_str, delta_str)
+    end
+
+    puts "-" * 60
+    baseline_str  = result.baseline_score  ? format("%.2f", result.baseline_score)  : "n/a"
+    candidate_str = result.candidate_score ? format("%.2f", result.candidate_score) : "n/a"
+    delta_str     = result.overall_delta   ? format("%+.2f", result.overall_delta)  : "n/a"
+    puts format("%-30s %8s %8s %10s", "OVERALL", baseline_str, candidate_str, delta_str)
+  end
 end
