@@ -11,7 +11,7 @@
       <% system_prompt_diff.each do |line| %>
         <div class="flex gap-2 px-3 py-0.5 <%= line_class(line) %>">
           <span class="select-none w-4 shrink-0"><%= line_prefix(line) %></span>
-          <span><%= line.text %></span>
+          <span class="whitespace-pre-wrap"><%= line.text %></span>
         </div>
       <% end %>
     </div>
@@ -23,7 +23,7 @@
       <% user_prompt_diff.each do |line| %>
         <div class="flex gap-2 px-3 py-0.5 <%= line_class(line) %>">
           <span class="select-none w-4 shrink-0"><%= line_prefix(line) %></span>
-          <span><%= line.text %></span>
+          <span class="whitespace-pre-wrap"><%= line.text %></span>
         </div>
       <% end %>
     </div>

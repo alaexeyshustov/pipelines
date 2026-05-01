@@ -1,5 +1,5 @@
 <%= render UI::PageHeaderComponent.new(
-  title: "Prompt Diff: #{@prompt.name}",
+  title: html_escape("Prompt Diff: #{@prompt.name}"),
   parent: { label: "Prompts", url: leva.prompts_path }
 ) %>
 

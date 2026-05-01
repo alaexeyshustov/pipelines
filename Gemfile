@@ -27,6 +27,7 @@ gem "falcon", require: false
 
 # Pagination
 gem "pagy"
+gem "diffy"
 gem "csv"
 
 # Assets

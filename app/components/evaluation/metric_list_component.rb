@@ -5,9 +5,5 @@ module Evaluation
     def initialize(metrics:)
       @metrics = metrics
     end
-
-    def empty?
-      @metrics.empty?
-    end
   end
 end

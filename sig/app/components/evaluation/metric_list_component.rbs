@@ -1,6 +1,5 @@
 module Evaluation
   class MetricListComponent < ViewComponent::Base
     def initialize: (metrics: untyped) -> void
-    def empty?: () -> bool
   end
 end
