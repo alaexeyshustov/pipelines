@@ -58,7 +58,7 @@ RSpec.describe "Evaluation::Experiments" do
       it "redirects with alert" do
         post improve_evaluation_experiment_path(experiment)
         expect(response).to redirect_to(evaluation_experiment_path(experiment))
-        expect(flash[:alert]).to include("LLM call failed")
+        expect(flash[:alert]).to include("Prompt improvement failed")
       end
     end
   end

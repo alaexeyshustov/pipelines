@@ -9,7 +9,7 @@ module Evaluation
     end
 
     def metric_names
-      @result.metric_deltas.keys
+      @result.metric_deltas.keys.sort
     end
 
     def delta_class(delta)
