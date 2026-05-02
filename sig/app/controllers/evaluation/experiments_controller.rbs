@@ -1,0 +1,13 @@
+module Evaluation
+  class ExperimentsController < ApplicationController
+    def index: () -> void
+    def show: () -> void
+    def improve: () -> void
+    def compare: () -> void
+    def activate: () -> void
+
+    private
+
+    def set_experiment: () -> void
+  end
+end

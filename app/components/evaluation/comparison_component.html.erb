@@ -1,0 +1,31 @@
+<div class="space-y-6">
+  <div class="grid grid-cols-3 gap-4 text-sm font-semibold text-gray-500 border-b pb-2">
+    <div>Metric</div>
+    <div class="text-center"><%= @baseline_experiment.name %></div>
+    <div class="text-center"><%= @candidate_experiment.name %></div>
+  </div>
+
+  <% metric_names.each do |name| %>
+    <div class="grid grid-cols-3 gap-4 text-sm py-1 border-b border-gray-100">
+      <div class="font-medium text-gray-700"><%= name %></div>
+      <div class="text-center text-gray-600"><%= format_score(@result.baseline_metrics[name]) %></div>
+      <div class="text-center">
+        <span class="<%= delta_class(@result.metric_deltas[name]) %>">
+          <%= format_score(@result.candidate_metrics[name]) %>
+          <span class="text-xs ml-1">(<%= format_delta(@result.metric_deltas[name]) %>)</span>
+        </span>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-3 gap-4 text-sm font-semibold pt-2 border-t border-gray-300">
+    <div class="text-gray-700">Overall</div>
+    <div class="text-center text-gray-600"><%= format_score(@result.baseline_score) %></div>
+    <div class="text-center">
+      <span class="<%= delta_class(@result.overall_delta) %>">
+        <%= format_score(@result.candidate_score) %>
+        <span class="text-xs ml-1">(<%= format_delta(@result.overall_delta) %>)</span>
+      </span>
+    </div>
+  </div>
+</div>
