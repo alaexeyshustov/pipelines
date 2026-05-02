@@ -85,4 +85,21 @@ namespace :evaluation do
     delta_str     = result.overall_delta   ? format("%+.2f", result.overall_delta)  : "n/a"
     puts format("%-30s %8s %8s %10s", "OVERALL", baseline_str, candidate_str, delta_str)
   end
+
+  desc "Improve prompt for an agent based on the latest completed experiment (e.g. rake evaluation:improve[Emails::ClassifyAgent])"
+  task :improve, [ :agent_name ] => :environment do |_, args|
+    agent_name = args[:agent_name] or raise ArgumentError, "Usage: rake evaluation:improve[AgentName]"
+
+    experiment = Leva::Experiment
+      .joins(:prompt)
+      .where(leva_prompts: { name: agent_name })
+      .where(status: :completed)
+      .order(id: :desc)
+      .first
+
+    raise ArgumentError, "No completed experiment found for #{agent_name}" unless experiment
+
+    prompt = Evaluation::PromptImprover.call(experiment: experiment)
+    puts "Created improved prompt v#{prompt.version} for #{agent_name} (id: #{prompt.id})"
+  end
 end

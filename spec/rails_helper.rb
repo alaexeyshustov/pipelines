@@ -39,6 +39,10 @@ RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
   config.include ViewComponent::TestHelpers, type: :component
 
+  config.before do
+    allow(Evaluation::PromptAutoEvalJob).to receive(:perform_later)
+  end
+
   config.fixture_paths = [
     Rails.root.join('spec/fixtures')
   ]
