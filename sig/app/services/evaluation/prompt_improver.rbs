@@ -1,0 +1,26 @@
+module Evaluation
+  class PromptImprover
+    SYSTEM_PROMPT: String
+    DEFAULT_MODEL: String
+
+    def self.call: (experiment: Leva::Experiment) -> Leva::Prompt
+
+    def initialize: (experiment: Leva::Experiment) -> void
+
+    def call: () -> Leva::Prompt
+
+    private
+
+    def load_evaluation_data: () -> Array[{ metric_name: String, score: Float, justification: String }]
+
+    def build_improvement_message: (
+      current_prompt: Leva::Prompt,
+      evaluation_data: Array[{ metric_name: String, score: Float, justification: String }],
+      metrics: ActiveRecord::Relation
+    ) -> String
+
+    def call_llm: (String user_message) -> { system_prompt: String, user_prompt: String }
+
+    def parse_response: (String content) -> { system_prompt: String, user_prompt: String }
+  end
+end

@@ -1,5 +1,9 @@
 module Evaluation
   class Justification < ApplicationRecord
+    def self.joins: (*untyped) -> ActiveRecord::Relation
+    def self.includes: (*untyped) -> ActiveRecord::Relation
+    def self.where: (**untyped) -> ActiveRecord::Relation
+
     def evaluation_result: () -> Leva::EvaluationResult
     def metric_name: () -> String
     def justification: () -> String

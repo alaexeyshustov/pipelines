@@ -1,0 +1,5 @@
+module Evaluation
+  class PromptAutoEvalJob < ApplicationJob
+    def perform: (Leva::Prompt prompt) -> void
+  end
+end
