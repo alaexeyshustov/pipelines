@@ -1,0 +1,5 @@
+module Evaluation
+  module AutoEvalTriggerable
+    extend ActiveSupport::Concern
+  end
+end

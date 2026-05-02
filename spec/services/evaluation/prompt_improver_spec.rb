@@ -103,9 +103,9 @@ RSpec.describe Evaluation::PromptImprover do
           .to_return(status: 200, body: body, headers: { "Content-Type" => "application/json" })
       end
 
-      it "raises ArgumentError" do
+      it "raises PromptImprover::Error" do
         expect { described_class.call(experiment: experiment) }
-          .to raise_error(ArgumentError, /invalid json/i)
+          .to raise_error(Evaluation::PromptImprover::Error, /invalid json/i)
       end
     end
   end

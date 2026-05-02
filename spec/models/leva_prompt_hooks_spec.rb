@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe "Leva::Prompt auto-eval hook" do # rubocop:disable RSpec/DescribeClass
   it "enqueues PromptAutoEvalJob when a new prompt is created" do
     prompt = create(:leva_prompt)
-    expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt)
+    expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt.id)
   end
 
   it "does not enqueue PromptAutoEvalJob when an existing prompt is updated" do

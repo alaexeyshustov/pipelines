@@ -2,7 +2,9 @@ module Evaluation
   class PromptAutoEvalJob < ApplicationJob
     queue_as :default
 
-    def perform(prompt)
+    def perform(prompt_id)
+      prompt = Leva::Prompt.find(prompt_id)
+
       previous_experiment = Leva::Experiment
         .joins(:prompt)
         .where(leva_prompts: { name: prompt.name })
@@ -10,7 +12,10 @@ module Evaluation
         .order(id: :desc)
         .first
 
-      return unless previous_experiment
+      unless previous_experiment
+        Rails.logger.info("[PromptAutoEvalJob] No completed experiment for '#{prompt.name}', skipping.")
+        return
+      end
 
       experiment = Leva::Experiment.create!(
         name: "Auto-eval for #{prompt.name} v#{prompt.version}",
@@ -21,6 +26,8 @@ module Evaluation
       )
 
       Leva::ExperimentJob.perform_later(experiment)
+    rescue ActiveRecord::RecordInvalid => e
+      Rails.logger.error("[PromptAutoEvalJob] Experiment creation failed: #{e.message}")
     end
   end
 end
