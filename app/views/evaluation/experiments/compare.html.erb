@@ -1,0 +1,40 @@
+<% if @candidate.pending? || @candidate.running? %>
+  <meta name="turbo-refresh-interval" content="5000">
+  <meta name="turbo-refresh-method" content="replace">
+<% end %>
+
+<%= render UI::PageHeaderComponent.new(
+  title: "Comparison",
+  parent: { label: @experiment.name, url: evaluation_experiment_path(@experiment) }
+) do |header| %>
+  <% if @candidate.completed? %>
+    <% header.with_action(type: :button, label: "Activate Candidate", url: activate_evaluation_experiment_path(@candidate), method: :post, variant: :success) %>
+  <% end %>
+<% end %>
+
+<% if @candidate.completed? && @result %>
+  <div class="max-w-3xl space-y-8">
+    <div class="rounded-lg border border-gray-200 bg-white p-6">
+      <h2 class="text-sm font-semibold text-gray-700 mb-4">Score Comparison</h2>
+      <%= render Evaluation::ComparisonComponent.new(
+        result: @result,
+        baseline_experiment: @experiment,
+        candidate_experiment: @candidate
+      ) %>
+    </div>
+
+    <% if @experiment.prompt && @candidate.prompt %>
+      <div class="rounded-lg border border-gray-200 bg-white p-6">
+        <h2 class="text-sm font-semibold text-gray-700 mb-4">Prompt Diff</h2>
+        <%= render Evaluation::PromptDiffComponent.new(
+          prompt_a: @experiment.prompt,
+          prompt_b: @candidate.prompt
+        ) %>
+      </div>
+    <% end %>
+  </div>
+<% else %>
+  <div class="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 max-w-xl">
+    Evaluation is pending. This page refreshes automatically when the evaluation completes.
+  </div>
+<% end %>

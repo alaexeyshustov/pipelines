@@ -1,0 +1,35 @@
+<% if @newer_experiment&.pending? || @newer_experiment&.running? %>
+  <meta name="turbo-refresh-interval" content="5000">
+  <meta name="turbo-refresh-method" content="replace">
+<% end %>
+
+<%= render UI::PageHeaderComponent.new(
+  title: @experiment.name,
+  parent: { label: "Experiments", url: evaluation_experiments_path }
+) do |header| %>
+  <% unless @newer_experiment %>
+    <% header.with_action(type: :button, label: "Improve Prompt", url: improve_evaluation_experiment_path(@experiment), method: :post, variant: :primary) %>
+  <% end %>
+  <% if @newer_experiment&.completed? %>
+    <% header.with_action(type: :link, label: "View Comparison", url: compare_evaluation_experiment_path(@experiment, candidate_id: @newer_experiment.id), variant: :success) %>
+  <% end %>
+<% end %>
+
+<div class="space-y-4 max-w-2xl">
+  <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+    <dt class="font-medium text-gray-500">Status</dt>
+    <dd class="text-gray-700"><%= @experiment.status %></dd>
+    <dt class="font-medium text-gray-500">Prompt</dt>
+    <dd class="text-gray-700"><%= @experiment.prompt&.name %> v<%= @experiment.prompt&.version %></dd>
+    <dt class="font-medium text-gray-500">Dataset</dt>
+    <dd class="text-gray-700"><%= @experiment.dataset&.name %></dd>
+    <dt class="font-medium text-gray-500">Created</dt>
+    <dd class="text-gray-700"><%= @experiment.created_at.strftime("%Y-%m-%d %H:%M") %></dd>
+  </dl>
+
+  <% if @newer_experiment&.pending? || @newer_experiment&.running? %>
+    <div class="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+      Evaluation for improved prompt is pending. This page refreshes automatically.
+    </div>
+  <% end %>
+</div>

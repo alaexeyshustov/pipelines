@@ -28,6 +28,13 @@ Rails.application.routes.draw do
   namespace :evaluation do
     resources :metrics, only: [ :index, :edit, :update ]
     get "prompts/:id/diff", to: "prompt_diffs#show", as: :prompt_diff
+    resources :experiments, only: [ :index, :show ] do
+      member do
+        post :improve
+        post :activate
+        get "compare/:candidate_id", action: :compare, as: :compare
+      end
+    end
   end
 
   namespace :orchestration do

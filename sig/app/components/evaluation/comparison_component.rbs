@@ -1,0 +1,9 @@
+module Evaluation
+  class ComparisonComponent < ViewComponent::Base
+    def initialize: (result: Evaluation::Comparison::ComparisonResult, baseline_experiment: Leva::Experiment, candidate_experiment: Leva::Experiment) -> void
+    def metric_names: () -> Array[String]
+    def delta_class: (Numeric? delta) -> String
+    def format_delta: (Numeric? delta) -> String
+    def format_score: (Numeric? score) -> String
+  end
+end

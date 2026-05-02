@@ -1,0 +1,14 @@
+<%= render UI::PageHeaderComponent.new(title: "Experiments") %>
+
+<%= render UI::TableComponent.new(collection: @experiments, empty_message: "No experiments found.") do |table| %>
+  <% table.with_columns([
+    { key: "name",   label: "Name",    cell: ->(e) { e.name } },
+    { key: "status", label: "Status",  cell: ->(e) { e.status.to_s } },
+    { key: "prompt", label: "Prompt",  cell: ->(e) { e.prompt&.name.to_s } }
+  ]) %>
+  <% table.with_action_column(
+    actions: ->(experiment) {
+      [{ label: "Show", url: evaluation_experiment_path(experiment), variant: :primary }]
+    }
+  ) %>
+<% end %>
