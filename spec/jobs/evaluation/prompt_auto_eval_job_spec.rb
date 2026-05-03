@@ -21,6 +21,7 @@ RSpec.describe Evaluation::PromptAutoEvalJob do
       described_class.perform_now(new_prompt.id)
       new_exp = Leva::Experiment.where(prompt: new_prompt).first
       expect(new_exp).to be_present
+      # Leva's belongs_to :prompt loads as Leva::Prompt; compare by id to avoid class mismatch
       expect(new_exp.prompt.id).to eq(new_prompt.id)
     end
 

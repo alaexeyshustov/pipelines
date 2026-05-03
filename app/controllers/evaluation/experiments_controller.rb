@@ -56,10 +56,13 @@ module Evaluation
     end
 
     def activate
-      prompt = @experiment.prompt
-      unless prompt
+      leva_prompt = @experiment.prompt
+      unless leva_prompt
         return redirect_to evaluation_experiment_path(@experiment), alert: "This experiment has no associated prompt."
       end
+
+      # Reload as Orchestration::Prompt so update! calls go through our subclass
+      prompt = Orchestration::Prompt.find(leva_prompt.id)
 
       Orchestration::Prompt.transaction do
         Orchestration::Prompt.where(name: prompt.name).where.not(id: prompt.id).find_each do |p|

@@ -8,11 +8,10 @@ RSpec.describe Orchestration::Prompt do
 
   it "does not enqueue PromptAutoEvalJob when an existing prompt is updated" do
     prompt = create(:orchestration_prompt)
-    RSpec::Mocks.space.proxy_for(Evaluation::PromptAutoEvalJob).reset
-    allow(Evaluation::PromptAutoEvalJob).to receive(:perform_later)
 
     prompt.update!(system_prompt: "Updated prompt text")
 
-    expect(Evaluation::PromptAutoEvalJob).not_to have_received(:perform_later)
+    # Exactly 1 call total (from create); update must not have triggered another
+    expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).exactly(1).time
   end
 end
