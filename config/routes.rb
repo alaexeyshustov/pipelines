@@ -38,6 +38,11 @@ Rails.application.routes.draw do
   end
 
   namespace :orchestration do
+    resources :agents do
+      member do
+        patch :toggle
+      end
+    end
     resources :actions
     resources :pipelines do
       member do

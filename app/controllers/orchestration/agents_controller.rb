@@ -1,0 +1,68 @@
+# frozen_string_literal: true
+
+module Orchestration
+  class AgentsController < ApplicationController
+    before_action :set_agent, only: [ :edit, :update, :destroy, :toggle ]
+
+    def index
+      @agents = Orchestration::Agent.order(:name)
+    end
+
+    def new
+      @agent = Orchestration::Agent.new
+    end
+
+    def create
+      @agent = Orchestration::Agent.new(agent_params)
+      if @agent.save
+        redirect_to orchestration_agents_path, notice: "Agent created."
+      else
+        render :new, status: :unprocessable_entity
+      end
+    end
+
+    def edit
+    end
+
+    def update
+      if @agent.update(agent_params)
+        redirect_to orchestration_agents_path, notice: "Agent updated."
+      else
+        render :edit, status: :unprocessable_entity
+      end
+    end
+
+    def destroy
+      @agent.destroy
+      if @agent.errors.any?
+        redirect_to orchestration_agents_path, alert: "Cannot delete agent: #{@agent.errors.full_messages.to_sentence}."
+      else
+        redirect_to orchestration_agents_path, notice: "Agent deleted."
+      end
+    end
+
+    def toggle
+      @agent.update!(enabled: !@agent.enabled)
+      redirect_to orchestration_agents_path, notice: "Agent #{@agent.enabled? ? "enabled" : "disabled"}."
+    end
+
+    private
+
+    def set_agent
+      @agent = Orchestration::Agent.find(params[:id])
+    end
+
+    def agent_params
+      permitted = params.require(:orchestration_agent).permit(:name, :description, :model, :tools)
+      parse_json_field(permitted, :tools)
+      permitted
+    rescue JSON::ParserError
+      permitted
+    end
+
+    def parse_json_field(permitted, key)
+      raw = permitted[key]
+      permitted[key] = JSON.parse(raw) if raw.present?
+    end
+  end
+end

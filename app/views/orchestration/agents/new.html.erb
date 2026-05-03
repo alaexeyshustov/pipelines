@@ -1,0 +1,5 @@
+<%= render UI::PageHeaderComponent.new(title: "New Agent", parent: { label: "Agent Library", url: orchestration_agents_path }) %>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
+  <%= render "form", agent: @agent %>
+</div>
