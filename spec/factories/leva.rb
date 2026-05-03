@@ -3,7 +3,7 @@ FactoryBot.define do
     sequence(:name) { |n| "dataset_#{n}" }
   end
 
-  factory :leva_prompt, class: "Leva::Prompt" do
+  factory :orchestration_prompt, class: "Orchestration::Prompt" do
     sequence(:name) { |n| "agent_#{n}" }
     system_prompt { "System prompt" }
     user_prompt { "User prompt {{input}}" }
@@ -15,7 +15,7 @@ FactoryBot.define do
     runner_class { "Evaluation::StubbedAgentRun" }
     evaluator_classes { [ "LLMJudgeEval" ] }
     association :dataset, factory: :leva_dataset
-    association :prompt, factory: :leva_prompt
+    association :prompt, factory: :orchestration_prompt
   end
 
   factory :leva_dataset_record, class: "Leva::DatasetRecord" do
@@ -28,7 +28,7 @@ FactoryBot.define do
     runner_class { "Evaluation::StubbedAgentRun" }
     association :experiment, factory: :leva_experiment
     association :dataset_record, factory: :leva_dataset_record
-    association :prompt, factory: :leva_prompt
+    association :prompt, factory: :orchestration_prompt
   end
 
   factory :leva_evaluation_result, class: "Leva::EvaluationResult" do

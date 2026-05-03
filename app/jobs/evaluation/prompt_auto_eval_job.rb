@@ -3,7 +3,7 @@ module Evaluation
     queue_as :default
 
     def perform(prompt_id)
-      prompt = Leva::Prompt.find(prompt_id)
+      prompt = Orchestration::Prompt.find(prompt_id)
 
       previous_experiment = Leva::Experiment
         .joins(:prompt)

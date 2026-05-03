@@ -20,14 +20,14 @@ RSpec.describe "evaluation:migrate_prompts rake task" do # rubocop:disable RSpec
     Rake::Task[task_name].reenable
   end
 
-  it "creates one Leva::Prompt per agent class" do
+  it "creates one Orchestration::Prompt per agent class" do
     expect { Rake::Task[task_name].invoke }
-      .to change(Leva::Prompt, :count).by(agent_classes.size)
+      .to change(Orchestration::Prompt, :count).by(agent_classes.size)
   end
 
   it "creates prompts named after each agent class" do
     Rake::Task[task_name].invoke
-    created_names = Leva::Prompt.pluck(:name)
+    created_names = Orchestration::Prompt.pluck(:name)
     expect(created_names).to match_array(agent_classes)
   end
 
@@ -35,7 +35,7 @@ RSpec.describe "evaluation:migrate_prompts rake task" do # rubocop:disable RSpec
     Rake::Task[task_name].invoke
     aggregate_failures do
       agent_classes.each do |agent_class|
-        prompt = Leva::Prompt.find_by!(name: agent_class)
+        prompt = Orchestration::Prompt.find_by!(name: agent_class)
         expected = agent_class.constantize.instructions
         expect(prompt.system_prompt).to eq(expected)
       end
@@ -46,12 +46,12 @@ RSpec.describe "evaluation:migrate_prompts rake task" do # rubocop:disable RSpec
     Rake::Task[task_name].invoke
     Rake::Task[task_name].reenable
     expect { Rake::Task[task_name].invoke }
-      .not_to change(Leva::Prompt, :count)
+      .not_to change(Orchestration::Prompt, :count)
   end
 
   it "updates system_prompt if instructions changed on re-run" do
     Rake::Task[task_name].invoke
-    original = Leva::Prompt.find_by!(name: "Emails::ClassifyAgent")
+    original = Orchestration::Prompt.find_by!(name: "Emails::ClassifyAgent")
     original.update!(system_prompt: "old instructions")
 
     Rake::Task[task_name].reenable

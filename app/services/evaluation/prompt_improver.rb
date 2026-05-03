@@ -37,7 +37,7 @@ module Evaluation
 
       improved = call_llm(user_message)
 
-      Leva::Prompt.create!(
+      Orchestration::Prompt.create!(
         name: current_prompt.name,
         system_prompt: improved[:system_prompt],
         user_prompt: improved[:user_prompt].presence || current_prompt.user_prompt

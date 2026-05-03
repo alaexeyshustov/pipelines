@@ -122,7 +122,7 @@ module Orchestration
       @prompt_cache ||= {} # : Hash[String?, String?]
       return @prompt_cache[agent_class] if @prompt_cache.key?(agent_class)
 
-      @prompt_cache[agent_class] = Leva::Prompt
+      @prompt_cache[agent_class] = Orchestration::Prompt
         .where(name: agent_class)
         .order(version: :desc, id: :desc)
         .first
