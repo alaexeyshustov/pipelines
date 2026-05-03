@@ -1,0 +1,21 @@
+<%= render UI::PageHeaderComponent.new(title: "Agent Library", notice: notice, alert: alert) do |header| %>
+  <% header.with_action(type: :link, label: "New Agent", url: new_orchestration_agent_path) %>
+<% end %>
+
+<%= render UI::TableComponent.new(collection: @agents, empty_message: "No agents found.") do |table| %>
+  <% table.with_columns([
+    { key: "name", label: "Name", classes: "px-4 py-3 font-mono text-xs" },
+    { key: "description", label: "Description", variant: :muted, cell: ->(agent) { agent.description.presence || "—" } },
+    { key: "model", label: "Model", variant: :muted, cell: ->(agent) { agent.model.presence || "—" } },
+    { key: "enabled", label: "Status", cell: ->(agent) { agent.enabled? ? "Enabled" : "Disabled" } }
+  ]) %>
+  <% table.with_action_column(
+    actions: ->(agent) {
+      [
+        { label: agent.enabled? ? "Disable" : "Enable", url: toggle_orchestration_agent_path(agent), method: :patch, variant: :secondary },
+        { label: "Edit", url: edit_orchestration_agent_path(agent), variant: :primary },
+        { label: "Delete", url: orchestration_agent_path(agent), method: :delete, variant: :danger, confirm: "Delete agent \"#{agent.name}\"?" }
+      ]
+    }
+  ) %>
+<% end %>

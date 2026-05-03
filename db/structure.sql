@@ -141,7 +141,12 @@ FOREIGN KEY ("evaluation_result_id")
   REFERENCES "leva_evaluation_results" ("id")
 );
 CREATE INDEX "index_evaluation_justifications_on_evaluation_result_id" ON "evaluation_justifications" ("evaluation_result_id");
+CREATE TABLE IF NOT EXISTS "orchestration_agents" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "description" text, "model" varchar, "tools" json DEFAULT '[]', "enabled" boolean DEFAULT TRUE NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE UNIQUE INDEX "index_orchestration_agents_on_name" ON "orchestration_agents" ("name");
+CREATE INDEX "index_actions_on_agent_class" ON "actions" ("agent_class") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260503140000'),
+('20260503133626'),
 ('20260429112350'),
 ('20260427135859'),
 ('20260427000001'),

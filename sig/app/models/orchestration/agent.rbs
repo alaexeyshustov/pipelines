@@ -1,0 +1,22 @@
+module Orchestration
+  class Agent < ApplicationRecord
+    ALLOWED_TOOL_NAMESPACES: Array[String]
+
+    def name: () -> String
+    def name=: (String) -> String
+    def description: () -> String?
+    def description=: (String?) -> String?
+    def model: () -> String?
+    def model=: (String?) -> String?
+    def tools: () -> Array[String]
+    def tools=: (Array[String]) -> Array[String]
+    def enabled: () -> bool
+    def enabled=: (bool) -> bool
+    def enabled?: () -> bool
+
+    private
+
+    def tools_must_be_valid: () -> void
+    def ensure_not_referenced: () -> void
+  end
+end
