@@ -37,9 +37,9 @@ RSpec.describe LLMJudgeEval do
       create(:evaluation_metric, agent_name: agent_name, name: "tool_call_accuracy", description: "Score tool call order.")
       create(:evaluation_metric, agent_name: agent_name, name: "output_quality", description: "Score output quality.")
 
-      prompt_double = instance_double(Leva::Prompt, system_prompt: "You are a classifier.")
+      prompt_double = instance_double(Orchestration::Prompt, system_prompt: "You are a classifier.")
       prompt_rel = instance_double(ActiveRecord::Relation)
-      allow(Leva::Prompt).to receive(:where).with(name: agent_name).and_return(prompt_rel)
+      allow(Orchestration::Prompt).to receive(:where).with(name: agent_name).and_return(prompt_rel)
       allow(prompt_rel).to receive(:order).with(version: :desc, id: :desc).and_return(prompt_rel)
       allow(prompt_rel).to receive(:first).and_return(prompt_double)
 
@@ -127,7 +127,7 @@ RSpec.describe LLMJudgeEval do
 
   describe "#evaluate_and_store" do
     let!(:leva_dataset) { Leva::Dataset.create!(name: "test_dataset") }
-    let!(:leva_prompt) { Leva::Prompt.create!(name: agent_name, system_prompt: "You are a classifier.", user_prompt: "Classify: {{input}}") }
+    let!(:leva_prompt) { Orchestration::Prompt.create!(name: agent_name, system_prompt: "You are a classifier.", user_prompt: "Classify: {{input}}") }
     let!(:leva_experiment) { Leva::Experiment.create!(name: "test_exp", dataset: leva_dataset, status: :pending, prompt: leva_prompt, runner_class: "Evaluation::StubbedAgentRun", evaluator_classes: [ "LLMJudgeEval" ]) }
     let!(:leva_dataset_record) { Leva::DatasetRecord.create!(dataset: leva_dataset, recordable: create(:orchestration_action_run, status: "completed")) }
     let!(:leva_runner_result) do

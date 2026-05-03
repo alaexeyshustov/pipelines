@@ -42,14 +42,14 @@ namespace :evaluation do
       klass = agent_class.constantize
       raise "#{agent_class} has no instructions" if klass.instructions.blank?
 
-      Leva::Prompt.find_or_initialize_by(name: agent_class).tap do |prompt|
+      Orchestration::Prompt.find_or_initialize_by(name: agent_class).tap do |prompt|
         prompt.system_prompt = klass.instructions
         # user_prompt is intentionally preserved on re-runs to avoid clobbering manual edits
         prompt.user_prompt = prompt.user_prompt.presence || "{{input}}"
         prompt.save!
       end
     end
-    Rails.logger.info "Migrated #{agent_classes.size} agent prompts to Leva::Prompt."
+    Rails.logger.info "Migrated #{agent_classes.size} agent prompts to Orchestration::Prompt."
   end
 
   desc "Compare two experiments and print per-metric deltas (e.g. rake evaluation:compare[1,2])"

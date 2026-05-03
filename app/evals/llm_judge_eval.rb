@@ -73,7 +73,7 @@ class LLMJudgeEval < Leva::BaseEval
   end
 
   def fetch_instructions(agent_name)
-    Leva::Prompt
+    Orchestration::Prompt
       .where(name: agent_name)
       .order(version: :desc, id: :desc)
       .first

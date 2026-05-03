@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe Evaluation::PromptImprover do
   let(:agent_name) { "Emails::ClassifyAgent" }
-  let(:prompt) { create(:leva_prompt, name: agent_name, system_prompt: "You classify emails.", user_prompt: "{{input}}") }
+  let(:prompt) { create(:orchestration_prompt, name: agent_name, system_prompt: "You classify emails.", user_prompt: "{{input}}") }
   let!(:experiment) { create(:leva_experiment, prompt: prompt, status: :completed) }
 
   def stub_llm(system_prompt: "Improved system.", user_prompt: "{{input}}")
@@ -33,9 +33,9 @@ RSpec.describe Evaluation::PromptImprover do
   end
 
   describe ".call" do
-    it "returns a new Leva::Prompt" do
+    it "returns a new Orchestration::Prompt" do
       result = described_class.call(experiment: experiment)
-      expect(result).to be_a(Leva::Prompt)
+      expect(result).to be_a(Orchestration::Prompt)
       expect(result).to be_persisted
     end
 
@@ -45,7 +45,7 @@ RSpec.describe Evaluation::PromptImprover do
     end
 
     it "creates a new prompt record (does not mutate original)" do
-      expect { described_class.call(experiment: experiment) }.to change(Leva::Prompt, :count).by(1)
+      expect { described_class.call(experiment: experiment) }.to change(Orchestration::Prompt, :count).by(1)
     end
 
     it "uses the improved system prompt from LLM" do

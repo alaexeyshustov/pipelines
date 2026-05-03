@@ -61,8 +61,8 @@ module Evaluation
         return redirect_to evaluation_experiment_path(@experiment), alert: "This experiment has no associated prompt."
       end
 
-      Leva::Prompt.transaction do
-        Leva::Prompt.where(name: prompt.name).where.not(id: prompt.id).find_each do |p|
+      Orchestration::Prompt.transaction do
+        Orchestration::Prompt.where(name: prompt.name).where.not(id: prompt.id).find_each do |p|
           meta = begin
             JSON.parse(p.metadata || "{}")
           rescue JSON::ParserError => e

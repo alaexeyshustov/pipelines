@@ -32,7 +32,7 @@ RSpec.describe "Evaluation::Experiments" do
 
   describe "POST /evaluation/experiments/:id/improve" do
     let(:experiment) { create(:leva_experiment) }
-    let(:new_prompt) { build(:leva_prompt) }
+    let(:new_prompt) { build(:orchestration_prompt) }
 
     before do
       allow(Evaluation::PromptImprover).to receive(:call).and_return(new_prompt)

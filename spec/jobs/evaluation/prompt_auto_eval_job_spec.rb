@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe Evaluation::PromptAutoEvalJob do
   let(:agent_name) { "Emails::ClassifyAgent" }
   let(:dataset) { create(:leva_dataset) }
-  let(:previous_prompt) { create(:leva_prompt, name: agent_name) }
+  let(:previous_prompt) { create(:orchestration_prompt, name: agent_name) }
   let(:previous_experiment) do
     create(:leva_experiment,
       prompt: previous_prompt,
@@ -12,7 +12,7 @@ RSpec.describe Evaluation::PromptAutoEvalJob do
       runner_class: "Evaluation::StubbedAgentRun",
       evaluator_classes: [ "LLMJudgeEval" ])
   end
-  let(:new_prompt) { create(:leva_prompt, name: agent_name) }
+  let(:new_prompt) { create(:orchestration_prompt, name: agent_name) }
 
   before { previous_experiment }
 
@@ -21,7 +21,7 @@ RSpec.describe Evaluation::PromptAutoEvalJob do
       described_class.perform_now(new_prompt.id)
       new_exp = Leva::Experiment.where(prompt: new_prompt).first
       expect(new_exp).to be_present
-      expect(new_exp.prompt).to eq(new_prompt)
+      expect(new_exp.prompt.id).to eq(new_prompt.id)
     end
 
     it "reuses the previous experiment's dataset" do
@@ -60,7 +60,7 @@ RSpec.describe Evaluation::PromptAutoEvalJob do
     end
 
     context "when no experiment exists for the prompt name at all" do
-      let(:new_prompt) { create(:leva_prompt, name: "Records::FillAgent") }
+      let(:new_prompt) { create(:orchestration_prompt, name: "Records::FillAgent") }
 
       it "does nothing" do
         expect { described_class.perform_now(new_prompt.id) }.not_to change(Leva::Experiment, :count)
