@@ -2,6 +2,8 @@
 
 module Orchestration
   class Agent < ApplicationRecord
+    ALLOWED_TOOL_NAMESPACES = %w[Records Emails].freeze
+
     self.table_name = "orchestration_agents"
 
     validates :name, presence: true, uniqueness: true
@@ -17,6 +19,12 @@ module Orchestration
       return if tools.blank?
 
       tools.each do |tool|
+        namespace = tool.to_s.split("::").first
+        unless ALLOWED_TOOL_NAMESPACES.include?(namespace)
+          errors.add(:tools, "contains tool outside allowed namespaces: #{tool}")
+          next
+        end
+
         tool.constantize
       rescue NameError
         errors.add(:tools, "contains invalid tool: #{tool}")

@@ -28,8 +28,14 @@ RSpec.describe Orchestration::Agent do
       expect(agent).to be_valid
     end
 
-    it "validates tools are valid constants" do
-      agent.tools = [ "NonExistent::ToolClass" ]
+    it "rejects tools outside allowed namespaces" do
+      agent.tools = [ "File" ]
+      expect(agent).not_to be_valid
+      expect(agent.errors[:tools].first).to include("outside allowed namespaces")
+    end
+
+    it "rejects unknown constants within allowed namespaces" do
+      agent.tools = [ "Records::DoesNotExist" ]
       expect(agent).not_to be_valid
       expect(agent.errors[:tools]).to be_present
     end

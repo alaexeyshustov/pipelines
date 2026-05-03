@@ -2,6 +2,8 @@
 
 module Orchestration
   class ActionsController < ApplicationController
+    include JsonParamsParsing
+
     before_action :set_action, only: [ :edit, :update, :destroy ]
 
     def index
@@ -61,11 +63,6 @@ module Orchestration
       permitted
     rescue JSON::ParserError
       permitted
-    end
-
-    def parse_json_field(permitted, key)
-      raw = permitted[key]
-      permitted[key] = JSON.parse(raw) if raw.present?
     end
   end
 end

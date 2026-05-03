@@ -1,9 +1,9 @@
 module Orchestration
   class Agent < ApplicationRecord
-    def self.table_name: () -> String
+    ALLOWED_TOOL_NAMESPACES: Array[String]
 
-    def name: () -> String?
-    def name=: (String?) -> String?
+    def name: () -> String
+    def name=: (String) -> String
     def description: () -> String?
     def description=: (String?) -> String?
     def model: () -> String?

@@ -1,0 +1,5 @@
+module JsonParamsParsing
+  private
+
+  def parse_json_field: (untyped permitted, Symbol key) -> void
+end

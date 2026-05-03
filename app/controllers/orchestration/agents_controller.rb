@@ -2,6 +2,8 @@
 
 module Orchestration
   class AgentsController < ApplicationController
+    include JsonParamsParsing
+
     before_action :set_agent, only: [ :edit, :update, :destroy, :toggle ]
 
     def index
@@ -33,16 +35,16 @@ module Orchestration
     end
 
     def destroy
-      @agent.destroy
-      if @agent.errors.any?
-        redirect_to orchestration_agents_path, alert: "Cannot delete agent: #{@agent.errors.full_messages.to_sentence}."
-      else
-        redirect_to orchestration_agents_path, notice: "Agent deleted."
-      end
+      @agent.destroy!
+      redirect_to orchestration_agents_path, notice: "Agent deleted."
+    rescue ActiveRecord::RecordNotDestroyed
+      redirect_to orchestration_agents_path, alert: "Cannot delete agent: it is referenced by one or more actions."
     end
 
     def toggle
-      @agent.update!(enabled: !@agent.enabled)
+      @agent.with_lock do
+        @agent.update(enabled: !@agent.enabled)
+      end
       redirect_to orchestration_agents_path, notice: "Agent #{@agent.enabled? ? "enabled" : "disabled"}."
     end
 
@@ -57,12 +59,8 @@ module Orchestration
       parse_json_field(permitted, :tools)
       permitted
     rescue JSON::ParserError
+      permitted[:tools] = []
       permitted
-    end
-
-    def parse_json_field(permitted, key)
-      raw = permitted[key]
-      permitted[key] = JSON.parse(raw) if raw.present?
     end
   end
 end
