@@ -16,6 +16,7 @@ module Orchestration
 
     def new
       @action = Orchestration::Action.new
+      @agents = Orchestration::Agent.enabled.order(:name)
     end
 
     def create
@@ -23,17 +24,20 @@ module Orchestration
       if @action.save
         redirect_to orchestration_actions_path, notice: "Action created."
       else
+        @agents = Orchestration::Agent.enabled.order(:name)
         render :new, status: :unprocessable_entity
       end
     end
 
     def edit
+      @agents = Orchestration::Agent.enabled.order(:name)
     end
 
     def update
       if @action.update(action_params)
         redirect_to orchestration_actions_path, notice: "Action updated."
       else
+        @agents = Orchestration::Agent.enabled.order(:name)
         render :edit, status: :unprocessable_entity
       end
     end
@@ -56,7 +60,7 @@ module Orchestration
 
     def action_params
       permitted = params.require(:orchestration_action).permit(
-        :name, :description, :agent_class, :model, :tools, :prompt, :params
+        :name, :description, :kind, :agent_id, :agent_class, :model, :tools, :prompt, :params
       )
       parse_json_field(permitted, :tools)
       parse_json_field(permitted, :params)

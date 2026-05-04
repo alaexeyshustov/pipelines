@@ -17,6 +17,7 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
         post orchestration_actions_path, params: {
           orchestration_action: {
             name: "Query Interviews",
+            kind: "service",
             agent_class: "Orchestration::QueryExecutor",
             description: "Fetches interviews from the database",
             params: '{"table":"interviews","column_name":"status","column_values":["screening"],"columns":["id","company","job_title"]}'
@@ -29,11 +30,14 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
       expect(query_action.agent_class).to eq("Orchestration::QueryExecutor")
       expect(query_action.params).to include("table" => "interviews")
 
+      classify_agent_record = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+
       expect {
         post orchestration_actions_path, params: {
           orchestration_action: {
             name: "Classify Emails",
-            agent_class: "Emails::ClassifyAgent",
+            kind: "agent",
+            agent_id: classify_agent_record.id,
             description: "Classifies emails using Mistral AI"
           }
         }
@@ -41,7 +45,7 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
 
       classify_action = Orchestration::Action.last
       expect(response).to redirect_to(orchestration_actions_path)
-      expect(classify_action.agent_class).to eq("Emails::ClassifyAgent")
+      expect(classify_action.agent.name).to eq("Emails::ClassifyAgent")
 
       # --- pipeline ---
 
@@ -106,13 +110,14 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
 
   describe "run: executing a pipeline with service-object and agentic steps" do
     let!(:query_action) do
-      create(:orchestration_action,
+      create(:orchestration_action, :service_kind,
         name: "Query Interviews",
         agent_class: "Orchestration::QueryExecutor",
         params: { "table" => "interviews", "column_name" => "status", "column_values" => [ "screening" ] })
     end
+    let!(:classify_agent) { create(:orchestration_agent, name: "Emails::ClassifyAgent") }
     let!(:classify_action) do
-      create(:orchestration_action, name: "Classify Emails", agent_class: "Emails::ClassifyAgent")
+      create(:orchestration_action, name: "Classify Emails", agent: classify_agent)
     end
     let!(:pipeline) { create(:orchestration_pipeline, name: "Job Application Pipeline", enabled: true) }
     let!(:fetch_step) { create(:orchestration_step, pipeline: pipeline, name: "Fetch Interviews", position: 1) }
@@ -170,20 +175,23 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
 
   describe "edit: updating an existing pipeline's metadata, steps, and action attachments" do
     let!(:ingest_action) do
-      create(:orchestration_action, name: "Transform Data", agent_class: "Orchestration::IngestionExecutor",
+      create(:orchestration_action, :service_kind, name: "Transform Data",
+        agent_class: "Orchestration::IngestionExecutor",
         params: { "operations" => [ { "type" => "pick", "keys" => [ "interviews" ] } ] })
     end
     let!(:pipeline) { create(:orchestration_pipeline, name: "Job Application Pipeline", enabled: true) }
     let!(:fetch_step) { create(:orchestration_step, pipeline: pipeline, name: "Fetch Interviews", position: 1) }
     let!(:classify_step) { create(:orchestration_step, pipeline: pipeline, name: "Classify Emails", position: 2) }
     let!(:fetch_step_action) do
-      query_action = create(:orchestration_action, name: "Query Interviews", agent_class: "Orchestration::QueryExecutor",
+      query_action = create(:orchestration_action, :service_kind, name: "Query Interviews",
+        agent_class: "Orchestration::QueryExecutor",
         params: { "table" => "interviews", "column_name" => "status", "column_values" => [ "screening" ] })
       create(:orchestration_step_action, step: fetch_step, action: query_action, position: 1)
     end
 
     before do
-      classify_action = create(:orchestration_action, name: "Classify Emails", agent_class: "Emails::ClassifyAgent")
+      classify_agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      classify_action = create(:orchestration_action, name: "Classify Emails", agent: classify_agent)
       create(:orchestration_step_action, step: classify_step, action: classify_action, position: 1)
     end
 

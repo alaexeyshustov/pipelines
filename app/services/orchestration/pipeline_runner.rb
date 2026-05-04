@@ -71,19 +71,19 @@ module Orchestration
 
     def run_agent(action_run)
       action = action_run.step_action.action
-      klass  = action.agent_class&.constantize
-      raise ArgumentError, "Agent class not found: #{action.agent_class}" unless klass
-
       input  = action_run.input
-      if klass.ancestors.include?(RubyLLM::Agent)
+
+      if action.agent?
         params = (action.params || {}).merge(action_run.step_action.params || {})
         agent = build_agent(action, params)
         chat_id = agent.respond_to?(:chat) ? agent.chat&.id : agent.id
-        # Persist before ask so chat_id is saved even if the agent raises
         action_run.update_column(:chat_id, chat_id)
         result = agent.ask(input.to_json)
         { "result" => parse_content(result.content) }
       else
+        klass = action.agent_class&.constantize
+        raise ArgumentError, "Service class not found: #{action.agent_class}" unless klass
+
         params = (action.params || {}).merge(action_run.step_action.params || {})
         klass.call(input, params)
       end
@@ -102,19 +102,21 @@ module Orchestration
     end
 
     def build_agent(action, _params)
-      model        = @pipeline_run.pipeline.model.presence || action.model
-      tools        = action.tools
-      prompt       = leva_prompt_for(action.agent_class) || action.prompt
+      agent_record = action.agent
+      raise ArgumentError, "No agent associated with action #{action.id}" unless agent_record
+
+      model        = @pipeline_run.pipeline.model.presence || agent_record.model
+      tools        = agent_record.tools
+      prompt       = leva_prompt_for(agent_record.name) || action.prompt
       schema_class = action.schema_class
-      agent_class  = action.agent_class
+      agent_class  = agent_record.name
       raise ArgumentError, "Agent class not found: #{agent_class}" unless agent_class
 
-      # agent = agent_class.constantize.new
       agent = agent_class.constantize.create
-      agent = agent.with_model(model)                    if model.present? && agent.respond_to?(:with_model)
-      agent = agent.with_tools(*tools)                   if tools.present?
+      agent = agent.with_model(model)                     if model.present? && agent.respond_to?(:with_model)
+      agent = agent.with_tools(*tools)                    if tools.present?
       agent = agent.with_schema(schema_class.constantize) if schema_class.present?
-      agent.chat.with_instructions(prompt)               if prompt.present? && agent.respond_to?(:chat)
+      agent.chat.with_instructions(prompt)                if prompt.present? && agent.respond_to?(:chat)
       agent
     end
 

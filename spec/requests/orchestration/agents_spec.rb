@@ -90,7 +90,7 @@ RSpec.describe "Orchestration::Agents" do
 
     it "shows error when agent is referenced by an action" do
       agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
-      create(:orchestration_action, agent_class: agent.name)
+      create(:orchestration_action, kind: :agent, agent: agent)
       expect {
         delete orchestration_agent_path(agent)
       }.not_to change(Orchestration::Agent, :count)

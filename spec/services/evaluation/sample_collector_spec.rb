@@ -2,7 +2,8 @@ require "rails_helper"
 
 RSpec.describe Evaluation::SampleCollector do
   let(:agent_name) { "Emails::ClassifyAgent" }
-  let(:action) { create(:orchestration_action, agent_class: agent_name) }
+  let(:orchestration_agent) { create(:orchestration_agent, name: agent_name) }
+  let(:action) { create(:orchestration_action, kind: :agent, agent: orchestration_agent) }
   let(:step_action) { create(:orchestration_step_action, action: action) }
   let(:pipeline_run) { create(:orchestration_pipeline_run, pipeline: step_action.step.pipeline) }
   let(:chat) { create(:chat) }
@@ -52,19 +53,18 @@ RSpec.describe Evaluation::SampleCollector do
     end
 
     it "only returns samples for the given agent_name" do # rubocop:disable RSpec/ExampleLength
+      other_agent = create(:orchestration_agent, name: "Emails::FilterAgent")
       other_sa = create(:orchestration_step_action,
-                        action: create(:orchestration_action, agent_class: "Emails::FilterAgent"))
+                        action: create(:orchestration_action, kind: :agent, agent: other_agent))
       create(:orchestration_action_run,
              step_action: other_sa,
              pipeline_run: create(:orchestration_pipeline_run, pipeline: other_sa.step.pipeline),
              status: "completed", chat: create(:chat), input: {})
-      build_action_run
+      own_run = build_action_run
 
       samples = described_class.call(agent_name: agent_name, sample_size: 10)
 
-      allowed_ids = Orchestration::ActionRun.joins(step_action: :action)
-                                            .where(actions: { agent_class: agent_name }).pluck(:id)
-      expect(samples.map(&:action_run_id)).to all(be_in(allowed_ids))
+      expect(samples.map(&:action_run_id)).to all(eq(own_run.id))
     end
   end
 

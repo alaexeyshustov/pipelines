@@ -13,7 +13,7 @@ RSpec.describe LLMJudgeEval do
         chat: instance_double(RubyLLM::Chat, messages: []),
         step_action: instance_double(
           Orchestration::StepAction,
-          action: instance_double(Orchestration::Action, agent_class: agent_name)
+          action: instance_double(Orchestration::Action, agent?: false, agent_class: agent_name)
         )
       )
     end
@@ -129,7 +129,13 @@ RSpec.describe LLMJudgeEval do
     let!(:leva_dataset) { Leva::Dataset.create!(name: "test_dataset") }
     let!(:leva_prompt) { Orchestration::Prompt.create!(name: agent_name, system_prompt: "You are a classifier.", user_prompt: "Classify: {{input}}") }
     let!(:leva_experiment) { Leva::Experiment.create!(name: "test_exp", dataset: leva_dataset, status: :pending, prompt: leva_prompt, runner_class: "Evaluation::StubbedAgentRun", evaluator_classes: [ "LLMJudgeEval" ]) }
-    let!(:leva_dataset_record) { Leva::DatasetRecord.create!(dataset: leva_dataset, recordable: create(:orchestration_action_run, status: "completed")) }
+    let!(:leva_dataset_record) do
+      classify_agent = create(:orchestration_agent, name: agent_name)
+      action = create(:orchestration_action, kind: :agent, agent: classify_agent)
+      step_action = create(:orchestration_step_action, action: action)
+      action_run = create(:orchestration_action_run, step_action: step_action, status: "completed")
+      Leva::DatasetRecord.create!(dataset: leva_dataset, recordable: action_run)
+    end
     let!(:leva_runner_result) do
       Leva::RunnerResult.create!(
         experiment: leva_experiment,

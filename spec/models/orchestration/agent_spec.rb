@@ -72,7 +72,7 @@ RSpec.describe Orchestration::Agent do
     end
 
     context "when referenced by an action" do
-      before { create(:orchestration_action, agent_class: persisted_agent.name) }
+      before { create(:orchestration_action, kind: :agent, agent: persisted_agent) }
 
       it "cannot be destroyed" do
         persisted_agent.destroy
