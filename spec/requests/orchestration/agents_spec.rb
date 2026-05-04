@@ -56,6 +56,22 @@ RSpec.describe "Orchestration::Agents" do
         post orchestration_agents_path, params: { orchestration_agent: { name: "" } }
         expect(response).to have_http_status(:unprocessable_content)
       end
+
+      it "preserves valid JSON fields when one JSON field is invalid" do # rubocop:disable RSpec/ExampleLength
+        post orchestration_agents_path, params: {
+          orchestration_agent: {
+            name: "Emails::ClassifyAgent",
+            tools: '["Records::TempFileTool"]',
+            params: '{"mode":"strict"}',
+            output_schema: "{invalid"
+          }
+        }
+
+        agent = Orchestration::Agent.last
+        expect(agent.tools).to eq([ "Records::TempFileTool" ])
+        expect(agent.params).to eq({ "mode" => "strict" })
+        expect(agent.output_schema).to be_nil
+      end
     end
   end
 

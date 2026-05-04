@@ -76,7 +76,6 @@ module Orchestration
       if action.agent?
         builder = RuntimeAgentBuilder.new(
           action: action,
-          chat: Chat.create!,
           pipeline_model: @pipeline_run.pipeline.model,
           prompt_override: leva_prompt_for(action.agent&.name),
           step_params: action_run.step_action.params

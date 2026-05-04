@@ -40,6 +40,14 @@ RSpec.describe Orchestration::PipelineRunner do
         action_run = Orchestration::ActionRun.last
         expect(action_run.chat_id).to eq(chat.id)
       end
+
+      it 'does not create an extra Chat record before building a legacy agent' do
+        allow(Chat).to receive(:create!)
+
+        described_class.new(pipeline_run).call
+
+        expect(Chat).not_to have_received(:create!)
+      end
     end
 
     context 'when the pipeline has a model set' do
