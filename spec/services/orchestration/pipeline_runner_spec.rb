@@ -5,10 +5,10 @@ RSpec.describe Orchestration::PipelineRunner do
   let(:step1)        { create(:orchestration_step, pipeline: pipeline, name: "extract", position: 1) }
   let(:action)       { create(:orchestration_action, agent: create(:orchestration_agent, name: "Emails::ClassifyAgent")) }
   let(:pipeline_run) { create(:orchestration_pipeline_run, pipeline: pipeline, status: "pending") }
-  let(:stub_agent)   { instance_double(Emails::ClassifyAgent) }
+  let(:stub_agent)   { instance_double(RubyLLM::Agent) }
 
   before do
-    allow(Emails::ClassifyAgent).to receive(:create).and_return(stub_agent)
+    allow(RubyLLM::Agent).to receive(:new).and_return(stub_agent)
     allow(stub_agent).to receive_messages(ask: instance_double(RubyLLM::Message, content: "classification result"), chat: instance_double(Chat, id: nil))
   end
 
@@ -39,14 +39,6 @@ RSpec.describe Orchestration::PipelineRunner do
         described_class.new(pipeline_run).call
         action_run = Orchestration::ActionRun.last
         expect(action_run.chat_id).to eq(chat.id)
-      end
-
-      it 'does not create an extra Chat record before building a legacy agent' do
-        allow(Chat).to receive(:create!)
-
-        described_class.new(pipeline_run).call
-
-        expect(Chat).not_to have_received(:create!)
       end
     end
 
@@ -549,9 +541,7 @@ RSpec.describe Orchestration::PipelineRunner do
         create(:orchestration_step_action, step: step2, action: filter_action, position: 1)
         create(:orchestration_step_action, step: step3, action: ingest_action, position: 1)
 
-        # filter_content is what the LLM returns before run_agent wraps it in { "result" => ... }
         allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [ { "id" => "e1" } ] })
-        allow(Emails::FilterAgent).to receive(:create).and_return(stub_agent)
         allow(stub_agent).to receive(:ask)
           .and_return(instance_double(RubyLLM::Message, content: { "results" => [ { "id" => "e1" } ] }))
       end

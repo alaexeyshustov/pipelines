@@ -44,24 +44,13 @@ module Orchestration
     private
 
     def base_agent
-      if legacy_agent_class
-        # steep:ignore:start
-        legacy_agent_class.create
-      else
-        RubyLLM::Agent.new(chat: runtime_chat)
-        # steep:ignore:end
-      end
+      # steep:ignore:start
+      RubyLLM::Agent.new(chat: runtime_chat)
+      # steep:ignore:end
     end
 
     def runtime_chat
       @chat || Chat.create!
-    end
-
-    def legacy_agent_class
-      klass = agent_record.name.safe_constantize
-      return klass if klass.is_a?(Class) && klass <= RubyLLM::Agent
-
-      nil
     end
 
     def agent_record

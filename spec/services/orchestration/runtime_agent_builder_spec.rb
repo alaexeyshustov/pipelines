@@ -20,6 +20,25 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
   end
   let(:action) { create(:orchestration_action, agent: agent_record) }
 
+  describe '#build' do
+    it 'does not delegate to a legacy RubyLLM::Agent subclass even when the agent name matches one' do # rubocop:disable RSpec/ExampleLength
+      legacy_agent_record = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      legacy_action = create(:orchestration_action, agent: legacy_agent_record)
+      allow(Emails::ClassifyAgent).to receive(:create)
+
+      generic_agent = instance_double(RubyLLM::Agent)
+      allow(RubyLLM::Agent).to receive(:new).and_return(generic_agent)
+      allow(generic_agent).to receive_messages(with_model: generic_agent, with_tools: generic_agent,
+                                               with_params: generic_agent, with_schema: generic_agent,
+                                               chat: instance_double(Chat, with_instructions: nil))
+
+      described_class.new(action: legacy_action).build
+
+      expect(Emails::ClassifyAgent).not_to have_received(:create)
+      expect(RubyLLM::Agent).to have_received(:new)
+    end
+  end
+
   describe '#snapshot' do
     it 'returns a hash with the resolved model' do
       expect(builder.snapshot[:model]).to eq("mistral-large")

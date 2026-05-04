@@ -115,7 +115,12 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
         agent_class: "Orchestration::QueryExecutor",
         params: { "table" => "interviews", "column_name" => "status", "column_values" => [ "screening" ] })
     end
-    let!(:classify_agent) { create(:orchestration_agent, name: "Emails::ClassifyAgent") }
+    let!(:classify_agent) do
+      create(:orchestration_agent,
+             name: "Emails::ClassifyAgent",
+             model: "mistral-large-latest",
+             tools: [ "Records::TempFileTool" ])
+    end
     let!(:classify_action) do
       create(:orchestration_action, name: "Classify Emails", agent: classify_agent)
     end

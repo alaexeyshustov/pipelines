@@ -17,7 +17,6 @@ module Orchestration
 
     def base_agent: () -> untyped
     def runtime_chat: () -> untyped
-    def legacy_agent_class: () -> untyped
     def agent_record: () -> Agent
     def resolved_model: () -> String?
     def resolved_prompt: () -> String?
