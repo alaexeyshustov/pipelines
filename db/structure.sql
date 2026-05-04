@@ -151,7 +151,9 @@ FOREIGN KEY ("agent_id")
   REFERENCES "orchestration_agents" ("id")
 );
 CREATE INDEX "index_actions_on_agent_class" ON "actions" ("agent_class") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_actions_on_agent_id" ON "actions" ("agent_id") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260503170000'),
 ('20260503160000'),
 ('20260503140000'),
 ('20260503133626'),

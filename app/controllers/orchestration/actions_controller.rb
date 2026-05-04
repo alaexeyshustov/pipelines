@@ -5,6 +5,7 @@ module Orchestration
     include JsonParamsParsing
 
     before_action :set_action, only: [ :edit, :update, :destroy ]
+    before_action :load_agents, only: [ :new, :create, :edit, :update ]
 
     def index
       @actions = Orchestration::Action
@@ -16,7 +17,6 @@ module Orchestration
 
     def new
       @action = Orchestration::Action.new
-      @agents = Orchestration::Agent.enabled.order(:name)
     end
 
     def create
@@ -24,20 +24,17 @@ module Orchestration
       if @action.save
         redirect_to orchestration_actions_path, notice: "Action created."
       else
-        @agents = Orchestration::Agent.enabled.order(:name)
         render :new, status: :unprocessable_entity
       end
     end
 
     def edit
-      @agents = Orchestration::Agent.enabled.order(:name)
     end
 
     def update
       if @action.update(action_params)
         redirect_to orchestration_actions_path, notice: "Action updated."
       else
-        @agents = Orchestration::Agent.enabled.order(:name)
         render :edit, status: :unprocessable_entity
       end
     end
@@ -56,6 +53,10 @@ module Orchestration
 
     def set_action
       @action = Orchestration::Action.find(params[:id])
+    end
+
+    def load_agents
+      @agents = Orchestration::Agent.enabled.order(:name)
     end
 
     def action_params
