@@ -3,9 +3,9 @@ require 'rails_helper'
 RSpec.describe Orchestration::PipelineRunner do
   let(:pipeline)     { create(:orchestration_pipeline) }
   let(:step1)        { create(:orchestration_step, pipeline: pipeline, name: "extract", position: 1) }
-  let(:action)       { create(:orchestration_action, agent_class: "Emails::ClassifyAgent") }
+  let(:action)       { create(:orchestration_action, agent: create(:orchestration_agent, name: "Emails::ClassifyAgent")) }
   let(:pipeline_run) { create(:orchestration_pipeline_run, pipeline: pipeline, status: "pending") }
-  let(:stub_agent) { instance_double(Emails::ClassifyAgent) }
+  let(:stub_agent)   { instance_double(Emails::ClassifyAgent) }
 
   before do
     allow(Emails::ClassifyAgent).to receive(:create).and_return(stub_agent)
@@ -45,7 +45,7 @@ RSpec.describe Orchestration::PipelineRunner do
     context 'when the pipeline has a model set' do
       before do
         pipeline.update!(model: 'mistral-large-latest')
-        action.update!(model: 'openai-gpt4')
+        action.agent.update!(model: 'openai-gpt4')
         create(:orchestration_step_action, step: step1, action: action, position: 1)
         allow(stub_agent).to receive(:with_model).and_return(stub_agent)
       end
@@ -59,7 +59,7 @@ RSpec.describe Orchestration::PipelineRunner do
     context 'when the pipeline has no model but the action does' do
       before do
         pipeline.update!(model: nil)
-        action.update!(model: 'openai-gpt4')
+        action.agent.update!(model: 'openai-gpt4')
         create(:orchestration_step_action, step: step1, action: action, position: 1)
         allow(stub_agent).to receive(:with_model).and_return(stub_agent)
       end
@@ -73,7 +73,7 @@ RSpec.describe Orchestration::PipelineRunner do
     context 'when both pipeline and action have no model' do
       before do
         pipeline.update!(model: nil)
-        action.update!(model: nil)
+        action.agent.update!(model: nil)
         create(:orchestration_step_action, step: step1, action: action, position: 1)
         allow(stub_agent).to receive(:with_model)
       end
@@ -168,7 +168,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
     context 'with an executable action' do
       before do
-        executable_action = create(:orchestration_action, agent_class: "Emails::FetchExecutor")
+        executable_action = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
         create(:orchestration_step_action, step: step1, action: executable_action, position: 1)
       end
 
@@ -184,7 +184,7 @@ RSpec.describe Orchestration::PipelineRunner do
     context 'with an executable action that has params' do
       before do
         ops = { "operations" => [ { "type" => "pick", "keys" => [ "emails" ] } ] }
-        ingest_action = create(:orchestration_action,
+        ingest_action = create(:orchestration_action, :service_kind,
                                 agent_class: "Orchestration::IngestionExecutor",
                                 params: ops)
         create(:orchestration_step_action, step: step1, action: ingest_action, position: 1)
@@ -241,7 +241,7 @@ RSpec.describe Orchestration::PipelineRunner do
       before do
         step_disabled = create(:orchestration_step, pipeline: pipeline, name: "disabled", position: 2, enabled: false)
         step3         = create(:orchestration_step, pipeline: pipeline, name: "load", position: 3)
-        action3       = create(:orchestration_action, agent_class: "Emails::ClassifyAgent")
+        action3       = create(:orchestration_action, agent: action.agent)
         create(:orchestration_step_action, step: step1, action: action, position: 1)
         create(:orchestration_step_action, step: step_disabled, action: action, position: 1)
         create(:orchestration_step_action, step: step3, action: action3, position: 1)
@@ -259,7 +259,7 @@ RSpec.describe Orchestration::PipelineRunner do
     context 'when step 1 fails, step 2 is not started' do
       before do
         step2   = create(:orchestration_step, pipeline: pipeline, name: "transform", position: 2)
-        action2 = create(:orchestration_action, agent_class: "Emails::ClassifyAgent")
+        action2 = create(:orchestration_action, agent: action.agent)
         create(:orchestration_step_action, step: step1, action: action, position: 1)
         create(:orchestration_step_action, step: step2, action: action2, position: 1)
         allow(stub_agent).to receive(:ask).and_raise(RuntimeError, "step1 exploded")
@@ -330,7 +330,7 @@ RSpec.describe Orchestration::PipelineRunner do
     context 'with two steps and input_mapping on the second step' do
       before do
         step2 = create(:orchestration_step, pipeline: pipeline, name: "transform", position: 2)
-        action2 = create(:orchestration_action, agent_class: "Emails::ClassifyAgent")
+        action2 = create(:orchestration_action, agent: action.agent)
         create(:orchestration_step_action, step: step1, action: action, position: 1)
         create(:orchestration_step_action, step: step2, action: action2, position: 1)
         allow(stub_agent).to receive(:ask).and_return(instance_double(RubyLLM::Message, content: "step output"))
@@ -358,7 +358,7 @@ RSpec.describe Orchestration::PipelineRunner do
       before do
         pipeline_run.update!(initial_input: { "date" => "2026-04-03", "providers" => [ "gmail" ] })
         step1.update!(input_mapping: { "fetch_date" => { "from_step" => "initial", "path" => "date" } })
-        executable_action = create(:orchestration_action, agent_class: "Emails::FetchExecutor")
+        executable_action = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
         create(:orchestration_step_action, step: step1, action: executable_action, position: 1)
         allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [] })
       end
@@ -375,9 +375,11 @@ RSpec.describe Orchestration::PipelineRunner do
         step2 = create(:orchestration_step, pipeline: pipeline, name: "filter",  position: 2)
         step3 = create(:orchestration_step, pipeline: pipeline, name: "ingest",  position: 3)
 
-        fetch_action  = create(:orchestration_action, agent_class: "Emails::FetchExecutor")
-        filter_action = create(:orchestration_action, agent_class: "Emails::FilterAgent")
-        ingest_action = create(:orchestration_action,
+        filter_agent_record = create(:orchestration_agent, name: "Emails::FilterAgent")
+
+        fetch_action  = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
+        filter_action = create(:orchestration_action, agent: filter_agent_record)
+        ingest_action = create(:orchestration_action, :service_kind,
                                 agent_class: "Orchestration::IngestionExecutor",
                                 params: {
                                   "operations" => [

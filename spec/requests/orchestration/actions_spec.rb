@@ -5,11 +5,11 @@ require "rails_helper"
 RSpec.describe "Orchestration::Actions" do
   describe "GET /orchestration/actions" do
     it "returns 200 and lists actions" do
-      action = create(:orchestration_action, name: "My Action", agent_class: "Emails::ClassifyAgent")
+      create(:orchestration_action, name: "My Action")
       get orchestration_actions_path
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("My Action")
-      expect(response.body).to include("Emails::ClassifyAgent")
+      expect(response.body).to include("agent")
     end
 
     it "shows pipeline usage count" do
@@ -26,20 +26,20 @@ RSpec.describe "Orchestration::Actions" do
       get new_orchestration_action_path
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("name")
-      expect(response.body).to include("agent_class")
+      expect(response.body).to include("kind")
     end
   end
 
   describe "POST /orchestration/actions" do
     context "with valid params" do
+      let(:orchestration_agent) { create(:orchestration_agent, name: "Emails::ClassifyAgent") }
       let(:valid_params) do
         {
           orchestration_action: {
             name: "New Action",
-            agent_class: "Emails::ClassifyAgent",
+            kind: "agent",
+            agent_id: orchestration_agent.id,
             description: "A description",
-            model: "mistral-small",
-            tools: '["EmailClassifier"]',
             prompt: "Classify this email",
             params: '{"key":"value"}'
           }
@@ -56,16 +56,17 @@ RSpec.describe "Orchestration::Actions" do
 
     context "with invalid params" do
       it "renders new with 422" do
-        post orchestration_actions_path, params: { orchestration_action: { name: "", agent_class: "" } }
+        post orchestration_actions_path, params: { orchestration_action: { name: "", kind: "agent" } }
         expect(response).to have_http_status(:unprocessable_content)
-        expect(response.body).to include("agent_class")
+        expect(response.body).to include("kind")
       end
 
       it "falls back to raw params when tools JSON is invalid" do
+        agent = create(:orchestration_agent)
         expect {
           post orchestration_actions_path, params: {
             orchestration_action: {
-              name: "Test", agent_class: "Emails::ClassifyAgent", tools: "{invalid json"
+              name: "Test", kind: "agent", agent_id: agent.id, tools: "{invalid json"
             }
           }
         }.to change(Orchestration::Action, :count).by(1)
@@ -87,7 +88,7 @@ RSpec.describe "Orchestration::Actions" do
       it "updates and redirects" do
         action = create(:orchestration_action, name: "Old Name")
         patch orchestration_action_path(action), params: {
-          orchestration_action: { name: "New Name", agent_class: "Emails::ClassifyAgent" }
+          orchestration_action: { name: "New Name" }
         }
         expect(response).to redirect_to(orchestration_actions_path)
         expect(action.reload.name).to eq("New Name")
@@ -98,7 +99,7 @@ RSpec.describe "Orchestration::Actions" do
       it "renders edit with 422" do
         action = create(:orchestration_action)
         patch orchestration_action_path(action), params: {
-          orchestration_action: { name: "", agent_class: "" }
+          orchestration_action: { name: "" }
         }
         expect(response).to have_http_status(:unprocessable_content)
       end

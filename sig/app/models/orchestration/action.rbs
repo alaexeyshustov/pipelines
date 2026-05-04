@@ -4,6 +4,12 @@ module Orchestration
 
     def name: () -> String?
     def name=: (String?) -> String?
+    def kind: () -> String
+    def kind=: (String) -> String
+    def agent?: () -> bool
+    def service?: () -> bool
+    def agent_id: () -> Integer?
+    def agent_id=: (Integer?) -> Integer?
     def agent_class: () -> String?
     def agent_class=: (String?) -> String?
     def schema_class: () -> String?
@@ -22,9 +28,11 @@ module Orchestration
     def output_schema=: (Hash[String, untyped]?) -> Hash[String, untyped]?
 
     def step_actions: () -> ActiveRecord::Associations::CollectionProxy
+    def agent: () -> Orchestration::Agent?
 
     private
 
-    def agent_class_must_be_valid: () -> void
+    def kind_specific_fields_valid: () -> void
+    def validate_service_class: () -> void
   end
 end

@@ -52,22 +52,28 @@ RECONCILE_EMAILS_INPUT_MAPPING = {
 }.freeze
 
 steps = [
-  { name: "Fetch Emails",                   agent_class: "Emails::FetchExecutor"                                                                              },
-  { name: "Classify Emails",                agent_class: "Emails::ClassifyAgent"                                                                              },
-  { name: "Filter Emails",                  agent_class: "Emails::FilterAgent"                                                                                },
-  { name: "Ingest Emails",                  agent_class: "Orchestration::IngestionExecutor", params: INGEST_EMAILS_PARAMS                                     },
-  { name: "Map Emails",                     agent_class: "Emails::MappingAgent",             schema_class: "ApplicationMailsSchema"                            },
-  { name: "Store Emails",                   agent_class: "Records::StoreAgent",              output_schema: STORE_EMAILS_OUTPUT_SCHEMA                         },
-  { name: "Query Email Records",            agent_class: "Orchestration::QueryExecutor",    params: QUERY_EMAIL_RECORDS_PARAMS,   input_mapping: QUERY_EMAIL_RECORDS_INPUT_MAPPING  },
-  { name: "Normalize Emails",               agent_class: "Records::NormalizeAgent",                                              input_mapping: NORMALIZE_EMAILS_INPUT_MAPPING     },
-  { name: "Reconcile Emails to Interviews", agent_class: "Records::ReconcileAgent", input_mapping: RECONCILE_EMAILS_INPUT_MAPPING                           },
-  { name: "Export to Gist",                 agent_class: "Interviews::GistExportExecutor"                                                                     }
+  { name: "Fetch Emails",                   kind: :service, agent_class: "Emails::FetchExecutor"                                                                              },
+  { name: "Classify Emails",                kind: :agent,   agent_name: "Emails::ClassifyAgent"                                                                               },
+  { name: "Filter Emails",                  kind: :agent,   agent_name: "Emails::FilterAgent"                                                                                 },
+  { name: "Ingest Emails",                  kind: :service, agent_class: "Orchestration::IngestionExecutor", params: INGEST_EMAILS_PARAMS                                     },
+  { name: "Map Emails",                     kind: :agent,   agent_name: "Emails::MappingAgent",              schema_class: "ApplicationMailsSchema"                            },
+  { name: "Store Emails",                   kind: :agent,   agent_name: "Records::StoreAgent",               output_schema: STORE_EMAILS_OUTPUT_SCHEMA                         },
+  { name: "Query Email Records",            kind: :service, agent_class: "Orchestration::QueryExecutor",    params: QUERY_EMAIL_RECORDS_PARAMS,   input_mapping: QUERY_EMAIL_RECORDS_INPUT_MAPPING  },
+  { name: "Normalize Emails",               kind: :agent,   agent_name: "Records::NormalizeAgent",                                               input_mapping: NORMALIZE_EMAILS_INPUT_MAPPING     },
+  { name: "Reconcile Emails to Interviews", kind: :agent,   agent_name: "Records::ReconcileAgent",          input_mapping: RECONCILE_EMAILS_INPUT_MAPPING                                             },
+  { name: "Export to Gist",                 kind: :service, agent_class: "Interviews::GistExportExecutor"                                                                     }
 ]
 
 Orchestration::Action.where(name: "Merge Email Records").destroy_all
 
 action_records = steps.map do |attrs|
+  agent_record = if attrs[:kind] == :agent
+    Orchestration::Agent.find_or_create_by!(name: attrs[:agent_name])
+  end
+
   Orchestration::Action.find_or_initialize_by(name: attrs[:name]).tap do |a|
+    a.kind          = attrs[:kind]
+    a.agent         = agent_record
     a.agent_class   = attrs[:agent_class]
     a.output_schema = attrs[:output_schema]
     a.params        = attrs[:params]

@@ -26,11 +26,11 @@ module Evaluation
     def action_runs
       # steep:ignore:start
       Orchestration::ActionRun
-        .joins(step_action: :action)
+        .joins(step_action: { action: :agent })
         .includes(chat: { messages: :parent_tool_call })
         .where(status: "completed")
         .where.not(chat_id: nil)
-        .where(actions: { agent_class: @agent_name })
+        .where(orchestration_agents: { name: @agent_name })
         .order(id: :desc)
         .limit(@sample_size)
       # steep:ignore:end

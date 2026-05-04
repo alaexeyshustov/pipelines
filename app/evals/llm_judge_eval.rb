@@ -69,7 +69,8 @@ class LLMJudgeEval < Leva::BaseEval
   private
 
   def agent_name(recordable)
-    recordable.step_action.action.agent_class
+    action = recordable.step_action.action
+    action.agent? ? action.agent&.name : action.agent_class
   end
 
   def fetch_instructions(agent_name)

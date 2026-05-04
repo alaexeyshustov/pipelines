@@ -3,8 +3,9 @@ require "rails_helper"
 RSpec.describe Evaluation::StubbedAgentRun do # rubocop:disable RSpec/MultipleMemoizedHelpers
   subject(:runner) { described_class.new }
 
+  let(:orchestration_agent) { create(:orchestration_agent, name: "Emails::ClassifyAgent") }
   let(:step_action) do
-    action = create(:orchestration_action, agent_class: "Emails::ClassifyAgent")
+    action = create(:orchestration_action, kind: :agent, agent: orchestration_agent)
     create(:orchestration_step_action, action: action)
   end
   let(:pipeline_run) { create(:orchestration_pipeline_run, pipeline: step_action.step.pipeline) }

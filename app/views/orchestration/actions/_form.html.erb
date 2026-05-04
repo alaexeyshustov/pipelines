@@ -15,21 +15,30 @@
   </div>
 
   <div>
-    <%= f.label :agent_class, class: "block text-sm font-medium text-gray-700 mb-1" %>
-    <%= f.text_field :agent_class, class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 #{"border-red-400" if action.errors[:agent_class].any?}", placeholder: "e.g. Emails::ClassifyAgent" %>
-    <% if action.errors[:agent_class].any? %>
-      <p class="mt-1 text-xs text-red-600"><%= action.errors[:agent_class].first %></p>
+    <%= f.label :kind, class: "block text-sm font-medium text-gray-700 mb-1" %>
+    <%= f.select :kind,
+          [["Agent (reusable Orchestration::Agent)", "agent"], ["Service (Executable class)", "service"]],
+          {},
+          class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
+  </div>
+
+  <div>
+    <%= f.label :agent_id, "Agent (for agent-kind)", class: "block text-sm font-medium text-gray-700 mb-1" %>
+    <%= f.select :agent_id,
+          @agents.map { |a| [a.name, a.id] },
+          { include_blank: "— select an agent —" },
+          class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 #{"border-red-400" if action.errors[:agent_id].any?}" %>
+    <% if action.errors[:agent_id].any? %>
+      <p class="mt-1 text-xs text-red-600"><%= action.errors[:agent_id].first %></p>
     <% end %>
   </div>
 
   <div>
-    <%= f.label :model, class: "block text-sm font-medium text-gray-700 mb-1" %>
-    <%= f.text_field :model, class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500", placeholder: "e.g. mistral-small" %>
-  </div>
-
-  <div>
-    <%= f.label :tools, "Tools (JSON array)", class: "block text-sm font-medium text-gray-700 mb-1" %>
-    <%= f.text_field :tools, value: action.tools ? action.tools.to_json : "", class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500", placeholder: '["ToolOne", "ToolTwo"]' %>
+    <%= f.label :agent_class, "Executable Class (for service-kind)", class: "block text-sm font-medium text-gray-700 mb-1" %>
+    <%= f.text_field :agent_class, class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 #{"border-red-400" if action.errors[:agent_class].any?}", placeholder: "e.g. Emails::FetchExecutor" %>
+    <% if action.errors[:agent_class].any? %>
+      <p class="mt-1 text-xs text-red-600"><%= action.errors[:agent_class].first %></p>
+    <% end %>
   </div>
 
   <div>

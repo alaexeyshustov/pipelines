@@ -32,7 +32,7 @@ module Orchestration
     end
 
     def ensure_not_referenced
-      return unless Orchestration::Action.exists?(agent_class: name)
+      return unless Orchestration::Action.exists?(agent_id: id)
 
       errors.add(:base, "cannot be deleted while referenced by actions")
       throw :abort

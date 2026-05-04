@@ -6,13 +6,14 @@ module Evaluation
 
       # steep:ignore:start
       action = record.step_action.action
-      agent_class_name = action.agent_class
-      raise ArgumentError, "agent_class is nil for action_run #{record.id}" unless agent_class_name
+      agent_record = action.agent
+      raise ArgumentError, "action #{record.id} is not agent-kind or has no agent" unless agent_record
 
+      agent_class_name = agent_record.name
       agent_class = agent_class_name.safe_constantize
-      raise ArgumentError, "agent_class #{agent_class_name.inspect} could not be resolved for action_run #{record.id}" unless agent_class
+      raise ArgumentError, "agent class #{agent_class_name.inspect} could not be resolved for action_run #{record.id}" unless agent_class
 
-      tool_classes = resolve_tools(action, agent_class)
+      tool_classes = resolve_tools(agent_record, agent_class)
       stubbed_tools = tool_classes.map { |tool_class| stub_tool(tool_class, registry) }
 
       agent = agent_class.create
@@ -26,9 +27,9 @@ module Evaluation
 
     private
 
-    def resolve_tools(action, agent_class)
+    def resolve_tools(agent_record, agent_class)
       # steep:ignore:start
-      configured = action.tools.presence
+      configured = agent_record.tools.presence
       return configured.map(&:constantize) if configured
 
       agent_class.tools
