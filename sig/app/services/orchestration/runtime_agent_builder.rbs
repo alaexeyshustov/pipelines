@@ -10,6 +10,7 @@ module Orchestration
     ) -> void
     def build: () -> untyped
     def resolved_output_schema: () -> Hash[String, untyped]?
+    def snapshot: () -> Hash[Symbol, untyped]
 
     private
 

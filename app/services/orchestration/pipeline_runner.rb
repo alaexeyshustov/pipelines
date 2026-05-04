@@ -82,7 +82,7 @@ module Orchestration
         )
         agent = builder.build
         chat_id = agent.respond_to?(:chat) ? agent.chat&.id : agent.id
-        action_run.update_column(:chat_id, chat_id)
+        action_run.update_columns(chat_id: chat_id, agent_snapshot: builder.snapshot)
         result = agent.ask(input.to_json)
         output = parse_content(result.content)
         action.agent&.output_schema.present? ? output : { "result" => output }

@@ -31,6 +31,16 @@ module Orchestration
       agent_record.output_schema.presence || @action.output_schema
     end
 
+    def snapshot
+      {
+        model: resolved_model,
+        prompt: resolved_prompt,
+        tools: resolved_tools&.map(&:to_s),
+        params: resolved_params,
+        output_schema: resolved_output_schema
+      }
+    end
+
     private
 
     def base_agent

@@ -178,6 +178,56 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
+    context 'with agent snapshot persistence' do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      let(:agent_record) do
+        action.agent.tap do |a|
+          a.update!(
+            name: "Reusable email classifier",
+            model: "mistral-small",
+            tools: [ "Records::TempFileTool" ],
+            prompt: "Classify incoming emails",
+            params: { "mode" => "default" }
+          )
+        end
+      end
+      let(:snapshot_agent) { instance_double(RubyLLM::Agent, chat: create(:chat), params: {}) }
+
+      before do
+        agent_record
+        create(:orchestration_step_action, step: step1, action: action, position: 1, params: { "limit" => 2 })
+        allow(RubyLLM::Agent).to receive(:new).and_return(snapshot_agent)
+        allow(snapshot_agent).to receive_messages(
+          with_model: snapshot_agent, with_tools: snapshot_agent,
+          with_params: snapshot_agent, with_schema: snapshot_agent,
+          ask: instance_double(RubyLLM::Message, content: "result")
+        )
+        allow(snapshot_agent.chat).to receive(:with_instructions)
+      end
+
+      it 'persists a resolved agent_snapshot on the action_run' do
+        described_class.new(pipeline_run).call
+        action_run = Orchestration::ActionRun.last
+
+        expect(action_run.agent_snapshot).to include(
+          "model" => "mistral-small",
+          "prompt" => "Classify incoming emails",
+          "tools" => [ "Records::TempFileTool" ],
+          "params" => { "mode" => "default", "limit" => 2 }
+        )
+      end
+
+      it 'does not mutate historical snapshots when the agent is later edited' do
+        described_class.new(pipeline_run).call
+        action_run = Orchestration::ActionRun.last
+        original_snapshot = action_run.agent_snapshot.dup
+
+        agent_record.update!(model: "mistral-large", prompt: "Updated prompt")
+        action_run.reload
+
+        expect(action_run.agent_snapshot).to eq(original_snapshot)
+      end
+    end
+
     context 'when an Orchestration::Prompt exists for the agent class' do
       let(:chat) { instance_spy(Chat, id: nil) }
 
@@ -259,6 +309,13 @@ RSpec.describe Orchestration::PipelineRunner do
         action_run = Orchestration::ActionRun.last
         expect(action_run.status).to eq("completed")
         expect(action_run.output).to eq({ "emails" => [] })
+      end
+
+      it 'does not persist an agent_snapshot for service-backed runs' do
+        allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [] })
+        described_class.new(pipeline_run).call
+        action_run = Orchestration::ActionRun.last
+        expect(action_run.agent_snapshot).to be_nil
       end
     end
 

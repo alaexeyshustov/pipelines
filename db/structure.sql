@@ -69,7 +69,7 @@ CREATE INDEX "index_pipeline_runs_on_pipeline_id_and_created_at" ON "pipeline_ru
 CREATE TABLE IF NOT EXISTS "pipelines" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "description" text, "enabled" boolean DEFAULT TRUE NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "cron_expression" varchar, "model" varchar /*application='ApplicationPipeline'*/, "initial_input_schema" json /*application='ApplicationPipeline'*/);
 CREATE INDEX "index_pipelines_on_enabled_and_cron_expression" ON "pipelines" ("enabled", "cron_expression") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "ruby_llm_monitoring_events" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "allocations" integer, "cost" float, "cpu_time" float, "duration" float, "end" float, "gc_time" float, "idle_time" float, "name" varchar, "payload" json, "time" float, "transaction_id" varchar, "provider" varchar GENERATED ALWAYS AS (payload->>'provider') STORED, "model" varchar GENERATED ALWAYS AS (payload->>'model') STORED, "input_tokens" integer GENERATED ALWAYS AS (CAST(payload->>'input_tokens' AS INTEGER)) STORED, "output_tokens" integer GENERATED ALWAYS AS (CAST(payload->>'output_tokens' AS INTEGER)) STORED, "exception_class" varchar GENERATED ALWAYS AS (json_extract(payload, '$.exception[0]')) STORED, "exception_message" varchar GENERATED ALWAYS AS (json_extract(payload, '$.exception[1]')) STORED, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "thinking_tokens" integer GENERATED ALWAYS AS (CAST(payload->>'thinking_tokens' AS INTEGER)) STORED);
-CREATE TABLE IF NOT EXISTS "action_runs" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "pipeline_run_id" integer NOT NULL, "step_action_id" integer NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "input" json, "output" json, "error" text, "started_at" datetime(6), "finished_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "chat_id" integer, CONSTRAINT "fk_rails_98c536e7ea"
+CREATE TABLE IF NOT EXISTS "action_runs" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "pipeline_run_id" integer NOT NULL, "step_action_id" integer NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "input" json, "output" json, "error" text, "started_at" datetime(6), "finished_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "chat_id" integer, "agent_snapshot" json /*application='ApplicationPipeline'*/, CONSTRAINT "fk_rails_98c536e7ea"
 FOREIGN KEY ("step_action_id")
   REFERENCES "step_actions" ("id")
 , CONSTRAINT "fk_rails_e54391b086"
@@ -153,6 +153,7 @@ FOREIGN KEY ("agent_id")
 CREATE INDEX "index_actions_on_agent_class" ON "actions" ("agent_class") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_actions_on_agent_id" ON "actions" ("agent_id") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260504130000'),
 ('20260504120000'),
 ('20260503170000'),
 ('20260503160000'),
