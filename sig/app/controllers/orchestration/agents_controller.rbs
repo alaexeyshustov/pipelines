@@ -1,0 +1,21 @@
+module Orchestration
+  class AgentsController < ApplicationController
+    include JsonParamsParsing
+
+    def index: () -> void
+    def new: () -> void
+    def create: () -> void
+    def edit: () -> void
+    def update: () -> void
+    def destroy: () -> void
+    def toggle: () -> void
+
+    private
+
+    def set_agent: () -> void
+    def agent_params: () -> ActionController::Parameters
+    def persist_agent: (Agent agent) -> bool
+    def parse_agent_json_field: (ActionController::Parameters permitted, Symbol key, expected: String) -> void
+    def attach_json_parse_errors: (Agent agent) -> void
+  end
+end
