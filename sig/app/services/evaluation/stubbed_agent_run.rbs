@@ -4,7 +4,7 @@ module Evaluation
 
     private
 
-    def resolve_tools: (Orchestration::Agent agent_record, Class agent_class) -> Array[Class]
+    def resolve_tools: (Orchestration::Agent agent_record) -> Array[Class]
     def stub_tool: (Class tool_class, ToolStubRegistry registry) -> Class
     def build_prediction: (untyped agent, untyped result) -> String
   end

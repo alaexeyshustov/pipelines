@@ -101,6 +101,40 @@ RSpec.describe Evaluation::StubbedAgentRun do # rubocop:disable RSpec/MultipleMe
 
       runner.execute(action_run)
     end
+
+    context "with a serialized orchestration agent and no Ruby subclass" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      let(:orchestration_agent) do
+        create(:orchestration_agent,
+               name: "Reusable email classifier",
+               model: "mistral-large-latest",
+               tools: [ "Records::TempFileTool" ],
+               output_schema: {
+                 "type" => "object",
+                 "required" => [ "results" ],
+                 "properties" => {
+                   "results" => {
+                     "type" => "array",
+                     "items" => {
+                       "type" => "object",
+                       "required" => [ "id" ],
+                       "properties" => {
+                         "id" => { "type" => "string" },
+                         "tags" => { "type" => "array", "items" => { "type" => "string" } }
+                       }
+                     }
+                   }
+                 }
+               })
+      end
+
+      it "replays the configured tools and structured output through the generic runtime" do
+        result = runner.execute(action_run)
+        parsed = JSON.parse(result)
+
+        expect(parsed["tool_calls"].first["tool_name"]).to eq("temp_file")
+        expect(parsed["output"]).to eq(JSON.parse(final_output))
+      end
+    end
   end
 
   describe "#stub_tool" do # rubocop:disable RSpec/MultipleMemoizedHelpers

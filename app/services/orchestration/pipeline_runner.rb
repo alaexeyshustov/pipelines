@@ -74,12 +74,19 @@ module Orchestration
       input  = action_run.input
 
       if action.agent?
-        params = (action.params || {}).merge(action_run.step_action.params || {})
-        agent = build_agent(action, params)
+        builder = RuntimeAgentBuilder.new(
+          action: action,
+          chat: Chat.create!,
+          pipeline_model: @pipeline_run.pipeline.model,
+          prompt_override: leva_prompt_for(action.agent&.name),
+          step_params: action_run.step_action.params
+        )
+        agent = builder.build
         chat_id = agent.respond_to?(:chat) ? agent.chat&.id : agent.id
         action_run.update_column(:chat_id, chat_id)
         result = agent.ask(input.to_json)
-        { "result" => parse_content(result.content) }
+        output = parse_content(result.content)
+        action.agent&.output_schema.present? ? output : { "result" => output }
       else
         klass = action.agent_class&.constantize
         raise ArgumentError, "Service class not found: #{action.agent_class}" unless klass
@@ -98,26 +105,13 @@ module Orchestration
     end
 
     def validate_output!(action, output)
-      OutputValidator.new(action.output_schema).validate!(output)
-    end
+      schema = if action.agent?
+        action.agent&.output_schema.presence || action.output_schema
+      else
+        action.output_schema
+      end
 
-    def build_agent(action, _params)
-      agent_record = action.agent
-      raise ArgumentError, "No agent associated with action #{action.id}" unless agent_record
-
-      model        = @pipeline_run.pipeline.model.presence || agent_record.model
-      tools        = agent_record.tools
-      prompt       = leva_prompt_for(agent_record.name) || action.prompt
-      schema_class = action.schema_class
-      agent_class  = agent_record.name
-      raise ArgumentError, "Agent class not found: #{agent_class}" unless agent_class
-
-      agent = agent_class.constantize.create
-      agent = agent.with_model(model)                     if model.present? && agent.respond_to?(:with_model)
-      agent = agent.with_tools(*tools)                    if tools.present?
-      agent = agent.with_schema(schema_class.constantize) if schema_class.present?
-      agent.chat.with_instructions(prompt)                if prompt.present? && agent.respond_to?(:chat)
-      agent
+      OutputValidator.new(schema).validate!(output)
     end
 
     def leva_prompt_for(agent_class)

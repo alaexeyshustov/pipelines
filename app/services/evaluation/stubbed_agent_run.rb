@@ -4,36 +4,29 @@ module Evaluation
       expected_tool_calls = ToolCallExtractor.call(record.chat)
       registry = Evaluation::ToolStubRegistry.new(expected_tool_calls)
 
-      # steep:ignore:start
       action = record.step_action.action
       agent_record = action.agent
       raise ArgumentError, "action #{record.id} is not agent-kind or has no agent" unless agent_record
 
-      agent_class_name = agent_record.name
-      agent_class = agent_class_name.safe_constantize
-      raise ArgumentError, "agent class #{agent_class_name.inspect} could not be resolved for action_run #{record.id}" unless agent_class
-
-      tool_classes = resolve_tools(agent_record, agent_class)
+      tool_classes = resolve_tools(agent_record)
       stubbed_tools = tool_classes.map { |tool_class| stub_tool(tool_class, registry) }
-
-      agent = agent_class.create
-      agent = agent.with_tools(*stubbed_tools, replace: true)
+      agent = Orchestration::RuntimeAgentBuilder.new(action: action, tool_classes: stubbed_tools).build
 
       result = agent.ask(record.input.to_json)
-      # steep:ignore:end
 
       build_prediction(agent, result)
     end
 
     private
 
-    def resolve_tools(agent_record, agent_class)
-      # steep:ignore:start
+    def resolve_tools(agent_record)
       configured = agent_record.tools.presence
       return configured.map(&:constantize) if configured
 
-      agent_class.tools
-      # steep:ignore:end
+      agent_class = agent_record.name.safe_constantize
+      return agent_class.tools if agent_class.respond_to?(:tools)
+
+      raise ArgumentError, "agent #{agent_record.name.inspect} has no configured tools"
     end
 
     def stub_tool(tool_class, registry)

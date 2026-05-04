@@ -144,7 +144,7 @@ FOREIGN KEY ("evaluation_result_id")
   REFERENCES "leva_evaluation_results" ("id")
 );
 CREATE INDEX "index_evaluation_justifications_on_evaluation_result_id" ON "evaluation_justifications" ("evaluation_result_id") /*application='ApplicationPipeline'*/;
-CREATE TABLE IF NOT EXISTS "orchestration_agents" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "description" text, "model" varchar, "tools" json DEFAULT '[]', "enabled" boolean DEFAULT TRUE NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE TABLE IF NOT EXISTS "orchestration_agents" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "description" text, "model" varchar, "tools" json DEFAULT '[]', "enabled" boolean DEFAULT TRUE NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "prompt" text /*application='ApplicationPipeline'*/, "params" json DEFAULT '{}' NOT NULL /*application='ApplicationPipeline'*/, "output_schema" json /*application='ApplicationPipeline'*/);
 CREATE UNIQUE INDEX "index_orchestration_agents_on_name" ON "orchestration_agents" ("name") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "actions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "agent_class" varchar, "description" text, "model" varchar, "tools" json, "prompt" text, "params" json, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "output_schema" json, "schema_class" varchar, "kind" varchar DEFAULT 'service' NOT NULL, "agent_id" integer, CONSTRAINT "fk_rails_951418a714"
 FOREIGN KEY ("agent_id")
@@ -153,6 +153,7 @@ FOREIGN KEY ("agent_id")
 CREATE INDEX "index_actions_on_agent_class" ON "actions" ("agent_class") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_actions_on_agent_id" ON "actions" ("agent_id") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260504120000'),
 ('20260503170000'),
 ('20260503160000'),
 ('20260503140000'),

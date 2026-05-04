@@ -28,17 +28,27 @@ RSpec.describe "Orchestration::Agents" do
             name: "Emails::ClassifyAgent",
             description: "Classifies emails",
             model: "mistral-small",
-            tools: "[]"
+            tools: "[]",
+            prompt: "Classify this payload",
+            params: '{"mode":"strict"}',
+            output_schema: '{"type":"object","required":["result"],"properties":{"result":{"type":"array"}}}'
           }
         }
       end
 
-      it "creates an agent and redirects" do
+      it "creates an agent and redirects" do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
         expect {
           post orchestration_agents_path, params: valid_params
         }.to change(Orchestration::Agent, :count).by(1)
         expect(response).to redirect_to(orchestration_agents_path)
-      end
+        expect(Orchestration::Agent.last.prompt).to eq("Classify this payload")
+        expect(Orchestration::Agent.last.params).to eq({ "mode" => "strict" })
+        expect(Orchestration::Agent.last.output_schema).to eq(
+          "type" => "object",
+          "required" => [ "result" ],
+          "properties" => { "result" => { "type" => "array" } }
+        )
+      end # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
     end
 
     context "with invalid params" do
