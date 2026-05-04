@@ -35,7 +35,7 @@ module Orchestration
       {
         model: resolved_model,
         prompt: resolved_prompt,
-        tools: resolved_tools&.map(&:to_s),
+        tools: resolved_tools&.map(&:to_s) || [],
         params: resolved_params,
         output_schema: resolved_output_schema
       }

@@ -10,6 +10,7 @@ module Orchestration
     ) -> void
     def build: () -> untyped
     def resolved_output_schema: () -> Hash[String, untyped]?
+    # Returns symbol-keyed hash at runtime; keys become strings after JSON round-trip on ActionRun#agent_snapshot.
     def snapshot: () -> Hash[Symbol, untyped]
 
     private

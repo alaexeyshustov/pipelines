@@ -20,7 +20,6 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
   end
   let(:action) { create(:orchestration_action, agent: agent_record) }
 
-
   describe '#snapshot' do
     it 'returns a hash with the resolved model' do
       expect(builder.snapshot[:model]).to eq("mistral-large")
