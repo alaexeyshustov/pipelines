@@ -40,6 +40,14 @@ RSpec.describe Orchestration::PipelineRunner do
         action_run = Orchestration::ActionRun.last
         expect(action_run.chat_id).to eq(chat.id)
       end
+
+      it 'does not create an extra Chat record before building a legacy agent' do
+        allow(Chat).to receive(:create!)
+
+        described_class.new(pipeline_run).call
+
+        expect(Chat).not_to have_received(:create!)
+      end
     end
 
     context 'when the pipeline has a model set' do
@@ -94,6 +102,79 @@ RSpec.describe Orchestration::PipelineRunner do
       it 'calls with_schema on the agent with the constantized class' do
         described_class.new(pipeline_run).call
         expect(stub_agent).to have_received(:with_schema).with(ApplicationMailsSchema)
+      end
+    end
+
+    context 'with a serialized orchestration agent configuration' do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      let(:serialized_chat) { create(:chat) }
+      let(:serialized_agent) do
+        instance_double(RubyLLM::Agent, chat: serialized_chat, params: {})
+      end
+
+      before do
+        action.agent.update!(
+          name: "Reusable email classifier",
+          model: "mistral-small",
+          tools: [ "Records::TempFileTool" ],
+          prompt: "Classify incoming emails",
+          params: { "mode" => "default", "limit" => 1 },
+          output_schema: {
+            "type" => "object",
+            "required" => [ "result" ],
+            "properties" => {
+              "result" => {
+                "type" => "array",
+                "items" => {
+                  "type" => "object",
+                  "required" => [ "id" ],
+                  "properties" => {
+                    "id" => { "type" => "string" }
+                  }
+                }
+              }
+            }
+          }
+        )
+        create(:orchestration_step_action, step: step1, action: action, position: 1, params: { "limit" => 2 })
+        allow(RubyLLM::Agent).to receive(:new).and_return(serialized_agent)
+        allow(serialized_chat).to receive(:with_instructions)
+        allow(serialized_agent).to receive_messages(with_model: serialized_agent, with_tools: serialized_agent, with_params: serialized_agent, with_schema: serialized_agent, ask: instance_double(RubyLLM::Message, content: { "result" => [ { "id" => "mail-1" } ] }))
+      end
+
+      it 'executes without relying on a Ruby agent subclass' do
+        described_class.new(pipeline_run).call
+        action_run = Orchestration::ActionRun.last
+
+        expect(RubyLLM::Agent).to have_received(:new)
+        expect(action_run.status).to eq("completed")
+        expect(action_run.output).to eq({ "result" => [ { "id" => "mail-1" } ] })
+      end
+
+      it 'applies agent defaults and lets step params override them' do
+        described_class.new(pipeline_run).call
+
+        expect(serialized_agent).to have_received(:with_params).with("mode" => "default", "limit" => 2)
+      end
+
+      it 'uses the database output schema for structured output requests' do # rubocop:disable RSpec/ExampleLength
+        described_class.new(pipeline_run).call
+
+        expect(serialized_agent).to have_received(:with_schema).with(
+          "type" => "object",
+          "required" => [ "result" ],
+          "properties" => {
+            "result" => {
+              "type" => "array",
+              "items" => {
+                "type" => "object",
+                "required" => [ "id" ],
+                "properties" => {
+                  "id" => { "type" => "string" }
+                }
+              }
+            }
+          }
+        )
       end
     end
 
@@ -278,8 +359,7 @@ RSpec.describe Orchestration::PipelineRunner do
                                         "properties" => { "result" => { "type" => "array" } } })
         create(:orchestration_step_action, step: step1, action: action, position: 1)
         # agent returns a natural-language string — not parseable as a JSON array
-        allow(stub_agent).to receive(:ask)
-          .and_return(instance_double(RubyLLM::Message, content: "I need more information."))
+        allow(stub_agent).to receive_messages(with_schema: stub_agent, ask: instance_double(RubyLLM::Message, content: "I need more information."))
       end
 
       it 'marks the ActionRun as failed with a schema error' do
@@ -295,13 +375,32 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
+    context 'when the agent has an output_schema and the output is invalid' do
+      before do
+        action.agent.update!(name: "Reusable email classifier",
+                             output_schema: { "type" => "object", "required" => [ "result" ],
+                                              "properties" => { "result" => { "type" => "array" } } })
+        create(:orchestration_step_action, step: step1, action: action, position: 1)
+        generic_agent = instance_double(RubyLLM::Agent, chat: create(:chat), params: {})
+        allow(RubyLLM::Agent).to receive(:new).and_return(generic_agent)
+        allow(generic_agent).to receive_messages(with_schema: generic_agent, ask: instance_double(RubyLLM::Message, content: { "result" => "not an array" }))
+      end
+
+      it 'marks the ActionRun as failed with a schema error from the agent record' do
+        described_class.new(pipeline_run).call
+        action_run = Orchestration::ActionRun.last
+
+        expect(action_run.status).to eq("failed")
+        expect(action_run.error).to match(/must be an array/)
+      end
+    end
+
     context 'when the action has an output_schema and the output is valid JSON' do
       before do
         action.update!(output_schema: { "type" => "object", "required" => [ "result" ],
                                         "properties" => { "result" => { "type" => "array" } } })
         create(:orchestration_step_action, step: step1, action: action, position: 1)
-        allow(stub_agent).to receive(:ask)
-          .and_return(instance_double(RubyLLM::Message, content: '[{"id":1}]'))
+        allow(stub_agent).to receive_messages(with_schema: stub_agent, ask: instance_double(RubyLLM::Message, content: '[{"id":1}]'))
       end
 
       it 'marks the ActionRun as completed with the parsed JSON result' do

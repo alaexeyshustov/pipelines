@@ -10,6 +10,12 @@ module Orchestration
     def model=: (String?) -> String?
     def tools: () -> Array[String]
     def tools=: (Array[String]) -> Array[String]
+    def prompt: () -> String?
+    def prompt=: (String?) -> String?
+    def params: () -> Hash[String, untyped]
+    def params=: (Hash[String, untyped]) -> Hash[String, untyped]
+    def output_schema: () -> Hash[String, untyped]?
+    def output_schema=: (Hash[String, untyped]?) -> Hash[String, untyped]?
     def enabled: () -> bool
     def enabled=: (bool) -> bool
     def enabled?: () -> bool

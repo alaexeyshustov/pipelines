@@ -28,23 +28,49 @@ RSpec.describe "Orchestration::Agents" do
             name: "Emails::ClassifyAgent",
             description: "Classifies emails",
             model: "mistral-small",
-            tools: "[]"
+            tools: "[]",
+            prompt: "Classify this payload",
+            params: '{"mode":"strict"}',
+            output_schema: '{"type":"object","required":["result"],"properties":{"result":{"type":"array"}}}'
           }
         }
       end
 
-      it "creates an agent and redirects" do
+      it "creates an agent and redirects" do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
         expect {
           post orchestration_agents_path, params: valid_params
         }.to change(Orchestration::Agent, :count).by(1)
         expect(response).to redirect_to(orchestration_agents_path)
-      end
+        expect(Orchestration::Agent.last.prompt).to eq("Classify this payload")
+        expect(Orchestration::Agent.last.params).to eq({ "mode" => "strict" })
+        expect(Orchestration::Agent.last.output_schema).to eq(
+          "type" => "object",
+          "required" => [ "result" ],
+          "properties" => { "result" => { "type" => "array" } }
+        )
+      end # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
     end
 
     context "with invalid params" do
       it "renders new with 422" do
         post orchestration_agents_path, params: { orchestration_agent: { name: "" } }
         expect(response).to have_http_status(:unprocessable_content)
+      end
+
+      it "preserves valid JSON fields when one JSON field is invalid" do # rubocop:disable RSpec/ExampleLength
+        post orchestration_agents_path, params: {
+          orchestration_agent: {
+            name: "Emails::ClassifyAgent",
+            tools: '["Records::TempFileTool"]',
+            params: '{"mode":"strict"}',
+            output_schema: "{invalid"
+          }
+        }
+
+        agent = Orchestration::Agent.last
+        expect(agent.tools).to eq([ "Records::TempFileTool" ])
+        expect(agent.params).to eq({ "mode" => "strict" })
+        expect(agent.output_schema).to be_nil
       end
     end
   end

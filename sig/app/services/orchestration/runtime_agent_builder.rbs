@@ -1,0 +1,26 @@
+module Orchestration
+  class RuntimeAgentBuilder
+    def initialize: (
+      action: Action,
+      ?chat: untyped,
+      ?pipeline_model: String?,
+      ?prompt_override: String?,
+      ?step_params: Hash[String, untyped]?,
+      ?tool_classes: Array[untyped]?
+    ) -> void
+    def build: () -> untyped
+    def resolved_output_schema: () -> Hash[String, untyped]?
+
+    private
+
+    def base_agent: () -> untyped
+    def runtime_chat: () -> untyped
+    def legacy_agent_class: () -> untyped
+    def agent_record: () -> Agent
+    def resolved_model: () -> String?
+    def resolved_prompt: () -> String?
+    def resolved_tools: () -> Array[untyped]?
+    def resolved_params: () -> Hash[String, untyped]
+    def resolved_generation_schema: () -> untyped
+  end
+end
