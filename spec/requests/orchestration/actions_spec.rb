@@ -40,7 +40,6 @@ RSpec.describe "Orchestration::Actions" do
             kind: "agent",
             agent_id: orchestration_agent.id,
             description: "A description",
-            model: "mistral-small",
             prompt: "Classify this email",
             params: '{"key":"value"}'
           }

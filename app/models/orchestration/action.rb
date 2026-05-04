@@ -19,6 +19,7 @@ module Orchestration
         errors.add(:agent_id, "must be present for agent-kind actions") if agent_id.blank?
         errors.add(:agent_class, "must be blank for agent-kind actions") if agent_class.present?
       else
+        errors.add(:agent_id, "must be blank for service-kind actions") if agent_id.present?
         validate_service_class
       end
     end

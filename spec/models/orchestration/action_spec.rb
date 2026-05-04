@@ -46,6 +46,14 @@ RSpec.describe Orchestration::Action do
         expect(action).not_to be_valid
         expect(action.errors[:agent_class]).to include(/must include Orchestration::Executable/)
       end
+
+      it "is invalid when agent_id is present" do
+        stub_const("MyExecutable", Class.new { include Orchestration::Executable })
+        action = build(:orchestration_action, kind: :service, agent: nil, agent_class: "MyExecutable")
+        action.agent_id = 999
+        expect(action).not_to be_valid
+        expect(action.errors[:agent_id]).to include(/must be blank/)
+      end
     end
 
     it_behaves_like "requires attribute", :name, :orchestration_action

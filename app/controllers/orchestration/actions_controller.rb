@@ -56,12 +56,17 @@ module Orchestration
     end
 
     def load_agents
-      @agents = Orchestration::Agent.enabled.order(:name)
+      enabled = Orchestration::Agent.enabled
+      @agents = if @action&.agent_id && !enabled.exists?(@action.agent_id)
+        enabled.or(Orchestration::Agent.where(id: @action.agent_id)).order(:name)
+      else
+        enabled.order(:name)
+      end
     end
 
     def action_params
       permitted = params.require(:orchestration_action).permit(
-        :name, :description, :kind, :agent_id, :agent_class, :model, :tools, :prompt, :params
+        :name, :description, :kind, :agent_id, :agent_class, :tools, :prompt, :params
       )
       parse_json_field(permitted, :tools)
       parse_json_field(permitted, :params)
