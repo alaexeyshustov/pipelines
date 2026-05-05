@@ -10,6 +10,21 @@ RSpec.describe "Orchestration::Agents" do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Emails::ClassifyAgent")
     end
+
+    it "shows action usage count per agent" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      create(:orchestration_action, name: "Action One", kind: :agent, agent: agent)
+      create(:orchestration_action, name: "Action Two", kind: :agent, agent: agent)
+      get orchestration_agents_path
+      expect(response.body).to include("Used by")
+    end
+
+    it "links agent name to show page" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      get orchestration_agents_path
+      expect(response.body).to include("href=\"#{orchestration_agent_path(agent)}\"")
+      expect(response.body).to match(/href="#{orchestration_agent_path(agent)}"[^>]*>\s*Emails::ClassifyAgent/)
+    end
   end
 
   describe "GET /orchestration/agents/new" do
@@ -72,6 +87,37 @@ RSpec.describe "Orchestration::Agents" do
         expect(agent.params).to eq({ "mode" => "strict" })
         expect(agent.output_schema).to be_nil
       end
+    end
+  end
+
+  describe "GET /orchestration/agents/:id" do
+    it "returns 200 and shows agent name" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      get orchestration_agent_path(agent)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Emails::ClassifyAgent")
+    end
+
+    it "lists actions that reference this agent" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      create(:orchestration_action, name: "Classify Email Step", kind: :agent, agent: agent)
+      get orchestration_agent_path(agent)
+      expect(response.body).to include("Classify Email Step")
+    end
+
+    it "shows pipeline name for actions attached to pipelines" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      action = create(:orchestration_action, name: "Classify Email Step", kind: :agent, agent: agent)
+      step_action = create(:orchestration_step_action, action: action)
+      get orchestration_agent_path(agent)
+      expect(response.body).to include(step_action.step.pipeline.name)
+    end
+
+    it "shows empty state when no actions reference the agent" do
+      agent = create(:orchestration_agent, name: "Unused Agent")
+      get orchestration_agent_path(agent)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("No actions")
     end
   end
 

@@ -9,6 +9,21 @@ RSpec.describe Orchestration::Agent do
     expect(agent).to be_valid
   end
 
+  describe "associations" do
+    it "exposes actions that reference it" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      action = create(:orchestration_action, kind: :agent, agent: agent)
+      expect(agent.actions).to include(action)
+    end
+
+    it "does not include actions for other agents" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      other_agent = create(:orchestration_agent, name: "Records::StoreAgent")
+      create(:orchestration_action, kind: :agent, agent: other_agent)
+      expect(agent.actions).to be_empty
+    end
+  end
+
   describe "validations" do
     it "requires name" do
       agent.name = nil

@@ -6,6 +6,8 @@ module Orchestration
 
     self.table_name = "orchestration_agents"
 
+    has_many :actions, class_name: "Orchestration::Action", foreign_key: :agent_id, dependent: :restrict_with_error, inverse_of: :agent
+
     validates :name, presence: true, uniqueness: true
     validate :tools_must_be_valid
 

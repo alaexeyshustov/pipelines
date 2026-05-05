@@ -3,6 +3,7 @@ module Orchestration
     include JsonParamsParsing
 
     def index: () -> void
+    def show: () -> void
     def new: () -> void
     def create: () -> void
     def edit: () -> void

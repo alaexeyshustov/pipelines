@@ -4,10 +4,18 @@ module Orchestration
   class AgentsController < ApplicationController
     include JsonParamsParsing
 
-    before_action :set_agent, only: [ :edit, :update, :destroy, :toggle ]
+    before_action :set_agent, only: [ :show, :edit, :update, :destroy, :toggle ]
 
     def index
-      @agents = Orchestration::Agent.order(:name)
+      @agents = Orchestration::Agent
+        .left_joins(:actions)
+        .select("orchestration_agents.*, COUNT(DISTINCT actions.id) AS action_count")
+        .group("orchestration_agents.id")
+        .order("orchestration_agents.name")
+    end
+
+    def show
+      @using_actions = @agent.actions.includes(step_actions: { step: :pipeline }).order(:name)
     end
 
     def new
