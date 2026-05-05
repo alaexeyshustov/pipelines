@@ -54,6 +54,10 @@ RECONCILE_EMAILS_INPUT_MAPPING = {
 # Agent runtime configs — model, tools, and prompt only.
 # output_schema is intentionally omitted here: the runner wraps agent output in { "result" => ... }
 # when agent.output_schema is nil, and downstream steps depend on that "result.*" path convention.
+#
+# IMPORTANT: Keep these configs in sync with AGENT_CONFIGS in
+# db/migrate/20260504140000_backfill_agent_configs_from_legacy_classes.rb.
+# Seeds cover fresh installs; the migration covers existing installations.
 AGENT_DEFINITIONS = {
   "Emails::ClassifyAgent" => {
     model:  "mistral-large-latest",

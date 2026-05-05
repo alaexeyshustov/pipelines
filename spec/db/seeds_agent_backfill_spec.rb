@@ -9,9 +9,12 @@ RSpec.describe "Seeds: agent config backfill" do # rubocop:disable RSpec/Describ
     "Emails::ClassifyAgent"  => { model: "mistral-large-latest", tools: [ "Records::TempFileTool" ] },
     "Emails::FilterAgent"    => { model: "mistral-large-latest", tools: [ "Records::TempFileTool" ] },
     "Emails::MappingAgent"   => { model: "mistral-large-latest", tools: [ "Emails::GetTool", "Records::TempFileTool" ] },
-    "Records::StoreAgent"    => { model: "mistral-large-latest", tools: [ "Records::InsertRowsTool" ] },
-    "Records::NormalizeAgent" => { model: "gpt-5.1",            tools: [ "Records::SearchSimilarTool" ] },
-    "Records::ReconcileAgent" => { model: "gpt-5.1",            tools: [ "Records::ReadSchemaTool" ] }
+    "Records::StoreAgent"    => { model: "mistral-large-latest", tools: [ "Emails::GetLabelsTool", "Emails::CreateLabelTool", "Emails::AddLabelsTool",
+                                                                           "Records::InsertRowsTool", "Records::ReadSchemaTool", "Emails::GetTool" ] },
+    "Records::NormalizeAgent" => { model: "gpt-5.1",            tools: [ "Records::ListRowsTool", "Records::ReadRowsTool", "Records::UpdateRowsTool",
+                                                                          "Records::ReadSchemaTool", "Records::SearchSimilarTool" ] },
+    "Records::ReconcileAgent" => { model: "gpt-5.1",            tools: [ "Records::ReadSchemaTool", "Records::TempFileTool", "Records::SearchSimilarTool",
+                                                                          "Records::InsertRowsTool", "Records::UpdateRowsTool", "Records::ReadRowsTool" ] }
   }.each do |agent_name, expected|
     describe agent_name do
       subject(:agent) { Orchestration::Agent.find_by!(name: agent_name) }
@@ -20,8 +23,8 @@ RSpec.describe "Seeds: agent config backfill" do # rubocop:disable RSpec/Describ
         expect(agent.model).to eq(expected[:model])
       end
 
-      it "has tools including #{expected[:tools].first}" do
-        expect(agent.tools).to include(expected[:tools].first)
+      it "has exactly the expected tools" do
+        expect(agent.tools).to match_array(expected[:tools])
       end
 
       it "has prompt set" do

@@ -4,6 +4,10 @@ class BackfillAgentConfigsFromLegacyClasses < ActiveRecord::Migration[8.1]
   # Backfills model, tools, and prompt for agents that previously relied on hardcoded Ruby subclasses.
   # output_schema is intentionally omitted: the runner wraps agent output in { "result" => ... }
   # when agent.output_schema is nil, and downstream steps depend on that "result.*" path convention.
+  #
+  # IMPORTANT: Keep these configs in sync with AGENT_DEFINITIONS in db/seeds.rb.
+  # Prompt or tool changes must be applied in both places: seeds.rb controls fresh installs,
+  # this migration covers existing installations.
   AGENT_CONFIGS = {
     "Emails::ClassifyAgent" => {
       model:  "mistral-large-latest",
@@ -171,7 +175,7 @@ class BackfillAgentConfigsFromLegacyClasses < ActiveRecord::Migration[8.1]
     AGENT_CONFIGS.each_key do |name|
       execute(<<~SQL)
         UPDATE orchestration_agents
-        SET model = NULL, tools = '[]', prompt = NULL
+        SET model = NULL, tools = NULL, prompt = NULL
         WHERE name = #{quote(name)}
       SQL
     end
