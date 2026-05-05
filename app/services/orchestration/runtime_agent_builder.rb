@@ -44,24 +44,13 @@ module Orchestration
     private
 
     def base_agent
-      if legacy_agent_class
-        # steep:ignore:start
-        legacy_agent_class.create
-      else
-        RubyLLM::Agent.new(chat: runtime_chat)
-        # steep:ignore:end
-      end
+      # steep:ignore:start
+      RubyLLM::Agent.new(chat: runtime_chat)
+      # steep:ignore:end
     end
 
     def runtime_chat
       @chat || Chat.create!
-    end
-
-    def legacy_agent_class
-      klass = agent_record.name.safe_constantize
-      return klass if klass.is_a?(Class) && klass <= RubyLLM::Agent
-
-      nil
     end
 
     def agent_record
@@ -80,7 +69,18 @@ module Orchestration
       return @tool_classes if @tool_classes.present?
 
       configured_tools = agent_record.tools.presence || @action.tools
-      configured_tools&.map { |tool| tool.is_a?(Class) ? tool : tool.constantize }
+      configured_tools&.map do |tool|
+        next tool if tool.is_a?(Class)
+
+        namespace = tool.to_s.split("::").first
+        unless Orchestration::Agent::ALLOWED_TOOL_NAMESPACES.include?(namespace)
+          raise ArgumentError, "Tool '#{tool}' is outside allowed namespaces (#{Orchestration::Agent::ALLOWED_TOOL_NAMESPACES.join(', ')})"
+        end
+
+        tool.constantize
+      rescue NameError
+        raise ArgumentError, "Unknown tool class: #{tool}"
+      end
     end
 
     def resolved_params

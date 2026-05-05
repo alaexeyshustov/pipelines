@@ -3,7 +3,27 @@ require "rails_helper"
 RSpec.describe Evaluation::StubbedAgentRun do # rubocop:disable RSpec/MultipleMemoizedHelpers
   subject(:runner) { described_class.new }
 
-  let(:orchestration_agent) { create(:orchestration_agent, name: "Emails::ClassifyAgent") }
+  let(:orchestration_agent) do
+    create(:orchestration_agent,
+           name: "Emails::ClassifyAgent",
+           model: "mistral-large-latest",
+           tools: [ "Records::TempFileTool" ],
+           output_schema: {
+             "type" => "object",
+             "properties" => {
+               "results" => {
+                 "type" => "array",
+                 "items" => {
+                   "type" => "object",
+                   "properties" => {
+                     "id"   => { "type" => "string" },
+                     "tags" => { "type" => "array", "items" => { "type" => "string" } }
+                   }
+                 }
+               }
+             }
+           })
+  end
   let(:step_action) do
     action = create(:orchestration_action, kind: :agent, agent: orchestration_agent)
     create(:orchestration_step_action, action: action)
