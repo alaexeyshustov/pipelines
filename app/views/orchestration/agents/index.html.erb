@@ -4,10 +4,12 @@
 
 <%= render UI::TableComponent.new(collection: @agents, empty_message: "No agents found.") do |table| %>
   <% table.with_columns([
-    { key: "name", label: "Name", classes: "px-4 py-3 font-mono text-xs" },
+    { key: "name",        label: "Name",        classes: "px-4 py-3 font-mono text-xs",
+      cell: ->(agent) { link_to agent.name, orchestration_agent_path(agent), class: "font-mono text-xs hover:underline" } },
     { key: "description", label: "Description", variant: :muted, cell: ->(agent) { agent.description.presence || "—" } },
-    { key: "model", label: "Model", variant: :muted, cell: ->(agent) { agent.model.presence || "—" } },
-    { key: "enabled", label: "Status", cell: ->(agent) { agent.enabled? ? "Enabled" : "Disabled" } }
+    { key: "model",       label: "Model",       variant: :muted, cell: ->(agent) { agent.model.presence || "—" } },
+    { key: "enabled",     label: "Status",      cell: ->(agent) { agent.enabled? ? "Enabled" : "Disabled" } },
+    { key: "action_count", label: "Used by",    variant: :muted, cell: ->(agent) { "#{agent.action_count} #{"action".pluralize(agent.action_count)}" } }
   ]) %>
   <% table.with_action_column(
     actions: ->(agent) {

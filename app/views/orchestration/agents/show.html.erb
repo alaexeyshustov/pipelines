@@ -1,0 +1,37 @@
+<%= render UI::PageHeaderComponent.new(
+      title: @agent.name,
+      parent: { label: "Agent Library", url: orchestration_agents_path }
+    ) do |header| %>
+  <% header.with_badge(
+    label: @agent.enabled? ? "Enabled" : "Disabled",
+    variant: @agent.enabled? ? :success : :warning
+  ) %>
+  <% header.with_action(type: :link, label: "Edit", url: edit_orchestration_agent_path(@agent), variant: :primary) %>
+<% end %>
+
+<%= render UI::DetailCardComponent.new(
+      entity: @agent,
+      attributes: [
+        { label: "Description",   attribute: :description },
+        { label: "Model",         attribute: :model },
+        { label: "Tools",         attribute: :tools,         type: :json },
+        { label: "Prompt",        attribute: :prompt,        type: :multiline },
+        { label: "Params",        attribute: :params,        type: :json },
+        { label: "Output Schema", attribute: :output_schema, type: :json }
+      ]
+    ) %>
+
+<div class="mt-8">
+  <h2 class="text-lg font-semibold text-gray-900 mb-4">Using Actions</h2>
+
+  <%= render UI::TableComponent.new(collection: @using_actions, empty_message: "No actions use this agent.") do |table| %>
+    <% table.with_columns([
+      { key: "name",      label: "Action" },
+      { key: "pipelines", label: "Pipelines", cell: ->(action) {
+          names = action.step_actions.map { |sa| sa.step.pipeline.name }.uniq
+          names.any? ? names.join(", ") : "—"
+        }
+      }
+    ]) %>
+  <% end %>
+</div>

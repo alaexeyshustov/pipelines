@@ -9,6 +9,7 @@ module Orchestration
 
     def index
       @actions = Orchestration::Action
+        .includes(:agent)
         .left_joins(step_actions: { step: :pipeline })
         .select("actions.*, COUNT(DISTINCT pipelines.id) AS pipeline_count")
         .group("actions.id")

@@ -5,7 +5,14 @@
 <%= render UI::TableComponent.new(collection: @actions, empty_message: "No actions found.") do |table| %>
   <% table.with_columns([
     { key: "name",           label: "Name" },
-    { key: "kind",           label: "Kind" },
+    { key: "kind", label: "Kind", cell: ->(action) {
+        if action.agent? && action.agent
+          safe_join([ "Agent · ", link_to(action.agent.name, orchestration_agent_path(action.agent), class: "font-mono text-xs hover:underline") ])
+        else
+          action.kind
+        end
+      }
+    },
     { key: "model",          label: "Model",     variant: :muted, cell: ->(action) { action.model || "—" } },
     { key: "pipeline_count", label: "Pipelines", variant: :muted }
   ]) %>

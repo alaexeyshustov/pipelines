@@ -12,6 +12,13 @@ RSpec.describe "Orchestration::Actions" do
       expect(response.body).to include("agent")
     end
 
+    it "shows agent name for agent-kind actions" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      create(:orchestration_action, name: "My Action", kind: :agent, agent: agent)
+      get orchestration_actions_path
+      expect(response.body).to match(/href="#{orchestration_agent_path(agent)}"[^>]*>\s*Emails::ClassifyAgent/)
+    end
+
     it "shows pipeline usage count" do
       action = create(:orchestration_action)
       step_action = create(:orchestration_step_action, action: action)
