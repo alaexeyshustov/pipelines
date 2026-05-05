@@ -10,6 +10,8 @@
             <%= status_badge %>
           <% elsif attr.type == :json %>
             <pre class="text-sm font-mono text-gray-900 whitespace-pre-wrap"><%= json_display(val) %></pre>
+          <% elsif attr.type == :multiline %>
+            <pre class="text-sm text-gray-900 whitespace-pre-wrap"><%= val || "—" %></pre>
           <% else %>
             <span class="<%= text_classes_for(attr) %>"><%= val || "—" %></span>
           <% end %>

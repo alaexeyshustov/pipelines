@@ -7,7 +7,7 @@
     { key: "name",           label: "Name" },
     { key: "kind", label: "Kind", cell: ->(action) {
         if action.agent? && action.agent
-          link_to action.agent.name, orchestration_agent_path(action.agent), class: "font-mono text-xs hover:underline"
+          safe_join([ "Agent · ", link_to(action.agent.name, orchestration_agent_path(action.agent), class: "font-mono text-xs hover:underline") ])
         else
           action.kind
         end

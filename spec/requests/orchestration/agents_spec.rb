@@ -16,7 +16,7 @@ RSpec.describe "Orchestration::Agents" do
       create(:orchestration_action, name: "Action One", kind: :agent, agent: agent)
       create(:orchestration_action, name: "Action Two", kind: :agent, agent: agent)
       get orchestration_agents_path
-      expect(response.body).to include("Used by")
+      expect(response.body).to include("2 actions")
     end
 
     it "links agent name to show page" do
@@ -111,6 +111,18 @@ RSpec.describe "Orchestration::Agents" do
       step_action = create(:orchestration_step_action, action: action)
       get orchestration_agent_path(agent)
       expect(response.body).to include(step_action.step.pipeline.name)
+    end
+
+    it "deduplicates pipeline name when action appears in multiple steps of the same pipeline" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      action = create(:orchestration_action, name: "Classify Email Step", kind: :agent, agent: agent)
+      pipeline = create(:orchestration_pipeline)
+      step_a = create(:orchestration_step, pipeline: pipeline)
+      step_b = create(:orchestration_step, pipeline: pipeline)
+      create(:orchestration_step_action, action: action, step: step_a)
+      create(:orchestration_step_action, action: action, step: step_b)
+      get orchestration_agent_path(agent)
+      expect(response.body.scan(pipeline.name).size).to eq(1)
     end
 
     it "shows empty state when no actions reference the agent" do
