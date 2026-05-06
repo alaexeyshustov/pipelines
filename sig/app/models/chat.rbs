@@ -7,4 +7,8 @@ class Chat < ApplicationRecord
   def model=: (Model?) -> Model?
 
   def action_runs: () -> ActiveRecord::Associations::CollectionProxy
+  def index_attributes: () -> Hash[Symbol, untyped]
+  def show_attributes: () -> Hash[Symbol, untyped]
+  def to_llm_context: () -> Hash[Symbol, String]
+  def ground_truth: () -> untyped
 end

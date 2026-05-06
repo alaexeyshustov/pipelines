@@ -153,6 +153,8 @@ FOREIGN KEY ("agent_id")
 CREATE INDEX "index_actions_on_agent_class" ON "actions" ("agent_class") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_actions_on_agent_id" ON "actions" ("agent_id") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260506133642'),
+('20260506000001'),
 ('20260504140000'),
 ('20260504130000'),
 ('20260504120000'),

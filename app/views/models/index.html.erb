@@ -2,7 +2,9 @@
   <% header.with_action(type: :button, label: "Sync Models", url: sync_models_path, method: :post, variant: :primary) %>
 <% end %>
 
-<%= render UI::TableComponent.new(collection: @models, empty_message: "No models found.") do |table| %>
+<%= render UI::SearchFormComponent.new(url: models_path, query: @query, clear_url: models_path) %>
+
+<%= render UI::TableComponent.new(collection: @models, empty_message: "No models found.", pagy: @pagy, filters: @filters) do |table| %>
   <% table.with_columns([
     { key: "id",                       label: "ID",             style: :compact },
     { key: "display_name",             label: "Name",           style: :compact },

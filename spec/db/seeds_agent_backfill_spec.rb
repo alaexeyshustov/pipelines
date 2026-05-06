@@ -14,7 +14,8 @@ RSpec.describe "Seeds: agent config backfill" do # rubocop:disable RSpec/Describ
     "Records::NormalizeAgent" => { model: "gpt-5.1",            tools: [ "Records::ListRowsTool", "Records::ReadRowsTool", "Records::UpdateRowsTool",
                                                                           "Records::ReadSchemaTool", "Records::SearchSimilarTool" ] },
     "Records::ReconcileAgent" => { model: "gpt-5.1",            tools: [ "Records::ReadSchemaTool", "Records::TempFileTool", "Records::SearchSimilarTool",
-                                                                          "Records::InsertRowsTool", "Records::UpdateRowsTool", "Records::ReadRowsTool" ] }
+                                                                          "Records::InsertRowsTool", "Records::UpdateRowsTool", "Records::ReadRowsTool" ] },
+    "Records::FillAgent"      => { model: "gpt-5.1",            tools: [ "Records::UpdateRowsTool", "Emails::GetTool" ] }
   }.each do |agent_name, expected|
     describe agent_name do
       subject(:agent) { Orchestration::Agent.find_by!(name: agent_name) }

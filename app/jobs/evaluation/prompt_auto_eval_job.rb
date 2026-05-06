@@ -21,7 +21,7 @@ module Evaluation
         name: "Auto-eval for #{prompt.name} v#{prompt.version}",
         dataset: previous_experiment.dataset,
         prompt: prompt,
-        runner_class: "Evaluation::StubbedAgentRun",
+        runner_class: "StubbedAgentRun",
         evaluator_classes: [ "LLMJudgeEval" ]
       )
 

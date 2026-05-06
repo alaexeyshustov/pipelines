@@ -128,7 +128,7 @@ RSpec.describe LLMJudgeEval do
   describe "#evaluate_and_store" do
     let!(:leva_dataset) { Leva::Dataset.create!(name: "test_dataset") }
     let!(:leva_prompt) { Orchestration::Prompt.create!(name: agent_name, system_prompt: "You are a classifier.", user_prompt: "Classify: {{input}}") }
-    let!(:leva_experiment) { Leva::Experiment.create!(name: "test_exp", dataset: leva_dataset, status: :pending, prompt: leva_prompt, runner_class: "Evaluation::StubbedAgentRun", evaluator_classes: [ "LLMJudgeEval" ]) }
+    let!(:leva_experiment) { Leva::Experiment.create!(name: "test_exp", dataset: leva_dataset, status: :pending, prompt: leva_prompt, runner_class: "StubbedAgentRun", evaluator_classes: [ "LLMJudgeEval" ]) }
     let!(:leva_dataset_record) do
       classify_agent = create(:orchestration_agent, name: agent_name)
       action = create(:orchestration_action, kind: :agent, agent: classify_agent)
@@ -142,7 +142,7 @@ RSpec.describe LLMJudgeEval do
         dataset_record: leva_dataset_record,
         prompt: leva_prompt,
         prediction: { tool_calls: [], output: "classified" }.to_json,
-        runner_class: "Evaluation::StubbedAgentRun"
+        runner_class: "StubbedAgentRun"
       )
     end
 

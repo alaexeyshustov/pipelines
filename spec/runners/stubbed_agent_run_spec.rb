@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 require "rails_helper"
 
-RSpec.describe Evaluation::StubbedAgentRun do # rubocop:disable RSpec/MultipleMemoizedHelpers
+RSpec.describe StubbedAgentRun do # rubocop:disable RSpec/MultipleMemoizedHelpers
   subject(:runner) { described_class.new }
 
   let(:orchestration_agent) do

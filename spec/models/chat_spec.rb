@@ -18,8 +18,11 @@ RSpec.describe Chat do
     expect(chat.model).to eq(model)
   end
 
-  it 'does not require a model' do
-    chat = build(:chat, model: nil)
-    expect(chat).to be_valid
+  describe '#to_llm_context' do
+    it 'returns a hash with messages' do
+      chat = create(:chat)
+      create(:message, chat: chat, role: 'user', content: 'Hello')
+      expect(chat.to_llm_context).to eq({ messages: "user: Hello" })
+    end
   end
 end

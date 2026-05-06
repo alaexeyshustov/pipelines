@@ -204,6 +204,24 @@ AGENT_DEFINITIONS = {
         (e.g. rejected_at, first_interview_at, second_interview_at, etc.), set applied_at
         to the earliest non-null date among those columns.
     PROMPT
+  },
+  "Records::FillAgent" => {
+    model:  "gpt-5.1",
+    tools:  [ "Records::UpdateRowsTool", "Emails::GetTool" ],
+    prompt: <<~PROMPT
+      Your task is to fill missing values in the <destination_table> table using the original email content.
+
+      Input:
+        {
+          "emails": ["list", "of", "emails", "to", "process"],
+          "destination_table": "The name of the database table to update.",
+        }
+
+      Steps:
+      1. For each email in <emails>, always call get_email to fetch its full content — this is mandatory regardless of what fields appear to be populated.
+      2. A field is considered missing if its value is null, an empty string, "unknown", "n/a", or any other clear placeholder.
+      3. Call update_rows only for records where at least one field was successfully extracted. Skip records where nothing new was found.
+    PROMPT
   }
 }.freeze
 
@@ -285,3 +303,35 @@ steps.each_with_index do |step_attrs, index|
     position: 1
   )
 end
+
+# Create agents that exist in app/agents/ but are not part of any pipeline step.
+%w[Records::FillAgent].each do |name|
+  config = AGENT_DEFINITIONS.fetch(name)
+  Orchestration::Agent.find_or_initialize_by(name: name).tap do |a|
+    a.model  = config[:model]  if config[:model].present?
+    a.tools  = config[:tools]  if config[:tools].present?
+    a.prompt = config[:prompt] if config[:prompt].present?
+    a.save!
+  end
+end
+
+# == Evaluations Dataset ==
+
+puts "Seeding Leva::Dataset from Chat history..."
+
+dataset = Leva::Dataset.find_or_create_by!(name: "Historical Conversations") do |d|
+  d.description = "Dataset created from historical Chat records for evaluation purposes."
+end
+
+# Insert chats as dataset records if they are not already present
+Chat.includes(:messages).find_each do |chat|
+  # Skip chats without messages to keep the dataset meaningful
+  next if chat.messages.empty?
+
+  Leva::DatasetRecord.find_or_create_by!(
+    dataset:    dataset,
+    recordable: chat
+  )
+end
+
+puts "Seeded #{dataset.dataset_records.count} records into '#{dataset.name}' dataset."
