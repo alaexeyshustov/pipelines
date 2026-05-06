@@ -1,0 +1,4 @@
+class ModelsController < ApplicationController
+  def index: () -> void
+  def sync: () -> void
+end

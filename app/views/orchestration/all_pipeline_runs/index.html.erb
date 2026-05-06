@@ -1,0 +1,17 @@
+<%= render UI::PageHeaderComponent.new(title: "Pipeline Runs") %>
+
+<%= render UI::TableComponent.new(collection: @runs, empty_message: "No runs yet.", pagy: @pagy) do |table| %>
+  <% table.with_columns([
+    { key: "pipeline",     label: "Pipeline",     style: :compact, cell: ->(run) { run.pipeline.name } },
+    { key: "status",       label: "Status",       style: :compact, badge: Orchestration::RunStatusBadgeComponent },
+    { key: "triggered_by", label: "Triggered By", style: :compact, variant: :subtle, cell: ->(run) { run.triggered_by || "—" } },
+    { key: "started_at",   label: "Started",      style: :compact, variant: :subtle, cell: ->(run) { run.started_at ? run.started_at.strftime("%Y-%m-%d %H:%M:%S") : "—" } },
+    { key: "finished_at",  label: "Finished",     style: :compact, variant: :subtle, cell: ->(run) { run.finished_at ? run.finished_at.strftime("%Y-%m-%d %H:%M:%S") : "—" } }
+  ]) %>
+  <% table.with_action_column(
+    style: :compact,
+    actions: ->(run) {
+      [{ label: "Details", url: orchestration_pipeline_pipeline_run_path(run.pipeline, run), variant: :primary }]
+    }
+  ) %>
+<% end %>
