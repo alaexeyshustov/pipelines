@@ -44,6 +44,7 @@ Rails.application.routes.draw do
       end
     end
     resources :actions
+    resources :pipeline_runs, only: [ :index ], controller: "all_pipeline_runs"
     resources :pipelines do
       member do
         post :run
@@ -61,7 +62,14 @@ Rails.application.routes.draw do
     end
   end
 
-  root to: "chats#index"
+  resources :models, only: [ :index ] do
+    collection do
+      post :sync
+    end
+  end
+
+  get "home", to: "home#index"
+  root to: "home#index"
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest

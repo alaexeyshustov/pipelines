@@ -1,0 +1,22 @@
+module UI
+  class SidebarComponent < ViewComponent::Base
+    class NavItem
+      attr_reader label: String
+      attr_reader path: String
+
+      def initialize: (label: String, path: String) -> void
+    end
+
+    class NavGroup
+      attr_reader label: String
+      attr_reader items: Array[NavItem]
+
+      def initialize: (label: String, items: Array[NavItem]) -> void
+    end
+
+    def initialize: (current_path: String) -> void
+    def nav_groups: () -> Array[NavGroup]
+    def group_open?: (NavGroup group) -> bool
+    def active?: (String path) -> bool
+  end
+end

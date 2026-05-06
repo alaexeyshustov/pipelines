@@ -1,0 +1,5 @@
+module Orchestration
+  class AllPipelineRunsController < ApplicationController
+    def index: () -> void
+  end
+end
