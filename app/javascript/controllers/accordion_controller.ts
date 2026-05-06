@@ -4,6 +4,7 @@ export default class AccordionController extends Controller {
   static targets = ["details"]
 
   declare detailsTargets: HTMLDetailsElement[]
+  private boundToggle!: (event: Event) => void
 
   toggle(event: Event) {
     const opened = event.target as HTMLDetailsElement
@@ -13,14 +14,15 @@ export default class AccordionController extends Controller {
   }
 
   connect() {
+    this.boundToggle = this.toggle.bind(this)
     this.detailsTargets.forEach((details) => {
-      details.addEventListener("toggle", this.toggle.bind(this))
+      details.addEventListener("toggle", this.boundToggle)
     })
   }
 
   disconnect() {
     this.detailsTargets.forEach((details) => {
-      details.removeEventListener("toggle", this.toggle.bind(this))
+      details.removeEventListener("toggle", this.boundToggle)
     })
   }
 }
