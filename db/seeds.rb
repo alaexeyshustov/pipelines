@@ -335,3 +335,12 @@ Chat.includes(:messages).find_each do |chat|
 end
 
 puts "Seeded #{dataset.dataset_records.count} records into '#{dataset.name}' dataset."
+
+# == Evaluation Datasets per Agent ==
+
+puts "Seeding Leva::Dataset from ActionRun history per agent..."
+
+AGENT_DEFINITIONS.each_key do |agent_name|
+  result = Evaluation::DatasetSeeder.call(agent_name: agent_name, sample_size: 20)
+  puts "Dataset '#{result.agent_name}': #{result.created} created, #{result.skipped} skipped."
+end

@@ -15,29 +15,8 @@ namespace :evaluation do
     agent_name  = args[:agent_name]  or raise ArgumentError, "Usage: rake evaluation:seed_dataset[AgentName,sample_size]"
     sample_size = (args[:sample_size] || 20).to_i
 
-    samples = Evaluation::SampleCollector.call(agent_name: agent_name, sample_size: sample_size)
-    if samples.empty?
-      Rails.logger.info("evaluation:seed_dataset: no completed action runs found for #{agent_name}")
-      next
-    end
-
-    dataset = Leva::Dataset.find_or_create_by!(name: agent_name)
-
-    existing_ids = dataset.dataset_records.where(recordable_type: "Orchestration::ActionRun")
-                          .pluck(:recordable_id).to_set
-
-    created = 0
-    samples.each do |sample|
-      next if existing_ids.include?(sample.action_run_id)
-
-      dataset.dataset_records.create!(
-        recordable_type: "Orchestration::ActionRun",
-        recordable_id: sample.action_run_id
-      )
-      created += 1
-    end
-
-    puts "Dataset '#{agent_name}': #{created} records added (#{samples.size - created} already present)."
+    result = Evaluation::DatasetSeeder.call(agent_name: agent_name, sample_size: sample_size)
+    puts "Dataset '#{result.agent_name}': #{result.created} records added (#{result.skipped} already present)."
   end
 
   desc "Persist extracted metrics for an agent (e.g. rake evaluation:seed_metrics[Emails::ClassifyAgent])"

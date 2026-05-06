@@ -13,7 +13,7 @@ module Orchestration
     validates :status, presence: true, inclusion: { in: STATUSES }
 
     def ground_truth
-      output&.dig("classification")
+      output
     end
 
     def index_attributes
@@ -42,7 +42,8 @@ module Orchestration
       {
         action: step_action.action.name,
         input: input,
-        status: status
+        status: status,
+        agent_snapshot: agent_snapshot
       }
     end
   end

@@ -79,10 +79,12 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
   end
 
   context "when no completed action runs exist" do
-    it "does not create a dataset" do
+    it "creates an empty dataset" do
       task.invoke(agent_name, "10")
 
-      expect(Leva::Dataset.find_by(name: agent_name)).to be_nil
+      dataset = Leva::Dataset.find_by(name: agent_name)
+      expect(dataset).to be_present
+      expect(dataset.dataset_records.count).to eq(0)
     end
   end
 end
