@@ -36,7 +36,12 @@ module UI
             NavItem.new(label: "Pipeline Runs", path: helpers.orchestration_pipeline_runs_path)
           ]
         ),
-        NavGroup.new(label: "Settings", items: [])
+        NavGroup.new(
+          label: "Settings",
+          items: [
+            NavItem.new(label: "Email Connectors", path: helpers.settings_email_connectors_path)
+          ]
+        )
       ]
     end
 

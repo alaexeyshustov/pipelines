@@ -1,0 +1,20 @@
+module Settings
+  class EmailConnectorsController < ApplicationController
+    @email_connectors: ActiveRecord::Relation
+    @email_connector: EmailConnector
+
+    def index: () -> void
+    def show: () -> void
+    def new: () -> void
+    def edit: () -> void
+    def create: () -> void
+    def update: () -> void
+    def destroy: () -> void
+    def test: () -> void
+
+    private
+
+    def set_email_connector: () -> void
+    def email_connector_params: () -> ActionController::Parameters
+  end
+end
