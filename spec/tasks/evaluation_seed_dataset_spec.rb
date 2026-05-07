@@ -79,12 +79,20 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
   end
 
   context "when no completed action runs exist" do
+    before { create(:orchestration_agent, name: agent_name) }
+
     it "creates an empty dataset" do
       task.invoke(agent_name, "10")
 
       dataset = Leva::Dataset.find_by(name: agent_name)
       expect(dataset).to be_present
       expect(dataset.dataset_records.count).to eq(0)
+    end
+  end
+
+  context "when the agent name is unknown" do
+    it "raises ArgumentError" do
+      expect { task.invoke("Unknown::Agent", "10") }.to raise_error(ArgumentError, /Unknown agent/)
     end
   end
 end

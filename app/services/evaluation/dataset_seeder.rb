@@ -12,21 +12,19 @@ module Evaluation
     end
 
     def call
-      runs = candidate_runs
       dataset = Leva::Dataset.find_or_create_by!(name: @agent_name)
-      existing_ids = dataset.dataset_records
-                            .where(recordable_type: "Orchestration::ActionRun")
-                            .pluck(:recordable_id).to_set
-
       created = 0
       skipped = 0
 
-      runs.each do |run|
-        if existing_ids.include?(run.id)
-          skipped += 1
-        else
-          dataset.dataset_records.create!(recordable: run)
+      candidate_runs.each do |run|
+        record = dataset.dataset_records.find_or_create_by!(
+          recordable_type: "Orchestration::ActionRun",
+          recordable_id: run.id
+        )
+        if record.previously_new_record?
           created += 1
+        else
+          skipped += 1
         end
       end
 
@@ -36,6 +34,7 @@ module Evaluation
     private
 
     def candidate_runs
+      # join table types not modelled in sig/shims
       # steep:ignore:start
       Orchestration::ActionRun
         .joins(step_action: { action: :agent })

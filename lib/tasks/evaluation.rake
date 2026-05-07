@@ -15,8 +15,10 @@ namespace :evaluation do
     agent_name  = args[:agent_name]  or raise ArgumentError, "Usage: rake evaluation:seed_dataset[AgentName,sample_size]"
     sample_size = (args[:sample_size] || 20).to_i
 
+    raise ArgumentError, "Unknown agent: #{agent_name}" unless Orchestration::Agent.exists?(name: agent_name)
+
     result = Evaluation::DatasetSeeder.call(agent_name: agent_name, sample_size: sample_size)
-    puts "Dataset '#{result.agent_name}': #{result.created} records added (#{result.skipped} already present)."
+    puts "Dataset '#{result.agent_name}': #{result.created} created, #{result.skipped} skipped."
   end
 
   desc "Persist extracted metrics for an agent (e.g. rake evaluation:seed_metrics[Emails::ClassifyAgent])"

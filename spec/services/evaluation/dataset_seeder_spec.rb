@@ -38,16 +38,16 @@ RSpec.describe Evaluation::DatasetSeeder do
       build_action_run(status: "failed")
       described_class.call(agent_name: agent_name, sample_size: 10)
 
-      dataset = Leva::Dataset.find_by(name: agent_name)
-      expect(dataset&.dataset_records&.count).to eq(0).or(be_nil)
+      dataset = Leva::Dataset.find_by!(name: agent_name)
+      expect(dataset.dataset_records.count).to eq(0)
     end
 
     it "skips action runs without a chat" do
       build_action_run(chat: nil)
       described_class.call(agent_name: agent_name, sample_size: 10)
 
-      dataset = Leva::Dataset.find_by(name: agent_name)
-      expect(dataset&.dataset_records&.count).to eq(0).or(be_nil)
+      dataset = Leva::Dataset.find_by!(name: agent_name)
+      expect(dataset.dataset_records.count).to eq(0)
     end
 
     it "skips action runs with service-kind step actions" do # rubocop:disable RSpec/ExampleLength
@@ -62,8 +62,8 @@ RSpec.describe Evaluation::DatasetSeeder do
 
       described_class.call(agent_name: agent_name, sample_size: 10)
 
-      dataset = Leva::Dataset.find_by(name: agent_name)
-      expect(dataset&.dataset_records&.count).to eq(0).or(be_nil)
+      dataset = Leva::Dataset.find_by!(name: agent_name)
+      expect(dataset.dataset_records.count).to eq(0)
     end
 
     it "skips action runs for a different agent name" do # rubocop:disable RSpec/ExampleLength
@@ -78,8 +78,8 @@ RSpec.describe Evaluation::DatasetSeeder do
 
       described_class.call(agent_name: agent_name, sample_size: 10)
 
-      dataset = Leva::Dataset.find_by(name: agent_name)
-      expect(dataset&.dataset_records&.count).to eq(0).or(be_nil)
+      dataset = Leva::Dataset.find_by!(name: agent_name)
+      expect(dataset.dataset_records.count).to eq(0)
     end
 
     it "respects sample_size limit" do
