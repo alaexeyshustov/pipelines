@@ -5,17 +5,24 @@ RSpec.describe LLMJudgeEval do
 
   let(:agent_name) { "Emails::ClassifyAgent" }
 
-  describe "#evaluate" do
+  describe "#evaluate" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+    let(:orchestration_agent) { create(:orchestration_agent, name: agent_name) }
+    let(:action) { create(:orchestration_action, kind: :agent, agent: orchestration_agent) }
+    let(:step_action) { create(:orchestration_step_action, action: action) }
+    let(:pipeline_run) { create(:orchestration_pipeline_run, pipeline: step_action.step.pipeline) }
     let(:recordable) do
-      instance_double(
-        Orchestration::ActionRun,
-        input: { "email" => "subject: Job offer" },
-        chat: instance_double(RubyLLM::Chat, messages: []),
-        step_action: instance_double(
-          Orchestration::StepAction,
-          action: instance_double(Orchestration::Action, agent?: false, agent_class: agent_name)
-        )
-      )
+      create(:orchestration_action_run,
+             step_action: step_action,
+             pipeline_run: pipeline_run,
+             status: "completed",
+             input: { "email" => "subject: Job offer" })
+    end
+    let(:llm_response_body) do
+      scores = JSON.generate([
+        { "metric_name" => "tool_call_accuracy", "score" => 4, "justification" => "Correct tool called." },
+        { "metric_name" => "output_quality", "score" => 5, "justification" => "Clear output." }
+      ])
+      { id: "msg_01", type: "message", role: "assistant", content: [ { type: "text", text: scores } ], model: "claude-sonnet-4-6", stop_reason: "end_turn", usage: { input_tokens: 200, output_tokens: 80 } }.to_json
     end
     let(:runner_result) do
       prediction = { tool_calls: [ { tool_name: "classify_email", arguments: { label: "offer" } } ], output: "Classified." }.to_json
@@ -24,13 +31,6 @@ RSpec.describe LLMJudgeEval do
         prediction: prediction,
         dataset_record: instance_double(Leva::DatasetRecord, recordable: recordable)
       )
-    end
-    let(:llm_response_body) do
-      scores = JSON.generate([
-        { "metric_name" => "tool_call_accuracy", "score" => 4, "justification" => "Correct tool called." },
-        { "metric_name" => "output_quality", "score" => 5, "justification" => "Clear output." }
-      ])
-      { id: "msg_01", type: "message", role: "assistant", content: [ { type: "text", text: scores } ], model: "claude-sonnet-4-6", stop_reason: "end_turn", usage: { input_tokens: 200, output_tokens: 80 } }.to_json
     end
 
     before do
@@ -50,6 +50,16 @@ RSpec.describe LLMJudgeEval do
       stub_request(:post, %r{api\.anthropic\.com})
         .to_return(status: 200, body: llm_response_body, headers: { "Content-Type" => "application/json" })
     end
+
+    context "when recordable is not an ActionRun" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      it "raises ArgumentError with a descriptive message" do
+        chat = create(:chat)
+        runner_result = instance_double(Leva::RunnerResult, prediction: "{}")
+        expect { eval_instance.evaluate(runner_result, chat) }.to raise_error(ArgumentError, /Orchestration::ActionRun/)
+      end
+    end
+
+
 
     it "returns per-metric scores with justifications" do
       results = eval_instance.evaluate(runner_result, recordable)
@@ -77,7 +87,7 @@ RSpec.describe LLMJudgeEval do
       }
     end
 
-    context "when the LLM returns invalid JSON" do
+    context "when the LLM returns invalid JSON" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       let(:llm_response_body) do
         { id: "msg_02", type: "message", role: "assistant", content: [ { type: "text", text: "not json" } ], model: "claude-sonnet-4-6", stop_reason: "end_turn", usage: { input_tokens: 10, output_tokens: 5 } }.to_json
       end
@@ -87,7 +97,7 @@ RSpec.describe LLMJudgeEval do
       end
     end
 
-    context "when prediction is nil" do
+    context "when prediction is nil" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       let(:runner_result) do
         instance_double(
           Leva::RunnerResult,
@@ -101,7 +111,7 @@ RSpec.describe LLMJudgeEval do
       end
     end
 
-    context "when the LLM returns a score outside 1–5" do
+    context "when the LLM returns a score outside 1–5" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       let(:llm_response_body) do
         scores = JSON.generate([
           { "metric_name" => "tool_call_accuracy", "score" => 10, "justification" => "Way off." }
@@ -114,7 +124,7 @@ RSpec.describe LLMJudgeEval do
       end
     end
 
-    context "when no active metrics exist" do
+    context "when no active metrics exist" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       before { Evaluation::Metric.update_all(active: false) }
 
       it "skips the LLM call and returns an empty array" do

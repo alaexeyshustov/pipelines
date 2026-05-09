@@ -154,6 +154,17 @@ CREATE INDEX "index_actions_on_agent_class" ON "actions" ("agent_class") /*appli
 CREATE INDEX "index_actions_on_agent_id" ON "actions" ("agent_id") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "email_connectors" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "provider" varchar NOT NULL, "configuration" text, "enabled" boolean DEFAULT TRUE NOT NULL, "last_connected_at" datetime(6), "status" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 INSERT INTO "schema_migrations" (version) VALUES
+('20260507091027'),
+('20260507091026'),
+('20260507091025'),
+('20260507091024'),
+('20260507091023'),
+('20260507091022'),
+('20260507091021'),
+('20260507091020'),
+('20260507091019'),
+('20260507091018'),
+('20260507091017'),
 ('20260506143458'),
 ('20260506133642'),
 ('20260506000001'),

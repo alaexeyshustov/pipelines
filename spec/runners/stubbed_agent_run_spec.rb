@@ -91,6 +91,13 @@ RSpec.describe StubbedAgentRun do # rubocop:disable RSpec/MultipleMemoizedHelper
   end
 
   describe "#execute" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+    context "when record is not an ActionRun" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      it "raises ArgumentError with a descriptive message" do
+        chat = create(:chat)
+        expect { runner.execute(chat) }.to raise_error(ArgumentError, /Orchestration::ActionRun/)
+      end
+    end
+
     it "returns a JSON string prediction" do
       result = runner.execute(action_run)
 

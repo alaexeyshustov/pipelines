@@ -30,10 +30,14 @@
           <%= c.label :credentials_path, "Credentials JSON Path", class: "block text-xs font-medium text-gray-500" %>
           <%= c.text_field :credentials_path, value: email_connector.configuration&.dig(:credentials_path), class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" %>
         </div>
-        <div>
+        <div class="mb-4">
           <%= c.label :token_path, "Token YAML Path", class: "block text-xs font-medium text-gray-500" %>
           <%= c.text_field :token_path, value: email_connector.configuration&.dig(:token_path), class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" %>
         </div>
+        <% if email_connector.persisted? %>
+          <%= link_to "Connect Gmail", setup_settings_email_connector_path(email_connector),
+              class: "inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors" %>
+        <% end %>
       </div>
 
       <div id="yahoo-fields" class="<%= 'hidden' unless email_connector.provider == 'yahoo' %>">

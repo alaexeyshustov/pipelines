@@ -9,5 +9,11 @@ module Emails
 
     def initialize: (credentials_path: String, token_path: String, scope: Array[String], ?output: IO) -> void
     def credentials: () -> untyped
+    def authorization_url: (callback_uri: String) -> String
+    def exchange_code: (code: String, callback_uri: String) -> untyped
+
+    private
+
+    def build_authorizer: (callback_uri: String) -> untyped
   end
 end

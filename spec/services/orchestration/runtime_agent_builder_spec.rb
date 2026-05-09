@@ -21,6 +21,12 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
   let(:action) { create(:orchestration_action, agent: agent_record) }
 
   describe '#build' do
+    it 'returns a RubyLLM::Agent instance' do
+      valid_model_builder = described_class.new(action: action, pipeline_model: "mistral-large-latest")
+      result = valid_model_builder.build
+      expect(result).to be_a(RubyLLM::Agent)
+    end
+
     it 'does not delegate to a legacy RubyLLM::Agent subclass even when the agent name matches one' do # rubocop:disable RSpec/ExampleLength
       legacy_agent_record = create(:orchestration_agent, name: "Emails::ClassifyAgent")
       legacy_action = create(:orchestration_action, agent: legacy_agent_record)

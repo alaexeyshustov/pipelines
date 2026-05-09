@@ -72,6 +72,10 @@ Rails.application.routes.draw do
     resources :email_connectors do
       member do
         post :test
+        get :setup
+      end
+      collection do
+        get :oauth_callback
       end
     end
   end

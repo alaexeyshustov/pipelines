@@ -11,16 +11,16 @@ module Orchestration
 
     def build
       agent = base_agent
-      agent = agent.with_model(resolved_model) if resolved_model.present?
+      agent.with_model(resolved_model) if resolved_model.present?
 
       tools = resolved_tools
-      agent = agent.with_tools(*tools, replace: true) if tools.present?
+      agent.with_tools(*tools, replace: true) if tools.present?
 
       params = resolved_params
-      agent = agent.with_params(**params) if params.present?
+      agent.with_params(**params) if params.present?
 
       schema = resolved_generation_schema
-      agent = agent.with_schema(schema) if schema.present?
+      agent.with_schema(schema) if schema.present?
 
       prompt = resolved_prompt
       agent.chat.with_instructions(prompt) if prompt.present?

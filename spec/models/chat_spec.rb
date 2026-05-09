@@ -1,6 +1,10 @@
 require 'rails_helper'
 
 RSpec.describe Chat do
+  it 'is not a Leva::Recordable' do
+    expect(described_class.ancestors).not_to include(Leva::Recordable)
+  end
+
   it 'can be persisted' do
     chat = create(:chat)
     expect(chat).to be_persisted
@@ -16,13 +20,5 @@ RSpec.describe Chat do
     model = create(:model)
     chat  = create(:chat, model: model)
     expect(chat.model).to eq(model)
-  end
-
-  describe '#to_llm_context' do
-    it 'returns a hash with messages' do
-      chat = create(:chat)
-      create(:message, chat: chat, role: 'user', content: 'Hello')
-      expect(chat.to_llm_context).to eq({ messages: "user: Hello" })
-    end
   end
 end

@@ -18,6 +18,8 @@ class LLMJudgeEval < Leva::BaseEval
   end
 
   def evaluate(runner_result, recordable)
+    raise ArgumentError, "LLMJudgeEval requires an Orchestration::ActionRun, got #{recordable.class}" unless recordable.is_a?(Orchestration::ActionRun)
+
     metrics = Evaluation::Metric.for_agent(agent_name(recordable)).active
     return [] if metrics.none?
 

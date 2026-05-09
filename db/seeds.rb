@@ -6,15 +6,38 @@
 #
 # Mirrors Pipeline::ApplicationsWorkflow steps 1-8, plus two IngestionExecutor steps for fan-in joins.
 
+FILTER_EMAILS_OUTPUT_SCHEMA = {
+  "type"                 => "object",
+  "additionalProperties" => false,
+  "required"             => [ "results" ],
+  "properties"           => {
+    "results" => {
+      "type"  => "array",
+      "items" => {
+        "type"                 => "object",
+        "additionalProperties" => false,
+        "required"             => [ "id", "tags" ],
+        "properties"           => {
+          "id"   => { "type" => "string" },
+          "tags" => { "type" => "array", "items" => { "type" => "string" } }
+        }
+      }
+    }
+  }
+}.freeze
+
 STORE_EMAILS_OUTPUT_SCHEMA = {
-  "type" => "object",
-  "required" => [ "result" ],
-  "properties" => {
+  "type"                 => "object",
+  "additionalProperties" => false,
+  "required"             => [ "result" ],
+  "properties"           => {
     "result" => {
-      "type" => "object",
-      "properties" => {
+      "type"                 => "object",
+      "additionalProperties" => false,
+      "required"             => [ "rows_inserted", "ids" ],
+      "properties"           => {
         "rows_inserted" => { "type" => "integer" },
-        "ids"           => { "type" => "array" }
+        "ids"           => { "type" => "array", "items" => { "type" => "integer" } }
       }
     }
   }
@@ -22,9 +45,19 @@ STORE_EMAILS_OUTPUT_SCHEMA = {
 
 INGEST_EMAILS_PARAMS = {
   "operations" => [
-    { "type" => "filter_by_ids", "source" => "emails", "ids_from" => "result.results", "output" => "emails" },
+    { "type" => "filter_by_ids", "source" => "emails", "ids_from" => "results", "output" => "emails" },
     { "type" => "pick", "keys" => [ "emails" ] }
   ]
+}.freeze
+
+MAP_EMAILS_INPUT_MAPPING = {
+  "emails" => { "from_step" => "Ingest Emails", "path" => "emails" }
+}.freeze
+
+STORE_EMAILS_INPUT_MAPPING = {
+  "emails" => { "from_step" => "Map Emails", "path" => "result.emails" },
+  "label"  => { "value" => "applications" },
+  "table"  => { "value" => "application_mails" }
 }.freeze
 
 QUERY_EMAIL_RECORDS_PARAMS = {
@@ -51,9 +84,10 @@ RECONCILE_EMAILS_INPUT_MAPPING = {
   "initial_status"      => { "value" => "pending_reply" }
 }.freeze
 
-# Agent runtime configs — model, tools, and prompt only.
-# output_schema is intentionally omitted here: the runner wraps agent output in { "result" => ... }
-# when agent.output_schema is nil, and downstream steps depend on that "result.*" path convention.
+# Agent runtime configs — model, tools, and prompt.
+# output_schema is set on agents that need reliable structured output (via with_schema).
+# When agent.output_schema is present the runner skips wrapping; downstream steps must use
+# paths that match the LLM's actual return shape (e.g. "result.ids" for StoreAgent).
 #
 # IMPORTANT: Keep these configs in sync with AGENT_CONFIGS in
 # db/migrate/20260504140000_backfill_agent_configs_from_legacy_classes.rb.
@@ -78,9 +112,10 @@ AGENT_DEFINITIONS = {
     PROMPT
   },
   "Emails::FilterAgent" => {
-    model:  "mistral-large-latest",
-    tools:  [ "Records::TempFileTool" ],
-    prompt: <<~PROMPT
+    model:         "mistral-large-latest",
+    tools:         [ "Records::TempFileTool" ],
+    output_schema: FILTER_EMAILS_OUTPUT_SCHEMA,
+    prompt:        <<~PROMPT
       You are an email filtering expert. Your job is to identify <emails> from a list related to a <topic>.
 
       Input:
@@ -95,7 +130,10 @@ AGENT_DEFINITIONS = {
       3. Return ONLY emails tagged with ANY of tags related to the <topic>
         (e.g. for "job applications" topic, tags might include "job", "application", "interview", "offer", etc.).
 
-      If no emails related to the <topic> are found, return an empty JSON array: []
+      Always return a JSON object with a "results" key containing the filtered emails array:
+      {"results": [{"id": "id of email", ...}, ...]}
+
+      If no emails are related to the <topic>, return: {"results": []}
     PROMPT
   },
   "Emails::MappingAgent" => {
@@ -116,10 +154,11 @@ AGENT_DEFINITIONS = {
     PROMPT
   },
   "Records::StoreAgent" => {
-    model:  "mistral-large-latest",
-    tools:  [ "Emails::GetLabelsTool", "Emails::CreateLabelTool", "Emails::AddLabelsTool",
-              "Records::InsertRowsTool", "Records::ReadSchemaTool", "Emails::GetTool" ],
-    prompt: <<~PROMPT
+    model:         "mistral-large-latest",
+    tools:         [ "Emails::GetLabelsTool", "Emails::CreateLabelTool", "Emails::AddLabelsTool",
+                    "Records::InsertRowsTool", "Records::ReadSchemaTool", "Emails::GetTool" ],
+    output_schema: STORE_EMAILS_OUTPUT_SCHEMA,
+    prompt:        <<~PROMPT
       You are a emails processor. For each email you receive:
 
       Input:
@@ -230,8 +269,8 @@ steps = [
   { name: "Classify Emails",                kind: :agent,   agent_name: "Emails::ClassifyAgent"                                                                               },
   { name: "Filter Emails",                  kind: :agent,   agent_name: "Emails::FilterAgent"                                                                                 },
   { name: "Ingest Emails",                  kind: :service, agent_class: "Orchestration::IngestionExecutor", params: INGEST_EMAILS_PARAMS                                     },
-  { name: "Map Emails",                     kind: :agent,   agent_name: "Emails::MappingAgent",              schema_class: "ApplicationMailsSchema"                            },
-  { name: "Store Emails",                   kind: :agent,   agent_name: "Records::StoreAgent",               output_schema: STORE_EMAILS_OUTPUT_SCHEMA                         },
+  { name: "Map Emails",   kind: :agent, agent_name: "Emails::MappingAgent",  schema_class: "ApplicationMailsSchema",  input_mapping: MAP_EMAILS_INPUT_MAPPING   },
+  { name: "Store Emails", kind: :agent, agent_name: "Records::StoreAgent",                                             input_mapping: STORE_EMAILS_INPUT_MAPPING },
   { name: "Query Email Records",            kind: :service, agent_class: "Orchestration::QueryExecutor",    params: QUERY_EMAIL_RECORDS_PARAMS,   input_mapping: QUERY_EMAIL_RECORDS_INPUT_MAPPING  },
   { name: "Normalize Emails",               kind: :agent,   agent_name: "Records::NormalizeAgent",                                               input_mapping: NORMALIZE_EMAILS_INPUT_MAPPING     },
   { name: "Reconcile Emails to Interviews", kind: :agent,   agent_name: "Records::ReconcileAgent",          input_mapping: RECONCILE_EMAILS_INPUT_MAPPING                                             },
@@ -244,9 +283,10 @@ action_records = steps.map do |attrs|
   agent_record = if attrs[:kind] == :agent
     agent_config = AGENT_DEFINITIONS[attrs[:agent_name]] || {}
     Orchestration::Agent.find_or_initialize_by(name: attrs[:agent_name]).tap do |a|
-      a.model  = agent_config[:model]  if agent_config[:model].present?
-      a.tools  = agent_config[:tools]  if agent_config[:tools].present?
-      a.prompt = agent_config[:prompt] if agent_config[:prompt].present?
+      a.model         = agent_config[:model]         if agent_config[:model].present?
+      a.tools         = agent_config[:tools]         if agent_config[:tools].present?
+      a.prompt        = agent_config[:prompt]        if agent_config[:prompt].present?
+      a.output_schema = agent_config[:output_schema] if agent_config.key?(:output_schema)
       a.save!
     end
   end
@@ -314,27 +354,6 @@ end
     a.save!
   end
 end
-
-# == Evaluations Dataset ==
-
-puts "Seeding Leva::Dataset from Chat history..."
-
-dataset = Leva::Dataset.find_or_create_by!(name: "Historical Conversations") do |d|
-  d.description = "Dataset created from historical Chat records for evaluation purposes."
-end
-
-# Insert chats as dataset records if they are not already present
-Chat.includes(:messages).find_each do |chat|
-  # Skip chats without messages to keep the dataset meaningful
-  next if chat.messages.empty?
-
-  Leva::DatasetRecord.find_or_create_by!(
-    dataset:    dataset,
-    recordable: chat
-  )
-end
-
-puts "Seeded #{dataset.dataset_records.count} records into '#{dataset.name}' dataset."
 
 # == Evaluation Datasets per Agent ==
 

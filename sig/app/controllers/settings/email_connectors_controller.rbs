@@ -11,6 +11,8 @@ module Settings
     def update: () -> void
     def destroy: () -> void
     def test: () -> void
+    def setup: () -> void
+    def oauth_callback: () -> void
 
     private
 

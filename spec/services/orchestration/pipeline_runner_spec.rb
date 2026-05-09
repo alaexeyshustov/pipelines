@@ -556,5 +556,345 @@ RSpec.describe Orchestration::PipelineRunner do
         expect(ingest_run.output).to eq({ "emails" => [ { "id" => "e1" } ] })
       end
     end
+
+    context 'when output_schema is on the action but not the agent (regression: Run #66)' do
+      let(:store_schema) do
+        { "type" => "object", "required" => [ "result" ], "properties" => { "result" => { "type" => "object" } } }
+      end
+
+      before do
+        store_agent_record = create(:orchestration_agent, name: "Records::StoreAgent")
+        store_action = create(:orchestration_action, agent: store_agent_record, output_schema: store_schema)
+        create(:orchestration_step_action, step: step1, action: store_action, position: 1)
+
+        allow(stub_agent).to receive(:ask)
+          .and_return(instance_double(RubyLLM::Message, content: [ 1, 2, 3 ]))
+      end
+
+      it 'wraps the raw output and fails validation when result is not an object' do
+        described_class.new(pipeline_run).call
+
+        store_run = Orchestration::ActionRun.last
+        expect(store_run.status).to eq("failed")
+        expect(store_run.error).to match(/output\.result must be an object/)
+      end
+    end
+
+    context 'when output_schema is on the agent record (fix for Run #66)' do
+      let(:store_schema) do
+        { "type" => "object", "required" => [ "result" ], "properties" => { "result" => { "type" => "object" } } }
+      end
+
+      before do
+        store_agent_record = create(:orchestration_agent, name: "Records::StoreAgent", output_schema: store_schema)
+        store_action = create(:orchestration_action, agent: store_agent_record)
+        create(:orchestration_step_action, step: step1, action: store_action, position: 1)
+
+        allow(stub_agent).to receive_messages(
+          with_schema: stub_agent,
+          ask: instance_double(RubyLLM::Message, content: { "result" => { "rows_inserted" => 1, "ids" => [ 42 ] } })
+        )
+      end
+
+      it 'calls with_schema, skips wrapping, and stores output as-is' do
+        described_class.new(pipeline_run).call
+
+        store_run = Orchestration::ActionRun.last
+        expect(store_run.status).to eq("completed")
+        expect(store_run.output).to eq({ "result" => { "rows_inserted" => 1, "ids" => [ 42 ] } })
+        expect(stub_agent).to have_received(:with_schema).with(store_schema)
+      end
+    end
+
+    context 'when schema is missing additionalProperties: false (regression: Run #67)' do
+      before do
+        store_agent_record = create(:orchestration_agent, name: "Records::StoreAgent",
+                                    output_schema: {
+                                      "type" => "object", "required" => [ "result" ],
+                                      "properties" => { "result" => { "type" => "object" } }
+                                    })
+        store_action = create(:orchestration_action, agent: store_agent_record)
+        create(:orchestration_step_action, step: step1, action: store_action, position: 1)
+
+        allow(stub_agent).to receive(:with_schema).and_return(stub_agent)
+        allow(stub_agent).to receive(:ask)
+          .and_raise(RuntimeError, "Invalid schema for response_format 'response': " \
+                                   "In context=(), 'additionalProperties' is required to be supplied and to be false.")
+      end
+
+      it 'marks the action_run as failed with the Mistral schema error' do
+        described_class.new(pipeline_run).call
+
+        store_run = Orchestration::ActionRun.last
+        expect(store_run.status).to eq("failed")
+        expect(store_run.error).to match(/additionalProperties/)
+      end
+    end
+
+    context 'when schema includes additionalProperties: false at all object levels (fix for Run #67)' do
+      let(:store_schema) do
+        {
+          "type"                 => "object",
+          "additionalProperties" => false,
+          "required"             => [ "result" ],
+          "properties"           => {
+            "result" => {
+              "type"                 => "object",
+              "additionalProperties" => false,
+              "properties"           => {
+                "rows_inserted" => { "type" => "integer" },
+                "ids"           => { "type" => "array" }
+              }
+            }
+          }
+        }
+      end
+
+      before do
+        store_agent_record = create(:orchestration_agent, name: "Records::StoreAgent", output_schema: store_schema)
+        store_action = create(:orchestration_action, agent: store_agent_record)
+        create(:orchestration_step_action, step: step1, action: store_action, position: 1)
+
+        allow(stub_agent).to receive_messages(
+          with_schema: stub_agent,
+          ask: instance_double(RubyLLM::Message, content: { "result" => { "rows_inserted" => 1, "ids" => [ 42 ] } })
+        )
+      end
+
+      it 'calls with_schema with additionalProperties: false at all levels and completes successfully' do
+        described_class.new(pipeline_run).call
+
+        expect(stub_agent).to have_received(:with_schema).with(
+          hash_including(
+            "additionalProperties" => false,
+            "properties"           => hash_including(
+              "result" => hash_including("additionalProperties" => false)
+            )
+          )
+        )
+        expect(Orchestration::ActionRun.last.status).to eq("completed")
+      end
+    end
+
+    context 'when schema has array field missing items (regression: Run #68)' do
+      before do
+        store_agent_record = create(:orchestration_agent, name: "Records::StoreAgent",
+                                    output_schema: {
+                                      "type" => "object", "additionalProperties" => false,
+                                      "required" => [ "result" ],
+                                      "properties" => {
+                                        "result" => {
+                                          "type" => "object", "additionalProperties" => false,
+                                          "properties" => {
+                                            "rows_inserted" => { "type" => "integer" },
+                                            "ids"           => { "type" => "array" }
+                                          }
+                                        }
+                                      }
+                                    })
+        store_action = create(:orchestration_action, agent: store_agent_record)
+        create(:orchestration_step_action, step: step1, action: store_action, position: 1)
+
+        allow(stub_agent).to receive(:with_schema).and_return(stub_agent)
+        allow(stub_agent).to receive(:ask)
+          .and_raise(RuntimeError, "Invalid schema for response_format 'response': " \
+                                   "In context=('properties', 'result', 'properties', 'ids'), array schema missing items.")
+      end
+
+      it 'marks the action_run as failed with the Mistral schema error' do
+        described_class.new(pipeline_run).call
+
+        store_run = Orchestration::ActionRun.last
+        expect(store_run.status).to eq("failed")
+        expect(store_run.error).to match(/array schema missing items/)
+      end
+    end
+
+    context 'when schema includes items on all array fields (fix for Run #68)' do
+      let(:store_schema) do
+        {
+          "type"                 => "object",
+          "additionalProperties" => false,
+          "required"             => [ "result" ],
+          "properties"           => {
+            "result" => {
+              "type"                 => "object",
+              "additionalProperties" => false,
+              "properties"           => {
+                "rows_inserted" => { "type" => "integer" },
+                "ids"           => { "type" => "array", "items" => {} }
+              }
+            }
+          }
+        }
+      end
+
+      before do
+        store_agent_record = create(:orchestration_agent, name: "Records::StoreAgent", output_schema: store_schema)
+        store_action = create(:orchestration_action, agent: store_agent_record)
+        create(:orchestration_step_action, step: step1, action: store_action, position: 1)
+
+        allow(stub_agent).to receive_messages(
+          with_schema: stub_agent,
+          ask: instance_double(RubyLLM::Message, content: { "result" => { "rows_inserted" => 1, "ids" => [ 42 ] } })
+        )
+      end
+
+      it 'calls with_schema with items on all arrays and completes successfully' do
+        described_class.new(pipeline_run).call
+
+        ids_schema = hash_including("items" => anything)
+        expect(stub_agent).to have_received(:with_schema).with(
+          hash_including(
+            "properties" => hash_including(
+              "result" => hash_including("properties" => hash_including("ids" => ids_schema))
+            )
+          )
+        )
+        expect(Orchestration::ActionRun.last.status).to eq("completed")
+      end
+    end
+
+    context 'when schema has items without type (regression: Run #69)' do
+      before do
+        store_agent_record = create(:orchestration_agent, name: "Records::StoreAgent",
+                                    output_schema: {
+                                      "type" => "object", "additionalProperties" => false,
+                                      "required" => [ "result" ],
+                                      "properties" => {
+                                        "result" => {
+                                          "type" => "object", "additionalProperties" => false,
+                                          "properties" => {
+                                            "rows_inserted" => { "type" => "integer" },
+                                            "ids"           => { "type" => "array", "items" => {} }
+                                          }
+                                        }
+                                      }
+                                    })
+        store_action = create(:orchestration_action, agent: store_agent_record)
+        create(:orchestration_step_action, step: step1, action: store_action, position: 1)
+
+        allow(stub_agent).to receive(:with_schema).and_return(stub_agent)
+        allow(stub_agent).to receive(:ask)
+          .and_raise(RuntimeError, "Invalid schema for response_format 'response': " \
+                                   "In context=('properties', 'result', 'properties', 'ids', 'items'), " \
+                                   "schema must have a 'type' key.")
+      end
+
+      it 'marks the action_run as failed with the Mistral schema error' do
+        described_class.new(pipeline_run).call
+
+        store_run = Orchestration::ActionRun.last
+        expect(store_run.status).to eq("failed")
+        expect(store_run.error).to match(/schema must have a 'type' key/)
+      end
+    end
+
+    context 'when schema items includes a type (fix for Run #69)' do
+      let(:store_schema) do
+        {
+          "type"                 => "object",
+          "additionalProperties" => false,
+          "required"             => [ "result" ],
+          "properties"           => {
+            "result" => {
+              "type"                 => "object",
+              "additionalProperties" => false,
+              "properties"           => {
+                "rows_inserted" => { "type" => "integer" },
+                "ids"           => { "type" => "array", "items" => { "type" => "integer" } }
+              }
+            }
+          }
+        }
+      end
+
+      before do
+        store_agent_record = create(:orchestration_agent, name: "Records::StoreAgent", output_schema: store_schema)
+        store_action = create(:orchestration_action, agent: store_agent_record)
+        create(:orchestration_step_action, step: step1, action: store_action, position: 1)
+
+        allow(stub_agent).to receive_messages(
+          with_schema: stub_agent,
+          ask: instance_double(RubyLLM::Message, content: { "result" => { "rows_inserted" => 1, "ids" => [ 42 ] } })
+        )
+      end
+
+      it 'calls with_schema with typed items and completes successfully' do
+        described_class.new(pipeline_run).call
+
+        ids_schema = hash_including("items" => { "type" => "integer" })
+        expect(stub_agent).to have_received(:with_schema).with(
+          hash_including(
+            "properties" => hash_including(
+              "result" => hash_including("properties" => hash_including("ids" => ids_schema))
+            )
+          )
+        )
+        expect(Orchestration::ActionRun.last.status).to eq("completed")
+      end
+    end
+
+    context 'when store agent returns result as non-object (regression: Run #64)' do
+      before do
+        store_agent_record = create(:orchestration_agent, name: "Records::StoreAgent",
+                                    output_schema: {
+                                      "type" => "object", "required" => [ "result" ],
+                                      "properties" => { "result" => { "type" => "object" } }
+                                    })
+        store_action = create(:orchestration_action, agent: store_agent_record)
+        create(:orchestration_step_action, step: step1, action: store_action, position: 1)
+
+        allow(stub_agent).to receive_messages(with_schema: stub_agent, ask: instance_double(RubyLLM::Message, content: { "result" => [ 1, 2, 3 ] }))
+      end
+
+      it 'marks the store action_run as failed with a schema validation error' do
+        described_class.new(pipeline_run).call
+
+        store_run = Orchestration::ActionRun.last
+        expect(store_run.status).to eq("failed")
+        expect(store_run.error).to match(/output\.result must be an object/)
+      end
+    end
+
+    context 'when filter agent returns a bare array (regression: Run #58 TypeError)' do
+      before do
+        step2 = create(:orchestration_step, pipeline: pipeline, name: "filter",  position: 2)
+        step3 = create(:orchestration_step, pipeline: pipeline, name: "ingest",  position: 3)
+
+        filter_agent_record = create(:orchestration_agent, name: "Emails::FilterAgent")
+
+        fetch_action  = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
+        filter_action = create(:orchestration_action, agent: filter_agent_record)
+        ingest_action = create(:orchestration_action, :service_kind,
+                                agent_class: "Orchestration::IngestionExecutor",
+                                params: {
+                                  "operations" => [
+                                    { "type" => "filter_by_ids", "source" => "emails",
+                                      "ids_from" => "result.results", "output" => "emails" },
+                                    { "type" => "pick", "keys" => [ "emails" ] }
+                                  ]
+                                })
+
+        create(:orchestration_step_action, step: step1, action: fetch_action,  position: 1)
+        create(:orchestration_step_action, step: step2, action: filter_action, position: 1)
+        create(:orchestration_step_action, step: step3, action: ingest_action, position: 1)
+
+        allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [ { "id" => "e1" } ] })
+        allow(stub_agent).to receive(:ask)
+          .and_return(instance_double(RubyLLM::Message, content: [ { "id" => "e1" } ]))
+      end
+
+      it 'completes with empty emails instead of crashing with TypeError' do
+        described_class.new(pipeline_run).call
+
+        ingest_run = Orchestration::ActionRun
+          .joins(step_action: :step)
+          .find_by(steps: { name: "ingest" })
+
+        expect(ingest_run.status).to eq("completed")
+        expect(ingest_run.output).to eq({ "emails" => [] })
+      end
+    end
   end
 end

@@ -10,39 +10,44 @@ module UI
     end
 
     def nav_groups
+      ma = helpers.main_app
       [
         NavGroup.new(
           label: "LLM",
           items: [
-            NavItem.new(label: "Chats",      path: helpers.chats_path),
-            NavItem.new(label: "Models",     path: helpers.models_path),
-            NavItem.new(label: "Monitoring", path: helpers.ruby_llm_monitoring.root_path),
-            NavItem.new(label: "Evaluation", path: helpers.leva.root_path)
+            NavItem.new(label: "Chats",      path: ma.chats_path),
+            NavItem.new(label: "Models",     path: ma.models_path),
+            NavItem.new(label: "Monitoring", path: "/monitoring"),
+            NavItem.new(label: "Evaluation", path: "/leva")
           ]
         ),
         NavGroup.new(
           label: "Mails",
           items: [
-            NavItem.new(label: "Application Emails", path: helpers.application_mails_path),
-            NavItem.new(label: "Interviews",         path: helpers.interviews_path)
+            NavItem.new(label: "Application Emails", path: ma.application_mails_path),
+            NavItem.new(label: "Interviews",         path: ma.interviews_path)
           ]
         ),
         NavGroup.new(
           label: "Orchestration",
           items: [
-            NavItem.new(label: "Pipelines",     path: helpers.orchestration_pipelines_path),
-            NavItem.new(label: "Actions",       path: helpers.orchestration_actions_path),
-            NavItem.new(label: "Agents",        path: helpers.orchestration_agents_path),
-            NavItem.new(label: "Pipeline Runs", path: helpers.orchestration_pipeline_runs_path)
+            NavItem.new(label: "Pipelines",     path: ma.orchestration_pipelines_path),
+            NavItem.new(label: "Actions",       path: ma.orchestration_actions_path),
+            NavItem.new(label: "Agents",        path: ma.orchestration_agents_path),
+            NavItem.new(label: "Pipeline Runs", path: ma.orchestration_pipeline_runs_path)
           ]
         ),
         NavGroup.new(
           label: "Settings",
           items: [
-            NavItem.new(label: "Email Connectors", path: helpers.settings_email_connectors_path)
+            NavItem.new(label: "Email Connectors", path: ma.settings_email_connectors_path)
           ]
         )
       ]
+    end
+
+    def root_path
+      helpers.main_app.root_path
     end
 
     def group_open?(group)
