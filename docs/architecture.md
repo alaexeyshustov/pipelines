@@ -38,7 +38,7 @@ The system follows a pipeline-based architecture where data flows through severa
 - `app/agents/`: specialized AI agent implementations.
 - `app/models/orchestration/`: models for managing the pipeline workflow.
 - `app/evals/`: evaluation logic to ensure agent quality.
-- `lib/emails/`: provider-specific email fetching logic.
+- `lib/emails/`: provider-specific email fetching logic. See [connectors.md](docs/connectors.md) for details.
 
 ## AI Agents
 Agents are first-class citizens, defined in `app/agents/`. They utilize `orchestration_prompts` for versioned system instructions and `orchestration_agents` for tool access configuration.

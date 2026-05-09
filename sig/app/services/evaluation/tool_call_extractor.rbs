@@ -1,5 +1,7 @@
 module Evaluation
   class ToolCallExtractor
-    def self.call: (Chat? chat) -> Array[SampleCollector::tool_call_entry]
+    type tool_call_entry = { tool_name: String, arguments: Hash[String, untyped], result: String? }
+
+    def self.call: (Chat? chat) -> Array[tool_call_entry]
   end
 end

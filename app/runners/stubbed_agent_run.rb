@@ -2,6 +2,8 @@
 
 class StubbedAgentRun < Leva::BaseRun
   def execute(record)
+    raise ArgumentError, "StubbedAgentRun requires an Orchestration::ActionRun, got #{record.class}" unless record.is_a?(Orchestration::ActionRun)
+
     expected_tool_calls = Evaluation::ToolCallExtractor.call(record.chat)
     registry = Evaluation::ToolStubRegistry.new(expected_tool_calls)
 

@@ -1,14 +1,17 @@
 # features
 
 [ ] Models balancer
-[ ] Prompt evaluations
-[ ] Models UI
-[ ] batch actions for chats
+[x] Prompt evaluations
+[x] Models UI
+[x] batch actions for chats
 [ ] auto remove old chats
 [ ] switch all agents to use .create instead of .new
 [x] add costs monitoring
-[ ] ai metrics
+[x] ai metrics
 [ ] autoimprovement
 [ ] qmd + Karpathy's agent wiki
 [ ] cli pipeline runner switch to run job inline
 [ ] pipeline for ocr
+[ ] agents - search select for model
+[ ] agents - multi checkboxes for tools
+[ ] agents - json input better schema UI

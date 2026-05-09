@@ -1,0 +1,49 @@
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">Email Connectors</h1>
+  <%= link_to "New Connector", new_settings_email_connector_path, class: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors" %>
+</div>
+
+<div class="bg-white shadow rounded-lg overflow-hidden">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provider</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Connected</th>
+        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="bg-white divide-y divide-gray-200">
+      <% @email_connectors.each do |connector| %>
+        <tr>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><%= connector.name %></td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><%= connector.provider.titleize %></td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm">
+            <% status_class = case connector.status
+               when 'connected' then 'bg-green-100 text-green-800'
+               when 'failed' then 'bg-red-100 text-red-800'
+               else 'bg-gray-100 text-gray-800'
+               end %>
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= status_class %>">
+              <%= connector.status&.titleize || 'Unknown' %>
+            </span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            <%= connector.last_connected_at&.strftime("%Y-%m-%d %H:%M") || 'Never' %>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+            <%= button_to "Test", test_settings_email_connector_path(connector), method: :post, class: "text-blue-600 hover:text-blue-900 inline" %>
+            <%= link_to "Edit", edit_settings_email_connector_path(connector), class: "text-indigo-600 hover:text-indigo-900" %>
+            <%= button_to "Destroy", settings_email_connector_path(connector), method: :delete, data: { confirm: "Are you sure?" }, class: "text-red-600 hover:text-red-900 inline" %>
+          </td>
+        </tr>
+      <% end %>
+      <% if @email_connectors.empty? %>
+        <tr>
+          <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No connectors found.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

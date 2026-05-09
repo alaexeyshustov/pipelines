@@ -71,6 +71,22 @@ RSpec.describe Orchestration::IngestionExecutor do
       end
     end
 
+    context 'when an intermediate node in ids_from path is an Array (regression: Run #60 TypeError)' do
+      let(:params) do
+        {
+          "operations" => [
+            { "type" => "filter_by_ids", "source" => "emails", "ids_from" => "result.results", "output" => "emails" }
+          ]
+        }
+      end
+      let(:array_result_input) { { "emails" => emails, "result" => filter_result } }
+
+      it 'returns empty emails instead of raising TypeError' do
+        result = described_class.call(array_result_input, params)
+        expect(result["emails"]).to eq([])
+      end
+    end
+
     context 'when renaming a key' do
       let(:params) do
         {

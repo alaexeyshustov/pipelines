@@ -16,14 +16,11 @@ module Emails
   end
 
   def credentials
-    client_id   = Google::Auth::ClientId.from_file(@credentials_path)
-    token_store = Google::Auth::Stores::FileTokenStore.new(file: @token_path)
-
     tcp_server   = TCPServer.new("localhost", 0)
     port         = tcp_server.addr[1]
     callback_uri = "http://localhost:#{port}"
 
-    authorizer = Google::Auth::UserAuthorizer.new(client_id, @scope, token_store, callback_uri:)
+    authorizer = build_authorizer(callback_uri:)
     creds      = authorizer.get_credentials(USER_ID)
 
     if creds.nil?
@@ -52,6 +49,24 @@ module Emails
     end
 
     creds
+  end
+
+  def authorization_url(callback_uri:)
+    build_authorizer(callback_uri:).get_authorization_url(base_url: callback_uri)
+  end
+
+  def exchange_code(code:, callback_uri:)
+    build_authorizer(callback_uri:).get_and_store_credentials_from_code(
+      user_id: USER_ID, code:, base_url: callback_uri
+    )
+  end
+
+  private
+
+  def build_authorizer(callback_uri:)
+    client_id   = Google::Auth::ClientId.from_file(@credentials_path)
+    token_store = Google::Auth::Stores::FileTokenStore.new(file: @token_path)
+    Google::Auth::UserAuthorizer.new(client_id, @scope, token_store, callback_uri:)
   end
   end
 end

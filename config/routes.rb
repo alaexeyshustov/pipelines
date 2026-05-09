@@ -68,6 +68,18 @@ Rails.application.routes.draw do
     end
   end
 
+  namespace :settings do
+    resources :email_connectors do
+      member do
+        post :test
+        get :setup
+      end
+      collection do
+        get :oauth_callback
+      end
+    end
+  end
+
   get "home", to: "home#index"
   root to: "home#index"
 

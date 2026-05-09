@@ -149,8 +149,28 @@ module Leva
     def dataset_record: () -> DatasetRecord
   end
 
+  class Dataset
+    def self.find_or_create_by!: (**untyped attrs) -> Dataset
+    def self.find_by: (**untyped attrs) -> Dataset?
+    def self.find_by!: (**untyped attrs) -> Dataset
+    def self.where: (**untyped attrs) -> untyped
+
+    def name: () -> String
+    def dataset_records: () -> DatasetRecordRelation
+  end
+
+  class DatasetRecordRelation
+    def where: (**untyped attrs) -> DatasetRecordRelation
+    def pluck: (Symbol column) -> Array[untyped]
+    def create!: (**untyped attrs) -> DatasetRecord
+    def find_or_create_by!: (**untyped attrs) -> DatasetRecord
+    def count: () -> Integer
+    def first: () -> DatasetRecord?
+  end
+
   class DatasetRecord
     def recordable: () -> untyped
+    def previously_new_record?: () -> bool
   end
 
   class Experiment

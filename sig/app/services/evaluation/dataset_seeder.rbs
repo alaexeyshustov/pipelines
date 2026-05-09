@@ -1,0 +1,20 @@
+module Evaluation
+  class DatasetSeeder
+    class Result
+      attr_reader agent_name: String
+      attr_reader created: Integer
+      attr_reader skipped: Integer
+
+      def self.new: (agent_name: String, created: Integer, skipped: Integer) -> Result
+    end
+
+    def self.call: (agent_name: String, ?sample_size: Integer) -> Result
+
+    def initialize: (agent_name: String, ?sample_size: Integer) -> void
+    def call: () -> Result
+
+    private
+
+    def candidate_runs: () -> ActiveRecord::Relation
+  end
+end

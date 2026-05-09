@@ -31,7 +31,10 @@ module Orchestration
       private
 
       def dig_path(hash, path)
-        hash.dig(*path.split("."))
+        path.split(".").reduce(hash) do |node, key|
+          break unless node.is_a?(Hash)
+          node[key]
+        end
       end
     end
   end

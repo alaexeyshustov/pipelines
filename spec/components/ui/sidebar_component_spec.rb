@@ -41,9 +41,10 @@ RSpec.describe UI::SidebarComponent, type: :component do
     expect(links).to include("Pipelines", "Actions", "Agents", "Pipeline Runs")
   end
 
-  it "renders Settings group with no nav links" do
+  it "renders Settings group with Email Connectors link" do
     details = rendered.css("details")[3]
-    expect(details.css("a[data-testid='sidebar-item']")).to be_empty
+    links = details.css("a[data-testid='sidebar-item']").map { |a| a.text.strip }
+    expect(links).to include("Email Connectors")
   end
 
   context "when current_path is in LLM group" do

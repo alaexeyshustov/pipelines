@@ -46,9 +46,9 @@ RSpec.describe Orchestration::ActionRun do
     end
 
     describe '#ground_truth' do
-      it 'returns the output classification from action run output' do
+      it 'returns the full output value' do
         action_run = create(:orchestration_action_run, output: { 'classification' => 'offer' })
-        expect(action_run.ground_truth).to eq('offer')
+        expect(action_run.ground_truth).to eq({ 'classification' => 'offer' })
       end
 
       it 'returns nil when output is blank' do
@@ -77,11 +77,14 @@ RSpec.describe Orchestration::ActionRun do
     end
 
     describe '#to_llm_context' do
-      it 'returns hash with input and action info' do
-        action_run = create(:orchestration_action_run, input: { 'email' => 'test body' })
+      it 'returns hash with input, action, status, and agent_snapshot' do # rubocop:disable RSpec/MultipleExpectations
+        action_run = create(:orchestration_action_run, input: { 'email' => 'test body' }, agent_snapshot: { 'model' => 'mistral' })
         result = action_run.to_llm_context
         expect(result).to have_key(:input)
         expect(result).to have_key(:action)
+        expect(result).to have_key(:status)
+        expect(result).to have_key(:agent_snapshot)
+        expect(result[:agent_snapshot]).to eq({ 'model' => 'mistral' })
       end
     end
   end
