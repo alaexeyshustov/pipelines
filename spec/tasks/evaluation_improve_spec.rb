@@ -36,7 +36,7 @@ RSpec.describe "evaluation:improve rake task" do # rubocop:disable RSpec/Describ
     it "enqueues PromptAutoEvalJob for the new prompt" do
       Rake::Task[task_name].invoke(agent_name)
       new_prompt = Orchestration::Prompt.where(name: agent_name).order(id: :desc).first
-      expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: new_prompt.id)
+      expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: new_prompt.id).once
     end
 
     it "prints the new prompt version and id" do
