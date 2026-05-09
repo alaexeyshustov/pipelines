@@ -11,23 +11,7 @@ module Evaluation
     def latest_score = @summary.latest_score
     def active_prompt_version = @summary.active_prompt_version
     def sample_count = @summary.sample_count
-
-    def score_over_time_data
-      experiments = Leva::Experiment
-        .joins(:prompt)
-        .where(leva_prompts: { name: agent_name })
-        .order(:created_at)
-
-      experiments.map do |exp|
-        avg = Leva::EvaluationResult.where(experiment_id: exp.id).average(:score)
-        {
-          id: exp.id,
-          name: exp.name,
-          created_at: exp.created_at.strftime("%Y-%m-%d"),
-          avg_score: avg&.to_f&.round(2)
-        }
-      end
-    end
+    def score_over_time_data = @summary.score_history
 
     def format_score(score)
       score.nil? ? "—" : score.to_s

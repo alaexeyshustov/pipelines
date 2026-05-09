@@ -4,8 +4,6 @@ import { Chart, LineController, LineElement, PointElement, LinearScale, Category
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip)
 
 interface DataPoint {
-  id: number
-  name: string
   created_at: string
   avg_score: number | null
 }

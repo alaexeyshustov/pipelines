@@ -12,6 +12,7 @@ RSpec.describe Evaluation::DashboardComponent, type: :component do
       latest_score: nil,
       active_prompt_version: nil,
       sample_count: 0,
+      score_history: [],
       **overrides
     )
   end
@@ -72,17 +73,19 @@ RSpec.describe Evaluation::DashboardComponent, type: :component do
 
   context "with many experiments — score-over-time chart present" do
     let(:experiment) { create(:leva_experiment) }
+    let(:score_history) do
+      [
+        { created_at: "2026-01-01", avg_score: 3.0 },
+        { created_at: "2026-02-01", avg_score: 4.0 }
+      ]
+    end
     let(:component) do
       described_class.new(summary: build_summary(
         agent_name: experiment.prompt.name,
         latest_experiment: experiment,
-        sample_count: 5
+        sample_count: 5,
+        score_history: score_history
       ))
-    end
-
-    before do
-      # second experiment for same agent (same prompt name means same agent)
-      create(:leva_experiment, prompt: experiment.prompt)
     end
 
     it "renders the ScoreOverTimeComponent chart wrapper" do

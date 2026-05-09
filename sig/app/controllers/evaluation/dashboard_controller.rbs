@@ -7,8 +7,8 @@ module Evaluation
     private
 
     def agent_summaries: () -> Array[untyped]
-    def build_summary: (String agent_name) -> untyped
-    def average_score: (untyped experiment) -> Float?
-    def active_version: (String agent_name) -> Integer?
+    def batch_stats: (Array[Integer] experiment_ids) -> Hash[Integer, Hash[Symbol, untyped]]
+    def build_score_history: (Array[untyped] experiments, Hash[Integer, untyped] avgs_by_id) -> Array[Hash[Symbol, untyped]]
+    def active_versions_for: (Array[String] agent_names) -> Hash[String, Integer]
   end
 end
