@@ -33,6 +33,11 @@ RSpec.describe Evaluation::PromptImprover do
   end
 
   describe ".call" do
+    it "enqueues PromptAutoEvalJob with the new prompt id" do
+      result = described_class.call(experiment: experiment)
+      expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: result.id)
+    end
+
     it "returns a new Orchestration::Prompt" do
       result = described_class.call(experiment: experiment)
       expect(result).to be_a(Orchestration::Prompt)

@@ -2,7 +2,7 @@ module Evaluation
   class PromptAutoEvalJob < ApplicationJob
     queue_as :default
 
-    def perform(prompt_id)
+    def perform(prompt_id:)
       prompt = Orchestration::Prompt.find(prompt_id)
 
       previous_experiment = Leva::Experiment
@@ -22,7 +22,8 @@ module Evaluation
         dataset: previous_experiment.dataset,
         prompt: prompt,
         runner_class: "StubbedAgentRun",
-        evaluator_classes: [ "LLMJudgeEval" ]
+        evaluator_classes: [ "LLMJudgeEval" ],
+        metadata: { triggered_by: "prompt_change" }
       )
 
       Leva::ExperimentJob.perform_later(experiment)
