@@ -97,6 +97,108 @@ namespace :evaluation do
     puts format("%-30s %8s %8s %10s", "OVERALL", baseline_str, candidate_str, delta_str)
   end
 
+  desc "Run an evaluation for a specific agent (e.g. rake evaluation:run[Emails::ClassifyAgent,mistral-large-latest])"
+  task :run, [ :agent_name, :model ] => :environment do |_, args|
+    agent_name = args[:agent_name] or raise ArgumentError, "Usage: rake evaluation:run[agent_name,model]"
+
+    prompt = Orchestration::Prompt.where(name: agent_name).order(version: :desc, id: :desc).first
+    raise ArgumentError, "No active prompt found for #{agent_name}" unless prompt
+
+    dataset = Leva::Dataset.find_by!(name: agent_name)
+
+    model_label = args[:model].presence || "default"
+    experiment = Leva::Experiment.create!(
+      name: "#{agent_name} eval w/ #{model_label} (#{Date.today})",
+      dataset: dataset,
+      prompt: prompt,
+      runner_class: "StubbedAgentRun",
+      evaluator_classes: [ "LLMJudgeEval" ],
+      metadata: args[:model].presence ? { "pipeline_model" => args[:model] } : nil
+    )
+
+    Leva::ExperimentJob.perform_later(experiment)
+    puts "Created experiment ##{experiment.id} for #{agent_name}"
+  end
+
+  desc "Run evaluations for all agents (e.g. rake evaluation:run_all[mistral-large-latest])"
+  task :run_all, [ :model ] => :environment do |_, args|
+    model = args[:model].presence
+
+    Orchestration::Agent.pluck(:name).each do |agent_name|
+      prompt = Orchestration::Prompt.where(name: agent_name).order(version: :desc, id: :desc).first
+      unless prompt
+        puts "#{agent_name}: skipped (no prompt)"
+        next
+      end
+
+      dataset = Leva::Dataset.find_by(name: agent_name)
+      unless dataset
+        puts "#{agent_name}: skipped (no dataset)"
+        next
+      end
+
+      model_label = model || "default"
+      experiment = Leva::Experiment.create!(
+        name: "#{agent_name} eval w/ #{model_label} (#{Date.today})",
+        dataset: dataset,
+        prompt: prompt,
+        runner_class: "StubbedAgentRun",
+        evaluator_classes: [ "LLMJudgeEval" ],
+        metadata: model ? { "pipeline_model" => model } : nil
+      )
+
+      Leva::ExperimentJob.perform_later(experiment)
+      puts "#{agent_name}: created experiment ##{experiment.id}"
+    end
+  end
+
+  desc "Print evaluation readiness status per agent"
+  task status: :environment do
+    agent_names = Orchestration::Agent.pluck(:name)
+
+    # steep:ignore:start
+    sample_counts = Orchestration::ActionRun
+      .joins(step_action: { action: :agent })
+      .where(status: "completed")
+      .where.not(chat_id: nil)
+      .group("orchestration_agents.name")
+      .count
+    # steep:ignore:end
+
+    latest_exp_ids = Leva::Experiment
+      .joins(:prompt)
+      .where(leva_prompts: { name: agent_names })
+      .group("leva_prompts.name")
+      .maximum(:id)
+
+    experiments_by_id = Leva::Experiment.where(id: latest_exp_ids.values).index_by(&:id)
+    exp_by_agent      = latest_exp_ids.transform_values { |id| experiments_by_id[id] }
+
+    avg_scores = latest_exp_ids.any? ?
+      Leva::EvaluationResult.where(experiment_id: latest_exp_ids.values).group(:experiment_id).average(:score) :
+      {}
+
+    prompt_versions = Orchestration::Prompt
+      .where(name: agent_names)
+      .group(:name)
+      .maximum(:version)
+
+    puts format("%-35s %10s %10s %8s %7s", "Agent", "Samples", "Exp ID", "Score", "Prompt")
+    puts "-" * 75
+
+    agent_names.each do |agent_name|
+      samples     = sample_counts[agent_name] || 0
+      experiment  = exp_by_agent[agent_name]
+      exp_id      = experiment ? "##{experiment.id}" : "n/a"
+      avg_score   = experiment ? avg_scores[experiment.id] : nil
+      score_str   = avg_score ? format("%.2f", avg_score) : "n/a"
+      version     = prompt_versions[agent_name]
+      version_str = version ? "v#{version}" : "n/a"
+
+      puts format("%-35s %10s %10s %8s %7s", agent_name, samples, exp_id, score_str, version_str)
+    end
+  end
+
   desc "Improve prompt for an agent based on the latest completed experiment (e.g. rake evaluation:improve[Emails::ClassifyAgent])"
   task :improve, [ :agent_name ] => :environment do |_, args|
     agent_name = args[:agent_name] or raise ArgumentError, "Usage: rake evaluation:improve[AgentName]"

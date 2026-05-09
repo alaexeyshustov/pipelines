@@ -131,6 +131,23 @@ RSpec.describe StubbedAgentRun do # rubocop:disable RSpec/MultipleMemoizedHelper
       runner.execute(action_run)
     end
 
+    context "when experiment metadata contains pipeline_model" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      let(:experiment) do
+        create(:leva_experiment,
+               runner_class: "StubbedAgentRun",
+               metadata: { "pipeline_model" => "mistral-small-latest" })
+      end
+
+      before { runner.instance_variable_set(:@experiment, experiment) }
+
+      it "passes pipeline_model to RuntimeAgentBuilder" do
+        allow(Orchestration::RuntimeAgentBuilder).to receive(:new).and_call_original
+        runner.execute(action_run)
+        expect(Orchestration::RuntimeAgentBuilder).to have_received(:new)
+          .with(hash_including(pipeline_model: "mistral-small-latest"))
+      end
+    end
+
     context "with a serialized orchestration agent and no Ruby subclass" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       let(:orchestration_agent) do
         create(:orchestration_agent,
