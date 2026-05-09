@@ -197,6 +197,7 @@ module Leva
     def self.where: (**untyped attrs) -> PromptRelation
     def self.order: (**untyped attrs) -> PromptRelation
 
+    def id: () -> Integer
     def name: () -> String?
     def name=: (String value) -> String
     def system_prompt: () -> String?

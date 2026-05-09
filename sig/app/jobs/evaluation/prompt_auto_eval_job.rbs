@@ -1,5 +1,5 @@
 module Evaluation
   class PromptAutoEvalJob < ApplicationJob
-    def perform: (Integer prompt_id) -> void
+    def perform: (prompt_id: Integer) -> void
   end
 end
