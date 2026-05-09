@@ -37,15 +37,11 @@ module Evaluation
 
       improved = call_llm(user_message)
 
-      new_prompt = Orchestration::Prompt.create!(
+      Orchestration::Prompt.create!(
         name: current_prompt.name,
         system_prompt: improved[:system_prompt],
         user_prompt: improved[:user_prompt].presence || current_prompt.user_prompt
       )
-
-      Evaluation::PromptAutoEvalJob.perform_later(prompt_id: new_prompt.id)
-
-      new_prompt
     end
 
     private
