@@ -59,6 +59,29 @@ RSpec.describe "evaluation:run rake task" do # rubocop:disable RSpec/DescribeCla
         expect(Leva::Experiment.last.prompt_id).to eq(newer_prompt.id)
       end
     end
+
+    context "when two prompts share the same version" do
+      let!(:second_prompt) { create(:orchestration_prompt, name: agent_name, version: 1) }
+
+      it "uses the highest id as a tiebreaker" do
+        Rake::Task[task_name].invoke(agent_name, nil)
+        expect(Leva::Experiment.last.prompt_id).to eq(second_prompt.id)
+      end
+    end
+  end
+
+  context "when model argument is provided" do
+    let(:model) { "mistral-large-latest" }
+
+    it "stores the model in experiment metadata" do
+      Rake::Task[task_name].invoke(agent_name, model)
+      expect(Leva::Experiment.last.metadata).to include("pipeline_model" => model)
+    end
+
+    it "includes the model in the experiment name" do
+      Rake::Task[task_name].invoke(agent_name, model)
+      expect(Leva::Experiment.last.name).to include(model)
+    end
   end
 
   context "when agent_name is missing" do

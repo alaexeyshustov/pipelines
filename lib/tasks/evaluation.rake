@@ -101,7 +101,7 @@ namespace :evaluation do
   task :run, [ :agent_name, :model ] => :environment do |_, args|
     agent_name = args[:agent_name] or raise ArgumentError, "Usage: rake evaluation:run[agent_name,model]"
 
-    prompt = Orchestration::Prompt.where(name: agent_name).order(version: :desc).first
+    prompt = Orchestration::Prompt.where(name: agent_name).order(version: :desc, id: :desc).first
     raise ArgumentError, "No active prompt found for #{agent_name}" unless prompt
 
     dataset = Leva::Dataset.find_by!(name: agent_name)
@@ -112,7 +112,8 @@ namespace :evaluation do
       dataset: dataset,
       prompt: prompt,
       runner_class: "StubbedAgentRun",
-      evaluator_classes: [ "LLMJudgeEval" ]
+      evaluator_classes: [ "LLMJudgeEval" ],
+      metadata: args[:model].presence ? { "pipeline_model" => args[:model] } : nil
     )
 
     Leva::ExperimentJob.perform_later(experiment)
@@ -124,7 +125,7 @@ namespace :evaluation do
     model = args[:model].presence
 
     Orchestration::Agent.pluck(:name).each do |agent_name|
-      prompt = Orchestration::Prompt.where(name: agent_name).order(version: :desc).first
+      prompt = Orchestration::Prompt.where(name: agent_name).order(version: :desc, id: :desc).first
       unless prompt
         puts "#{agent_name}: skipped (no prompt)"
         next
@@ -142,7 +143,8 @@ namespace :evaluation do
         dataset: dataset,
         prompt: prompt,
         runner_class: "StubbedAgentRun",
-        evaluator_classes: [ "LLMJudgeEval" ]
+        evaluator_classes: [ "LLMJudgeEval" ],
+        metadata: model ? { "pipeline_model" => model } : nil
       )
 
       Leva::ExperimentJob.perform_later(experiment)
@@ -154,31 +156,44 @@ namespace :evaluation do
   task status: :environment do
     agent_names = Orchestration::Agent.pluck(:name)
 
+    # steep:ignore:start
+    sample_counts = Orchestration::ActionRun
+      .joins(step_action: { action: :agent })
+      .where(status: "completed")
+      .where.not(chat_id: nil)
+      .group("orchestration_agents.name")
+      .count
+    # steep:ignore:end
+
+    latest_exp_ids = Leva::Experiment
+      .joins(:prompt)
+      .where(leva_prompts: { name: agent_names })
+      .group("leva_prompts.name")
+      .maximum(:id)
+
+    experiments_by_id = Leva::Experiment.where(id: latest_exp_ids.values).index_by(&:id)
+    exp_by_agent      = latest_exp_ids.transform_values { |id| experiments_by_id[id] }
+
+    avg_scores = latest_exp_ids.any? ?
+      Leva::EvaluationResult.where(experiment_id: latest_exp_ids.values).group(:experiment_id).average(:score) :
+      {}
+
+    prompt_versions = Orchestration::Prompt
+      .where(name: agent_names)
+      .group(:name)
+      .maximum(:version)
+
     puts format("%-35s %10s %10s %8s %7s", "Agent", "Samples", "Exp ID", "Score", "Prompt")
     puts "-" * 75
 
     agent_names.each do |agent_name|
-      samples = Orchestration::ActionRun
-        # steep:ignore:start
-        .joins(step_action: { action: :agent })
-        # steep:ignore:end
-        .where(status: "completed")
-        .where.not(chat_id: nil)
-        .where(orchestration_agents: { name: agent_name })
-        .count
-
-      experiment = Leva::Experiment
-        .joins(:prompt)
-        .where(leva_prompts: { name: agent_name })
-        .order(id: :desc)
-        .first
-
-      exp_id    = experiment ? "##{experiment.id}" : "n/a"
-      avg_score = experiment ? Leva::EvaluationResult.where(experiment: experiment).average(:score) : nil
-      score_str = avg_score ? format("%.2f", avg_score) : "n/a"
-
-      prompt_version = Orchestration::Prompt.where(name: agent_name).order(version: :desc).pick(:version)
-      version_str    = prompt_version ? "v#{prompt_version}" : "n/a"
+      samples     = sample_counts[agent_name] || 0
+      experiment  = exp_by_agent[agent_name]
+      exp_id      = experiment ? "##{experiment.id}" : "n/a"
+      avg_score   = experiment ? avg_scores[experiment.id] : nil
+      score_str   = avg_score ? format("%.2f", avg_score) : "n/a"
+      version     = prompt_versions[agent_name]
+      version_str = version ? "v#{version}" : "n/a"
 
       puts format("%-35s %10s %10s %8s %7s", agent_name, samples, exp_id, score_str, version_str)
     end

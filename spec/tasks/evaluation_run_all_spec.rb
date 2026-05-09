@@ -41,6 +41,19 @@ RSpec.describe "evaluation:run_all rake task" do # rubocop:disable RSpec/Describ
     expect(output).to include(filter_agent_name)
   end
 
+  context "when model is provided" do
+    it "stores the model in each experiment metadata" do
+      run_task("mistral-large-latest")
+      expect(Leva::Experiment.all.map { |e| e.metadata&.dig("pipeline_model") }.uniq)
+        .to eq([ "mistral-large-latest" ])
+    end
+
+    it "includes the model in each experiment name" do
+      run_task("mistral-large-latest")
+      expect(Leva::Experiment.all.map(&:name)).to all(include("mistral-large-latest"))
+    end
+  end
+
   context "when an agent has no prompt" do
     before { Orchestration::Prompt.where(name: classify_agent_name).delete_all }
 

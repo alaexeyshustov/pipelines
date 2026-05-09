@@ -13,7 +13,8 @@ class StubbedAgentRun < Leva::BaseRun
 
     tool_classes = resolve_tools(agent_record)
     stubbed_tools = tool_classes.map { |tool_class| stub_tool(tool_class, registry) }
-    agent = Orchestration::RuntimeAgentBuilder.new(action: action, tool_classes: stubbed_tools).build
+    pipeline_model = @experiment&.metadata&.dig("pipeline_model")
+    agent = Orchestration::RuntimeAgentBuilder.new(action: action, tool_classes: stubbed_tools, pipeline_model: pipeline_model).build
 
     result = agent.ask(record.input.to_json)
 
