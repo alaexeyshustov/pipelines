@@ -1,0 +1,14 @@
+module Evaluation
+  class DashboardController < ApplicationController
+    AgentSummary: Data
+
+    def show: () -> void
+
+    private
+
+    def agent_summaries: () -> Array[untyped]
+    def build_summary: (String agent_name) -> untyped
+    def average_score: (untyped experiment) -> Float?
+    def active_version: (String agent_name) -> Integer?
+  end
+end

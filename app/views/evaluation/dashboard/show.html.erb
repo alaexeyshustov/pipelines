@@ -1,0 +1,11 @@
+<%= render UI::PageHeaderComponent.new(title: "Evaluation Dashboard") %>
+
+<div class="space-y-8">
+  <% @agent_summaries.each do |summary| %>
+    <%= render Evaluation::DashboardComponent.new(summary: summary) %>
+  <% end %>
+
+  <% if @agent_summaries.empty? %>
+    <p class="text-gray-500 text-sm">No experiments found.</p>
+  <% end %>
+</div>

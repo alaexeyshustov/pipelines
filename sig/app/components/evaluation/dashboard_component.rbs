@@ -1,0 +1,12 @@
+module Evaluation
+  class DashboardComponent < ViewComponent::Base
+    def initialize: (summary: untyped) -> void
+    def agent_name: () -> String
+    def latest_experiment: () -> untyped
+    def latest_score: () -> Float?
+    def active_prompt_version: () -> Integer?
+    def sample_count: () -> Integer
+    def score_over_time_data: () -> Array[Hash[Symbol, untyped]]
+    def format_score: (Float? score) -> String
+  end
+end

@@ -1,0 +1,29 @@
+<div class="rounded-lg border border-gray-200 bg-white shadow-sm p-6 space-y-4">
+  <div class="flex items-center justify-between">
+    <h2 class="text-lg font-semibold text-gray-800"><%= agent_name %></h2>
+    <% if latest_experiment %>
+      <%= link_to "View Experiment", evaluation_experiment_path(latest_experiment), class: "text-sm text-indigo-600 hover:underline" %>
+    <% end %>
+  </div>
+
+  <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
+    <div>
+      <dt class="font-medium text-gray-500">Latest Experiment</dt>
+      <dd class="text-gray-700"><%= latest_experiment&.id || "—" %></dd>
+    </div>
+    <div>
+      <dt class="font-medium text-gray-500">Avg Score</dt>
+      <dd class="text-gray-700"><%= format_score(latest_score) %></dd>
+    </div>
+    <div>
+      <dt class="font-medium text-gray-500">Active Prompt</dt>
+      <dd class="text-gray-700"><%= active_prompt_version ? "v#{active_prompt_version}" : "—" %></dd>
+    </div>
+    <div>
+      <dt class="font-medium text-gray-500">Samples</dt>
+      <dd class="text-gray-700"><%= sample_count %></dd>
+    </div>
+  </dl>
+
+  <%= render Evaluation::ScoreOverTimeComponent.new(agent_name: agent_name, data: score_over_time_data) %>
+</div>

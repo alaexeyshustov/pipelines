@@ -10,14 +10,16 @@
   "dependencies": {
     "@hotwired/stimulus": "^3.2.2",
     "@hotwired/turbo-rails": "^8.0.12",
-    "@stimulus-components/dialog": "^1.0.1"
+    "@stimulus-components/dialog": "^1.0.1",
+    "chart.js": "^4.5.1"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",
     "typescript": "^5.8.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
-

@@ -26,6 +26,7 @@ Rails.application.routes.draw do
   end
 
   namespace :evaluation do
+    root to: "dashboard#show"
     resources :metrics, only: [ :index, :edit, :update ]
     get "prompts/:id/diff", to: "prompt_diffs#show", as: :prompt_diff
     resources :experiments, only: [ :index, :show ] do
