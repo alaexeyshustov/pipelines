@@ -1,0 +1,7 @@
+module Evaluation
+  class ScoreOverTimeComponent < ViewComponent::Base
+    def initialize: (agent_name: String, data: Array[Hash[Symbol, untyped]]) -> void
+    def chart_data_json: () -> String
+    def has_data?: () -> bool
+  end
+end

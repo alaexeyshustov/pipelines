@@ -1,0 +1,14 @@
+module Evaluation
+  class DashboardController < ApplicationController
+    AgentSummary: Data
+
+    def show: () -> void
+
+    private
+
+    def agent_summaries: () -> Array[untyped]
+    def batch_stats: (Array[Integer] experiment_ids) -> Hash[Integer, Hash[Symbol, untyped]]
+    def build_score_history: (Array[untyped] experiments, Hash[Integer, untyped] avgs_by_id) -> Array[Hash[Symbol, untyped]]
+    def active_versions_for: (Array[String] agent_names) -> Hash[String, Integer]
+  end
+end

@@ -1,0 +1,11 @@
+<% if has_data? %>
+  <div
+    data-controller="evaluation--score-chart"
+    data-evaluation--score-chart-points-value="<%= chart_data_json %>"
+    class="mt-4 h-40"
+  >
+    <canvas></canvas>
+  </div>
+<% else %>
+  <p class="mt-4 text-xs text-gray-400">No experiment data to chart.</p>
+<% end %>
