@@ -97,6 +97,27 @@ RSpec.describe Orchestration::InputMappingResolver do
       end
     end
 
+    context 'with a non-numeric string segment against an Array node' do
+      let(:input_mapping) do
+        { "bad" => { "from" => "fetch", "path" => "emails.subject" } }
+      end
+
+      it 'raises MissingPath rather than silently coercing the segment to 0' do
+        expect { resolver.resolve }
+          .to raise_error(described_class::MissingPath, /emails\.subject/)
+      end
+    end
+
+    context 'with a non-numeric string segment against an Array node and optional: true' do
+      let(:input_mapping) do
+        { "bad" => { "from" => "fetch", "path" => "emails.subject", "optional" => true } }
+      end
+
+      it 'returns nil without raising' do
+        expect(resolver.resolve["bad"]).to be_nil
+      end
+    end
+
     context 'with the reserved _initial slot' do
       let(:previous_outputs) do
         {

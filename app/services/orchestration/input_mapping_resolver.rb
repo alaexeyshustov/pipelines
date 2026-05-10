@@ -31,7 +31,12 @@ module Orchestration
       value = path.split(".").reduce(upstream) do |node, seg|
         break nil if node.nil?
 
-        node.is_a?(Array) ? node[seg.to_i] : node[seg]
+        if node.is_a?(Array)
+          break nil unless seg.match?(/\A\d+\z/)
+          node[seg.to_i]
+        else
+          node[seg]
+        end
       end
 
       return nil if value.nil? && optional

@@ -514,6 +514,23 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
+    context 'when pipeline_run has an empty initial_input and a step maps from _initial' do
+      before do
+        pipeline_run.update!(initial_input: {})
+        executable_action = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
+        create(:orchestration_step_action,
+               step: step1, action: executable_action, position: 1,
+               input_mapping: { "data" => { "from" => "_initial" } })
+        allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [] })
+      end
+
+      it 'seeds _initial even for an empty hash so explicit mappings resolve without UnknownOutputKey' do
+        described_class.new(pipeline_run).call
+        expect(Emails::FetchExecutor).to have_received(:call).with({ "data" => {} }, anything)
+        expect(pipeline_run.reload.status).to eq("completed")
+      end
+    end
+
     context 'with three steps where step 3 needs step 1 output (accumulation)' do
       before do
         step2 = create(:orchestration_step, pipeline: pipeline, name: "filter",  position: 2)

@@ -8,7 +8,7 @@ module Orchestration
       @pipeline_run.update!(status: "running", started_at: Time.current)
 
       previous_outputs = {} # : Hash[String, Hash[String, untyped]]
-      previous_outputs["_initial"] = @pipeline_run.initial_input if @pipeline_run.initial_input.present?
+      previous_outputs["_initial"] = @pipeline_run.initial_input unless @pipeline_run.initial_input.nil?
 
       @pipeline_run.pipeline.steps.where(enabled: true).order(:position).each do |step|
         action_runs = run_step(step, previous_outputs)
