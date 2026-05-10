@@ -7,17 +7,11 @@ module Orchestration
     def call
       @pipeline_run.update!(status: "running", started_at: Time.current)
 
-      previous_outputs = [] # : Array[Orchestration::InputMappingResolver::previous_output_entry]
-      previous_outputs << { "step_name" => "initial", "output" => @pipeline_run.initial_input } if @pipeline_run.initial_input.present?
+      previous_outputs = {} # : Hash[String, Hash[String, untyped]]
+      previous_outputs["_initial"] = @pipeline_run.initial_input unless @pipeline_run.initial_input.nil?
 
       @pipeline_run.pipeline.steps.where(enabled: true).order(:position).each do |step|
-        # input_mapping: nil — auto-merge until step_action.input_mapping is wired in later slices
-        resolved_input = InputMappingResolver.new(
-          input_mapping: nil,
-          previous_outputs: previous_outputs
-        ).resolve
-
-        action_runs = run_step(step, resolved_input)
+        action_runs = run_step(step, previous_outputs)
 
         failed_run = action_runs.find { |ar| ar.status == "failed" }
         if failed_run
@@ -25,8 +19,8 @@ module Orchestration
           return
         end
 
-        previous_outputs += action_runs.map do |ar|
-          { "step_name" => step.name, "output" => ar.output || {} }
+        action_runs.each do |ar|
+          previous_outputs[ar.step_action.output_key] = ar.output || {}
         end
       end
 
@@ -35,8 +29,13 @@ module Orchestration
 
     private
 
-    def run_step(step, resolved_input)
+    def run_step(step, previous_outputs)
       action_runs = step.step_actions.map do |step_action|
+        resolved_input = InputMappingResolver.new(
+          input_mapping: step_action.input_mapping || {},
+          previous_outputs: previous_outputs
+        ).resolve
+
         @pipeline_run.action_runs.create!(
           step_action: step_action,
           status: "pending",
