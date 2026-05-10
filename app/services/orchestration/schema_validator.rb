@@ -1,15 +1,15 @@
 module Orchestration
-  class OutputValidator
+  class SchemaValidator
     Error = Class.new(StandardError)
 
     def initialize(schema)
       @schema = schema
     end
 
-    def validate!(output)
+    def validate!(data)
       return if @schema.nil?
 
-      validate_node!(output, @schema, "output")
+      validate_node!(data, @schema, "data")
     end
 
     private

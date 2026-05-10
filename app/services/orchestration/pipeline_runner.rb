@@ -110,7 +110,7 @@ module Orchestration
         action.output_schema
       end
 
-      OutputValidator.new(schema).validate!(output)
+      SchemaValidator.new(schema).validate!(output)
     end
 
     def leva_prompt_for(agent_class)

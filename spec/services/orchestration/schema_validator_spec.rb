@@ -1,13 +1,13 @@
 require 'rails_helper'
 
-RSpec.describe Orchestration::OutputValidator do
+RSpec.describe Orchestration::SchemaValidator do
   subject(:validator) { described_class.new(schema) }
 
   describe '#validate!' do
     context 'when schema is nil' do
       let(:schema) { nil }
 
-      it 'passes any output' do
+      it 'passes any input' do
         expect { validator.validate!({ "result" => "anything" }) }.not_to raise_error
       end
     end
@@ -23,7 +23,7 @@ RSpec.describe Orchestration::OutputValidator do
         }
       end
 
-      it 'passes when output matches' do
+      it 'passes when data matches' do
         expect { validator.validate!({ "result" => [ 1, 2, 3 ] }) }.not_to raise_error
       end
 
@@ -34,12 +34,12 @@ RSpec.describe Orchestration::OutputValidator do
 
       it 'raises when the property type is wrong' do
         expect { validator.validate!({ "result" => "a string" }) }
-          .to raise_error(described_class::Error, /output\.result must be an array/)
+          .to raise_error(described_class::Error, /data\.result must be an array/)
       end
 
       it 'raises when the top-level value is not an object' do
         expect { validator.validate!([]) }
-          .to raise_error(described_class::Error, /output must be an object/)
+          .to raise_error(described_class::Error, /data must be an object/)
       end
     end
 
@@ -52,7 +52,7 @@ RSpec.describe Orchestration::OutputValidator do
 
       it 'raises for a non-array' do
         expect { validator.validate!("text") }
-          .to raise_error(described_class::Error, /output must be an array/)
+          .to raise_error(described_class::Error, /data must be an array/)
       end
     end
 

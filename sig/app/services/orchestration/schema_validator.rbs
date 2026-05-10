@@ -1,9 +1,9 @@
 module Orchestration
-  class OutputValidator
+  class SchemaValidator
     Error: singleton(StandardError)
 
     def initialize: (Hash[String, untyped]? schema) -> void
-    def validate!: (Hash[String, untyped] output) -> void
+    def validate!: (Hash[String, untyped] data) -> void
 
     private
 
