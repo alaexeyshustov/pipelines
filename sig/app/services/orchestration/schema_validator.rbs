@@ -3,10 +3,10 @@ module Orchestration
     Error: singleton(StandardError)
 
     def initialize: (Hash[String, untyped]? schema) -> void
-    def validate!: (Hash[String, untyped] data) -> void
+    def validate!: (untyped data) -> void
 
     private
 
-    def validate_node!: (untyped value, Hash[String, untyped] schema, String path) -> void
+    def validate_node!: (untyped value, Hash[String, untyped]? schema, String path) -> void
   end
 end

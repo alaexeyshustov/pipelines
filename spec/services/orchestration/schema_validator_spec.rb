@@ -79,6 +79,16 @@ RSpec.describe Orchestration::SchemaValidator do
       end
     end
 
+    context 'with a nil property sub-schema' do
+      let(:schema) do
+        { "type" => "object", "properties" => { "result" => nil } }
+      end
+
+      it 'does not raise when the property exists but its sub-schema is nil' do
+        expect { validator.validate!({ "result" => "anything" }) }.not_to raise_error
+      end
+    end
+
     context 'with string type' do
       let(:schema) { { "type" => "object", "properties" => { "result" => { "type" => "string" } } } }
 
@@ -89,6 +99,53 @@ RSpec.describe Orchestration::SchemaValidator do
       it 'raises for a non-string' do
         expect { validator.validate!({ "result" => 42 }) }
           .to raise_error(described_class::Error, /must be a string/)
+      end
+    end
+
+    context 'with integer type' do
+      let(:schema) { { "type" => "object", "properties" => { "count" => { "type" => "integer" } } } }
+
+      it 'passes for an integer' do
+        expect { validator.validate!({ "count" => 42 }) }.not_to raise_error
+      end
+
+      it 'raises for a float' do
+        expect { validator.validate!({ "count" => 1.5 }) }
+          .to raise_error(described_class::Error, /must be an integer/)
+      end
+    end
+
+    context 'with number type' do
+      let(:schema) { { "type" => "object", "properties" => { "score" => { "type" => "number" } } } }
+
+      it 'passes for a float' do
+        expect { validator.validate!({ "score" => 1.5 }) }.not_to raise_error
+      end
+
+      it 'passes for an integer' do
+        expect { validator.validate!({ "score" => 42 }) }.not_to raise_error
+      end
+
+      it 'raises for a non-numeric' do
+        expect { validator.validate!({ "score" => "high" }) }
+          .to raise_error(described_class::Error, /must be a number/)
+      end
+    end
+
+    context 'with boolean type' do
+      let(:schema) { { "type" => "object", "properties" => { "flag" => { "type" => "boolean" } } } }
+
+      it 'passes for true' do
+        expect { validator.validate!({ "flag" => true }) }.not_to raise_error
+      end
+
+      it 'passes for false' do
+        expect { validator.validate!({ "flag" => false }) }.not_to raise_error
+      end
+
+      it 'raises for a non-boolean' do
+        expect { validator.validate!({ "flag" => "yes" }) }
+          .to raise_error(described_class::Error, /must be a boolean/)
       end
     end
   end
