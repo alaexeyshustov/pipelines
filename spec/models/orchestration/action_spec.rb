@@ -68,4 +68,23 @@ RSpec.describe Orchestration::Action do
       expect(described_class.exists?(action.id)).to be true
     end
   end
+
+  describe "input_schema column" do
+    it "round-trips a JSON object" do
+      schema = {
+        "type" => "object",
+        "required" => [ "emails" ],
+        "properties" => { "emails" => { "type" => "array" } }
+      }
+      action = create(:orchestration_action, input_schema: schema)
+      expect(action.reload.input_schema).to eq(schema)
+    end
+
+    it "is nullable" do
+      action = build(:orchestration_action, input_schema: nil)
+      expect(action).to be_valid
+      action.save!
+      expect(action.reload.input_schema).to be_nil
+    end
+  end
 end

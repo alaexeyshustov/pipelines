@@ -8,7 +8,7 @@ RSpec.describe Orchestration::StepComponent, type: :component do
   let(:pipeline) { build_stubbed(:orchestration_pipeline, id: 1) }
   let(:step) do
     build_stubbed(:orchestration_step, id: 10, pipeline: pipeline, name: "My Step", position: 2, enabled: true).tap do |s|
-      allow(s).to receive_messages(step_actions: [], input_mapping: nil)
+      allow(s).to receive_messages(step_actions: [],)
     end
   end
   let(:actions) { build_stubbed_list(:orchestration_action, 2) }
@@ -74,7 +74,7 @@ RSpec.describe Orchestration::StepComponent, type: :component do
   context "when the step is disabled" do
     let(:step) do
       build_stubbed(:orchestration_step, id: 10, pipeline: pipeline, name: "My Step", position: 2, enabled: false).tap do |s|
-        allow(s).to receive_messages(step_actions: [], input_mapping: nil)
+        allow(s).to receive_messages(step_actions: [],)
       end
     end
 
@@ -100,7 +100,7 @@ RSpec.describe Orchestration::StepComponent, type: :component do
         allow(s).to receive(:params).and_return(nil)
       end
       build_stubbed(:orchestration_step, id: 10, pipeline: pipeline, name: "My Step", position: 2, enabled: true).tap do |s|
-        allow(s).to receive_messages(step_actions: [ sa ], input_mapping: nil)
+        allow(s).to receive_messages(step_actions: [ sa ],)
       end
     end
 
@@ -113,18 +113,6 @@ RSpec.describe Orchestration::StepComponent, type: :component do
     end
   end
 
-  context "when the step has input_mapping" do
-    let(:step) do
-      build_stubbed(:orchestration_step, id: 10, pipeline: pipeline, name: "My Step", position: 2, enabled: true).tap do |s|
-        allow(s).to receive_messages(step_actions: [], input_mapping: { "key" => "value" })
-      end
-    end
-
-    it "renders the input mapping section" do
-      expect(rendered.text).to include("Input mapping:")
-      expect(rendered.css("code").text).to include("key")
-    end
-  end
 
   describe "#move_up?" do
     it "returns false when first" do
@@ -158,7 +146,7 @@ RSpec.describe Orchestration::StepComponent, type: :component do
     context "when step is disabled" do
       let(:step) do
         build_stubbed(:orchestration_step, enabled: false, id: 10, pipeline: pipeline).tap do |s|
-          allow(s).to receive_messages(step_actions: [], input_mapping: nil)
+          allow(s).to receive_messages(step_actions: [],)
         end
       end
 

@@ -6,9 +6,28 @@ module Orchestration
     before_action :set_step
 
     def create
+      action = Orchestration::Action.find_by(id: params.dig(:orchestration_step_action, :action_id))
+      unless action
+        redirect_to orchestration_pipeline_path(@pipeline), alert: "Invalid action." and return
+      end
+
+      parsed = step_action_params
+      unless parsed
+        redirect_to orchestration_pipeline_path(@pipeline), alert: "Params must be valid JSON." and return
+      end
+
       next_position = (@step.step_actions.maximum(:position) || 0) + 1
-      @step_action = @step.step_actions.build(step_action_params.merge(position: next_position))
-      if @step_action.save
+      key = Orchestration::OutputKeyDeriver.call(action_name: action.name, step: @step)
+      @step_action = @step.step_actions.build(parsed.merge(position: next_position, output_key: key))
+
+      begin
+        saved = @step_action.save
+      rescue ActiveRecord::RecordNotUnique
+        @step_action.output_key = "#{key}_#{SecureRandom.hex(3)}"
+        saved = @step_action.save
+      end
+
+      if saved
         redirect_to orchestration_pipeline_path(@pipeline), notice: "Action attached."
       else
         redirect_to orchestration_pipeline_path(@pipeline), alert: "Could not attach action."
@@ -37,7 +56,7 @@ module Orchestration
       permitted[:params] = JSON.parse(raw) if raw.present?
       permitted
     rescue JSON::ParserError
-      permitted
+      nil
     end
   end
 end

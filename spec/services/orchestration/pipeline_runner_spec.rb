@@ -475,24 +475,13 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
-    context 'with two steps and input_mapping on the second step' do
+    context 'with two steps' do
       before do
         step2 = create(:orchestration_step, pipeline: pipeline, name: "transform", position: 2)
         action2 = create(:orchestration_action, agent: action.agent)
         create(:orchestration_step_action, step: step1, action: action, position: 1)
         create(:orchestration_step_action, step: step2, action: action2, position: 1)
         allow(stub_agent).to receive(:ask).and_return(instance_double(RubyLLM::Message, content: "step output"))
-        step2.update!(input_mapping: {
-          "processed" => { "from_step" => "extract", "path" => "result", "merge" => "concat" }
-        })
-      end
-
-      it 'passes step1 output as resolved input to the step2 ActionRun' do
-        described_class.new(pipeline_run).call
-        step2_action_run = Orchestration::ActionRun
-          .joins(step_action: :step)
-          .where(steps: { name: "transform" }).first
-        expect(step2_action_run.input).to eq({ "processed" => "step output" })
       end
 
       it 'completes both steps and the PipelineRun' do
@@ -500,21 +489,28 @@ RSpec.describe Orchestration::PipelineRunner do
         expect(pipeline_run.reload.status).to eq("completed")
         expect(Orchestration::ActionRun.where(status: "completed").count).to eq(2)
       end
+
+      it 'passes accumulated previous outputs as merged input to step2' do
+        described_class.new(pipeline_run).call
+        step2_action_run = Orchestration::ActionRun
+          .joins(step_action: :step)
+          .where(steps: { name: "transform" }).first
+        expect(step2_action_run.input).to include("result" => "step output")
+      end
     end
 
     context 'when pipeline_run has initial_input' do
       before do
         pipeline_run.update!(initial_input: { "date" => "2026-04-03", "providers" => [ "gmail" ] })
-        step1.update!(input_mapping: { "fetch_date" => { "from_step" => "initial", "path" => "date" } })
         executable_action = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
         create(:orchestration_step_action, step: step1, action: executable_action, position: 1)
         allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [] })
       end
 
-      it 'injects initial_input as step 0 output so step 1 can reference it via input_mapping' do
+      it 'auto-merges initial_input so step 1 receives it in its input' do
         described_class.new(pipeline_run).call
         action_run = Orchestration::ActionRun.last
-        expect(action_run.input).to eq({ "fetch_date" => "2026-04-03" })
+        expect(action_run.input).to include("date" => "2026-04-03", "providers" => [ "gmail" ])
       end
     end
 

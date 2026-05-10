@@ -11,8 +11,9 @@ module Orchestration
       previous_outputs << { "step_name" => "initial", "output" => @pipeline_run.initial_input } if @pipeline_run.initial_input.present?
 
       @pipeline_run.pipeline.steps.where(enabled: true).order(:position).each do |step|
+        # input_mapping: nil — auto-merge until step_action.input_mapping is wired in later slices
         resolved_input = InputMappingResolver.new(
-          input_mapping: step.input_mapping,
+          input_mapping: nil,
           previous_outputs: previous_outputs
         ).resolve
 
