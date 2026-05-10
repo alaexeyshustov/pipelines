@@ -572,7 +572,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
         store_run = Orchestration::ActionRun.last
         expect(store_run.status).to eq("failed")
-        expect(store_run.error).to match(/output\.result must be an object/)
+        expect(store_run.error).to match(/data\.result must be an object/)
       end
     end
 
@@ -849,7 +849,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
         store_run = Orchestration::ActionRun.last
         expect(store_run.status).to eq("failed")
-        expect(store_run.error).to match(/output\.result must be an object/)
+        expect(store_run.error).to match(/data\.result must be an object/)
       end
     end
 

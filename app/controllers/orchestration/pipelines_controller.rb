@@ -43,8 +43,8 @@ module Orchestration
       initial_input = extract_initial_input
       if @pipeline.initial_input_schema.present?
         begin
-          Orchestration::OutputValidator.new(@pipeline.initial_input_schema).validate!(initial_input)
-        rescue Orchestration::OutputValidator::Error => e
+          Orchestration::SchemaValidator.new(@pipeline.initial_input_schema).validate!(initial_input)
+        rescue Orchestration::SchemaValidator::Error => e
           redirect_to path, alert: e.message
           return
         end

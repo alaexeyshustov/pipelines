@@ -1,0 +1,12 @@
+module Orchestration
+  class SchemaValidator
+    Error: singleton(StandardError)
+
+    def initialize: (Hash[String, untyped]? schema) -> void
+    def validate!: (untyped data) -> void
+
+    private
+
+    def validate_node!: (untyped value, Hash[String, untyped]? schema, String path) -> void
+  end
+end

@@ -1,20 +1,22 @@
 module Orchestration
-  class OutputValidator
+  class SchemaValidator
     Error = Class.new(StandardError)
 
     def initialize(schema)
       @schema = schema
     end
 
-    def validate!(output)
+    def validate!(data)
       return if @schema.nil?
 
-      validate_node!(output, @schema, "output")
+      validate_node!(data, @schema, "data")
     end
 
     private
 
     def validate_node!(value, schema, path)
+      return if schema.nil?
+
       case schema["type"]
       when "object"
         raise Error, "#{path} must be an object" unless value.is_a?(Hash)
@@ -23,6 +25,7 @@ module Orchestration
           raise Error, "#{path} missing required key: #{key}" unless value.key?(key)
         end
 
+        # JSON Schema: properties not present in data are valid (only required enforces presence)
         (schema["properties"] || {}).each do |key, sub_schema|
           validate_node!(value[key], sub_schema, "#{path}.#{key}") if value.key?(key)
         end
@@ -39,11 +42,14 @@ module Orchestration
       when "string"
         raise Error, "#{path} must be a string" unless value.is_a?(String)
 
-      when "number", "integer"
+      when "integer"
+        raise Error, "#{path} must be an integer" unless value.is_a?(Integer)
+
+      when "number"
         raise Error, "#{path} must be a number" unless value.is_a?(Numeric)
 
       when "boolean"
-        raise Error, "#{path} must be a boolean" unless value == true || value == false
+        raise Error, "#{path} must be a boolean" unless value.is_a?(TrueClass) || value.is_a?(FalseClass)
       end
     end
   end
