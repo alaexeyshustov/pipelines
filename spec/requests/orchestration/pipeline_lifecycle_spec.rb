@@ -214,23 +214,15 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
       expect(pipeline.description).to eq("Enhanced with data transformation")
     end
 
-    # rubocop:disable RSpec/ExampleLength
-    it "renames an existing step and updates its input_mapping" do
+    it "renames an existing step and redirects" do
       patch orchestration_pipeline_step_path(pipeline, classify_step), params: {
-        orchestration_step: {
-          name: "AI Classification",
-          input_mapping: '{"emails":{"from_step":"Fetch Interviews","path":"interviews"}}'
-        }
+        orchestration_step: { name: "AI Classification" }
       }
 
       expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
       classify_step.reload
       expect(classify_step.name).to eq("AI Classification")
-      expect(classify_step.input_mapping).to eq(
-        "emails" => { "from_step" => "Fetch Interviews", "path" => "interviews" }
-      )
     end
-    # rubocop:disable RSpec/ExampleLength
 
     # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
     it "adds a new step with a service-object action at the end" do

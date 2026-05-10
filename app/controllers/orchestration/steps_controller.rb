@@ -63,17 +63,7 @@ module Orchestration
     end
 
     def step_params
-      permitted = params.require(:orchestration_step).permit(:name, :input_mapping)
-      raw = permitted[:input_mapping]
-      return permitted unless raw.present?
-
-      permitted.merge(input_mapping: parse_input_mapping(raw))
-    end
-
-    def parse_input_mapping(raw)
-      JSON.parse(raw)
-    rescue JSON::ParserError
-      raw
+      params.require(:orchestration_step).permit(:name)
     end
   end
 end

@@ -83,15 +83,6 @@ RSpec.describe "Orchestration::Pipelines" do
       expect(response.body).to include("My Action")
     end
 
-    it "shows input mapping on steps" do
-      pipeline = create(:orchestration_pipeline)
-      create(:orchestration_step, pipeline: pipeline, position: 1,
-             input_mapping: { "email" => "$.output.email" })
-
-      get orchestration_pipeline_path(pipeline)
-
-      expect(response).to have_http_status(:ok)
-    end
 
     it "displays latest run status when a run exists" do
       pipeline = create(:orchestration_pipeline, name: "Show Pipeline")
@@ -196,12 +187,12 @@ RSpec.describe "Orchestration::Pipelines" do
   end
 
   describe "PATCH /orchestration/pipelines/:pipeline_id/steps/:id" do
-    it "updates step name and input_mapping and redirects to show" do
+    it "updates step name and redirects to show" do
       pipeline = create(:orchestration_pipeline)
       step = create(:orchestration_step, pipeline: pipeline, name: "Old", position: 1)
 
       patch orchestration_pipeline_step_path(pipeline, step), params: {
-        orchestration_step: { name: "Updated", input_mapping: '{"key":"val"}' }
+        orchestration_step: { name: "Updated" }
       }
 
       expect(response).to redirect_to(orchestration_pipeline_path(pipeline))

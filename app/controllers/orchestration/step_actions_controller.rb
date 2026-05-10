@@ -7,7 +7,10 @@ module Orchestration
 
     def create
       next_position = (@step.step_actions.maximum(:position) || 0) + 1
-      @step_action = @step.step_actions.build(step_action_params.merge(position: next_position))
+      action = Orchestration::Action.find_by(id: step_action_params[:action_id])
+      key = action ? derive_output_key(action.name) : "action_#{next_position}"
+      attrs = step_action_params.merge(position: next_position, output_key: key)
+      @step_action = @step.step_actions.build(attrs)
       if @step_action.save
         redirect_to orchestration_pipeline_path(@pipeline), notice: "Action attached."
       else
@@ -38,6 +41,20 @@ module Orchestration
       permitted
     rescue JSON::ParserError
       permitted
+    end
+
+    def derive_output_key(action_name)
+      base = action_name.to_s.parameterize(separator: "_")
+      base = "action" if base.blank?
+      base = "x_#{base}" unless base.match?(/\A[a-z]/)
+
+      candidate = base
+      suffix    = 2
+      while @step.step_actions.exists?(output_key: candidate)
+        candidate = "#{base}_#{suffix}"
+        suffix += 1
+      end
+      candidate
     end
   end
 end

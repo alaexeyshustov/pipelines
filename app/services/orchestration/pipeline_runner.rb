@@ -12,7 +12,7 @@ module Orchestration
 
       @pipeline_run.pipeline.steps.where(enabled: true).order(:position).each do |step|
         resolved_input = InputMappingResolver.new(
-          input_mapping: step.input_mapping,
+          input_mapping: nil,
           previous_outputs: previous_outputs
         ).resolve
 
