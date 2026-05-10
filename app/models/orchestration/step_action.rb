@@ -18,8 +18,7 @@ module Orchestration
     private
 
     def output_key_immutable_after_first_run
-      return unless persisted? && output_key_changed?
-      return unless action_runs.exists?
+      return if !persisted? || !output_key_changed? || !action_runs.exists?
 
       errors.add(:output_key, "cannot be changed once a run exists for this step_action")
     end

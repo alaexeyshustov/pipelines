@@ -40,14 +40,22 @@ class OrchestrationDataFlowFoundation < ActiveRecord::Migration[8.1]
 
   def backfill_output_keys
     say_with_time "backfilling step_actions.output_key from action.name" do
-      execute(<<~SQL.squish).then(&:to_a).each do |row|
+      rows = execute(<<~SQL.squish).then(&:to_a)
         SELECT step_actions.id        AS id,
                step_actions.step_id   AS step_id,
                actions.name           AS action_name
         FROM step_actions
         JOIN actions ON actions.id = step_actions.action_id
+        ORDER BY step_actions.step_id, step_actions.position
       SQL
-        key = derive_output_key(row["action_name"], row["step_id"], row["id"])
+
+      # Track assigned keys per step in memory to avoid O(n²) uniqueness SELECTs.
+      assigned_per_step = Hash.new { |h, k| h[k] = Set.new }
+
+      rows.each do |row|
+        step_id = row["step_id"]
+        key = derive_output_key(row["action_name"], assigned_per_step[step_id])
+        assigned_per_step[step_id] << key
         execute "UPDATE step_actions SET output_key = #{quote(key)} WHERE id = #{row['id'].to_i}"
       end
     end
@@ -56,29 +64,18 @@ class OrchestrationDataFlowFoundation < ActiveRecord::Migration[8.1]
   # Within a single `step`, two parallel `step_actions` referencing the same
   # `Action` would parameterize to the same key. Append a suffix when needed
   # so the unique index can be added.
-  def derive_output_key(action_name, step_id, step_action_id)
+  def derive_output_key(action_name, existing_keys)
     base = action_name.to_s.parameterize(separator: "_")
     base = "action" if base.blank?
-    base = "x_#{base}" if base.start_with?("_") || base !~ /\A[a-z]/
+    base = "x_#{base}" unless base.match?(/\A[a-z]/)
 
     candidate = base
     suffix    = 2
-    until output_key_unique?(step_id, candidate, step_action_id)
+    while existing_keys.include?(candidate)
       candidate = "#{base}_#{suffix}"
       suffix += 1
     end
     candidate
-  end
-
-  def output_key_unique?(step_id, candidate, step_action_id)
-    sql = <<~SQL.squish
-      SELECT id FROM step_actions
-      WHERE step_id = #{step_id.to_i}
-        AND output_key = #{quote(candidate)}
-        AND id <> #{step_action_id.to_i}
-      LIMIT 1
-    SQL
-    select_all(sql).empty?
   end
 
   def backfill_step_action_mappings

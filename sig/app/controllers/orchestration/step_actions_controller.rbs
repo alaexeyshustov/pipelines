@@ -7,6 +7,6 @@ module Orchestration
 
     def set_pipeline: () -> void
     def set_step: () -> void
-    def step_action_params: () -> ActionController::Parameters
+    def step_action_params: () -> ActionController::Parameters?
   end
 end
