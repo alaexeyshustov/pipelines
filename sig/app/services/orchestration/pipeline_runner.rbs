@@ -5,7 +5,7 @@ module Orchestration
 
     private
 
-    def run_step: (Step step, Hash[String, untyped] resolved_input) -> Array[ActionRun]
+    def run_step: (Step step, Hash[String, Hash[String, untyped]] previous_outputs) -> Array[ActionRun]
     def run_actions_in_parallel: (Array[ActionRun] action_runs) -> void
     def execute_action: (ActionRun action_run) -> void
     def run_agent: (ActionRun action_run) -> Hash[String, untyped]

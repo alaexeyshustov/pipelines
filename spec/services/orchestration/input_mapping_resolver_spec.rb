@@ -4,107 +4,113 @@ RSpec.describe Orchestration::InputMappingResolver do
   subject(:resolver) { described_class.new(input_mapping: input_mapping, previous_outputs: previous_outputs) }
 
   let(:previous_outputs) do
-    [
-      { "step_name" => "extract", "output" => { "text" => "hello", "count" => 1 } },
-      { "step_name" => "extract", "output" => { "text" => "world", "count" => 2 } }
-    ]
+    {
+      "fetch" => { "emails" => [ { "id" => "e1", "subject" => "Hello" } ] }
+    }
   end
 
   describe '#resolve' do
-    context 'when input_mapping is nil' do
-      let(:input_mapping) { nil }
-
-      it 'merges all outputs into a single hash' do
-        result = resolver.resolve
-        expect(result).to eq({ "text" => "world", "count" => 2 })
-      end
-    end
-
-    context 'when input_mapping is nil and previous_outputs is empty' do
-      let(:input_mapping) { nil }
-      let(:previous_outputs) { [] }
+    context 'with an empty input_mapping' do
+      let(:input_mapping) { {} }
 
       it 'returns an empty hash' do
         expect(resolver.resolve).to eq({})
       end
     end
 
-    context 'with explicit input_mapping using merge concat' do
+    context 'with a required path that exists' do
       let(:input_mapping) do
-        {
-          "combined_text" => { "from_step" => "extract", "path" => "text", "merge" => "concat" }
-        }
+        { "subject" => { "from" => "fetch", "path" => "emails" } }
       end
 
-      it 'concatenates values from the specified step and path' do
-        result = resolver.resolve
-        expect(result["combined_text"]).to eq("hello\nworld")
+      it 'returns the resolved value at the path' do
+        expect(resolver.resolve["subject"]).to eq([ { "id" => "e1", "subject" => "Hello" } ])
       end
     end
 
-    context 'with explicit mapping referencing a missing path' do
+    context 'with an unknown from key' do
       let(:input_mapping) do
-        {
-          "missing_key" => { "from_step" => "extract", "path" => "nonexistent", "merge" => "concat" }
-        }
+        { "data" => { "from" => "nonexistent", "path" => "emails" } }
       end
 
-      it 'returns an empty string for missing keys' do
-        expect(resolver.resolve["missing_key"]).to eq("")
+      it 'raises UnknownOutputKey naming the from value' do
+        expect { resolver.resolve }
+          .to raise_error(described_class::UnknownOutputKey, /nonexistent/)
       end
     end
 
-    context 'with explicit mapping referencing an unknown step' do
+    context 'with a required path that does not exist' do
       let(:input_mapping) do
-        {
-          "data" => { "from_step" => "unknown_step", "path" => "text", "merge" => "concat" }
-        }
+        { "missing" => { "from" => "fetch", "path" => "no_such_key" } }
       end
 
-      it 'returns an empty string for unknown steps' do
-        expect(resolver.resolve["data"]).to eq("")
+      it 'raises MissingPath naming the from and path' do
+        expect { resolver.resolve }
+          .to raise_error(described_class::MissingPath, /fetch.*no_such_key|no_such_key.*fetch/)
       end
     end
 
-    context 'with explicit mapping without merge strategy' do
+    context 'with optional: true and a missing path' do
       let(:input_mapping) do
-        {
-          "last_count" => { "from_step" => "extract", "path" => "count" }
-        }
+        { "maybe" => { "from" => "fetch", "path" => "no_such_key", "optional" => true } }
       end
 
-      it 'returns the last matching value' do
-        expect(resolver.resolve["last_count"]).to eq(2)
+      it 'returns nil without raising' do
+        expect { resolver.resolve }.not_to raise_error
+        expect(resolver.resolve["maybe"]).to be_nil
       end
     end
 
-    context 'with a static value' do
+    context 'with a whole-output reference (no path)' do
       let(:input_mapping) do
-        {
-          "destination_table"    => { "value" => "application_mails" },
-          "columns_to_normalize" => { "value" => [ "company", "job_title" ] }
-        }
+        { "all_fetch" => { "from" => "fetch" } }
       end
 
-      it 'returns the literal value without consulting previous_outputs' do
-        result = resolver.resolve
-        expect(result["destination_table"]).to eq("application_mails")
-        expect(result["columns_to_normalize"]).to eq([ "company", "job_title" ])
+      it 'returns the entire upstream output hash' do
+        expect(resolver.resolve["all_fetch"]).to eq(
+          { "emails" => [ { "id" => "e1", "subject" => "Hello" } ] }
+        )
       end
     end
 
-    context 'with a dotted path' do
+    context 'with a deep dot path' do
       let(:previous_outputs) do
-        [
-          { "step_name" => "store", "output" => { "result" => { "ids" => [ 1, 2, 3 ] } } }
-        ]
+        { "store" => { "result" => { "ids" => [ 1, 2, 3 ] } } }
       end
+
       let(:input_mapping) do
-        { "stored_ids" => { "from_step" => "store", "path" => "result.ids" } }
+        { "stored_ids" => { "from" => "store", "path" => "result.ids" } }
       end
 
       it 'digs into nested output keys' do
         expect(resolver.resolve["stored_ids"]).to eq([ 1, 2, 3 ])
+      end
+    end
+
+    context 'with a numeric path segment into an array' do
+      let(:input_mapping) do
+        { "first_subject" => { "from" => "fetch", "path" => "emails.0.subject" } }
+      end
+
+      it 'coerces the numeric segment to an integer and returns the element' do
+        expect(resolver.resolve["first_subject"]).to eq("Hello")
+      end
+    end
+
+    context 'with the reserved _initial slot' do
+      let(:previous_outputs) do
+        {
+          "_initial"  => { "date" => "2026-05-10", "providers" => [ "gmail" ] },
+          "fetch"     => { "emails" => [ { "id" => "e1", "subject" => "Hello" } ] }
+        }
+      end
+
+      let(:input_mapping) do
+        { "run_date" => { "from" => "_initial", "path" => "date" } }
+      end
+
+      it 'resolves the _initial slot like any other output key' do
+        expect(resolver.resolve["run_date"]).to eq("2026-05-10")
       end
     end
   end

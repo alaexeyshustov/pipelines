@@ -1,14 +1,17 @@
 module Orchestration
   class InputMappingResolver
-    type previous_output_entry = { "step_name" => String, "output" => Hash[String, untyped] }
+    class UnknownOutputKey < StandardError
+    end
 
-    def initialize: (input_mapping: Hash[String, untyped]?, previous_outputs: Array[previous_output_entry]) -> void
+    class MissingPath < StandardError
+    end
+
+    def initialize: (input_mapping: Hash[String, untyped], previous_outputs: Hash[String, Hash[String, untyped]]) -> void
     def resolve: () -> Hash[String, untyped]
 
     private
 
-    def concatenate_all: () -> Hash[String, untyped]
-    def resolve_explicit: () -> Hash[String, untyped]
-    def apply_merge: (Array[untyped], String?) -> untyped
+    def fetch_upstream!: (String from) -> Hash[String, untyped]
+    def dig_path: (Hash[String, untyped] upstream, String path, String from, bool? optional) -> untyped
   end
 end

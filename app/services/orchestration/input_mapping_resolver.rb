@@ -1,44 +1,43 @@
 module Orchestration
   class InputMappingResolver
+    class UnknownOutputKey < StandardError; end
+    class MissingPath < StandardError; end
+
     def initialize(input_mapping:, previous_outputs:)
-      @input_mapping = input_mapping
+      @input_mapping    = input_mapping
       @previous_outputs = previous_outputs
     end
 
     def resolve
-      return concatenate_all if @input_mapping.nil?
+      @input_mapping.transform_values do |spec|
+        from     = spec["from"]
+        path     = spec["path"]
+        optional = spec["optional"]
 
-      resolve_explicit
+        upstream = fetch_upstream!(from)
+        path ? dig_path(upstream, path, from, optional) : upstream
+      end
     end
 
     private
 
-    def concatenate_all
-      # steep:ignore:start
-      @previous_outputs.reduce({}) { |acc, entry| acc.merge(entry["output"] || {}) } # Ruby::UnannotatedEmptyCollection
-      # steep:ignore:end
+    def fetch_upstream!(from)
+      raise UnknownOutputKey, "unknown output key: #{from.inspect}" unless @previous_outputs.key?(from)
+
+      @previous_outputs[from]
     end
 
-    def resolve_explicit
-      @input_mapping.transform_values do |spec|
-        next spec["value"] if spec.key?("value")
+    def dig_path(upstream, path, from, optional)
+      value = path.split(".").reduce(upstream) do |node, seg|
+        break nil if node.nil?
 
-        step_name = spec["from_step"]
-        path      = spec["path"]
-        merge     = spec["merge"]
-
-        values = @previous_outputs
-          .select { |e| e["step_name"] == step_name }
-          .filter_map { |e| e.dig("output", *path.split(".")) }
-
-        apply_merge(values, merge)
+        node.is_a?(Array) ? node[seg.to_i] : node[seg]
       end
-    end
 
-    def apply_merge(values, strategy)
-      return values.last if strategy != "concat"
+      return nil if value.nil? && optional
+      raise MissingPath, "missing path #{path.inspect} in output #{from.inspect}" if value.nil?
 
-      values.join("\n")
+      value
     end
   end
 end

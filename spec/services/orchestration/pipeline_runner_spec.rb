@@ -490,12 +490,12 @@ RSpec.describe Orchestration::PipelineRunner do
         expect(Orchestration::ActionRun.where(status: "completed").count).to eq(2)
       end
 
-      it 'passes accumulated previous outputs as merged input to step2' do
+      it 'gives step2 an empty input when it has no input_mapping' do
         described_class.new(pipeline_run).call
         step2_action_run = Orchestration::ActionRun
           .joins(step_action: :step)
           .where(steps: { name: "transform" }).first
-        expect(step2_action_run.input).to include("result" => "step output")
+        expect(step2_action_run.input).to eq({})
       end
     end
 
@@ -507,10 +507,10 @@ RSpec.describe Orchestration::PipelineRunner do
         allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [] })
       end
 
-      it 'auto-merges initial_input so step 1 receives it in its input' do
+      it 'gives step 1 empty input when it has no input_mapping (initial_input is not auto-merged)' do
         described_class.new(pipeline_run).call
         action_run = Orchestration::ActionRun.last
-        expect(action_run.input).to include("date" => "2026-04-03", "providers" => [ "gmail" ])
+        expect(action_run.input).to eq({})
       end
     end
 
@@ -542,14 +542,14 @@ RSpec.describe Orchestration::PipelineRunner do
           .and_return(instance_double(RubyLLM::Message, content: { "results" => [ { "id" => "e1" } ] }))
       end
 
-      it 'accumulates all previous step outputs so step 3 can access step 1 data' do
+      it 'gives step 3 empty input when it has no input_mapping (cross-step data requires explicit mapping)' do
         described_class.new(pipeline_run).call
 
         ingest_run = Orchestration::ActionRun
           .joins(step_action: :step)
           .find_by(steps: { name: "ingest" })
 
-        expect(ingest_run.output).to eq({ "emails" => [ { "id" => "e1" } ] })
+        expect(ingest_run.input).to eq({})
       end
     end
 
