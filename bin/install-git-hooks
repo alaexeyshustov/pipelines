@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+if [ ! -d .githooks ]; then
+  echo "Missing .githooks directory." >&2
+  exit 1
+fi
+
+find .githooks -type f -exec chmod +x {} +
+git config core.hooksPath .githooks
+
+echo "Git hooks installed from $ROOT/.githooks"

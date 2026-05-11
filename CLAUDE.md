@@ -1,23 +1,24 @@
-Rails 8.1 / Ruby 4.0 application that runs a **multi-agent job-application tracking pipeline**. It pulls emails from Gmail and Yahoo Mail, classifies them with Mistral AI, labels them in the provider, and maintains an SQLite database of job applications and interview progress.
+Rails 8.1 / Ruby 4.0 application that pulls Gmail and Yahoo Mail job-application emails, classifies them with Mistral AI, labels them in-provider, and tracks application/interview progress in SQLite.
 
-## TDD
-  **Always use TDD**
+## Essentials
 
-  - Always run `bundle exec rubocop -a` after making changing a file to fix style issues
-  - Always run `bundle exec rspec -f FILE` after making changing a file to run a single test file
-  - Always Run `steep check` after modifying type signatures to catch errors early
+- JavaScript package manager: `pnpm` (not npm/yarn).
+- Asset commands: `pnpm install`, `pnpm run build`, `pnpm run build:watch`.
+- Type-signature commands: `bundle exec rbs -r optparse validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**/**/*.rbs`, `bundle exec steep check`.
+- Check [.claude/rules/](.claude/rules/) for path-specific guidance for models, services, jobs, views, specs, signatures, and other app layers.
 
-## Overview
+## Task-specific guidance
 
-- Schema Definition (keep synchronized) [schemas.md](docs/schemas.md)
-- **Architecture & Subsystems:**
-  - [Architecture Overview](docs/architecture.md)
-  - [Orchestration Subsystem](docs/orchestration.md)
-  - [Evaluations (Leva) Subsystem](docs/evals.md)
+- [Testing workflow](docs/claude/testing.md)
+- [Type signatures](docs/claude/type-signatures.md)
 
-## Gotchas
-  - Use .claude/rules for components-specific rules.
-  - **JavaScript toolchain:** Uses **pnpm** (not npm/yarn). Always use `pnpm install`, `pnpm run build`, `pnpm run build:watch`. Never use `npm install` or `yarn`. Controllers are written in **TypeScript** (`app/javascript/controllers/*.ts`), bundled by esbuild via `pnpm run build`.
-    - **Hard-won discoveries:** If something took significant effort to figure out (non-obvious gotcha, tricky integration, surprising behavior), add a brief note about it here so future agents don't repeat the work.
-      - **Secondary effects after structural changes (dev only):** After running `rails db:migrate`, `rails db:schema:load`, or `rails db:reset`, always: (1) restart the Rails server to clear stale attribute reflection caches, and (2) run `Rails.cache.clear` in the Rails console. Skipping this causes "unknown attribute" errors and broken UI. 
-      - **If you edited `db/seeds.rb` during the task (dev only):** run `rails db:seed` before finishing — modals and pipeline steps won't appear otherwise.
+## Project context
+
+- [Schema definition](docs/schemas.md)
+- [Architecture overview](docs/architecture.md)
+- [Orchestration subsystem](docs/orchestration.md)
+- [Evaluations (Leva) subsystem](docs/evals.md)
+
+## [Gotchas](docs/claude/gotchas.md)
+
+If you uncover a new non-obvious gotcha, add a brief note here so future agents do not rediscover it the hard way.

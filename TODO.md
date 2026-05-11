@@ -15,3 +15,7 @@
 [ ] agents - search select for model
 [ ] agents - multi checkboxes for tools
 [ ] agents - json input better schema UI
+[ ] evaluation run from UI
+[ ] orchestration pipeline steps ingestions is buggy
+[ ] remove duplicated tests
+[ ] mutation tests check for errors

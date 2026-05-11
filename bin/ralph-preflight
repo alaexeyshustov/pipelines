@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+if [ -n "$(git status --porcelain)" ]; then
+  echo "Worktree is not clean. Commit, stash, or discard changes before running /ralph." >&2
+  git status --short
+  exit 1
+fi
+
+echo "Installing project git hooks..."
+bin/install-git-hooks
+
+echo "Building JavaScript assets..."
+pnpm run build
+
+echo "Building Tailwind assets..."
+bundle exec rails tailwindcss:build
+
+echo "Ralph preflight passed."
