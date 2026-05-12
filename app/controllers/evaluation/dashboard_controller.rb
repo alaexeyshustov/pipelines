@@ -6,6 +6,7 @@ module Evaluation
 
     def show
       @agent_summaries = agent_summaries
+      @experiments = Leva::Experiment.includes(:prompt).order(created_at: :desc)
     end
 
     private

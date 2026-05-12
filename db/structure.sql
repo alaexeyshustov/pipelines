@@ -154,7 +154,13 @@ FOREIGN KEY ("pipeline_id")
 );
 CREATE INDEX "index_steps_on_pipeline_id" ON "steps" ("pipeline_id") /*application='ApplicationPipeline'*/;
 CREATE UNIQUE INDEX "index_steps_on_pipeline_id_and_position" ON "steps" ("pipeline_id", "position") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "evaluation_wizard_drafts" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "session_token" varchar NOT NULL, "step" integer DEFAULT 1 NOT NULL, "payload" json, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE UNIQUE INDEX "index_evaluation_wizard_drafts_on_session_token" ON "evaluation_wizard_drafts" ("session_token") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "evaluation_synthetic_records" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "agent_name" varchar NOT NULL, "input" json NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE INDEX "index_evaluation_synthetic_records_on_agent_name" ON "evaluation_synthetic_records" ("agent_name") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260512110721'),
+('20260512110713'),
 ('20260510120000'),
 ('20260507091027'),
 ('20260507091026'),

@@ -11,14 +11,16 @@ class LLMJudgeEval < Leva::BaseEval
     - "justification": explanation of the score (string)
   PROMPT
 
-  @judge_model = ENV.fetch("JUDGE_LLM_MODEL", "claude-sonnet-4-6")
+  @judge_model = ENV.fetch("JUDGE_LLM_MODEL", "gpt-5.4")
 
   class << self
     attr_accessor :judge_model
   end
 
   def evaluate(runner_result, recordable)
-    raise ArgumentError, "LLMJudgeEval requires an Orchestration::ActionRun, got #{recordable.class}" unless recordable.is_a?(Orchestration::ActionRun)
+    unless recordable.respond_to?(:input) && recordable.respond_to?(:step_action)
+      raise ArgumentError, "LLMJudgeEval requires a recordable with #input and #step_action, got #{recordable.class}"
+    end
 
     metrics = Evaluation::Metric.for_agent(agent_name(recordable)).active
     return [] if metrics.none?
@@ -121,7 +123,7 @@ class LLMJudgeEval < Leva::BaseEval
       #{JSON.pretty_generate(actual_tool_calls)}
 
       ## Agent Output
-      #{output}
+      #{JSON.pretty_generate(output)}
 
       ## Evaluation Metrics
       #{rubrics}

@@ -1,4 +1,6 @@
-<%= render UI::PageHeaderComponent.new(title: "Experiments") %>
+<%= render UI::PageHeaderComponent.new(title: "Experiments") do |header| %>
+  <% header.with_action(type: :link, label: "Run New Experiment", url: new_evaluation_experiment_path, variant: :primary) %>
+<% end %>
 
 <%= render UI::TableComponent.new(collection: @experiments, empty_message: "No experiments found.") do |table| %>
   <% table.with_columns([

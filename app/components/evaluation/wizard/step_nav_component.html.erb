@@ -1,0 +1,26 @@
+<nav aria-label="Wizard progress" class="flex items-center justify-between mb-8">
+  <% steps.each_with_index do |step, index| %>
+    <% is_last = index == steps.length - 1 %>
+    <div class="flex items-center <%= is_last ? '' : 'flex-1' %>">
+      <% if step[:state] == :complete %>
+        <div data-testid="step-complete" class="flex items-center gap-2 text-indigo-600">
+          <span class="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 text-white text-xs font-bold">✓</span>
+          <span class="text-sm font-medium hidden sm:inline"><%= step[:label] %></span>
+        </div>
+      <% elsif step[:state] == :active %>
+        <div data-testid="step-active" class="flex items-center gap-2 text-indigo-700">
+          <span class="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-700 text-white text-xs font-bold"><%= index + 1 %></span>
+          <span class="text-sm font-semibold"><%= step[:label] %></span>
+        </div>
+      <% else %>
+        <div data-testid="step-upcoming" class="flex items-center gap-2 text-gray-400">
+          <span class="flex items-center justify-center w-7 h-7 rounded-full border-2 border-gray-300 text-xs font-medium"><%= index + 1 %></span>
+          <span class="text-sm hidden sm:inline"><%= step[:label] %></span>
+        </div>
+      <% end %>
+      <% unless is_last %>
+        <div class="flex-1 h-0.5 mx-3 <%= step[:state] == :complete ? 'bg-indigo-400' : 'bg-gray-200' %>"></div>
+      <% end %>
+    </div>
+  <% end %>
+</nav>

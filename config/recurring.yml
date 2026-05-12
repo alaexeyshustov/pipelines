@@ -8,3 +8,9 @@ production:
     schedule: "* * * * *"
     queue: default
     description: "Check enabled pipelines and enqueue due runs every minute"
+
+  wizard_draft_cleanup:
+    class: Evaluation::WizardDraftCleanupJob
+    schedule: "0 */6 * * *"
+    queue: default
+    description: "Delete expired evaluation wizard drafts every 6 hours"

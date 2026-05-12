@@ -1,0 +1,12 @@
+<div id="<%= dom_id(metric) %>" class="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-white">
+  <div class="flex-1 min-w-0">
+    <p class="text-sm font-medium text-gray-900 truncate"><%= metric.name %></p>
+    <p class="text-xs text-gray-500 truncate"><%= metric.description %></p>
+  </div>
+  <div class="flex items-center gap-4 ml-4 shrink-0">
+    <span class="text-xs text-gray-400">weight: <%= metric.weight %></span>
+    <%= button_to "×", evaluation_metric_path(metric), method: :delete,
+          class: "text-gray-400 hover:text-red-500 font-bold text-base leading-none",
+          data: { turbo_method: :delete } %>
+  </div>
+</div>

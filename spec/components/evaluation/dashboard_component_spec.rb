@@ -32,8 +32,8 @@ RSpec.describe Evaluation::DashboardComponent, type: :component do
       expect(rendered.text).to include("0")
     end
 
-    it "does not render a link to experiment" do
-      expect(rendered.css("a[href*='experiment']")).to be_empty
+    it "does not render a 'View Experiment' link" do
+      expect(rendered.css("a[href*='experiments/']").select { |a| a.text.strip == "View Experiment" }).to be_empty
     end
   end
 
@@ -90,6 +90,18 @@ RSpec.describe Evaluation::DashboardComponent, type: :component do
 
     it "renders the ScoreOverTimeComponent chart wrapper" do
       expect(rendered.css("[data-controller='evaluation--score-chart']")).to be_present
+    end
+  end
+
+  context "with a known agent_name" do
+    let(:component) { described_class.new(summary: build_summary(agent_name: "TestAgent")) }
+
+    it "renders a Run Evaluation link pointing to new_evaluation_experiment_path" do
+      expect(rendered.css("a[href*='experiments/new']")).to be_present
+    end
+
+    it "passes agent_name as query param in the Run Evaluation link" do
+      expect(rendered.css("a[href*='agent_name=TestAgent']")).to be_present
     end
   end
 end

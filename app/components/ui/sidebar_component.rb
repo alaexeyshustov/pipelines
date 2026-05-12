@@ -18,7 +18,8 @@ module UI
             NavItem.new(label: "Chats",      path: ma.chats_path),
             NavItem.new(label: "Models",     path: ma.models_path),
             NavItem.new(label: "Monitoring", path: "/monitoring"),
-            NavItem.new(label: "Evaluation", path: "/leva")
+            NavItem.new(label: "Evaluation", path: "/evaluation"),
+            NavItem.new(label: "Leva", path: "/leva")
           ]
         ),
         NavGroup.new(

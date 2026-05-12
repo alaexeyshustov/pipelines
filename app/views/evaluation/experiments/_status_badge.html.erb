@@ -1,0 +1,8 @@
+<turbo-frame id="experiment-status"
+  <% if local_assigns.fetch(:with_src, true) %>src="<%= status_frame_evaluation_experiment_path(experiment) %>"<% end %>
+  <% unless experiment.completed? || experiment.failed? %>refresh="interval" data-turbo-refresh-interval="3000"<% end %>>
+  <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+    <%= experiment.completed? ? 'bg-green-100 text-green-800' : experiment.failed? ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800' %>">
+    <%= experiment.status %>
+  </span>
+</turbo-frame>

@@ -1,0 +1,18 @@
+module Evaluation
+  class MetricSuggester
+    SYSTEM_PROMPT: String
+    DEFAULT_MODEL: String
+
+    class Error < StandardError
+    end
+
+    def self.call: (agent_name: String, model: String?) -> Array[{ name: String, description: String, weight: Float }]
+
+    def initialize: (agent_name: String, model: String?) -> void
+    def call: () -> Array[{ name: String, description: String, weight: Float }]
+
+    private
+    def fetch_system_prompt: () -> String?
+    def parse_response: (String) -> Array[{ name: String, description: String, weight: Float }]
+  end
+end

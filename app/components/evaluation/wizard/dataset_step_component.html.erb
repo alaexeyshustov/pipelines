@@ -1,0 +1,54 @@
+<div class="space-y-6">
+  <h3 class="text-sm font-semibold text-gray-700">Select a dataset</h3>
+
+  <%= form_with url: wizard_step_evaluation_experiments_path, method: :post do |f| %>
+    <%= f.hidden_field :current_step, value: 3 %>
+
+    <div class="space-y-2">
+      <% @datasets.each do |dataset| %>
+        <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 <%= dataset_selected?(dataset) ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 bg-white' %>">
+          <%= radio_button_tag "wizard[dataset_id]", dataset.id, dataset_selected?(dataset), class: "text-indigo-600" %>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900"><%= dataset.name %></p>
+            <p class="text-xs text-gray-500"><%= record_count(dataset) %> records</p>
+          </div>
+        </label>
+      <% end %>
+    </div>
+
+    <div class="flex justify-end pt-2 border-t border-gray-100">
+      <button type="submit" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+        Next →
+      </button>
+    </div>
+  <% end %>
+
+  <%# Synthetic dataset generation %>
+  <details class="border border-dashed border-gray-300 rounded-lg p-4">
+    <summary class="text-sm font-medium text-gray-600 cursor-pointer">Generate Synthetic Dataset with AI</summary>
+    <div class="mt-4 space-y-3">
+      <%= form_with url: generate_evaluation_datasets_path, method: :post, data: { turbo_frame: "dataset-pending" } do |f| %>
+        <%= f.hidden_field :agent_name, value: @agent_name %>
+        <%= f.hidden_field :draft_token, value: @draft_token %>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Dataset name</label>
+            <%= f.text_field :dataset_name, class: "w-full rounded border border-gray-300 px-2 py-1.5 text-sm", placeholder: "e.g. classify-synthetic-v1" %>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Record count (1–50)</label>
+            <%= f.number_field :count, value: 10, min: 1, max: 50, class: "w-full rounded border border-gray-300 px-2 py-1.5 text-sm" %>
+          </div>
+          <div class="col-span-2">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Hints (optional)</label>
+            <%= f.text_area :hints, rows: 2, class: "w-full rounded border border-gray-300 px-2 py-1.5 text-sm", placeholder: "Describe edge-cases to include…" %>
+          </div>
+        </div>
+        <button type="submit" class="mt-2 px-4 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded hover:bg-indigo-700">
+          Generate
+        </button>
+      <% end %>
+      <turbo-frame id="dataset-pending" class="block mt-2 text-xs text-gray-400"></turbo-frame>
+    </div>
+  </details>
+</div>

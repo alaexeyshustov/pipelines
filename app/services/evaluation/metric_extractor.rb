@@ -6,7 +6,7 @@ module Evaluation
       Return ONLY the JSON array with no additional text.
     PROMPT
 
-    DEFAULT_MODEL = ENV.fetch("EVALUATION_LLM_MODEL", "claude-sonnet-4-6")
+    DEFAULT_MODEL = ENV.fetch("EVALUATION_LLM_MODEL", "gpt-5.4")
 
     def self.call(agent_name)
       new(agent_name).call

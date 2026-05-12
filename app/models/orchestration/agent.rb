@@ -15,6 +15,14 @@ module Orchestration
 
     before_destroy :ensure_not_referenced
 
+    def self.available_models
+      RubyLLM.models.all
+        .select { |m| m.type.to_s == "chat" }
+        .group_by { |m| m.provider.to_s }
+        .transform_values { |models| models.map(&:id).sort }
+        .sort_by { |provider, _| provider }
+    end
+
     private
 
     def tools_must_be_valid

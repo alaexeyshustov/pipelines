@@ -1,0 +1,5 @@
+module Evaluation
+  class SyntheticDatasetGenerator
+    def self.call: (draft_token: String, agent_name: String, dataset_name: String, count: Integer | String, ?hints: String?) -> String
+  end
+end

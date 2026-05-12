@@ -1,0 +1,34 @@
+<%= render UI::PageHeaderComponent.new(title: "New Experiment") %>
+
+<div class="max-w-3xl mx-auto space-y-6">
+  <%= render Evaluation::Wizard::StepNavComponent.new(current_step: @step) %>
+
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+    <% case @step %>
+    <% when 1 %>
+      <%= render Evaluation::Wizard::AgentPromptStepComponent.new(
+            agent_names:     @agent_names,
+            prompts:         @prompts,
+            agent_name:      @agent_name,
+            prompt_id:       @prompt_id,
+            experiment_name: @experiment_name) %>
+    <% when 2 %>
+      <%= render Evaluation::Wizard::MetricsStepComponent.new(
+            agent_name: @agent_name,
+            metrics:    @metrics) %>
+    <% when 3 %>
+      <%= render Evaluation::Wizard::DatasetStepComponent.new(
+            agent_name:          @agent_name,
+            datasets:            @datasets,
+            selected_dataset_id: @selected_dataset_id,
+            draft_token:         session[:wizard_token]) %>
+    <% when 4 %>
+      <%= render Evaluation::Wizard::ReviewStepComponent.new(
+            agent_name:      @agent_name,
+            prompt:          @prompt,
+            experiment_name: @experiment_name,
+            metrics_count:   @metrics_count,
+            dataset:         @dataset) %>
+    <% end %>
+  </div>
+</div>

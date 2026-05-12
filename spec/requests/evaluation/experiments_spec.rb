@@ -28,7 +28,60 @@ RSpec.describe "Evaluation::Experiments" do
       get evaluation_experiment_path(experiment)
       expect(response.body).to include(experiment.name)
     end
-  end
+
+    it "shows the status badge" do
+      get evaluation_experiment_path(experiment)
+      expect(response.body).to include(experiment.status.to_s)
+    end
+
+    it "shows records evaluated count" do
+      get evaluation_experiment_path(experiment)
+      expect(response.body).to include("Records evaluated")
+    end
+
+    it "shows Metrics section" do
+      get evaluation_experiment_path(experiment)
+      expect(response.body).to include("Metrics")
+    end
+
+    context "when metrics exist for the agent" do
+      let!(:metric) do # rubocop:disable RSpec/LetSetup
+        create(:evaluation_metric, agent_name: experiment.prompt.name, name: "Accuracy", description: "Correct output")
+      end
+
+      it "lists the metric name" do
+        get evaluation_experiment_path(experiment)
+        expect(response.body).to include("Accuracy")
+      end
+
+      it "shows 'no results' when no eval results exist" do
+        get evaluation_experiment_path(experiment)
+        expect(response.body).to include("no results")
+      end
+
+        it "shows the average metric score" do
+          runner_result = create(:leva_runner_result, experiment: experiment)
+          eval_result = Leva::EvaluationResult.create!(
+            experiment: experiment, dataset_record: runner_result.dataset_record,
+            runner_result: runner_result, evaluator_class: "LLMJudgeEval", score: 4.0
+          )
+          Evaluation::Justification.create!(evaluation_result: eval_result, metric_name: "Accuracy", justification: "Good")
+          get evaluation_experiment_path(experiment)
+          expect(response.body).to include("4.00")
+        end
+
+        it "shows overall average" do
+          runner_result = create(:leva_runner_result, experiment: experiment)
+          eval_result = Leva::EvaluationResult.create!(
+            experiment: experiment, dataset_record: runner_result.dataset_record,
+            runner_result: runner_result, evaluator_class: "LLMJudgeEval", score: 4.0
+          )
+          Evaluation::Justification.create!(evaluation_result: eval_result, metric_name: "Accuracy", justification: "Good")
+          get evaluation_experiment_path(experiment)
+          expect(response.body).to include("Overall average")
+        end
+      end
+    end
 
   describe "POST /evaluation/experiments/:id/improve" do
     let(:experiment) { create(:leva_experiment) }
@@ -118,6 +171,202 @@ RSpec.describe "Evaluation::Experiments" do
       post activate_evaluation_experiment_path(experiment)
       meta = JSON.parse(experiment.prompt.reload.metadata || "{}")
       expect(meta["active"]).to be(true)
+    end
+  end
+
+  describe "GET /evaluation/experiments/new" do
+    it "returns 200" do
+      get new_evaluation_experiment_path
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "renders the step nav with 'Agent & Prompt' label" do
+      get new_evaluation_experiment_path
+      expect(response.body).to include("Agent")
+    end
+
+    it "accepts a step param and still returns 200" do
+      get new_evaluation_experiment_path(step: 2)
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "creates a wizard draft and stores token in session" do
+      get new_evaluation_experiment_path
+      expect(session[:wizard_token]).to be_present
+    end
+  end
+
+  describe "POST /evaluation/experiments/wizard_step" do
+    it "redirects to step 2 after step 1 submission" do
+      post wizard_step_evaluation_experiments_path, params: {
+        current_step: 1,
+        wizard: { agent_name: "Emails::ClassifyAgent", experiment_name: "My Exp", prompt_id: "" }
+      }
+      expect(response).to redirect_to(new_evaluation_experiment_path(step: 2))
+    end
+
+    it "persists agent_name in draft payload" do
+      post wizard_step_evaluation_experiments_path, params: {
+        current_step: 1,
+        wizard: { agent_name: "Emails::ClassifyAgent", experiment_name: "My Exp", prompt_id: "" }
+      }
+      token = session[:wizard_token]
+      draft = Evaluation::WizardDraft.find_by(session_token: token)
+      expect(draft.payload["agent_name"]).to eq("Emails::ClassifyAgent")
+    end
+
+    it "redirects to step 3 after step 2 (no payload)" do
+      post wizard_step_evaluation_experiments_path, params: { current_step: 2 }
+      expect(response).to redirect_to(new_evaluation_experiment_path(step: 3))
+    end
+
+    context "when submitting step 4 (final review)" do
+      let!(:dataset) { create(:leva_dataset) }
+      let!(:prompt)  { create(:orchestration_prompt) }
+      let!(:metric)  { create(:evaluation_metric, agent_name: prompt.name) }
+
+      before { allow(Leva::ExperimentJob).to receive(:perform_later) }
+
+      def navigate_to_step4(prompt:, dataset:)
+        post wizard_step_evaluation_experiments_path, params: { current_step: 1, wizard: { agent_name: "Agent", experiment_name: "Eval Exp", prompt_id: prompt.id.to_s } }
+        post wizard_step_evaluation_experiments_path, params: { current_step: 2 }
+        post wizard_step_evaluation_experiments_path, params: { current_step: 3, wizard: { dataset_id: dataset.id.to_s } }
+      end
+
+      it "creates an experiment and redirects to show page" do
+        navigate_to_step4(prompt: prompt, dataset: dataset)
+        expect {
+          post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
+        }.to change(Leva::Experiment, :count).by(1)
+        expect(response).to redirect_to(evaluation_experiment_path(Leva::Experiment.last))
+      end
+
+      it "enqueues Leva::ExperimentJob on completion" do
+        navigate_to_step4(prompt: prompt, dataset: dataset)
+        post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
+        expect(Leva::ExperimentJob).to have_received(:perform_later).once
+      end
+
+      it "clears wizard_token from session on completion" do
+        navigate_to_step4(prompt: prompt, dataset: dataset)
+        post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
+        expect(session[:wizard_token]).to be_nil
+      end
+
+      it "auto-generates metrics and creates the experiment when no active metrics exist" do
+        metric.update!(active: false)
+        allow(Evaluation::MetricSuggester).to receive(:call).and_return([
+          { name: "Accuracy", description: "Correct output", weight: 1.0 }
+        ])
+        navigate_to_step4(prompt: prompt, dataset: dataset)
+        expect {
+          post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
+        }.to change(Leva::Experiment, :count).by(1)
+        expect(Evaluation::Metric.for_agent(prompt.name).active.count).to be >= 1
+        expect(response).to redirect_to(evaluation_experiment_path(Leva::Experiment.last))
+      end
+
+      it "creates the experiment even when MetricSuggester fails" do
+        metric.update!(active: false)
+        allow(Evaluation::MetricSuggester).to receive(:call)
+          .and_raise(Evaluation::MetricSuggester::Error, "LLM unavailable")
+        navigate_to_step4(prompt: prompt, dataset: dataset)
+        expect {
+          post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
+        }.to change(Leva::Experiment, :count).by(1)
+        expect(response).to redirect_to(evaluation_experiment_path(Leva::Experiment.last))
+      end
+    end
+  end
+
+  describe "GET /evaluation/experiments/:id/status_frame" do
+    let!(:experiment) { create(:leva_experiment) }
+
+    it "returns 200" do
+      get status_frame_evaluation_experiment_path(experiment)
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "renders the status badge partial" do
+      get status_frame_evaluation_experiment_path(experiment)
+      expect(response.body).to include(experiment.status.to_s)
+    end
+  end
+
+  describe "GET /evaluation/experiments/:id/metrics/:metric_name" do
+    let(:experiment) { create(:leva_experiment) }
+    let(:metric_name) { "Accuracy" }
+
+    it "returns 200" do
+      get metric_results_evaluation_experiment_path(experiment, metric_name: metric_name)
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "shows the metric name as title" do
+      get metric_results_evaluation_experiment_path(experiment, metric_name: metric_name)
+      expect(response.body).to include(metric_name)
+    end
+
+    it "shows empty state when no results" do
+      get metric_results_evaluation_experiment_path(experiment, metric_name: metric_name)
+      expect(response.body).to include("No evaluation results")
+    end
+
+    context "when evaluation results exist for the metric" do
+      let!(:runner_result) { create(:leva_runner_result, experiment: experiment, prediction: "Predicted text") }
+      let!(:eval_result) do
+        Leva::EvaluationResult.create!(
+          experiment: experiment, dataset_record: runner_result.dataset_record,
+          runner_result: runner_result, evaluator_class: "LLMJudgeEval", score: 3.5
+        )
+      end
+      let!(:justification) do # rubocop:disable RSpec/LetSetup
+        Evaluation::Justification.create!(
+          evaluation_result: eval_result, metric_name: metric_name,
+          justification: "Partially correct response."
+        )
+      end
+
+      it "shows the score" do
+        get metric_results_evaluation_experiment_path(experiment, metric_name: metric_name)
+        expect(response.body).to include("3.50")
+      end
+
+      it "shows the agent output" do
+        get metric_results_evaluation_experiment_path(experiment, metric_name: metric_name)
+        expect(response.body).to include("Predicted text")
+      end
+
+      it "shows the justification" do
+        get metric_results_evaluation_experiment_path(experiment, metric_name: metric_name)
+        expect(response.body).to include("Partially correct response.")
+      end
+
+      it "does not include results for other metrics" do
+        Evaluation::Justification.create!(
+          evaluation_result: eval_result, metric_name: "Other metric",
+          justification: "Other justification."
+        )
+        get metric_results_evaluation_experiment_path(experiment, metric_name: metric_name)
+        expect(response.body).not_to include("Other justification.")
+      end
+    end
+  end
+
+  describe "GET /evaluation/experiments/prompt_versions" do
+    let!(:prompt) { create(:orchestration_prompt, name: "classify_agent") }
+
+    it "returns 200 with JSON array" do
+      get prompt_versions_evaluation_experiments_path, params: { agent_name: "classify_agent" }
+      expect(response).to have_http_status(:ok)
+      data = JSON.parse(response.body)
+      expect(data).to be_an(Array)
+      expect(data.first["id"]).to eq(prompt.id)
+    end
+
+    it "returns empty array for unknown agent" do
+      get prompt_versions_evaluation_experiments_path, params: { agent_name: "unknown_agent" }
+      expect(JSON.parse(response.body)).to eq([])
     end
   end
 end
