@@ -1,0 +1,34 @@
+module Orchestration
+  class Pipeline
+    class Validator
+      class Issue < Data
+        def self.new: (code: Symbol, message: String, mapping_key: String?, from: String?, path: String?) -> Issue
+        attr_reader code: Symbol
+        attr_reader message: String
+        attr_reader mapping_key: String?
+        attr_reader from: String?
+        attr_reader path: String?
+      end
+
+      class StepResult < Data
+        def self.new: (step_action_id: Integer, output_key: String, errors: Array[Issue], warnings: Array[Issue]) -> StepResult
+        attr_reader step_action_id: Integer
+        attr_reader output_key: String
+        attr_reader errors: Array[Issue]
+        attr_reader warnings: Array[Issue]
+      end
+
+      def initialize: (Orchestration::Pipeline pipeline) -> void
+      def call: () -> Array[StepResult]
+
+      private
+
+      def ordered_step_actions: () -> Array[Orchestration::StepAction]
+      def validate_input_mapping: (Orchestration::StepAction step_action, Hash[String, untyped] known_schemas, Array[Issue] errors, Array[Issue] warnings) -> void
+      def validate_path_vs_schema: (String from, String? path, String mapping_key, Hash[String, untyped]? upstream_schema, Array[Issue] errors) -> void
+      def path_valid_in_schema?: (String path, Hash[String, untyped] schema) -> bool
+      def validate_input_schema: (Orchestration::StepAction step_action, Array[Issue] errors) -> void
+      def merge_params: (Orchestration::StepAction step_action) -> Hash[String, untyped]
+    end
+  end
+end

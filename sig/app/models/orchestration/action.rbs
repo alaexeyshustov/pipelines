@@ -26,6 +26,8 @@ module Orchestration
     def params=: (Hash[String, untyped]?) -> Hash[String, untyped]?
     def output_schema: () -> Hash[String, untyped]?
     def output_schema=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def input_schema: () -> Hash[String, untyped]?
+    def input_schema=: (Hash[String, untyped]?) -> Hash[String, untyped]?
 
     def step_actions: () -> ActiveRecord::Associations::CollectionProxy
     def agent: () -> Orchestration::Agent?
