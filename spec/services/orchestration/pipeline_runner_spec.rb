@@ -378,7 +378,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
         action_run = Orchestration::ActionRun.last
         expect(action_run.status).to eq("failed")
-        expect(action_run.error).to eq("OpenAI API error (429): Rate limit exceeded")
+        expect(action_run.error).to eq("openai API error (429): Rate limit exceeded")
         expect(action_run.error_details).to include(
           "category" => "provider_http_error",
           "provider" => "openai",
@@ -386,7 +386,7 @@ RSpec.describe Orchestration::PipelineRunner do
           "status_code" => 429,
           "message" => "Rate limit exceeded"
         )
-        expect(pipeline_run.reload.error).to eq("OpenAI API error (429): Rate limit exceeded")
+        expect(pipeline_run.reload.error).to eq("openai API error (429): Rate limit exceeded")
         expect(Rails.logger).to have_received(:error).with(include('"category":"provider_http_error"'))
       end
     end
@@ -404,7 +404,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
         action_run = Orchestration::ActionRun.last
         expect(action_run.status).to eq("failed")
-        expect(action_run.error).to eq("Mistral transport error: execution expired")
+        expect(action_run.error).to eq("mistral transport error: execution expired")
         expect(action_run.error_details).to include(
           "category" => "transport_error",
           "provider" => "mistral",

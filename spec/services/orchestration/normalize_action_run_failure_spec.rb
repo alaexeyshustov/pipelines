@@ -32,7 +32,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
       it "extracts a concise summary and structured details" do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
         result = described_class.call(error:, action_run:, raw_content: nil)
 
-        expect(result.summary).to eq("OpenAI API error (429): Rate limit exceeded")
+        expect(result.summary).to eq("openai API error (429): Rate limit exceeded")
         expect(result.details).to include(
           "category" => "provider_http_error",
           "provider" => "openai",
@@ -59,7 +59,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
       it "classifies it as a transport error" do
         result = described_class.call(error:, action_run:, raw_content: nil)
 
-        expect(result.summary).to eq("Mistral transport error: execution expired")
+        expect(result.summary).to eq("mistral transport error: execution expired")
         expect(result.details).to include(
           "category" => "transport_error",
           "provider" => "mistral",

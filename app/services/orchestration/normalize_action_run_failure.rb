@@ -49,7 +49,7 @@ module Orchestration
     def provider_http_error_result
       parsed_error = extract_parsed_error(response_body)
       message = provider_error_message(parsed_error)
-      summary = "#{provider_label} API error (#{response_status}): #{message}"
+      summary = "#{provider_display_name} API error (#{response_status}): #{message}"
 
       Result.new(
         summary:,
@@ -64,7 +64,7 @@ module Orchestration
     end
 
     def transport_error_result
-      summary = "#{provider_label} transport error: #{sanitize_string(@error.message.to_s)}"
+      summary = "#{provider_display_name} transport error: #{sanitize_string(@error.message.to_s)}"
 
       Result.new(
         summary:,
@@ -178,18 +178,8 @@ module Orchestration
       end
     end
 
-    def provider_label
-      labels = {
-        "openai" => "OpenAI",
-        "mistral" => "Mistral",
-        "gemini" => "Gemini",
-        "anthropic" => "Anthropic"
-      }
-      provider = provider_name
-
-      return "Provider" if provider.nil?
-
-      labels.fetch(provider, "Provider")
+    def provider_display_name
+      provider_name || "provider"
     end
 
     def sanitized_excerpt(value)

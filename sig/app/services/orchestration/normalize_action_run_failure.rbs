@@ -40,7 +40,7 @@ module Orchestration
     def invalid_model_raw_content: () -> untyped
     def model_name: () -> String?
     def provider_name: () -> String?
-    def provider_label: () -> String
+    def provider_display_name: () -> String
     def sanitized_excerpt: (untyped value) -> String?
     def stringify: (untyped value) -> String
     def sanitize_value: (untyped value) -> untyped
