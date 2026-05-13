@@ -347,6 +347,70 @@ RSpec.describe Orchestration::PipelineRunner do
         action_run = Orchestration::ActionRun.last
         expect(action_run.status).to eq("failed")
         expect(action_run.error).to eq("agent exploded")
+        expect(action_run.error_details).to be_nil
+      end
+    end
+
+    context "when the provider returns a low-signal HTTP error" do
+      let(:response) do
+        instance_double(
+          Faraday::Response,
+          status: 429,
+          body: {
+            "error" => {
+              "message" => "Rate limit exceeded",
+              "type" => "rate_limit"
+            }
+          }.to_json
+        )
+      end
+
+      before do
+        action.agent.update!(model: "gpt-4.1-mini")
+        create(:orchestration_step_action, step: step1, action: action, position: 1)
+        allow(Rails.logger).to receive(:error)
+        allow(stub_agent).to receive(:with_model).and_return(stub_agent)
+        allow(stub_agent).to receive(:ask).and_raise(RubyLLM::Error.new(response, "An unknown error occurred"))
+      end
+
+      it "persists structured provider diagnostics and logs them" do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
+        described_class.new(pipeline_run).call
+
+        action_run = Orchestration::ActionRun.last
+        expect(action_run.status).to eq("failed")
+        expect(action_run.error).to eq("OpenAI API error (429): Rate limit exceeded")
+        expect(action_run.error_details).to include(
+          "category" => "provider_http_error",
+          "provider" => "openai",
+          "model" => "gpt-4.1-mini",
+          "status_code" => 429,
+          "message" => "Rate limit exceeded"
+        )
+        expect(pipeline_run.reload.error).to eq("OpenAI API error (429): Rate limit exceeded")
+        expect(Rails.logger).to have_received(:error).with(include('"category":"provider_http_error"'))
+      end
+    end
+
+    context "when the provider call hits a transport timeout" do
+      before do
+        action.agent.update!(model: "mistral-small-latest")
+        create(:orchestration_step_action, step: step1, action: action, position: 1)
+        allow(stub_agent).to receive(:with_model).and_return(stub_agent)
+        allow(stub_agent).to receive(:ask).and_raise(Faraday::TimeoutError.new("execution expired"))
+      end
+
+      it "persists transport diagnostics" do
+        described_class.new(pipeline_run).call
+
+        action_run = Orchestration::ActionRun.last
+        expect(action_run.status).to eq("failed")
+        expect(action_run.error).to eq("Mistral transport error: execution expired")
+        expect(action_run.error_details).to include(
+          "category" => "transport_error",
+          "provider" => "mistral",
+          "model" => "mistral-small-latest",
+          "message" => "execution expired"
+        )
       end
     end
 
@@ -411,11 +475,16 @@ RSpec.describe Orchestration::PipelineRunner do
         allow(stub_agent).to receive_messages(with_schema: stub_agent, ask: instance_double(RubyLLM::Message, content: "I need more information."))
       end
 
-      it 'marks the ActionRun as failed with a schema error' do
+      it 'marks the ActionRun as failed with invalid model output diagnostics' do # rubocop:disable RSpec/MultipleExpectations
         described_class.new(pipeline_run).call
         action_run = Orchestration::ActionRun.last
         expect(action_run.status).to eq("failed")
-        expect(action_run.error).to match(/must be an array/)
+        expect(action_run.error).to match(/Invalid model output/)
+        expect(action_run.error_details).to include(
+          "category" => "invalid_model_output",
+          "message" => a_string_matching(/Invalid model output/)
+        )
+        expect(action_run.error_details["raw_response_excerpt"]).to include("I need more information.")
       end
 
       it 'marks the PipelineRun as failed' do
@@ -441,6 +510,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
         expect(action_run.status).to eq("failed")
         expect(action_run.error).to match(/must be an array/)
+        expect(action_run.error_details).to include("category" => "invalid_model_output")
       end
     end
 

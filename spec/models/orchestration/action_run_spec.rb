@@ -67,12 +67,17 @@ RSpec.describe Orchestration::ActionRun do
     end
 
     describe '#show_attributes' do
-      it 'returns hash including input, output, and status' do
-        action_run = create(:orchestration_action_run, status: 'completed', input: { 'email' => 'test' }, output: { 'result' => 'ok' })
+      it 'returns hash including input, output, status, and error_details' do # rubocop:disable RSpec/MultipleExpectations
+        action_run = create(:orchestration_action_run,
+                            status: 'completed',
+                            input: { 'email' => 'test' },
+                            output: { 'result' => 'ok' },
+                            error_details: { 'category' => 'provider_http_error' })
         result = action_run.show_attributes
         expect(result).to include(status: 'completed')
         expect(result).to have_key(:input)
         expect(result).to have_key(:output)
+        expect(result).to have_key(:error_details)
       end
     end
 

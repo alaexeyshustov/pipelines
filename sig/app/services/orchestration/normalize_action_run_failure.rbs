@@ -1,0 +1,52 @@
+module Orchestration
+  class NormalizeActionRunFailure
+    MAX_EXCERPT_LENGTH: Integer
+    REDACTED_VALUE: String
+    REDACTED_EMAIL: String
+
+    class Result
+      def initialize: (summary: String, details: Hash[String, untyped]?) -> void
+      def summary: () -> String
+      def details: () -> Hash[String, untyped]?
+    end
+
+    def self.call: (error: StandardError, action_run: ActionRun, raw_content: untyped) -> Result
+
+    def initialize: (error: StandardError, action_run: ActionRun, raw_content: untyped) -> void
+    def call: () -> Result
+
+    private
+
+    def provider_http_error?: () -> bool
+    def transport_error?: () -> bool
+    def invalid_model_output?: () -> bool
+    def provider_http_error_result: () -> Result
+    def transport_error_result: () -> Result
+    def invalid_model_output_result: () -> Result
+    def build_details: (
+      category: String,
+      message: String,
+      status_code: Integer?,
+      parsed_error: untyped,
+      raw_response_excerpt: String?
+    ) -> Hash[String, untyped]
+    def request_context: () -> Hash[String, untyped]?
+    def response: () -> untyped
+    def response_status: () -> Integer
+    def response_body: () -> untyped
+    def provider_error_message: (untyped parsed_error) -> String
+    def extract_parsed_error: (untyped body) -> untyped
+    def parse_json: (untyped value) -> untyped
+    def invalid_model_raw_content: () -> untyped
+    def model_name: () -> String?
+    def provider_name: () -> String?
+    def provider_label: () -> String
+    def sanitized_excerpt: (untyped value) -> String?
+    def stringify: (untyped value) -> String
+    def sanitize_value: (untyped value) -> untyped
+    def sensitive_key?: (untyped key) -> bool
+    def sanitize_string: (String value) -> String
+    def truncate: (String value) -> String
+    def ruby_llm_error?: (StandardError error) -> bool
+  end
+end
