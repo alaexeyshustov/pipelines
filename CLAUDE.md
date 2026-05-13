@@ -2,6 +2,8 @@ Rails 8.1 / Ruby 4.0 application that pulls Gmail and Yahoo Mail job-application
 
 ## Essentials
 
+- Prefer TDD cycle for development.
+- Use `bundle exec` for all commands.
 - JavaScript package manager: `pnpm` (not npm/yarn).
 - Asset commands: `pnpm install`, `pnpm run build`, `pnpm run build:watch`.
 - Type-signature commands: `bundle exec rbs -r optparse validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**/**/*.rbs`, `bundle exec steep check`.

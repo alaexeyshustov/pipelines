@@ -1,0 +1,20 @@
+module Evaluation
+  class SyntheticAction
+    attr_reader agent_class: String
+
+    def agent?: () -> false
+    def agent: () -> nil
+  end
+
+  class SyntheticStepAction
+    attr_reader action: SyntheticAction
+  end
+
+  class SyntheticRecord < ApplicationRecord
+    attr_accessor agent_name: String
+    attr_accessor input: untyped
+
+    def step_action: () -> SyntheticStepAction
+    def chat: () -> nil
+  end
+end

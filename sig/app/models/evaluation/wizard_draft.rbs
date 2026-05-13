@@ -1,0 +1,13 @@
+module Evaluation
+  class WizardDraft < ApplicationRecord
+    attr_accessor session_token: String
+    attr_accessor step: Integer
+    attr_accessor payload: Hash[String, untyped]?
+
+    def self.find_or_create_for_token: (String) -> WizardDraft
+    def self.cleanup_expired: () -> Integer
+    def advance!: (Integer, ?Hash[Symbol | String, untyped]) -> bool
+    def merge_payload!: (Hash[Symbol | String, untyped]) -> bool
+    def payload_for_step: (Symbol | String) -> untyped
+  end
+end

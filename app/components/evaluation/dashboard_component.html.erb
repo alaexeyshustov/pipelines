@@ -1,9 +1,15 @@
 <div class="rounded-lg border border-gray-200 bg-white shadow-sm p-6 space-y-4">
   <div class="flex items-center justify-between">
     <h2 class="text-lg font-semibold text-gray-800"><%= agent_name %></h2>
-    <% if latest_experiment %>
-      <%= link_to "View Experiment", evaluation_experiment_path(latest_experiment), class: "text-sm text-indigo-600 hover:underline" %>
-    <% end %>
+    <div class="flex items-center gap-3">
+      <% if latest_experiment %>
+        <%= link_to "View Experiment", evaluation_experiment_path(latest_experiment),
+              class: "text-sm text-indigo-600 hover:underline" %>
+      <% end %>
+      <%= link_to "Run Evaluation",
+            new_evaluation_experiment_path(agent_name: agent_name),
+            class: "text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg" %>
+    </div>
   </div>
 
   <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">

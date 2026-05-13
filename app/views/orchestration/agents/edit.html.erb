@@ -1,3 +1,6 @@
+<%= content_for :head do %>
+  <%= stylesheet_link_tag "tom-select" %>
+<% end %>
 <%= render UI::PageHeaderComponent.new(title: "Edit Agent", parent: { label: "Agent Library", url: orchestration_agents_path }) %>
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">

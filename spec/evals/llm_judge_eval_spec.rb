@@ -22,7 +22,7 @@ RSpec.describe LLMJudgeEval do
         { "metric_name" => "tool_call_accuracy", "score" => 4, "justification" => "Correct tool called." },
         { "metric_name" => "output_quality", "score" => 5, "justification" => "Clear output." }
       ])
-      { id: "msg_01", type: "message", role: "assistant", content: [ { type: "text", text: scores } ], model: "claude-sonnet-4-6", stop_reason: "end_turn", usage: { input_tokens: 200, output_tokens: 80 } }.to_json
+      { id: "chatcmpl-01", object: "chat.completion", model: "gpt-5.4", choices: [ { index: 0, message: { role: "assistant", content: scores }, finish_reason: "stop" } ], usage: { prompt_tokens: 200, completion_tokens: 80, total_tokens: 280 } }.to_json
     end
     let(:runner_result) do
       prediction = { tool_calls: [ { tool_name: "classify_email", arguments: { label: "offer" } } ], output: "Classified." }.to_json
@@ -47,15 +47,15 @@ RSpec.describe LLMJudgeEval do
         [ { tool_name: "classify_email", arguments: { label: "offer" }, result: "done" } ]
       )
 
-      stub_request(:post, %r{api\.anthropic\.com})
+      stub_request(:post, %r{api\.openai\.com})
         .to_return(status: 200, body: llm_response_body, headers: { "Content-Type" => "application/json" })
     end
 
-    context "when recordable is not an ActionRun" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+    context "when recordable does not implement the duck-type interface" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       it "raises ArgumentError with a descriptive message" do
         chat = create(:chat)
         runner_result = instance_double(Leva::RunnerResult, prediction: "{}")
-        expect { eval_instance.evaluate(runner_result, chat) }.to raise_error(ArgumentError, /Orchestration::ActionRun/)
+        expect { eval_instance.evaluate(runner_result, chat) }.to raise_error(ArgumentError, /#input.*#step_action|#step_action.*#input/)
       end
     end
 
@@ -70,7 +70,7 @@ RSpec.describe LLMJudgeEval do
     it "includes all metrics in the LLM request" do
       eval_instance.evaluate(runner_result, recordable)
 
-      expect(WebMock).to have_requested(:post, %r{api\.anthropic\.com}).with { |req|
+      expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
         body = JSON.parse(req.body)
         messages_text = body["messages"].to_s
         messages_text.include?("classify_email") &&
@@ -79,17 +79,44 @@ RSpec.describe LLMJudgeEval do
       }
     end
 
-    it "uses temperature 0 for reproducibility" do
+    context "when output is a hash (structured JSON result)" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      let(:runner_result) do
+        prediction = {
+          tool_calls: [],
+          output: { results: [ { id: "abc123", tags: [ "job", "application" ] } ] }
+        }.to_json
+        instance_double(
+          Leva::RunnerResult,
+          prediction: prediction,
+          dataset_record: instance_double(Leva::DatasetRecord, recordable: recordable)
+        )
+      end
+
+      it "sends the output as valid JSON, not Ruby hash syntax" do
+        eval_instance.evaluate(runner_result, recordable)
+
+        expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
+          body = JSON.parse(req.body)
+          messages_text = body["messages"].map { |m| m["content"] }.join
+          # Valid JSON uses colons; Ruby inspect would produce =>
+          messages_text.include?('"id"') && !messages_text.include?("=>")
+        }
+      end
+    end
+
+    it "requests temperature 0 (gpt-5 models normalize this to 1.0 per provider requirements)" do
       eval_instance.evaluate(runner_result, recordable)
 
-      expect(WebMock).to have_requested(:post, %r{api\.anthropic\.com}).with { |req|
-        JSON.parse(req.body)["temperature"] == 0
+      # gpt-5* models require temperature=1.0 regardless of the requested value;
+      # RubyLLM normalizes it automatically (see providers/openai/temperature.rb).
+      expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
+        JSON.parse(req.body)["temperature"] == 1.0
       }
     end
 
     context "when the LLM returns invalid JSON" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       let(:llm_response_body) do
-        { id: "msg_02", type: "message", role: "assistant", content: [ { type: "text", text: "not json" } ], model: "claude-sonnet-4-6", stop_reason: "end_turn", usage: { input_tokens: 10, output_tokens: 5 } }.to_json
+        { id: "chatcmpl-02", object: "chat.completion", model: "gpt-5.4", choices: [ { index: 0, message: { role: "assistant", content: "not json" }, finish_reason: "stop" } ], usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 } }.to_json
       end
 
       it "returns an empty array without raising" do
@@ -116,7 +143,7 @@ RSpec.describe LLMJudgeEval do
         scores = JSON.generate([
           { "metric_name" => "tool_call_accuracy", "score" => 10, "justification" => "Way off." }
         ])
-        { id: "msg_03", type: "message", role: "assistant", content: [ { type: "text", text: scores } ], model: "claude-sonnet-4-6", stop_reason: "end_turn", usage: { input_tokens: 10, output_tokens: 5 } }.to_json
+        { id: "chatcmpl-03", object: "chat.completion", model: "gpt-5.4", choices: [ { index: 0, message: { role: "assistant", content: scores }, finish_reason: "stop" } ], usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 } }.to_json
       end
 
       it "drops the invalid entry and returns an empty array" do
@@ -130,7 +157,7 @@ RSpec.describe LLMJudgeEval do
       it "skips the LLM call and returns an empty array" do
         result = eval_instance.evaluate(runner_result, recordable)
         expect(result).to eq([])
-        expect(WebMock).not_to have_requested(:post, %r{api\.anthropic\.com})
+        expect(WebMock).not_to have_requested(:post, %r{api\.openai\.com})
       end
     end
   end
@@ -165,8 +192,8 @@ RSpec.describe LLMJudgeEval do
         { "metric_name" => "tool_call_accuracy", "score" => 4, "justification" => "Good." },
         { "metric_name" => "output_quality", "score" => 5, "justification" => "Excellent." }
       ])
-      body = { id: "msg_01", type: "message", role: "assistant", content: [ { type: "text", text: scores } ], model: "claude-sonnet-4-6", stop_reason: "end_turn", usage: { input_tokens: 200, output_tokens: 80 } }.to_json
-      stub_request(:post, %r{api\.anthropic\.com})
+      body = { id: "chatcmpl-01", object: "chat.completion", model: "gpt-5.4", choices: [ { index: 0, message: { role: "assistant", content: scores }, finish_reason: "stop" } ], usage: { prompt_tokens: 200, completion_tokens: 80, total_tokens: 280 } }.to_json
+      stub_request(:post, %r{api\.openai\.com})
         .to_return(status: 200, body: body, headers: { "Content-Type" => "application/json" })
     end
 
@@ -194,8 +221,8 @@ RSpec.describe LLMJudgeEval do
   end
 
   describe "judge_model configuration" do
-    it "defaults to claude-sonnet-4-6" do
-      expect(described_class.judge_model).to eq("claude-sonnet-4-6")
+    it "defaults to gpt-5.4" do
+      expect(described_class.judge_model).to eq("gpt-5.4")
     end
 
     it "can be overridden" do

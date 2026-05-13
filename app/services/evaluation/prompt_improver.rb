@@ -47,7 +47,7 @@ module Evaluation
     private
 
     def model
-      ENV.fetch("EVALUATION_LLM_MODEL", "claude-sonnet-4-6")
+      ENV.fetch("EVALUATION_LLM_MODEL", "gpt-5.4")
     end
 
     def load_evaluation_data

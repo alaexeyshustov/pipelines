@@ -1,4 +1,6 @@
-<%= render UI::PageHeaderComponent.new(title: "Evaluation Dashboard") %>
+<%= render UI::PageHeaderComponent.new(title: "Evaluation Dashboard") do |header| %>
+  <% header.with_action(type: :link, label: "Run New Experiment", url: new_evaluation_experiment_path, variant: :primary) %>
+<% end %>
 
 <div class="space-y-8">
   <% @agent_summaries.each do |summary| %>
@@ -6,6 +8,27 @@
   <% end %>
 
   <% if @agent_summaries.empty? %>
-    <p class="text-gray-500 text-sm">No experiments found.</p>
+    <div class="text-center py-12 text-gray-500 text-sm">
+      <p class="mb-4">No experiments found.</p>
+      <%= link_to "Run your first evaluation →", new_evaluation_experiment_path,
+            class: "text-indigo-600 hover:underline font-medium" %>
+    </div>
+  <% end %>
+</div>
+
+<div class="mt-10">
+  <h2 class="text-lg font-semibold text-gray-900 mb-4">All Experiments</h2>
+  <%= render UI::TableComponent.new(collection: @experiments, empty_message: "No experiments yet.") do |table| %>
+    <% table.with_columns([
+      { key: "name",       label: "Name",    cell: ->(e) { e.name } },
+      { key: "status",     label: "Status",  cell: ->(e) { e.status.to_s } },
+      { key: "prompt",     label: "Prompt",  cell: ->(e) { e.prompt&.name.to_s } },
+      { key: "created_at", label: "Created", cell: ->(e) { e.created_at.strftime("%Y-%m-%d %H:%M") } }
+    ]) %>
+    <% table.with_action_column(
+      actions: ->(experiment) {
+        [{ label: "Show", url: evaluation_experiment_path(experiment), variant: :primary }]
+      }
+    ) %>
   <% end %>
 </div>

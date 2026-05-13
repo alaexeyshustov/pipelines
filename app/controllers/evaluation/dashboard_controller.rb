@@ -6,10 +6,12 @@ module Evaluation
 
     def show
       @agent_summaries = agent_summaries
+      @experiments = Leva::Experiment.includes(:prompt).order(created_at: :desc)
     end
 
     private
 
+    # TODO: move this logic out of controller
     def agent_summaries
       prompt_names = Leva::Experiment.joins(:prompt).distinct.pluck("leva_prompts.name")
       return [] if prompt_names.empty?

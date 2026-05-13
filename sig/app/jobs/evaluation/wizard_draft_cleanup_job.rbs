@@ -1,0 +1,5 @@
+module Evaluation
+  class WizardDraftCleanupJob < ApplicationJob
+    def perform: () -> void
+  end
+end

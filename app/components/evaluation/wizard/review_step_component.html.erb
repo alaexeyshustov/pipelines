@@ -1,0 +1,43 @@
+<div class="space-y-6">
+  <div class="bg-gray-50 rounded-xl p-5 border border-gray-200">
+    <h3 class="text-sm font-semibold text-gray-700 mb-4">Review experiment configuration</h3>
+    <dl class="divide-y divide-gray-200 text-sm">
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="font-medium text-gray-500">Experiment name</dt>
+        <dd class="col-span-2 text-gray-900"><%= @experiment_name.presence || "(untitled)" %></dd>
+      </div>
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="font-medium text-gray-500">Agent</dt>
+        <dd class="col-span-2 text-gray-900 font-mono text-xs"><%= @agent_name %></dd>
+      </div>
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="font-medium text-gray-500">Prompt</dt>
+        <dd class="col-span-2 text-gray-900 font-mono text-xs"><%= prompt_label %></dd>
+      </div>
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="font-medium text-gray-500">Metrics</dt>
+        <dd class="col-span-2 text-gray-900"><%= @metrics_count %> active</dd>
+      </div>
+      <div class="py-3 grid grid-cols-3 gap-4">
+        <dt class="font-medium text-gray-500">Dataset</dt>
+        <dd class="col-span-2 text-gray-900"><%= dataset_label %></dd>
+      </div>
+    </dl>
+  </div>
+
+  <% if no_metrics? %>
+    <div class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+      No metrics configured — metrics will be auto-generated with AI when you run the experiment.
+    </div>
+  <% end %>
+
+  <%= form_with url: wizard_step_evaluation_experiments_path, method: :post do |f| %>
+    <%= f.hidden_field :current_step, value: 4 %>
+    <div class="flex justify-end">
+      <button type="submit"
+              class="px-6 py-2.5 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm">
+        Run Experiment →
+      </button>
+    </div>
+  <% end %>
+</div>

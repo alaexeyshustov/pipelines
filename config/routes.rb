@@ -27,13 +27,28 @@ Rails.application.routes.draw do
 
   namespace :evaluation do
     root to: "dashboard#show"
-    resources :metrics, only: [ :index, :edit, :update ]
+    resources :metrics, only: [ :index, :edit, :update, :create, :destroy ] do
+      collection do
+        post :generate
+      end
+    end
     get "prompts/:id/diff", to: "prompt_diffs#show", as: :prompt_diff
-    resources :experiments, only: [ :index, :show ] do
+    resources :datasets, only: [] do
+      collection do
+        post :generate
+      end
+    end
+    resources :experiments, only: [ :index, :show, :new, :create ] do
       member do
         post :improve
         post :activate
         get "compare/:candidate_id", action: :compare, as: :compare
+        get :status_frame
+        get "metrics/:metric_name", action: :metric_results, as: :metric_results
+      end
+      collection do
+        post :wizard_step
+        get :prompt_versions
       end
     end
   end

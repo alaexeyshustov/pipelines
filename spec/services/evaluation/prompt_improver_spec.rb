@@ -7,12 +7,12 @@ RSpec.describe Evaluation::PromptImprover do
 
   def stub_llm(system_prompt: "Improved system.", user_prompt: "{{input}}")
     body = {
-      id: "msg_01", type: "message", role: "assistant",
-      content: [ { type: "text", text: JSON.generate({ "system_prompt" => system_prompt, "user_prompt" => user_prompt }) } ],
-      model: "claude-sonnet-4-6", stop_reason: "end_turn",
-      usage: { input_tokens: 200, output_tokens: 80 }
+      id: "cmpl-test", object: "chat.completion",
+      model: "gpt-5.4",
+      choices: [ { index: 0, message: { role: "assistant", content: JSON.generate({ "system_prompt" => system_prompt, "user_prompt" => user_prompt }) }, finish_reason: "stop" } ],
+      usage: { prompt_tokens: 200, completion_tokens: 80, total_tokens: 280 }
     }.to_json
-    stub_request(:post, %r{api\.anthropic\.com})
+    stub_request(:post, %r{api\.openai\.com})
       .to_return(status: 200, body: body, headers: { "Content-Type" => "application/json" })
   end
 
@@ -67,7 +67,7 @@ RSpec.describe Evaluation::PromptImprover do
 
     it "includes the current system prompt in the LLM request" do
       described_class.call(experiment: experiment)
-      expect(WebMock).to have_requested(:post, %r{api\.anthropic\.com}).with { |req|
+      expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
         req.body.include?("You classify emails.")
       }
     end
@@ -75,14 +75,14 @@ RSpec.describe Evaluation::PromptImprover do
     it "includes evaluation scores and justifications in the LLM request" do
       make_eval_result(score: 2.0, metric_name: "accuracy", justification: "Missed several emails.")
       described_class.call(experiment: experiment)
-      expect(WebMock).to have_requested(:post, %r{api\.anthropic\.com}).with { |req|
+      expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
         req.body.include?("accuracy") && req.body.include?("Missed several emails.")
       }
     end
 
     it "includes metric rubrics in the LLM request" do
       described_class.call(experiment: experiment)
-      expect(WebMock).to have_requested(:post, %r{api\.anthropic\.com}).with { |req|
+      expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
         req.body.include?("How accurate is it?")
       }
     end
@@ -99,12 +99,12 @@ RSpec.describe Evaluation::PromptImprover do
     context "when LLM returns invalid JSON" do
       before do
         body = {
-          id: "msg_01", type: "message", role: "assistant",
-          content: [ { type: "text", text: "not json" } ],
-          model: "claude-sonnet-4-6", stop_reason: "end_turn",
-          usage: { input_tokens: 100, output_tokens: 10 }
+          id: "cmpl-test", object: "chat.completion",
+          model: "gpt-5.4",
+          choices: [ { index: 0, message: { role: "assistant", content: "not json" }, finish_reason: "stop" } ],
+          usage: { prompt_tokens: 100, completion_tokens: 10, total_tokens: 110 }
         }.to_json
-        stub_request(:post, %r{api\.anthropic\.com})
+        stub_request(:post, %r{api\.openai\.com})
           .to_return(status: 200, body: body, headers: { "Content-Type" => "application/json" })
       end
 
