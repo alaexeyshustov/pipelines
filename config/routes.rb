@@ -33,7 +33,7 @@ Rails.application.routes.draw do
       end
     end
     get "prompts/:id/diff", to: "prompt_diffs#show", as: :prompt_diff
-    resources :datasets, only: [ :index ] do
+    resources :datasets, only: [] do
       collection do
         post :generate
       end

@@ -15,7 +15,7 @@
 [ ] agents - json input better schema UI
 [ ] evaluation run from UI
 [ ] orchestration pipeline steps ingestions is buggy
-[ ] orchestration pipeline - josn schema
+[ ] orchestration pipeline - json schema
 [ ] remove duplicated tests
 [ ] mutation tests check for errors
 [ ] jobs - dashboard

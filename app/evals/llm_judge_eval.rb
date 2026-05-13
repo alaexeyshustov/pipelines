@@ -123,7 +123,7 @@ class LLMJudgeEval < Leva::BaseEval
       #{JSON.pretty_generate(actual_tool_calls)}
 
       ## Agent Output
-      #{JSON.pretty_generate(output)}
+      #{output.is_a?(String) ? output : JSON.pretty_generate(output)}
 
       ## Evaluation Metrics
       #{rubrics}

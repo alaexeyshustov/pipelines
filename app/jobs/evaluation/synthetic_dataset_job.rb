@@ -51,9 +51,9 @@ module Evaluation
       return [] unless dataset
 
       dataset.dataset_records
-             .joins("INNER JOIN orchestration_action_runs ON recordable_type = 'Orchestration::ActionRun' AND recordable_id = orchestration_action_runs.id")
+             .joins("INNER JOIN action_runs ON leva_dataset_records.recordable_type = 'Orchestration::ActionRun' AND leva_dataset_records.recordable_id = action_runs.id")
              .limit(3)
-             .pluck("orchestration_action_runs.input")
+             .pluck("action_runs.input")
              .compact
     end
 

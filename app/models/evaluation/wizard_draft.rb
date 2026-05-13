@@ -5,7 +5,7 @@ module Evaluation
     self.table_name = "evaluation_wizard_drafts"
 
     validates :session_token, presence: true, uniqueness: true
-    validates :step, numericality: { only_integer: true, in: 1..4 }
+    validates :step, numericality: { only_integer: true }, inclusion: { in: 1..4 }
 
     def self.find_or_create_for_token(token)
       find_or_create_by!(session_token: token)

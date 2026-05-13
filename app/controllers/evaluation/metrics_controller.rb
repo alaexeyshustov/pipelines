@@ -35,7 +35,7 @@ module Evaluation
       else
         respond_to do |format|
           format.turbo_stream do
-            render turbo_stream: turbo_stream.replace(
+            render turbo_stream: turbo_stream.update(
               "metric-form",
               partial: "evaluation/metrics/new_form",
               locals: { metric: @metric }

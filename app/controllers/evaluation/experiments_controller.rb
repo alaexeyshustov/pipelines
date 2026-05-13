@@ -198,7 +198,13 @@ module Evaluation
 
     def create_experiment_from_draft(draft)
       payload    = draft.payload || {}
-      agent_name = Orchestration::Prompt.find_by(id: payload["prompt_id"])&.name
+      prompt_id  = payload["prompt_id"].presence ||
+                   Orchestration::Prompt
+                     .where(name: payload["agent_name"])
+                     .order(version: :desc, id: :desc)
+                     .pick(:id)
+                     &.to_s
+      agent_name = Orchestration::Prompt.find_by(id: prompt_id)&.name
 
       if agent_name.present? && Evaluation::Metric.for_agent(agent_name).active.none?
         begin
@@ -211,7 +217,7 @@ module Evaluation
       experiment = Leva::Experiment.create!(
         name:              payload["experiment_name"].presence || "Manual eval",
         dataset_id:        payload["dataset_id"],
-        prompt_id:         payload["prompt_id"],
+        prompt_id:         prompt_id,
         runner_class:      "StubbedAgentRun",
         evaluator_classes: [ "LLMJudgeEval" ],
         metadata:          { "triggered_by" => "manual" }
