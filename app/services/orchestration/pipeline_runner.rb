@@ -62,11 +62,11 @@ module Orchestration
 
     def execute_action(action_run)
       action_run.update!(status: "running", started_at: Time.current)
-      output = run_agent(action_run)
-      validate_output!(action_run.step_action.action, output)
-      action_run.update!(status: "completed", output: output, finished_at: Time.current)
+      execution = run_agent(action_run)
+      validate_output!(action_run.step_action.action, execution[:output], raw_content: execution[:raw_content])
+      action_run.update!(status: "completed", output: execution[:output], error: nil, error_details: nil, finished_at: Time.current)
     rescue StandardError => error
-      action_run.update!(status: "failed", error: error.message, finished_at: Time.current)
+      handle_action_failure(action_run, error, raw_content: execution&.dig(:raw_content))
     end
 
     def run_agent(action_run)
@@ -84,26 +84,29 @@ module Orchestration
         chat_id = agent.respond_to?(:chat) ? agent.chat&.id : agent.id
         action_run.update_columns(chat_id: chat_id, agent_snapshot: builder.snapshot)
         result = agent.ask(input.to_json)
-        output = parse_content(result.content)
-        action.agent&.output_schema.present? ? output : { "result" => output }
+        output = parse_content(result.content, structured_output_expected?(action))
+        normalized_output = action.agent&.output_schema.present? ? output : { "result" => output }
+        { output: normalized_output, raw_content: result.content }
       else
         klass = action.agent_class&.constantize
         raise ArgumentError, "Service class not found: #{action.agent_class}" unless klass
 
         params = (action.params || {}).merge(action_run.step_action.params || {})
-        klass.call(input, params)
+        { output: klass.call(input, params), raw_content: nil }
       end
     end
 
-    def parse_content(content)
+    def parse_content(content, structured_output_expected)
       return content unless content.is_a?(String)
 
       JSON.parse(content)
-    rescue JSON::ParserError
+    rescue JSON::ParserError => error
+      raise InvalidModelOutputError.new("Invalid model output: #{error.message}", raw_content: content) if structured_output_expected
+
       content
     end
 
-    def validate_output!(action, output)
+    def validate_output!(action, output, raw_content:)
       schema = if action.agent?
         action.agent&.output_schema.presence || action.output_schema
       else
@@ -111,6 +114,47 @@ module Orchestration
       end
 
       SchemaValidator.new(schema).validate!(output)
+    rescue SchemaValidator::Error => error
+      raise error unless action.agent? && structured_output_expected?(action)
+
+      raise InvalidModelOutputError.new("Invalid model output: #{error.message}", raw_content: raw_content)
+    end
+
+    def handle_action_failure(action_run, error, raw_content:)
+      failure = NormalizeActionRunFailure.call(error:, action_run:, raw_content:)
+      action_run.update!(
+        status: "failed",
+        error: failure.summary,
+        error_details: failure.details,
+        finished_at: Time.current
+      )
+      log_action_failure(action_run, failure) if failure.details.present?
+    end
+
+    def log_action_failure(action_run, failure)
+      details = failure.details || {}
+
+      Rails.logger.error(
+        {
+          event: "orchestration.action_run_failed",
+          category: details["category"],
+          provider: details["provider"],
+          model: details["model"],
+          status_code: details["status_code"],
+          action_run_id: action_run.id,
+          pipeline_run_id: @pipeline_run.id,
+          chat_id: details["chat_id"],
+          summary: failure.summary
+        }.to_json
+      )
+    end
+
+    def structured_output_expected?(action)
+      action.agent? && (
+        action.agent&.output_schema.present? ||
+        action.output_schema.present? ||
+        action.schema_class.present?
+      )
     end
 
     def leva_prompt_for(agent_class)

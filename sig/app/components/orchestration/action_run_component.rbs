@@ -5,9 +5,11 @@ module Orchestration
     def action_name: () -> String
     def formatted_started_at: () -> String?
     def formatted_finished_at: () -> String?
+    def diagnostics_data: () -> Hash[String, untyped]?
+    def raw_response_excerpt: () -> String?
     def status_badge: () -> RunStatusBadgeComponent?
+    def diagnostics_disclosure: () -> UI::JsonDisclosureComponent?
     def input_disclosure: () -> UI::JsonDisclosureComponent?
     def output_disclosure: () -> UI::JsonDisclosureComponent?
   end
 end
-

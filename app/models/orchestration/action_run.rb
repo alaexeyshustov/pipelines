@@ -32,6 +32,7 @@ module Orchestration
         input: input,
         output: output,
         error: error,
+        error_details: error_details,
         agent_snapshot: agent_snapshot,
         started_at: started_at,
         finished_at: finished_at

@@ -5,7 +5,7 @@ CREATE UNIQUE INDEX "index_application_mails_on_email_id" ON "application_mails"
 CREATE INDEX "index_application_mails_on_date" ON "application_mails" ("date") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "interviews" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "company" varchar NOT NULL, "job_title" varchar NOT NULL, "status" varchar DEFAULT 'pending_reply', "applied_at" date, "rejected_at" date, "first_interview_at" date, "second_interview_at" date, "third_interview_at" date, "fourth_interview_at" date, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_interviews_on_company_and_job_title" ON "interviews" ("company", "job_title") /*application='ApplicationPipeline'*/;
-CREATE VIRTUAL TABLE email_vectors USING vec0(
+CREATE VIRTUAL TABLE IF NOT EXISTS email_vectors USING vec0(
   email_id TEXT PRIMARY KEY,
   embedding FLOAT[1536]
 );
@@ -53,7 +53,7 @@ CREATE INDEX "index_pipeline_runs_on_pipeline_id_and_created_at" ON "pipeline_ru
 CREATE TABLE IF NOT EXISTS "pipelines" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "description" text, "enabled" boolean DEFAULT TRUE NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "cron_expression" varchar, "model" varchar /*application='ApplicationPipeline'*/, "initial_input_schema" json /*application='ApplicationPipeline'*/);
 CREATE INDEX "index_pipelines_on_enabled_and_cron_expression" ON "pipelines" ("enabled", "cron_expression") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "ruby_llm_monitoring_events" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "allocations" integer, "cost" float, "cpu_time" float, "duration" float, "end" float, "gc_time" float, "idle_time" float, "name" varchar, "payload" json, "time" float, "transaction_id" varchar, "provider" varchar GENERATED ALWAYS AS (payload->>'provider') STORED, "model" varchar GENERATED ALWAYS AS (payload->>'model') STORED, "input_tokens" integer GENERATED ALWAYS AS (CAST(payload->>'input_tokens' AS INTEGER)) STORED, "output_tokens" integer GENERATED ALWAYS AS (CAST(payload->>'output_tokens' AS INTEGER)) STORED, "exception_class" varchar GENERATED ALWAYS AS (json_extract(payload, '$.exception[0]')) STORED, "exception_message" varchar GENERATED ALWAYS AS (json_extract(payload, '$.exception[1]')) STORED, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "thinking_tokens" integer GENERATED ALWAYS AS (CAST(payload->>'thinking_tokens' AS INTEGER)) STORED);
-CREATE TABLE IF NOT EXISTS "action_runs" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "pipeline_run_id" integer NOT NULL, "step_action_id" integer NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "input" json, "output" json, "error" text, "started_at" datetime(6), "finished_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "chat_id" integer, "agent_snapshot" json /*application='ApplicationPipeline'*/, CONSTRAINT "fk_rails_98c536e7ea"
+CREATE TABLE IF NOT EXISTS "action_runs" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "pipeline_run_id" integer NOT NULL, "step_action_id" integer NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "input" json, "output" json, "error" text, "started_at" datetime(6), "finished_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "chat_id" integer, "agent_snapshot" json /*application='ApplicationPipeline'*/, "error_details" json, CONSTRAINT "fk_rails_98c536e7ea"
 FOREIGN KEY ("step_action_id")
   REFERENCES "step_actions" ("id")
 , CONSTRAINT "fk_rails_e54391b086"
@@ -159,6 +159,7 @@ CREATE UNIQUE INDEX "index_evaluation_wizard_drafts_on_session_token" ON "evalua
 CREATE TABLE IF NOT EXISTS "evaluation_synthetic_records" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "agent_name" varchar NOT NULL, "input" json NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE INDEX "index_evaluation_synthetic_records_on_agent_name" ON "evaluation_synthetic_records" ("agent_name") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260513143500'),
 ('20260512110721'),
 ('20260512110713'),
 ('20260510120000'),
@@ -219,4 +220,3 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260316000003'),
 ('20260316000002'),
 ('20260316000001');
-

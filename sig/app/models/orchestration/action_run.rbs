@@ -12,6 +12,8 @@ module Orchestration
     def output=: (Hash[String, untyped]?) -> Hash[String, untyped]?
     def agent_snapshot: () -> Hash[String, untyped]?
     def agent_snapshot=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def error_details: () -> Hash[String, untyped]?
+    def error_details=: (Hash[String, untyped]?) -> Hash[String, untyped]?
     def error: () -> String?
     def error=: (String?) -> String?
     def started_at: () -> Time?

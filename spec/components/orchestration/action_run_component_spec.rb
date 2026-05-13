@@ -87,6 +87,38 @@ RSpec.describe Orchestration::ActionRunComponent, type: :component do
     end
   end
 
+  context "when structured error details are present" do
+    let(:action_run) do
+      build_stubbed(:orchestration_action_run,
+                    step_action: step_action,
+                    status: "failed",
+                    started_at: nil,
+                    finished_at: nil,
+                    error: "OpenAI API error (429): Rate limit exceeded",
+                    error_details: {
+                      "category" => "provider_http_error",
+                      "provider" => "openai",
+                      "model" => "gpt-4.1-mini",
+                      "status_code" => 429,
+                      "message" => "Rate limit exceeded",
+                      "parsed_error" => { "type" => "rate_limit" },
+                      "raw_response_excerpt" => '{"error":{"message":"Rate limit exceeded"}}'
+                    },
+                    input: nil,
+                    output: nil)
+    end
+
+    it "renders a diagnostics disclosure" do
+      expect(rendered.css("details summary").map { |node| node.text.strip }).to include("Diagnostics")
+      expect(rendered.css("pre").map(&:text).join("\n")).to include('"provider"')
+    end
+
+    it "renders a raw response excerpt disclosure" do
+      expect(rendered.css("details summary").map { |node| node.text.strip }).to include("Raw response excerpt")
+      expect(rendered.css("pre").map(&:text).join("\n")).to include("Rate limit exceeded")
+    end
+  end
+
   context "when input is present" do
     let(:action_run) do
       build_stubbed(:orchestration_action_run,

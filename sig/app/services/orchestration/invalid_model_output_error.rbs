@@ -1,0 +1,7 @@
+module Orchestration
+  class InvalidModelOutputError < StandardError
+    attr_reader raw_content: untyped
+
+    def initialize: (String message, raw_content: untyped) -> void
+  end
+end
