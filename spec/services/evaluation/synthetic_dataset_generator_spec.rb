@@ -14,19 +14,10 @@ RSpec.describe Evaluation::SyntheticDatasetGenerator do
     end
 
     it "enqueues SyntheticDatasetJob with coerced integer count" do
-      described_class.call(
-        draft_token: draft_token,
-        agent_name:  agent_name,
-        dataset_name: dataset_name,
-        count: count
-      )
+      described_class.call(draft_token:, agent_name:, dataset_name:, count:)
 
       expect(Evaluation::SyntheticDatasetJob).to have_received(:perform_later).with(
-        draft_token: draft_token,
-        agent_name:  agent_name,
-        dataset_name: dataset_name,
-        count: 5,
-        hints: ""
+        draft_token: draft_token, agent_name: agent_name, dataset_name: dataset_name, count: 5, hints: ""
       )
     end
 

@@ -3,10 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Evaluation::Wizard::DatasetStepComponent, type: :component do
-  let(:agent_name) { "Emails::ClassifyAgent" }
-  let(:datasets) { build_list(:leva_dataset, 2) }
-  let(:draft_token) { "abc123" }
-
   subject(:rendered) do
     render_inline(described_class.new(
       agent_name: agent_name,
@@ -14,6 +10,11 @@ RSpec.describe Evaluation::Wizard::DatasetStepComponent, type: :component do
       draft_token: draft_token
     ))
   end
+
+  let(:agent_name) { "Emails::ClassifyAgent" }
+  let(:datasets) { build_list(:leva_dataset, 2) }
+  let(:draft_token) { "abc123" }
+
 
   it "renders dataset names as selectable options" do
     datasets.each { |d| expect(rendered.text).to include(d.name) }
@@ -23,7 +24,7 @@ RSpec.describe Evaluation::Wizard::DatasetStepComponent, type: :component do
     selected = create(:leva_dataset)
     rendered = render_inline(described_class.new(
       agent_name: agent_name,
-      datasets: [selected],
+      datasets: [ selected ],
       selected_dataset_id: selected.id,
       draft_token: draft_token
     ))

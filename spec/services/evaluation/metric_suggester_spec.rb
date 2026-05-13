@@ -17,10 +17,10 @@ RSpec.describe Evaluation::MetricSuggester do
 
   let(:llm_response_body) do
     {
-      id: "msg_01", type: "message", role: "assistant",
-      content: [ { type: "text", text: metrics_json } ],
-      model: "claude-sonnet-4-6", stop_reason: "end_turn",
-      usage: { input_tokens: 100, output_tokens: 50 }
+      id: "cmpl-test", object: "chat.completion",
+      model: "gpt-5.4",
+      choices: [ { index: 0, message: { role: "assistant", content: metrics_json }, finish_reason: "stop" } ],
+      usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 }
     }.to_json
   end
 
@@ -32,7 +32,7 @@ RSpec.describe Evaluation::MetricSuggester do
     allow(prompt_relation).to receive(:order).with(version: :desc, id: :desc).and_return(prompt_relation)
     allow(prompt_relation).to receive(:first).and_return(prompt_double)
 
-    stub_request(:post, %r{api\.anthropic\.com})
+    stub_request(:post, %r{api\.openai\.com})
       .to_return(status: 200, body: llm_response_body, headers: { "Content-Type" => "application/json" })
   end
 
@@ -60,7 +60,7 @@ RSpec.describe Evaluation::MetricSuggester do
 
     it "sends the agent system prompt to the LLM" do
       suggester.call
-      expect(WebMock).to have_requested(:post, %r{api\.anthropic\.com}).with { |req|
+      expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
         body = JSON.parse(req.body)
         body["messages"].any? { |m| m["content"].to_s.include?(instructions) }
       }
@@ -81,10 +81,10 @@ RSpec.describe Evaluation::MetricSuggester do
     context "when LLM returns invalid JSON" do
       let(:llm_response_body) do
         {
-          id: "msg_02", type: "message", role: "assistant",
-          content: [ { type: "text", text: "not json at all" } ],
-          model: "claude-sonnet-4-6", stop_reason: "end_turn",
-          usage: { input_tokens: 10, output_tokens: 5 }
+          id: "cmpl-test", object: "chat.completion",
+          model: "gpt-5.4",
+          choices: [ { index: 0, message: { role: "assistant", content: "not json at all" }, finish_reason: "stop" } ],
+          usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 }
         }.to_json
       end
 
@@ -96,10 +96,10 @@ RSpec.describe Evaluation::MetricSuggester do
     context "when LLM returns a non-array JSON value" do
       let(:llm_response_body) do
         {
-          id: "msg_03", type: "message", role: "assistant",
-          content: [ { type: "text", text: '{"key":"value"}' } ],
-          model: "claude-sonnet-4-6", stop_reason: "end_turn",
-          usage: { input_tokens: 10, output_tokens: 5 }
+          id: "cmpl-test", object: "chat.completion",
+          model: "gpt-5.4",
+          choices: [ { index: 0, message: { role: "assistant", content: '{"key":"value"}' }, finish_reason: "stop" } ],
+          usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 }
         }.to_json
       end
 

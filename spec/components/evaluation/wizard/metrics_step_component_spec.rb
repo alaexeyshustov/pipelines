@@ -3,10 +3,11 @@
 require "rails_helper"
 
 RSpec.describe Evaluation::Wizard::MetricsStepComponent, type: :component do
+  subject(:rendered) { render_inline(described_class.new(agent_name: agent_name, metrics: metrics)) }
+
   let(:agent_name) { "Emails::ClassifyAgent" }
   let(:metrics) { create_list(:evaluation_metric, 2, agent_name: agent_name) }
 
-  subject(:rendered) { render_inline(described_class.new(agent_name: agent_name, metrics: metrics)) }
 
   it "renders metric names" do
     metrics.each { |m| expect(rendered.text).to include(m.name) }

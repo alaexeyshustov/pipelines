@@ -12,7 +12,8 @@ module Evaluation
     def call: () -> Array[{ name: String, description: String, weight: Float }]
 
     private
-    def fetch_system_prompt: () -> String?
+
+    def orchestration_prompt: () -> String?
     def parse_response: (String) -> Array[{ name: String, description: String, weight: Float }]
   end
 end

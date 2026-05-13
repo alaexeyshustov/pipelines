@@ -95,14 +95,14 @@ RSpec.describe Evaluation::WizardDraft do
   end
 
   describe "#payload_for_step" do
-    let(:draft) { build(:evaluation_wizard_draft, payload: { "metrics" => [{ "name" => "accuracy" }] }) }
+    let(:draft) { build(:evaluation_wizard_draft, payload: { "metrics" => [ { "name" => "accuracy" } ] }) }
 
     it "returns the value for a string key" do
-      expect(draft.payload_for_step("metrics")).to eq([{ "name" => "accuracy" }])
+      expect(draft.payload_for_step("metrics")).to eq([ { "name" => "accuracy" } ])
     end
 
     it "returns the value for a symbol key" do
-      expect(draft.payload_for_step(:metrics)).to eq([{ "name" => "accuracy" }])
+      expect(draft.payload_for_step(:metrics)).to eq([ { "name" => "accuracy" } ])
     end
 
     it "returns nil when payload is nil" do

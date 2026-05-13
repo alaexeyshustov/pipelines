@@ -3,12 +3,13 @@
 require "rails_helper"
 
 RSpec.describe Evaluation::Wizard::AgentPromptStepComponent, type: :component do
-  let(:agent_names) { %w[Emails::ClassifyAgent Chats::SummaryAgent] }
-  let(:prompts) { build_list(:orchestration_prompt, 2) }
-
   subject(:rendered) do
     render_inline(described_class.new(agent_names: agent_names, prompts: prompts))
   end
+
+  let(:agent_names) { %w[Emails::ClassifyAgent Chats::SummaryAgent] }
+  let(:prompts) { build_list(:orchestration_prompt, 2) }
+
 
   it "renders a form posting to wizard_step" do
     expect(rendered.css("form").first["action"]).to include("wizard_step")

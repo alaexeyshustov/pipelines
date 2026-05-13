@@ -6,6 +6,7 @@ module Evaluation
     def perform: (draft_token: String, agent_name: String, dataset_name: String, count: Integer, ?hints: String) -> void
 
     private
+
     def fetch_system_prompt: (String) -> String
     def fetch_few_shot_samples: (String) -> Array[untyped]
     def build_user_message: (system_prompt_text: String, count: Integer, hints: String, few_shot: Array[untyped]) -> String

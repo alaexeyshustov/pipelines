@@ -11,12 +11,12 @@ RSpec.describe "evaluation:improve rake task" do # rubocop:disable RSpec/Describ
 
   def stub_llm(system_prompt: "Improved prompt.", user_prompt: "{{input}}")
     body = {
-      id: "msg_01", type: "message", role: "assistant",
-      content: [ { type: "text", text: JSON.generate({ "system_prompt" => system_prompt, "user_prompt" => user_prompt }) } ],
-      model: "claude-sonnet-4-6", stop_reason: "end_turn",
-      usage: { input_tokens: 200, output_tokens: 80 }
+      id: "cmpl-test", object: "chat.completion",
+      model: "gpt-5.4",
+      choices: [ { index: 0, message: { role: "assistant", content: JSON.generate({ "system_prompt" => system_prompt, "user_prompt" => user_prompt }) }, finish_reason: "stop" } ],
+      usage: { prompt_tokens: 200, completion_tokens: 80, total_tokens: 280 }
     }.to_json
-    stub_request(:post, %r{api\.anthropic\.com})
+    stub_request(:post, %r{api\.openai\.com})
       .to_return(status: 200, body: body, headers: { "Content-Type" => "application/json" })
   end
 
