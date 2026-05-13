@@ -11,6 +11,7 @@ module Evaluation
 
     private
 
+    # TODO: move this logic out of controller
     def agent_summaries
       prompt_names = Leva::Experiment.joins(:prompt).distinct.pluck("leva_prompts.name")
       return [] if prompt_names.empty?

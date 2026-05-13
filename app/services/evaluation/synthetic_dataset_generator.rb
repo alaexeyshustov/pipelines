@@ -2,6 +2,7 @@
 
 module Evaluation
   class SyntheticDatasetGenerator
+    # TODO: this class is not needed
     def self.call(draft_token:, agent_name:, dataset_name:, count:, hints: nil)
       SyntheticDatasetJob.perform_later(
         draft_token:  draft_token,
