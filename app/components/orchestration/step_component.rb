@@ -78,20 +78,6 @@ module Orchestration
       @actions.map { |a| [ a.name, a.id ] }
     end
 
-    def from_options
-      @upstream_schemas.keys.map { |k| [ k, k ] }
-    end
-
-    def path_options_for(from_key)
-      schema = @upstream_schemas[from_key]
-      return nil if schema.nil?
-
-      properties = schema["properties"]
-      return nil if properties.blank?
-
-      properties.keys.map { |k| [ k, k ] }
-    end
-
     def all_validator_errors
       @validator_results.flat_map(&:errors)
     end
@@ -106,7 +92,7 @@ module Orchestration
 
     def validity_badge_label
       if all_validator_errors.any?
-        "#{all_validator_errors.size} error#{"s" if all_validator_errors.size > 1}"
+        helpers.pluralize(all_validator_errors.size, "error")
       else
         "Valid"
       end

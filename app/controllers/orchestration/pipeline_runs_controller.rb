@@ -12,6 +12,7 @@ module Orchestration
       @run = @pipeline.pipeline_runs.find(params[:id])
       action_runs_by_step = @run.action_runs
         .includes(step_action: :action)
+        .order(:id)
         .group_by { |ar| ar.step_action.step_id }
 
       accumulated_outputs = { "_initial" => @run.initial_input }.compact

@@ -9,6 +9,6 @@ module Orchestration
     def set_pipeline: () -> void
     def set_step: () -> void
     def step_action_params: () -> ActionController::Parameters?
-    def parse_input_mapping: () -> Hash[String, untyped]
+    def parse_input_mapping: () -> ([Hash[String, untyped], nil] | [Hash[untyped, untyped], String])
   end
 end

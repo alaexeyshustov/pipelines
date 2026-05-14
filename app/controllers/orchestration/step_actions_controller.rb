@@ -36,33 +36,22 @@ module Orchestration
 
     def update
       @step_action = @step.step_actions.find(params[:id])
-      new_mapping = parse_input_mapping
-
-      result = nil
-      saved = false
-
-      ActiveRecord::Base.transaction do
-        @step_action.update!(input_mapping: new_mapping)
-        validator_results = Orchestration::Pipeline::Validator.call(@pipeline)
-        result = validator_results.find { |r| r.step_action_id == @step_action.id }
-
-        if result&.errors&.any?
-          raise ActiveRecord::Rollback
-        end
-
-        saved = true
+      mapping, key_error = parse_input_mapping
+      if key_error
+        redirect_to orchestration_pipeline_path(@pipeline), alert: key_error and return
       end
 
-      if saved
-        if result&.warnings&.any?
-          warning_summary = result.warnings.map { |w| "#{w.code}: #{w.message}" }.join("; ")
-          redirect_to orchestration_pipeline_path(@pipeline),
-                      notice: "Mapping saved. Warning: #{warning_summary}"
+      result = Orchestration::InputMappingUpdater.call(step_action: @step_action, input_mapping: mapping)
+
+      if result.saved
+        notice = if result.warnings.any?
+          "Mapping saved. Warning: #{result.warnings.map { |w| "#{w.code}: #{w.message}" }.join("; ")}"
         else
-          redirect_to orchestration_pipeline_path(@pipeline), notice: "Mapping saved."
+          "Mapping saved."
         end
+        redirect_to orchestration_pipeline_path(@pipeline), notice: notice
       else
-        error_summary = result&.errors&.map(&:message)&.join("; ") || "Invalid mapping."
+        error_summary = result.errors.map(&:message).join("; ").presence || "Invalid mapping."
         redirect_to orchestration_pipeline_path(@pipeline), alert: error_summary
       end
     end
@@ -93,17 +82,23 @@ module Orchestration
     end
 
     def parse_input_mapping
-      raw = params.dig(:orchestration_step_action, :input_mapping)
-      mapping = raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h.deep_stringify_keys : {}
+      permitted = params.require(:orchestration_step_action).permit(input_mapping: {})
+      mapping   = (permitted[:input_mapping]&.to_h || {}).deep_stringify_keys
 
       new_key  = params.dig(:orchestration_step_action, :new_key).presence
       new_from = params.dig(:orchestration_step_action, :new_from).presence
-      if new_key && new_from
-        new_path = params.dig(:orchestration_step_action, :new_path).presence
-        mapping[new_key] = { "from" => new_from, "path" => new_path }.compact
+
+      if new_key
+        unless new_key.match?(Orchestration::StepAction::OUTPUT_KEY_FORMAT)
+          return [ {}, "Key #{new_key.inspect} is invalid: must only contain lowercase letters, digits, and underscores, and start with a letter." ]
+        end
+        if new_from
+          new_path = params.dig(:orchestration_step_action, :new_path).presence
+          mapping[new_key] = { "from" => new_from, "path" => new_path }.compact
+        end
       end
 
-      mapping
+      [ mapping, nil ]
     end
   end
 end

@@ -15,7 +15,5 @@ module Orchestration
     def set_pipeline: () -> void
     def pipeline_params: () -> ActionController::Parameters
     def extract_initial_input: () -> Hash[String, untyped]?
-    def compute_upstream_schemas_per_step: () -> Hash[Integer, Hash[String, untyped?]]
-    def compute_validator_results_per_step: () -> Hash[Integer, Array[Pipeline::Validator::StepResult]]
   end
 end

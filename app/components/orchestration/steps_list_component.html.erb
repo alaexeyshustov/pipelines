@@ -1,0 +1,7 @@
+<%= render Orchestration::StepComponent.with_collection(
+      @steps,
+      pipeline: @pipeline,
+      actions: @actions,
+      upstream_schemas_per_step: @upstream_schemas_per_step,
+      validator_results_per_step: @validator_results_per_step
+    ) %>

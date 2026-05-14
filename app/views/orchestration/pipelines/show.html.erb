@@ -83,12 +83,10 @@
         <p class="px-6 py-8 text-center text-gray-400 text-sm">No steps yet. Add a step below.</p>
       <% else %>
         <div class="divide-y divide-gray-100">
-          <%= render Orchestration::StepComponent.with_collection(
-                @steps,
+          <%= render Orchestration::StepsListComponent.new(
                 pipeline: @pipeline,
-                actions: @actions,
-                upstream_schemas_per_step: @upstream_schemas_per_step,
-                validator_results_per_step: @validator_results_per_step
+                steps: @steps,
+                actions: @actions
               ) %>
         </div>
       <% end %>

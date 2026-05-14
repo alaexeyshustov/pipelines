@@ -1,0 +1,5 @@
+module Orchestration
+  class StepsListComponent < ViewComponent::Base
+    def initialize: (pipeline: Pipeline, steps: untyped, actions: untyped) -> void
+  end
+end

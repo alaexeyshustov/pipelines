@@ -1,0 +1,16 @@
+module Orchestration
+  class InputMappingUpdater
+    class Result
+      attr_reader saved: bool
+      attr_reader errors: Array[Pipeline::Validator::Issue]
+      attr_reader warnings: Array[Pipeline::Validator::Issue]
+
+      def self.new: (saved: bool, errors: Array[Pipeline::Validator::Issue], warnings: Array[Pipeline::Validator::Issue]) -> instance
+    end
+
+    def self.call: (step_action: StepAction, input_mapping: Hash[String, untyped]) -> Result
+
+    def initialize: (step_action: StepAction, input_mapping: Hash[String, untyped]) -> void
+    def call: () -> Result
+  end
+end
