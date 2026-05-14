@@ -1,6 +1,6 @@
 module Orchestration
   class ActionRunComponent < ViewComponent::Base
-    def initialize: (action_run: ActionRun) -> void
+    def initialize: (action_run: ActionRun, ?available_outputs: Hash[String, untyped]?) -> void
     def before_render: () -> void
     def action_name: () -> String
     def formatted_started_at: () -> String?
@@ -11,5 +11,6 @@ module Orchestration
     def diagnostics_disclosure: () -> UI::JsonDisclosureComponent?
     def input_disclosure: () -> UI::JsonDisclosureComponent?
     def output_disclosure: () -> UI::JsonDisclosureComponent?
+    def available_outputs_disclosure: () -> UI::JsonDisclosureComponent?
   end
 end

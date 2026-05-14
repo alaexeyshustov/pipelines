@@ -8,6 +8,7 @@
           <% unless @step.enabled? %>
             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">disabled</span>
           <% end %>
+          <span class="<%= validity_badge_classes %>" data-testid="validity-badge"><%= validity_badge_label %></span>
         </div>
 
         <% if @step.step_actions.any? %>
@@ -22,6 +23,78 @@
               </div>
             <% end %>
           </div>
+
+          <%# Input mapping editors %>
+          <% @step.step_actions.each do |sa| %>
+            <div class="mt-3 pt-3 border-t border-gray-100" data-testid="input-mapping-editor">
+              <%= form_with url: orchestration_pipeline_step_step_action_path(@pipeline, @step, sa),
+                            method: :patch, class: "space-y-2" do |f| %>
+                <p class="text-xs font-medium text-gray-600">Mapping for <span class="font-mono"><%= sa.output_key %></span></p>
+
+                <% (sa.input_mapping || {}).each do |mapping_key, spec| %>
+                  <% spec ||= {} %>
+                  <% current_from = spec["from"] %>
+                  <% current_path = spec["path"] %>
+                  <% path_opts = path_options_for(current_from) %>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-mono text-gray-700 w-24 truncate" title="<%= mapping_key %>"><%= mapping_key %></span>
+                    <span class="text-xs text-gray-400">←</span>
+                    <%= f.select "orchestration_step_action[input_mapping][#{mapping_key}][from]",
+                          options_for_select(from_options, current_from),
+                          {},
+                          name: "orchestration_step_action[input_mapping][#{mapping_key}][from]",
+                          "data-testid": "from-select",
+                          class: "border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" %>
+                    <% if path_opts %>
+                      <%= f.select "orchestration_step_action[input_mapping][#{mapping_key}][path]",
+                            options_for_select(path_opts, current_path),
+                            { include_blank: "— whole output —" },
+                            name: "orchestration_step_action[input_mapping][#{mapping_key}][path]",
+                            "data-testid": "path-select",
+                            class: "border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" %>
+                    <% else %>
+                      <%= f.text_field "orchestration_step_action[input_mapping][#{mapping_key}][path]",
+                            value: current_path,
+                            name: "orchestration_step_action[input_mapping][#{mapping_key}][path]",
+                            placeholder: "dot.path (optional)",
+                            "data-testid": "path-text",
+                            class: "border border-gray-300 rounded px-1.5 py-1 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500" %>
+                    <% end %>
+                  </div>
+                <% end %>
+
+                <%# Add new mapping entry row %>
+                <div class="flex items-center gap-2 border-t border-dashed border-gray-200 pt-2">
+                  <span class="text-xs text-gray-400 w-24">new key:</span>
+                  <%= f.text_field :new_key,
+                        name: "orchestration_step_action[new_key]",
+                        placeholder: "input_key",
+                        class: "w-24 border border-gray-300 rounded px-1.5 py-1 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500" %>
+                  <span class="text-xs text-gray-400">←</span>
+                  <%= f.select :new_from,
+                        options_for_select(from_options),
+                        { include_blank: "— from —" },
+                        name: "orchestration_step_action[new_from]",
+                        class: "border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" %>
+                  <%= f.text_field :new_path,
+                        name: "orchestration_step_action[new_path]",
+                        placeholder: "dot.path (optional)",
+                        class: "border border-gray-300 rounded px-1.5 py-1 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500" %>
+                  <%= f.submit "Save mapping", class: "px-2 py-1 bg-indigo-600 text-white text-xs font-medium rounded hover:bg-indigo-700 transition-colors cursor-pointer" %>
+                </div>
+              <% end %>
+            </div>
+
+            <%# Per-step-action validation errors %>
+            <% step_action_result = @validator_results.find { |r| r.step_action_id == sa.id } %>
+            <% if step_action_result&.errors&.any? %>
+              <ul class="mt-1 ml-4 space-y-0.5">
+                <% step_action_result.errors.each do |err| %>
+                  <li class="text-xs text-red-600">⚠ <%= err.message %></li>
+                <% end %>
+              </ul>
+            <% end %>
+          <% end %>
         <% end %>
 
       </div>
@@ -62,4 +135,3 @@
     <% end %>
   </div>
 </div>
-
