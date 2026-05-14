@@ -10,10 +10,10 @@ RSpec.describe Orchestration::MappingEntryComponent, type: :component do
       mapping_key:  "email_body",
       current_from: "_initial",
       current_path: "body",
-      path_opts:    [["body", "body"], ["subject", "subject"]]
+      path_opts:    [ [ "body", "body" ], [ "subject", "subject" ] ]
     )
   end
-  let(:from_options) { [["_initial", "_initial"], ["classification", "classification"]] }
+  let(:from_options) { [ [ "_initial", "_initial" ], [ "classification", "classification" ] ] }
   let(:component) { described_class.new(row: row, from_options: from_options) }
 
   it "renders the mapping key label" do
