@@ -7,12 +7,15 @@ module Orchestration
     renders_many :detach_buttons, UI::DialogComponent
     renders_one :remove_button, UI::DialogComponent
 
-    def initialize(step:, step_counter:, step_iteration:, pipeline:, actions:)
+    def initialize(step:, step_counter:, step_iteration:, pipeline:, actions:,
+                   upstream_schemas_per_step: {}, validator_results_per_step: {})
       @step = step
       @step_counter = step_counter
       @step_iteration = step_iteration
       @pipeline = pipeline
       @actions = actions
+      @upstream_schemas = upstream_schemas_per_step.fetch(step.id, { "_initial" => nil })
+      @validator_results = validator_results_per_step.fetch(step.id, [])
     end
 
     def before_render
@@ -73,6 +76,26 @@ module Orchestration
 
     def actions_select_options
       @actions.map { |a| [ a.name, a.id ] }
+    end
+
+    def all_validator_errors
+      @validator_results.flat_map(&:errors)
+    end
+
+    def validity_badge_classes
+      if all_validator_errors.any?
+        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700"
+      else
+        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700"
+      end
+    end
+
+    def validity_badge_label
+      if all_validator_errors.any?
+        helpers.pluralize(all_validator_errors.size, "error")
+      else
+        "Valid"
+      end
     end
   end
 end

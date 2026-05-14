@@ -8,9 +8,11 @@ module Orchestration
     renders_one :diagnostics_disclosure, -> { UI::JsonDisclosureComponent.new(label: "Diagnostics", data: diagnostics_data) }
     renders_one :input_disclosure, -> { UI::JsonDisclosureComponent.new(label: "Input", data: @action_run.input) }
     renders_one :output_disclosure, -> { UI::JsonDisclosureComponent.new(label: "Output", data: @action_run.output) }
+    renders_one :available_outputs_disclosure, -> { UI::JsonDisclosureComponent.new(label: "Available Outputs", data: @available_outputs) }
 
-    def initialize(action_run:)
+    def initialize(action_run:, available_outputs: nil)
       @action_run = action_run
+      @available_outputs = available_outputs
     end
 
     def before_render
@@ -18,6 +20,7 @@ module Orchestration
       with_diagnostics_disclosure if diagnostics_data.present?
       with_input_disclosure
       with_output_disclosure
+      with_available_outputs_disclosure if @available_outputs.present?
     end
 
     def action_name

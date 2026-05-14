@@ -113,7 +113,6 @@ RSpec.describe Orchestration::StepComponent, type: :component do
     end
   end
 
-
   describe "#move_up?" do
     it "returns false when first" do
       allow(iteration).to receive(:first?).and_return(true)
@@ -153,6 +152,160 @@ RSpec.describe Orchestration::StepComponent, type: :component do
       it "returns 'Enable'" do
         expect(component.toggle_label).to eq("Enable")
       end
+    end
+  end
+
+  context "when the step has a step_action and upstream_schemas are provided" do
+    let(:component) do
+      sa = build_stubbed(:orchestration_step_action,
+                         id: 99, output_key: "my_action",
+                         input_mapping: { "email" => { "from" => "_initial", "path" => nil } },
+                         action: build_stubbed(:orchestration_action, name: "My Action", output_schema: nil)).tap do |s|
+        allow(s).to receive(:params).and_return(nil)
+      end
+      the_step = build_stubbed(:orchestration_step, id: 10, pipeline: pipeline, name: "My Step", position: 2, enabled: true).tap do |s|
+        allow(s).to receive_messages(step_actions: [ sa ])
+      end
+      described_class.new(
+        step: the_step, step_counter: 1, step_iteration: iteration,
+        pipeline: pipeline, actions: actions,
+        upstream_schemas_per_step: { 10 => { "_initial" => nil, "prior_action" => nil } },
+        validator_results_per_step: {}
+      )
+    end
+
+    it "renders from select with _initial option" do
+      expect(rendered.css("select[data-testid='from-select'] option[value='_initial']")).to be_present
+    end
+
+    it "renders from select with upstream output_key option" do
+      expect(rendered.css("select[data-testid='from-select'] option[value='prior_action']")).to be_present
+    end
+
+    it "excludes the step_action's own output_key from from select" do
+      option_values = rendered.css("select[data-testid='from-select'] option").map { |o| o["value"] }
+      expect(option_values).not_to include("my_action")
+    end
+  end
+
+  context "when the upstream action has an output_schema with properties" do
+    let(:component) do
+      sa = build_stubbed(:orchestration_step_action,
+                         id: 99, output_key: "my_action",
+                         input_mapping: { "email" => { "from" => "prior_action", "path" => nil } },
+                         action: build_stubbed(:orchestration_action, name: "My Action", output_schema: nil)).tap do |s|
+        allow(s).to receive(:params).and_return(nil)
+      end
+      the_step = build_stubbed(:orchestration_step, id: 10, pipeline: pipeline, name: "My Step", position: 2, enabled: true).tap do |s|
+        allow(s).to receive_messages(step_actions: [ sa ])
+      end
+      upstream_schema = { "type" => "object", "properties" => { "email" => { "type" => "string" }, "name" => { "type" => "string" } } }
+      described_class.new(
+        step: the_step, step_counter: 1, step_iteration: iteration,
+        pipeline: pipeline, actions: actions,
+        upstream_schemas_per_step: { 10 => { "_initial" => nil, "prior_action" => upstream_schema } },
+        validator_results_per_step: {}
+      )
+    end
+
+    it "renders path as a select with schema property names as options" do
+      select = rendered.css("select[data-testid='path-select']").first
+      expect(select).to be_present
+      option_values = select.css("option").map { |o| o["value"] }
+      expect(option_values).to include("email", "name")
+    end
+  end
+
+  context "when the upstream action has no output_schema" do
+    let(:component) do
+      sa = build_stubbed(:orchestration_step_action,
+                         id: 99, output_key: "my_action",
+                         input_mapping: { "email" => { "from" => "_initial", "path" => nil } },
+                         action: build_stubbed(:orchestration_action, name: "My Action", output_schema: nil)).tap do |s|
+        allow(s).to receive(:params).and_return(nil)
+      end
+      the_step = build_stubbed(:orchestration_step, id: 10, pipeline: pipeline, name: "My Step", position: 2, enabled: true).tap do |s|
+        allow(s).to receive_messages(step_actions: [ sa ])
+      end
+      described_class.new(
+        step: the_step, step_counter: 1, step_iteration: iteration,
+        pipeline: pipeline, actions: actions,
+        upstream_schemas_per_step: { 10 => { "_initial" => nil } },
+        validator_results_per_step: {}
+      )
+    end
+
+    it "renders path as a text input" do
+      expect(rendered.css("input[data-testid='path-text']")).to be_present
+    end
+
+    it "does not render a path select" do
+      expect(rendered.css("select[data-testid='path-select']")).to be_empty
+    end
+  end
+
+  context "when the validator reports no errors for this step" do
+    let(:component) do
+      sa = build_stubbed(:orchestration_step_action,
+                         id: 99, output_key: "my_action",
+                         input_mapping: {},
+                         action: build_stubbed(:orchestration_action, name: "My Action", output_schema: nil)).tap do |s|
+        allow(s).to receive(:params).and_return(nil)
+      end
+      the_step = build_stubbed(:orchestration_step, id: 10, pipeline: pipeline, name: "My Step", position: 2, enabled: true).tap do |s|
+        allow(s).to receive_messages(step_actions: [ sa ])
+      end
+      described_class.new(
+        step: the_step, step_counter: 1, step_iteration: iteration,
+        pipeline: pipeline, actions: actions,
+        upstream_schemas_per_step: { 10 => { "_initial" => nil } },
+        validator_results_per_step: { 10 => [] }
+      )
+    end
+
+    it "renders a green validity badge" do
+      badge = rendered.css("[data-testid='validity-badge']").first
+      expect(badge).to be_present
+      expect(badge["class"]).to include("green")
+    end
+  end
+
+  context "when the validator reports errors for this step" do
+    let(:error_message) { "input_mapping key \"email\" references unknown output key \"missing\"" }
+    let(:component) do
+      issue = Orchestration::Pipeline::Validator::Issue.new(
+        code: :unknown_from, message: error_message,
+        mapping_key: "email", from: "missing", path: nil
+      )
+      result = Orchestration::Pipeline::Validator::StepResult.new(
+        step_action_id: 99, output_key: "my_action",
+        errors: [ issue ], warnings: []
+      )
+      sa = build_stubbed(:orchestration_step_action,
+                         id: 99, output_key: "my_action",
+                         input_mapping: {},
+                         action: build_stubbed(:orchestration_action, name: "My Action", output_schema: nil)).tap do |s|
+        allow(s).to receive(:params).and_return(nil)
+      end
+      the_step = build_stubbed(:orchestration_step, id: 10, pipeline: pipeline, name: "My Step", position: 2, enabled: true).tap do |s|
+        allow(s).to receive_messages(step_actions: [ sa ])
+      end
+      described_class.new(
+        step: the_step, step_counter: 1, step_iteration: iteration,
+        pipeline: pipeline, actions: actions,
+        upstream_schemas_per_step: { 10 => { "_initial" => nil } },
+        validator_results_per_step: { 10 => [ result ] }
+      )
+    end
+
+    it "renders a red validity badge" do
+      badge = rendered.css("[data-testid='validity-badge']").first
+      expect(badge).to be_present
+      expect(badge["class"]).to include("red")
+    end
+
+    it "renders the error message" do
+      expect(rendered.text).to include(error_message)
     end
   end
 end

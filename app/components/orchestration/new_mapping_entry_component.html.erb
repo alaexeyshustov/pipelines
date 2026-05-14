@@ -1,0 +1,18 @@
+<div class="flex items-center gap-2 border-t border-dashed border-gray-200 pt-2">
+  <span class="text-xs text-gray-400 w-24">new key:</span>
+  <%= text_field_tag "orchestration_step_action[new_key]",
+        nil,
+        placeholder: "input_key",
+        class: "w-24 border border-gray-300 rounded px-1.5 py-1 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500" %>
+  <span class="text-xs text-gray-400">←</span>
+  <%= select_tag "orchestration_step_action[new_from]",
+        options_for_select(@from_options),
+        include_blank: "— from —",
+        class: "border border-gray-300 rounded px-1.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" %>
+  <%= text_field_tag "orchestration_step_action[new_path]",
+        nil,
+        placeholder: "dot.path (optional)",
+        class: "border border-gray-300 rounded px-1.5 py-1 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500" %>
+  <%= submit_tag "Save mapping",
+        class: "px-2 py-1 bg-indigo-600 text-white text-xs font-medium rounded hover:bg-indigo-700 transition-colors cursor-pointer" %>
+</div>

@@ -1,0 +1,5 @@
+module Orchestration
+  class StepsRunListComponent < ViewComponent::Base
+    def initialize: (pipeline: Pipeline, run: PipelineRun, action_runs_by_step: Hash[Integer, Array[ActionRun]]) -> void
+  end
+end

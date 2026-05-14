@@ -1,0 +1,16 @@
+<div class="mt-3 pt-3 border-t border-gray-100" data-testid="input-mapping-editor">
+  <%= render Orchestration::InputMappingComponent.new(
+        step_action: @step_action,
+        pipeline: @pipeline,
+        step: @step,
+        upstream_schemas: @upstream_schemas
+      ) %>
+
+  <% if validation_errors.any? %>
+    <ul class="mt-1 ml-4 space-y-0.5">
+      <% validation_errors.each do |err| %>
+        <li class="text-xs text-red-600">⚠ <%= err.message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

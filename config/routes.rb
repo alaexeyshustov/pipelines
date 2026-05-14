@@ -73,7 +73,7 @@ Rails.application.routes.draw do
           patch :move_down
           patch :toggle
         end
-        resources :step_actions, only: [ :create, :destroy ]
+        resources :step_actions, only: [ :create, :update, :destroy ]
       end
     end
   end

@@ -1,0 +1,19 @@
+module Orchestration
+  class InputMappingComponent < ViewComponent::Base
+    class MappingRow
+      attr_reader mapping_key: String
+      attr_reader current_from: String?
+      attr_reader current_path: String?
+      attr_reader path_opts: Array[[String, String]]?
+
+      def self.new: (mapping_key: String, current_from: String?, current_path: String?, path_opts: Array[[String, String]]?) -> instance
+    end
+
+    def initialize: (step_action: StepAction, pipeline: Pipeline, step: Step, upstream_schemas: Hash[String, untyped?]) -> void
+    def form_url: () -> String
+    def from_options: () -> Array[[String, String]]
+    def path_options_for: (String from_key) -> Array[[String, String]]?
+    def mapping: () -> Hash[String, untyped]
+    def mapping_rows: () -> Array[MappingRow]
+  end
+end

@@ -8,6 +8,10 @@ module Orchestration
     validates :name, presence: true
     validate :cron_expression_parseable, if: -> { cron_expression.present? }
 
+    def validate_steps
+      Pipeline::Validator.call(self)
+    end
+
     def next_run_at(from: Time.current)
       return nil if cron_expression.blank?
       cron = Fugit::Cron.parse(cron_expression)

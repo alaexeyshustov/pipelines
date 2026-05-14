@@ -34,6 +34,28 @@ module Orchestration
       end
     end
 
+    def update
+      @step_action = @step.step_actions.find(params[:id])
+      mapping, key_error = parse_input_mapping
+      if key_error
+        redirect_to orchestration_pipeline_path(@pipeline), alert: key_error and return
+      end
+
+      result = Orchestration::InputMappingUpdater.call(step_action: @step_action, input_mapping: mapping)
+
+      if result.saved
+        notice = if result.warnings.any?
+          "Mapping saved. Warning: #{result.warnings.map { |w| "#{w.code}: #{w.message}" }.join("; ")}"
+        else
+          "Mapping saved."
+        end
+        redirect_to orchestration_pipeline_path(@pipeline), notice: notice
+      else
+        error_summary = result.errors.map(&:message).join("; ").presence || "Invalid mapping."
+        redirect_to orchestration_pipeline_path(@pipeline), alert: error_summary
+      end
+    end
+
     def destroy
       @step_action = @step.step_actions.find(params[:id])
       @step_action.destroy
@@ -57,6 +79,26 @@ module Orchestration
       permitted
     rescue JSON::ParserError
       nil
+    end
+
+    def parse_input_mapping
+      permitted = params.require(:orchestration_step_action).permit(input_mapping: {})
+      mapping   = (permitted[:input_mapping]&.to_h || {}).deep_stringify_keys
+
+      new_key  = params.dig(:orchestration_step_action, :new_key).presence
+      new_from = params.dig(:orchestration_step_action, :new_from).presence
+
+      if new_key
+        unless new_key.match?(Orchestration::StepAction::OUTPUT_KEY_FORMAT)
+          return [ {}, "Key #{new_key.inspect} is invalid: must only contain lowercase letters, digits, and underscores, and start with a letter." ]
+        end
+        if new_from
+          new_path = params.dig(:orchestration_step_action, :new_path).presence
+          mapping[new_key] = { "from" => new_from, "path" => new_path }.compact
+        end
+      end
+
+      [ mapping, nil ]
     end
   end
 end

@@ -206,4 +206,25 @@ RSpec.describe Orchestration::ActionRunComponent, type: :component do
       end
     end
   end
+
+  context "when available_outputs is provided" do
+    let(:available_outputs) { { "_initial" => { "email" => "test@example.com" }, "prior_action" => { "result" => 42 } } }
+    let(:component) { described_class.new(action_run: action_run, available_outputs: available_outputs) }
+
+    it "renders an Available Outputs disclosure" do
+      expect(rendered.css("details summary").map { |s| s.text.strip }).to include("Available Outputs")
+    end
+
+    it "renders the available outputs content" do
+      expect(rendered.css("pre").map(&:text).join).to include('"_initial"')
+    end
+  end
+
+  context "when available_outputs is nil" do
+    let(:component) { described_class.new(action_run: action_run, available_outputs: nil) }
+
+    it "does not render an Available Outputs disclosure" do
+      expect(rendered.css("details summary").map { |s| s.text.strip }).not_to include("Available Outputs")
+    end
+  end
 end

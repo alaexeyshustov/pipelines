@@ -11,11 +11,12 @@ module Orchestration
       @step = entry[:step]
       @action_run_records = entry[:action_runs]
       @derived_status = entry[:derived_status]
+      @available_outputs = entry[:available_outputs]
     end
 
     def before_render
       with_status_badge
-      @action_run_records.each { |ar| with_action_run_item(action_run: ar) }
+      @action_run_records.each { |ar| with_action_run_item(action_run: ar, available_outputs: @available_outputs) }
     end
   end
 end

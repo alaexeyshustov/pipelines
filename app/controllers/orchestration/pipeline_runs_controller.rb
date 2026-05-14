@@ -10,13 +10,10 @@ module Orchestration
 
     def show
       @run = @pipeline.pipeline_runs.find(params[:id])
-      action_runs_by_step = @run.action_runs
+      @action_runs_by_step = @run.action_runs
         .includes(step_action: :action)
+        .order(:id)
         .group_by { |ar| ar.step_action.step_id }
-      @steps_with_action_runs = @pipeline.steps.map do |step|
-        action_runs = action_runs_by_step.fetch(step.id, [])
-        { step: step, action_runs: action_runs, derived_status: Orchestration::Step.derive_status(action_runs) }
-      end
     end
 
     private

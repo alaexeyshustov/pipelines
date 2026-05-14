@@ -5,6 +5,7 @@ module Orchestration
     def destroy: () -> void
     def move_up: () -> void
     def move_down: () -> void
+    def toggle: () -> void
 
     private
 
@@ -12,6 +13,5 @@ module Orchestration
     def set_step: () -> void
     def render_pipeline_show: () -> void
     def step_params: () -> ActionController::Parameters
-    def parse_input_mapping: (String? raw) -> untyped
   end
 end

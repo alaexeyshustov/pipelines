@@ -8,6 +8,7 @@
           <% unless @step.enabled? %>
             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">disabled</span>
           <% end %>
+          <span class="<%= validity_badge_classes %>" data-testid="validity-badge"><%= validity_badge_label %></span>
         </div>
 
         <% if @step.step_actions.any? %>
@@ -22,6 +23,15 @@
               </div>
             <% end %>
           </div>
+
+          <%# Input mapping editors %>
+          <%= render Orchestration::StepActionEditorComponent.with_collection(
+                @step.step_actions,
+                pipeline: @pipeline,
+                step: @step,
+                upstream_schemas: @upstream_schemas,
+                validator_results: @validator_results
+              ) %>
         <% end %>
 
       </div>
@@ -62,4 +72,3 @@
     <% end %>
   </div>
 </div>
-
