@@ -1024,6 +1024,24 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
+    context 'when a required input_schema field is supplied via step_action params' do
+      before do
+        action.update!(input_schema: {
+          "type" => "object",
+          "required" => [ "mode" ],
+          "properties" => { "mode" => { "type" => "string" } }
+        })
+        create(:orchestration_step_action, step: step1, action: action, position: 1, params: { "mode" => "strict" })
+        allow(stub_agent).to receive(:with_params).and_return(stub_agent)
+      end
+
+      it 'does not fail validation because params are merged with resolved input for agent actions' do
+        described_class.new(pipeline_run).call
+        expect(pipeline_run.reload.status).to eq("completed")
+        expect(stub_agent).to have_received(:ask)
+      end
+    end
+
     context 'when a step has two parallel actions with distinct output keys' do # rubocop:disable RSpec/MultipleMemoizedHelpers
       before do
         step2 = create(:orchestration_step, pipeline: pipeline, name: "consume", position: 2)
@@ -1048,7 +1066,7 @@ RSpec.describe Orchestration::PipelineRunner do
         described_class.new(pipeline_run).call
         expect(pipeline_run.reload.status).to eq("completed")
         consume_run = Orchestration::ActionRun.joins(step_action: :step).find_by(steps: { name: "consume" })
-        expect(consume_run.input.keys).to contain_exactly("a", "b")
+        expect(consume_run.input).to eq({ "a" => { "data" => "alpha" }, "b" => { "data" => "beta" } })
       end
     end
 
@@ -1076,6 +1094,11 @@ RSpec.describe Orchestration::PipelineRunner do
           .first
         expect(sib_b_run.status).to eq("failed")
         expect(sib_b_run.error).to include('unknown output key: "sib_a"')
+      end
+
+      it 'does not execute the valid sibling when a resolver error marks any action_run in the step failed' do
+        described_class.new(pipeline_run).call
+        expect(Emails::FetchExecutor).not_to have_received(:call)
       end
     end
 

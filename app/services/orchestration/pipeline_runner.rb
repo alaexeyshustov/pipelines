@@ -47,8 +47,10 @@ module Orchestration
         action_run
       end
 
-      runnable = action_runs.select { |ar| ar.status == "pending" }
-      run_actions_in_parallel(runnable) if runnable.any?
+      unless action_runs.any? { |ar| ar.status == "failed" }
+        runnable = action_runs.select { |ar| ar.status == "pending" }
+        run_actions_in_parallel(runnable) if runnable.any?
+      end
       action_runs.each(&:reload)
     end
 
@@ -67,9 +69,12 @@ module Orchestration
 
     def execute_action(action_run)
       action_run.update!(status: "running", started_at: Time.current)
-      validate_input!(action_run.step_action.action, action_run.input || {})
+      action = action_run.step_action.action
+      input  = action_run.input || {} # : Hash[String, untyped]
+      effective_input = action.agent? ? (action_run.step_action.params || {}).merge(input) : input
+      validate_input!(action, effective_input)
       execution = run_agent(action_run)
-      validate_output!(action_run.step_action.action, execution[:output], raw_content: execution[:raw_content])
+      validate_output!(action, execution[:output], raw_content: execution[:raw_content])
       action_run.update!(status: "completed", output: execution[:output], error: nil, error_details: nil, finished_at: Time.current)
     rescue StandardError => error
       handle_action_failure(action_run, error, raw_content: execution&.dig(:raw_content))
