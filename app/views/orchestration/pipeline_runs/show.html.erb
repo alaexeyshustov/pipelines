@@ -13,6 +13,4 @@
 
 <%= render Orchestration::RunDetailCardComponent.new(run: @run) %>
 
-<div class="grid grid-cols-1 gap-4">
-  <%= render(Orchestration::StepRunComponent.with_collection(@steps_with_action_runs)) %>
-</div>
+<%= render Orchestration::StepsRunListComponent.new(pipeline: @pipeline, run: @run, action_runs_by_step: @action_runs_by_step) %>

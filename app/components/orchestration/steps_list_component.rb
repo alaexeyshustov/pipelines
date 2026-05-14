@@ -23,7 +23,7 @@ module Orchestration
     end
 
     def compute_validator_results_per_step
-      all_results = Pipeline::Validator.call(@pipeline)
+      all_results = @pipeline.validate_steps
       step_action_id_to_step_id = @steps.each_with_object({}) do |step, map|
         step.step_actions.each { |sa| map[sa.id] = step.id }
       end

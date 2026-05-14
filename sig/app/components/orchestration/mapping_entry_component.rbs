@@ -1,0 +1,5 @@
+module Orchestration
+  class MappingEntryComponent < ViewComponent::Base
+    def initialize: (row: InputMappingComponent::MappingRow, from_options: Array[[String, String]]) -> void
+  end
+end
