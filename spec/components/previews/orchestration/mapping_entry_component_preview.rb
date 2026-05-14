@@ -7,9 +7,9 @@ module Orchestration
         mapping_key:  "email_body",
         current_from: "_initial",
         current_path: "body",
-        path_opts:    [["body", "body"], ["subject", "subject"]]
+        path_opts:    [ [ "body", "body" ], [ "subject", "subject" ] ]
       )
-      from_options = [["_initial", "_initial"], ["classification", "classification"]]
+      from_options = [ [ "_initial", "_initial" ], [ "classification", "classification" ] ]
 
       render(Orchestration::MappingEntryComponent.new(row: row, from_options: from_options))
     end
@@ -21,7 +21,7 @@ module Orchestration
         current_path: "some.nested.path",
         path_opts:    nil
       )
-      from_options = [["_initial", "_initial"]]
+      from_options = [ [ "_initial", "_initial" ] ]
 
       render(Orchestration::MappingEntryComponent.new(row: row, from_options: from_options))
     end

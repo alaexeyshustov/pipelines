@@ -8,7 +8,7 @@ module Orchestration
 
     def with_sources
       render(Orchestration::NewMappingEntryComponent.new(
-        from_options: [["_initial", "_initial"], ["classification", "classification"]]
+        from_options: [ [ "_initial", "_initial" ], [ "classification", "classification" ] ]
       ))
     end
   end

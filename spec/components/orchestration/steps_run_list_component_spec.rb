@@ -15,7 +15,7 @@ RSpec.describe Orchestration::StepsRunListComponent, type: :component do
   end
 
   before do
-    allow(pipeline).to receive(:steps).and_return([step])
+    allow(pipeline).to receive(:steps).and_return([ step ])
   end
 
   it "renders a grid container" do
@@ -31,21 +31,14 @@ RSpec.describe Orchestration::StepsRunListComponent, type: :component do
   end
 
   context "when action_runs exist for a step" do
-    let(:action) { build_stubbed(:orchestration_action, name: "Classify Agent") }
-    let(:step_action) do
-      build_stubbed(:orchestration_step_action, id: 1, step: step, action: action, output_key: "classification")
-    end
     let(:action_run) do
-      build_stubbed(:orchestration_action_run,
-                    step_action: step_action,
-                    status: "completed",
-                    started_at: nil,
-                    finished_at: nil,
-                    error: nil,
-                    input: nil,
-                    output: nil)
+      sa = build_stubbed(:orchestration_step_action, id: 1, step: step,
+                         action: build_stubbed(:orchestration_action, name: "Classify Agent"),
+                         output_key: "classification")
+      build_stubbed(:orchestration_action_run, step_action: sa, status: "completed",
+                    started_at: nil, finished_at: nil, error: nil, input: nil, output: nil)
     end
-    let(:action_runs_by_step) { { step.id => [action_run] } }
+    let(:action_runs_by_step) { { step.id => [ action_run ] } }
 
     it "renders the action run" do
       expect(rendered.css("[data-testid='action-run']")).to be_present
