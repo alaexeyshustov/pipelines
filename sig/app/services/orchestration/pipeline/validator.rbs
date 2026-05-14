@@ -18,6 +18,8 @@ module Orchestration
         attr_reader warnings: Array[Issue]
       end
 
+      def self.call: (Orchestration::Pipeline pipeline) -> Array[StepResult]
+
       def initialize: (Orchestration::Pipeline pipeline) -> void
       def call: () -> Array[StepResult]
 

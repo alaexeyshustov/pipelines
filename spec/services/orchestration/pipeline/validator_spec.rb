@@ -6,6 +6,13 @@ RSpec.describe Orchestration::Pipeline::Validator do
   let(:pipeline) { create(:orchestration_pipeline) }
   let(:step)     { create(:orchestration_step, pipeline: pipeline, position: 1) }
 
+  describe '.call' do
+    it 'delegates to an instance and returns results' do
+      create(:orchestration_step_action, step: step, position: 1, output_key: "fetch", input_mapping: nil)
+      expect(described_class.call(pipeline)).to be_an(Array)
+    end
+  end
+
   describe '#call' do
     context 'with a fully-correct pipeline (no input_mapping, no schema constraints)' do
       before do
@@ -208,6 +215,39 @@ RSpec.describe Orchestration::Pipeline::Validator do
              step: step, position: 1, output_key: "bad",
              input_mapping: { "x" => { "from" => "bad_ref" } })
       expect { validator.call }.not_to raise_error
+    end
+
+    context 'with a non-Hash spec value in input_mapping' do
+      before do
+        create(:orchestration_step_action,
+               step: step, position: 1, output_key: "fetch",
+               input_mapping: { "key" => "plain_string_value" })
+      end
+
+      it 'does not raise' do
+        expect { validator.call }.not_to raise_error
+      end
+
+      it 'returns no errors for the malformed entry' do
+        expect(validator.call.first.errors).to be_empty
+      end
+    end
+
+    context 'with a non-Array required field in input_schema' do
+      let(:action) do
+        create(:orchestration_action,
+               input_schema: { "type" => "object", "required" => "emails" })
+      end
+
+      before do
+        create(:orchestration_step_action,
+               step: step, position: 1, output_key: "fetch",
+               action: action, input_mapping: nil)
+      end
+
+      it 'does not raise' do
+        expect { validator.call }.not_to raise_error
+      end
     end
 
     context 'with _initial as a from reference' do

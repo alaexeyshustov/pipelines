@@ -4,6 +4,8 @@ module Orchestration
       Issue = Data.define(:code, :message, :mapping_key, :from, :path)
       StepResult = Data.define(:step_action_id, :output_key, :errors, :warnings)
 
+      def self.call(pipeline) = new(pipeline).call
+
       def initialize(pipeline)
         @pipeline = pipeline
       end
@@ -35,16 +37,17 @@ module Orchestration
       private
 
       def ordered_step_actions
-        @pipeline.steps.includes(step_actions: :action).order(:position).flat_map do |step|
+        @pipeline.steps.includes(step_actions: :action).flat_map do |step|
           step.step_actions.sort_by(&:position)
         end
       end
 
       def validate_input_mapping(step_action, known_schemas, errors, warnings)
         mapping = step_action.input_mapping || {}
-        effective_params = merge_params(step_action)
 
         mapping.each do |mapping_key, spec|
+          next unless spec.is_a?(Hash)
+
           from = spec["from"]
           path = spec["path"]
 
@@ -60,7 +63,7 @@ module Orchestration
             )
           end
 
-          if effective_params.key?(mapping_key)
+          if merge_params(step_action).key?(mapping_key)
             warnings << Issue.new(
               code: :param_collision,
               message: "key #{mapping_key.inspect} appears in both input_mapping and params; input_mapping wins at runtime",
@@ -114,7 +117,8 @@ module Orchestration
         schema = step_action.action.input_schema
         return if schema.nil?
 
-        required_keys = schema["required"] || []
+        required_keys = schema["required"]
+        return unless required_keys.is_a?(Array)
         return if required_keys.empty?
 
         covered = Set.new((step_action.input_mapping || {}).keys + merge_params(step_action).keys)
