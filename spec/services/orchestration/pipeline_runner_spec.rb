@@ -940,6 +940,190 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
+    context 'when an agent action has step params alongside a resolved input' do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      let(:classify_agent) { instance_double(RubyLLM::Agent, chat: create(:chat), params: {}) }
+
+      before do
+        fetch_action = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
+        classify_action = create(:orchestration_action, agent: create(:orchestration_agent, name: "Emails::ClassifyAgent"))
+        step2 = create(:orchestration_step, pipeline: pipeline, name: "classify", position: 2)
+
+        create(:orchestration_step_action, step: step1, action: fetch_action, position: 1, output_key: "fetch")
+        create(:orchestration_step_action,
+               step: step2, action: classify_action, position: 1,
+               input_mapping: { "emails" => { "from" => "fetch", "path" => "emails" } },
+               params: { "mode" => "strict", "limit" => 10 })
+
+        allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [ { "id" => "e1" } ] })
+        allow(RubyLLM::Agent).to receive(:new).and_return(classify_agent)
+        allow(classify_agent).to receive_messages(
+          with_model: classify_agent,
+          with_params: classify_agent,
+          ask: instance_double(RubyLLM::Message, content: "done")
+        )
+      end
+
+      it 'passes step params merged with the resolved input to the agent ask call' do
+        described_class.new(pipeline_run).call
+        expect(classify_agent).to have_received(:ask)
+          .with(satisfy { |json| JSON.parse(json) == { "mode" => "strict", "limit" => 10, "emails" => [ { "id" => "e1" } ] } })
+      end
+    end
+
+    context 'when step params and input_mapping share a key' do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      let(:classify_agent) { instance_double(RubyLLM::Agent, chat: create(:chat), params: {}) }
+
+      before do
+        fetch_action = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
+        classify_action = create(:orchestration_action, agent: create(:orchestration_agent, name: "Emails::ClassifyAgent"))
+        step2 = create(:orchestration_step, pipeline: pipeline, name: "classify", position: 2)
+
+        create(:orchestration_step_action, step: step1, action: fetch_action, position: 1, output_key: "fetch")
+        create(:orchestration_step_action,
+               step: step2, action: classify_action, position: 1,
+               input_mapping: { "emails" => { "from" => "fetch", "path" => "emails" } },
+               params: { "emails" => "PARAM_OVERRIDE", "limit" => 5 })
+
+        allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [ { "id" => "e1" } ] })
+        allow(RubyLLM::Agent).to receive(:new).and_return(classify_agent)
+        allow(classify_agent).to receive_messages(
+          with_model: classify_agent,
+          with_params: classify_agent,
+          ask: instance_double(RubyLLM::Message, content: "done")
+        )
+      end
+
+      it 'input_mapping value wins over the param value on collision' do
+        described_class.new(pipeline_run).call
+        expect(classify_agent).to have_received(:ask)
+          .with(satisfy { |json| JSON.parse(json).fetch("emails") == [ { "id" => "e1" } ] })
+      end
+    end
+
+    context 'when the action has an input_schema and the resolved input violates it' do
+      before do
+        action.update!(input_schema: {
+          "type" => "object",
+          "required" => [ "emails" ],
+          "properties" => { "emails" => { "type" => "array" } }
+        })
+        create(:orchestration_step_action, step: step1, action: action, position: 1)
+      end
+
+      it 'marks the action_run failed with the schema error before invoking the agent' do
+        described_class.new(pipeline_run).call
+        action_run = Orchestration::ActionRun.last
+        expect(action_run.status).to eq("failed")
+        expect(action_run.error).to match(/missing required key: emails/)
+        expect(stub_agent).not_to have_received(:ask)
+      end
+
+      it 'marks the pipeline_run as failed' do
+        described_class.new(pipeline_run).call
+        expect(pipeline_run.reload.status).to eq("failed")
+      end
+    end
+
+    context 'when a step has two parallel actions with distinct output keys' do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      before do
+        step2 = create(:orchestration_step, pipeline: pipeline, name: "consume", position: 2)
+        fetch_a = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
+        fetch_b = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
+        consume_action = create(:orchestration_action, agent: action.agent)
+
+        create(:orchestration_step_action, step: step1, action: fetch_a, position: 1, output_key: "source_a")
+        create(:orchestration_step_action, step: step1, action: fetch_b, position: 2, output_key: "source_b")
+        create(:orchestration_step_action,
+               step: step2, action: consume_action, position: 1,
+               input_mapping: {
+                 "a" => { "from" => "source_a" },
+                 "b" => { "from" => "source_b" }
+               })
+
+        allow(Emails::FetchExecutor).to receive(:call)
+          .and_return({ "data" => "alpha" }, { "data" => "beta" })
+      end
+
+      it 'both parallel outputs are accessible to the next step via their output_keys' do
+        described_class.new(pipeline_run).call
+        expect(pipeline_run.reload.status).to eq("completed")
+        consume_run = Orchestration::ActionRun.joins(step_action: :step).find_by(steps: { name: "consume" })
+        expect(consume_run.input.keys).to contain_exactly("a", "b")
+      end
+    end
+
+    context 'when an input_mapping references a sibling action in the same step' do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      before do
+        step2 = create(:orchestration_step, pipeline: pipeline, name: "process", position: 2)
+        sibling_a = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
+        sibling_b = create(:orchestration_action, agent: action.agent)
+
+        create(:orchestration_step_action, step: step1, action: action, position: 1)
+        create(:orchestration_step_action, step: step2, action: sibling_a, position: 1, output_key: "sib_a")
+        create(:orchestration_step_action,
+               step: step2, action: sibling_b, position: 2, output_key: "sib_b",
+               input_mapping: { "data" => { "from" => "sib_a" } })
+
+        allow(stub_agent).to receive(:ask).and_return(instance_double(RubyLLM::Message, content: "result"))
+        allow(Emails::FetchExecutor).to receive(:call).and_return({ "result" => [] })
+      end
+
+      it 'marks the sibling-referencing action_run failed at resolve-time with UnknownOutputKey' do
+        described_class.new(pipeline_run).call
+        sib_b_run = Orchestration::ActionRun
+          .joins(:step_action)
+          .where(step_actions: { output_key: "sib_b" })
+          .first
+        expect(sib_b_run.status).to eq("failed")
+        expect(sib_b_run.error).to include('unknown output key: "sib_a"')
+      end
+    end
+
+    context 'when input_mapping references an unknown output key' do
+      before do
+        create(:orchestration_step_action,
+               step: step1, action: action, position: 1,
+               input_mapping: { "x" => { "from" => "nonexistent" } })
+      end
+
+      it 'creates the action_run and marks it failed with the resolver message' do
+        described_class.new(pipeline_run).call
+        expect(Orchestration::ActionRun.count).to eq(1)
+        action_run = Orchestration::ActionRun.last
+        expect(action_run.status).to eq("failed")
+        expect(action_run.error).to eq('unknown output key: "nonexistent"')
+      end
+
+      it 'marks the pipeline_run as failed' do
+        described_class.new(pipeline_run).call
+        expect(pipeline_run.reload.status).to eq("failed")
+      end
+    end
+
+    context 'when input_mapping references a missing path' do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      before do
+        fetch_action = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
+        classify_action = create(:orchestration_action, agent: action.agent)
+        step2 = create(:orchestration_step, pipeline: pipeline, name: "classify", position: 2)
+
+        create(:orchestration_step_action, step: step1, action: fetch_action, position: 1, output_key: "fetch")
+        create(:orchestration_step_action,
+               step: step2, action: classify_action, position: 1,
+               input_mapping: { "x" => { "from" => "fetch", "path" => "nonexistent.deep" } })
+
+        allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [] })
+      end
+
+      it 'marks the classify action_run failed with the specific MissingPath message' do
+        described_class.new(pipeline_run).call
+        classify_run = Orchestration::ActionRun
+          .joins(step_action: :step)
+          .find_by(steps: { name: "classify" })
+        expect(classify_run.status).to eq("failed")
+        expect(classify_run.error).to include("nonexistent.deep")
+      end
+    end
+
     context 'when filter agent returns a bare array (regression: Run #58 TypeError)' do
       before do
         step2 = create(:orchestration_step, pipeline: pipeline, name: "filter",  position: 2)

@@ -31,19 +31,24 @@ module Orchestration
 
     def run_step(step, previous_outputs)
       action_runs = step.step_actions.map do |step_action|
-        resolved_input = InputMappingResolver.new(
-          input_mapping: step_action.input_mapping || {},
-          previous_outputs: previous_outputs
-        ).resolve
+        empty_input = {} # : Hash[String, untyped]
+        action_run = @pipeline_run.action_runs.create!(step_action: step_action, status: "pending", input: empty_input)
 
-        @pipeline_run.action_runs.create!(
-          step_action: step_action,
-          status: "pending",
-          input: resolved_input
-        )
+        begin
+          resolved = InputMappingResolver.new(
+            input_mapping: step_action.input_mapping || {},
+            previous_outputs: previous_outputs
+          ).resolve
+          action_run.update!(input: resolved)
+        rescue InputMappingResolver::UnknownOutputKey, InputMappingResolver::MissingPath => e
+          action_run.update!(status: "failed", error: e.message, finished_at: Time.current)
+        end
+
+        action_run
       end
 
-      run_actions_in_parallel(action_runs)
+      runnable = action_runs.select { |ar| ar.status == "pending" }
+      run_actions_in_parallel(runnable) if runnable.any?
       action_runs.each(&:reload)
     end
 
@@ -62,6 +67,7 @@ module Orchestration
 
     def execute_action(action_run)
       action_run.update!(status: "running", started_at: Time.current)
+      validate_input!(action_run.step_action.action, action_run.input || {})
       execution = run_agent(action_run)
       validate_output!(action_run.step_action.action, execution[:output], raw_content: execution[:raw_content])
       action_run.update!(status: "completed", output: execution[:output], error: nil, error_details: nil, finished_at: Time.current)
@@ -71,7 +77,7 @@ module Orchestration
 
     def run_agent(action_run)
       action = action_run.step_action.action
-      input  = action_run.input
+      input  = action_run.input || {} # : Hash[String, untyped]
 
       if action.agent?
         builder = RuntimeAgentBuilder.new(
@@ -83,7 +89,8 @@ module Orchestration
         agent = builder.build
         chat_id = agent.respond_to?(:chat) ? agent.chat&.id : agent.id
         action_run.update_columns(chat_id: chat_id, agent_snapshot: builder.snapshot)
-        result = agent.ask(input.to_json)
+        params = action_run.step_action.params || {}
+        result = agent.ask(params.merge(input).to_json)
         output = parse_content(result.content, structured_output_expected?(action))
         normalized_output = action.agent&.output_schema.present? ? output : { "result" => output }
         { output: normalized_output, raw_content: result.content }
@@ -147,6 +154,13 @@ module Orchestration
           summary: failure.summary
         }.to_json
       )
+    end
+
+    def validate_input!(action, input)
+      schema = action.input_schema
+      return unless schema.present?
+
+      SchemaValidator.new(schema).validate!(input)
     end
 
     def structured_output_expected?(action)
