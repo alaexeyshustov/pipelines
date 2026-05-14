@@ -1,6 +1,6 @@
 module Emails
   type message = {
-      id: String | Integer | nil,
+      id: String | nil,
       provider: String,
       subject: String,
       from: String,

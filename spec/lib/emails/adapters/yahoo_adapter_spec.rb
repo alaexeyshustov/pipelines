@@ -40,7 +40,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
 
       expect(messages).to be_an(Array)
       expect(messages.first).to include(
-        id:      101,
+        id:      "101",
         subject: 'Job Application Update',
         from:    'hr@company.com'
       )
@@ -91,7 +91,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
       message = adapter.get_message(101)
 
       expect(message).to include(
-        id:      101,
+        id:      "101",
         subject: 'Job Application Update',
         from:    'hr@company.com'
       )
