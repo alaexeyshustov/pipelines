@@ -64,8 +64,8 @@ STORE_EMAILS_OUTPUT_SCHEMA = {
 }.freeze
 
 FETCH_EMAILS_INPUT_MAPPING = {
-  "date"      => { "from" => "_initial", "path" => "date" },
-  "providers" => { "from" => "_initial", "path" => "providers" }
+  "date"      => { "from" => "_initial", "path" => "date",      "optional" => true },
+  "providers" => { "from" => "_initial", "path" => "providers", "optional" => true }
 }.freeze
 
 CLASSIFY_EMAILS_INPUT_MAPPING = {
@@ -317,16 +317,16 @@ AGENT_DEFINITIONS = {
 }.freeze
 
 steps = [
-  { name: "Fetch Emails",                   kind: :service, agent_class: "Emails::FetchExecutor"                                                                                             },
-  { name: "Classify Emails",                kind: :agent,   agent_name: "Emails::ClassifyAgent"                                                                                              },
-  { name: "Filter Emails",                  kind: :agent,   agent_name: "Emails::FilterAgent",  sa_params: FILTER_EMAILS_STEP_PARAMS, sa_input_mapping: FILTER_EMAILS_INPUT_MAPPING           },
-  { name: "Ingest Emails",                  kind: :service, agent_class: "Orchestration::IngestionExecutor",  params: INGEST_EMAILS_PARAMS                                                   },
-  { name: "Map Emails",                     kind: :agent,   agent_name: "Emails::MappingAgent",  schema_class: "ApplicationMailsSchema", sa_input_mapping: MAP_EMAILS_INPUT_MAPPING           },
-  { name: "Store Emails",                   kind: :agent,   agent_name: "Records::StoreAgent",   sa_params: STORE_EMAILS_STEP_PARAMS,  sa_input_mapping: STORE_EMAILS_INPUT_MAPPING           },
+  { name: "Fetch Emails",                   kind: :service, agent_class: "Emails::FetchExecutor",                                          sa_input_mapping: FETCH_EMAILS_INPUT_MAPPING     },
+  { name: "Classify Emails",                kind: :agent,   agent_name: "Emails::ClassifyAgent",                                           sa_input_mapping: CLASSIFY_EMAILS_INPUT_MAPPING  },
+  { name: "Filter Emails",                  kind: :agent,   agent_name: "Emails::FilterAgent",  sa_params: FILTER_EMAILS_STEP_PARAMS,      sa_input_mapping: FILTER_EMAILS_INPUT_MAPPING    },
+  { name: "Ingest Emails",                  kind: :service, agent_class: "Orchestration::IngestionExecutor",  params: INGEST_EMAILS_PARAMS, sa_input_mapping: INGEST_EMAILS_INPUT_MAPPING   },
+  { name: "Map Emails",                     kind: :agent,   agent_name: "Emails::MappingAgent",  schema_class: "ApplicationMailsSchema",   sa_input_mapping: MAP_EMAILS_INPUT_MAPPING       },
+  { name: "Store Emails",                   kind: :agent,   agent_name: "Records::StoreAgent",   sa_params: STORE_EMAILS_STEP_PARAMS,      sa_input_mapping: STORE_EMAILS_INPUT_MAPPING     },
   { name: "Query Email Records",            kind: :service, agent_class: "Orchestration::QueryExecutor",  params: QUERY_EMAIL_RECORDS_PARAMS, sa_input_mapping: QUERY_EMAIL_RECORDS_INPUT_MAPPING },
   { name: "Normalize Emails",               kind: :agent,   agent_name: "Records::NormalizeAgent",  sa_params: NORMALIZE_EMAILS_STEP_PARAMS, sa_input_mapping: NORMALIZE_EMAILS_INPUT_MAPPING },
   { name: "Reconcile Emails to Interviews", kind: :agent,   agent_name: "Records::ReconcileAgent",  sa_params: RECONCILE_EMAILS_STEP_PARAMS, sa_input_mapping: RECONCILE_EMAILS_INPUT_MAPPING },
-  { name: "Export to Gist",                 kind: :service, agent_class: "Interviews::GistExportExecutor"                                                                                    }
+  { name: "Export to Gist",                 kind: :service, agent_class: "Interviews::GistExportExecutor",                                 sa_input_mapping: {}                             }
 ]
 
 Orchestration::Action.where(name: "Merge Email Records").destroy_all

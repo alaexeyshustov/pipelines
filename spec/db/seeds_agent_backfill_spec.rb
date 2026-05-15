@@ -6,7 +6,6 @@ RSpec.describe "Seeds: agent config backfill" do # rubocop:disable RSpec/Describ
   before { load Rails.root.join("db/seeds.rb") }
 
   agents_without_output_schema = %w[
-    Emails::ClassifyAgent
     Emails::MappingAgent
     Records::NormalizeAgent
     Records::ReconcileAgent
@@ -45,6 +44,24 @@ RSpec.describe "Seeds: agent config backfill" do # rubocop:disable RSpec/Describ
           expect(agent.output_schema).to be_nil
         end
       end
+    end
+  end
+
+  describe "Emails::ClassifyAgent" do
+    subject(:agent) { Orchestration::Agent.find_by!(name: "Emails::ClassifyAgent") }
+
+    it "has output_schema so Yahoo integer UIDs are reliably returned as strings" do
+      expect(agent.output_schema).to be_present
+    end
+
+    it "has output_schema with required results array" do
+      expect(agent.output_schema).to match(
+        hash_including(
+          "additionalProperties" => false,
+          "required"             => [ "results" ],
+          "properties"           => hash_including("results" => hash_including("type" => "array"))
+        )
+      )
     end
   end
 

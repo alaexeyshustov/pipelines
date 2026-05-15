@@ -16,8 +16,15 @@ RSpec.describe Emails::FetchExecutor do
       expect(result).to eq({ "emails" => [ { id: 1 }, { id: 2 } ] })
     end
 
-    it 'uses today as default date' do
+    it 'uses today as default date when key is absent' do
       described_class.call({})
+
+      expect(Emails).to have_received(:list_messages).with('gmail', hash_including(after_date: date - 1, before_date: date))
+      expect(Emails).to have_received(:list_messages).with('yahoo', hash_including(after_date: date - 1, before_date: date))
+    end
+
+    it 'falls back to today when date is nil (optional mapping from scheduled run)' do
+      described_class.call({ "date" => nil, "providers" => nil })
 
       expect(Emails).to have_received(:list_messages).with('gmail', hash_including(after_date: date - 1, before_date: date))
       expect(Emails).to have_received(:list_messages).with('yahoo', hash_including(after_date: date - 1, before_date: date))

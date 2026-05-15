@@ -14,12 +14,16 @@ RSpec.describe "Seeds: pipeline 2 step input_mapping" do # rubocop:disable RSpec
   describe "Fetch Emails (step 1)" do
     subject(:sa) { step_action_for("Fetch Emails") }
 
-    it "maps date from initial input" do
-      expect(sa.input_mapping).to include("date" => { "from" => "_initial", "path" => "date" })
+    it "maps date from initial input as optional (falls back to today for scheduled runs)" do
+      expect(sa.input_mapping).to include(
+        "date" => { "from" => "_initial", "path" => "date", "optional" => true }
+      )
     end
 
-    it "maps providers from initial input" do
-      expect(sa.input_mapping).to include("providers" => { "from" => "_initial", "path" => "providers" })
+    it "maps providers from initial input as optional (falls back to all providers for scheduled runs)" do
+      expect(sa.input_mapping).to include(
+        "providers" => { "from" => "_initial", "path" => "providers", "optional" => true }
+      )
     end
   end
 

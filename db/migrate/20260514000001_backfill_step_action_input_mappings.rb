@@ -10,8 +10,8 @@ class BackfillStepActionInputMappings < ActiveRecord::Migration[8.1]
   STEP_CONFIGS = {
     "Fetch Emails" => {
       input_mapping: {
-        "date"      => { "from" => "_initial", "path" => "date" },
-        "providers" => { "from" => "_initial", "path" => "providers" }
+        "date"      => { "from" => "_initial", "path" => "date",      "optional" => true },
+        "providers" => { "from" => "_initial", "path" => "providers", "optional" => true }
       }
     },
     "Classify Emails" => {
