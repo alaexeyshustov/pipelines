@@ -9,7 +9,7 @@ module Emails
 
       def to_h
         {
-          id:      @uid,
+          id:      @uid.to_s,
           provider: "yahoo",
           subject: ImapBodyParser.decode_header(@mail.subject) || "(No Subject)",
           from:    Array(@mail.from).join(", ").presence || "Unknown",

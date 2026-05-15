@@ -14,15 +14,19 @@ module Orchestration
         path     = spec["path"]
         optional = spec["optional"]
 
-        upstream = fetch_upstream!(from)
+        upstream = fetch_upstream!(from, optional:)
+        next nil if upstream.nil?
         path ? dig_path(upstream, path, from, optional) : upstream
       end
     end
 
     private
 
-    def fetch_upstream!(from)
-      raise UnknownOutputKey, "unknown output key: #{from.inspect}" unless @previous_outputs.key?(from)
+    def fetch_upstream!(from, optional: false)
+      unless @previous_outputs.key?(from)
+        return nil if optional
+        raise UnknownOutputKey, "unknown output key: #{from.inspect}"
+      end
 
       @previous_outputs[from]
     end

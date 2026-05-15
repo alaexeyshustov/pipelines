@@ -11,7 +11,7 @@ module Orchestration
 
     private
 
-    def fetch_upstream!: (String from) -> Hash[String, untyped]
+    def fetch_upstream!: (String from, ?optional: bool) -> Hash[String, untyped]?
     def dig_path: (Hash[String, untyped] upstream, String path, String from, bool? optional) -> untyped
   end
 end

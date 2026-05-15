@@ -61,6 +61,27 @@ RSpec.describe Orchestration::InputMappingResolver do
       end
     end
 
+    context 'with optional: true and a missing upstream key' do
+      let(:input_mapping) do
+        { "maybe" => { "from" => "_initial", "path" => "date", "optional" => true } }
+      end
+
+      it 'returns nil without raising when the upstream key is absent' do
+        expect { resolver.resolve }.not_to raise_error
+        expect(resolver.resolve["maybe"]).to be_nil
+      end
+    end
+
+    context 'with optional: false (default) and a missing upstream key' do
+      let(:input_mapping) do
+        { "data" => { "from" => "_initial", "path" => "date" } }
+      end
+
+      it 'raises UnknownOutputKey' do
+        expect { resolver.resolve }.to raise_error(described_class::UnknownOutputKey, /_initial/)
+      end
+    end
+
     context 'with a whole-output reference (no path)' do
       let(:input_mapping) do
         { "all_fetch" => { "from" => "fetch" } }

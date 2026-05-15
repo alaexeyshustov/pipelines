@@ -7,9 +7,9 @@ module Emails
     DEFAULT_MAX_RESULTS = 10
 
     def self.call(input, params = {})
-      date        = Date.parse(input.fetch("date", DEFAULT_DATE))
+      date        = Date.parse(input["date"] || DEFAULT_DATE)
       after       = date - 1
-      providers   = input.fetch("providers", DEFAULT_PROVIDERS)
+      providers   = input["providers"] || DEFAULT_PROVIDERS
       max_results = params.fetch("max_results", DEFAULT_MAX_RESULTS).to_i
 
       emails = Sync do
