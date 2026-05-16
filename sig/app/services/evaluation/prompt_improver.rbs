@@ -25,10 +25,14 @@ module Evaluation
 
     def load_evaluation_data: () -> Array[EvaluationEntry]
 
+    def load_samples: () -> Array[{ input: untyped, output: String }]
+
     def build_improvement_message: (
       current_prompt: Leva::Prompt,
       evaluation_data: Array[EvaluationEntry],
-      metrics: ActiveRecord::Relation
+      metrics: ActiveRecord::Relation,
+      samples: Array[{ input: untyped, output: String }],
+      output_schema: untyped
     ) -> String
 
     def call_llm: (String user_message) -> { system_prompt: String, user_prompt: String }

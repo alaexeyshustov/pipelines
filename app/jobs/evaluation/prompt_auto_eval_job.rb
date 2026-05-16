@@ -13,7 +13,7 @@ module Evaluation
         .first
 
       unless previous_experiment
-        Rails.logger.info("[PromptAutoEvalJob] No completed experiment for '#{prompt.name}', skipping.")
+        logger.info("[PromptAutoEvalJob] No completed experiment for '#{prompt.name}', skipping.")
         return
       end
 
@@ -28,7 +28,7 @@ module Evaluation
 
       Leva::ExperimentJob.perform_later(experiment)
     rescue ActiveRecord::RecordInvalid => e
-      Rails.logger.error("[PromptAutoEvalJob] Experiment creation failed: #{e.message}")
+      logger.error("[PromptAutoEvalJob] Experiment creation failed: #{e.message}")
     end
   end
 end

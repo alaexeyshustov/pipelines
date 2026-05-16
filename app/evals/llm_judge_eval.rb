@@ -30,7 +30,7 @@ class LLMJudgeEval < Leva::BaseEval
       return []
     end
 
-    prompt_text = fetch_instructions(agent_name(recordable))
+    prompt_text = fetch_instructions(runner_result)
     prediction = JSON.parse(runner_result.prediction)
     expected_tool_calls = Evaluation::ToolCallExtractor.call(recordable.chat)
 
@@ -77,12 +77,8 @@ class LLMJudgeEval < Leva::BaseEval
     action.agent? ? action.agent&.name : action.agent_class
   end
 
-  def fetch_instructions(agent_name)
-    Orchestration::Prompt
-      .where(name: agent_name)
-      .order(version: :desc, id: :desc)
-      .first
-      &.system_prompt
+  def fetch_instructions(runner_result)
+    runner_result.prompt&.system_prompt
   end
 
   def call_judge(instructions:, input:, expected_tool_calls:, actual_tool_calls:, output:, metrics:)

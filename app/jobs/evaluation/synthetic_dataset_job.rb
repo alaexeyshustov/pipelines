@@ -31,7 +31,7 @@ module Evaluation
 
       update_draft(draft_token, status: "complete", dataset_id: dataset.id)
     rescue StandardError => e
-      Rails.logger.error("[SyntheticDatasetJob] Failed for draft #{draft_token}: #{e.message}")
+      logger.error("[SyntheticDatasetJob] Failed for draft #{draft_token}: #{e.message}")
       update_draft(draft_token, status: "error", error_message: e.message)
     end
 

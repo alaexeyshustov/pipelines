@@ -64,6 +64,14 @@ RSpec.describe Evaluation::PromptAutoEvalJob do
         described_class.perform_now(prompt_id: new_prompt.id)
         expect(Leva::ExperimentJob).not_to have_received(:perform_later)
       end
+
+      it "logs that the prompt was skipped" do
+        allow(described_class.logger).to receive(:info)
+
+        described_class.perform_now(prompt_id: new_prompt.id)
+
+        expect(described_class.logger).to have_received(:info).with(/PromptAutoEvalJob.*skipping/)
+      end
     end
 
     context "when no experiment exists for the prompt name at all" do

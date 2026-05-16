@@ -23,10 +23,10 @@ RSpec.describe Evaluation::WizardDraftCleanupJob do
     it "logs the number of deleted drafts" do
       create(:evaluation_wizard_draft, session_token: "old_one", updated_at: 25.hours.ago)
 
-      allow(Rails.logger).to receive(:info)
+      allow(described_class.logger).to receive(:info)
       described_class.perform_now
 
-      expect(Rails.logger).to have_received(:info).with(/WizardDraftCleanupJob.*1/)
+      expect(described_class.logger).to have_received(:info).with(/WizardDraftCleanupJob.*1/)
     end
   end
 end

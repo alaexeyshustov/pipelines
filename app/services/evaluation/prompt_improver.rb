@@ -4,15 +4,27 @@ module Evaluation
 
     EvaluationEntry = Data.define(:metric_name, :score, :justification)
 
-    SYSTEM_PROMPT = <<~PROMPT.freeze
+    IMPROVEMENT_PROMPT = <<~PROMPT.freeze
       You are an expert prompt engineer. You will be given a current agent system prompt,
-      evaluation scores with justifications, and metric rubrics describing what each score measures.
+      evaluation scores with justifications, metric rubrics, and sample inputs with actual
+      agent outputs.
 
       Your task: improve the system prompt to address weak areas (low scores) while preserving
-      behaviors that already score well. Return ONLY a JSON object with:
-      - "system_prompt": the improved system prompt (string)
-      - "user_prompt": the improved user prompt (string)
+      behaviors that already score well.
+
+      IMPORTANT constraints:
+      - Do NOT add output format descriptions, JSON schema examples, or structured output
+        instructions to the improved prompt. The output schema is enforced at the API level
+        via response_format and must not appear in the prompt text — duplicating it adds noise
+        and degrades model performance.
+      - The output schema section (if present) is provided for your reference only, so you
+        understand what the agent produces. Do not replicate it in the improved prompt.
     PROMPT
+
+    class ImprovementSchema < RubyLLM::Schema
+      string :system_prompt, required: true, description: "The improved system prompt text. Must be non-empty."
+      string :user_prompt, required: true, description: "The improved user prompt text. Can be empty if no changes are needed."
+    end
 
     def self.call(experiment:)
       new(experiment:).call
@@ -28,11 +40,15 @@ module Evaluation
 
       metrics         = Evaluation::Metric.where(agent_name: current_prompt.name, active: true)
       evaluation_data = load_evaluation_data
+      samples         = load_samples
+      output_schema   = Orchestration::Agent.find_by(name: current_prompt.name)&.output_schema
 
       user_message = build_improvement_message(
         current_prompt:,
         evaluation_data:,
-        metrics:
+        metrics:,
+        samples:,
+        output_schema:
       )
 
       improved = call_llm(user_message)
@@ -40,7 +56,8 @@ module Evaluation
       Orchestration::Prompt.create!(
         name: current_prompt.name,
         system_prompt: improved[:system_prompt],
-        user_prompt: improved[:user_prompt].presence || current_prompt.user_prompt
+        user_prompt: improved[:user_prompt].presence || current_prompt.user_prompt,
+        version: current_prompt.version + 1
       )
     end
 
@@ -57,12 +74,37 @@ module Evaluation
         .map { |j| EvaluationEntry.new(metric_name: j.metric_name, score: j.evaluation_result.score, justification: j.justification) }
     end
 
-    def build_improvement_message(current_prompt:, evaluation_data:, metrics:)
+    def load_samples
+      Leva::RunnerResult
+        .where(experiment: @experiment)
+        .includes(dataset_record: :recordable)
+        .order(Arel.sql("RANDOM()"))
+        .limit(5)
+        .filter_map do |rr|
+          prediction = JSON.parse(rr.prediction) rescue next
+          { input: rr.dataset_record.recordable.input, output: prediction.fetch("output", "") }
+        end
+    end
+
+    def build_improvement_message(current_prompt:, evaluation_data:, metrics:, samples:, output_schema:)
       rubrics = metrics.map { |m| "- #{m.name}: #{m.description}" }.join("\n")
 
       score_lines = evaluation_data.map do |r|
         "- #{r.metric_name}: #{r.score}/5 — #{r.justification}"
       end.join("\n")
+
+      sample_lines = samples.map.with_index(1) do |s, i|
+        "### Sample #{i}\nInput: #{JSON.generate(s[:input])}\nOutput: #{s[:output]}"
+      end.join("\n\n")
+
+      schema_section = if output_schema.present?
+        <<~SECTION
+          ## Output Schema (API-enforced — for reference only, DO NOT include in improved prompt)
+          <output_schema>
+          #{JSON.pretty_generate(output_schema)}
+          </output_schema>
+        SECTION
+      end
 
       <<~MSG
         ## Current System Prompt
@@ -82,12 +124,20 @@ module Evaluation
 
         ## Metric Rubrics
         #{rubrics.presence || "(no metrics defined)"}
+
+        ## Sample Inputs and Actual Agent Outputs
+        <samples>
+        #{sample_lines.presence || "(no samples available)"}
+        </samples>
+
+        #{schema_section}
       MSG
     end
 
     def call_llm(user_message)
       response = RubyLLM.chat(model:)
-                        .with_instructions(SYSTEM_PROMPT)
+                        .with_instructions(IMPROVEMENT_PROMPT)
+                        .witch_schema(ImprovementSchema)
                         .ask(user_message)
 
       parse_response(response.content)

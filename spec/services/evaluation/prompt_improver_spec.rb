@@ -53,6 +53,11 @@ RSpec.describe Evaluation::PromptImprover do
       expect { described_class.call(experiment: experiment) }.to change(Orchestration::Prompt, :count).by(1)
     end
 
+    it "increments the version from the source prompt" do
+      result = described_class.call(experiment: experiment)
+      expect(result.version).to eq(prompt.version + 1)
+    end
+
     it "uses the improved system prompt from LLM" do
       stub_llm(system_prompt: "Better classification prompt.")
       result = described_class.call(experiment: experiment)
@@ -85,6 +90,22 @@ RSpec.describe Evaluation::PromptImprover do
       expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
         req.body.include?("How accurate is it?")
       }
+    end
+
+    context "when the agent has an output schema" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      before do
+        create(:orchestration_agent, name: agent_name,
+               output_schema: { "type" => "object", "properties" => { "results" => { "type" => "array" } } })
+      end
+
+      it "includes the schema in the request but instructs not to embed it in the prompt" do
+        described_class.call(experiment: experiment)
+        expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
+          body = JSON.parse(req.body)
+          text = body["messages"].to_s
+          text.include?("API-enforced") && text.include?("DO NOT include")
+        }
+      end
     end
 
     context "when experiment has no associated prompt" do

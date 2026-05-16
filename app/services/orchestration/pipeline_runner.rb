@@ -94,8 +94,7 @@ module Orchestration
         agent = builder.build
         chat_id = agent.respond_to?(:chat) ? agent.chat&.id : agent.id
         action_run.update_columns(chat_id: chat_id, agent_snapshot: builder.snapshot)
-        params = action_run.step_action.params || {}
-        result = agent.ask(params.merge(input).to_json)
+        result = agent.ask(builder.resolved_params.merge(input).to_json)
         output = parse_content(result.content, structured_output_expected?(action))
         normalized_output = action.agent&.output_schema.present? ? output : { "result" => output }
         { output: normalized_output, raw_content: result.content }

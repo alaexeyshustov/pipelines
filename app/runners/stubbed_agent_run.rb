@@ -18,7 +18,12 @@ class StubbedAgentRun < Leva::BaseRun
       meta = JSON.parse(meta) if meta.is_a?(String)
       meta&.[]("pipeline_model")
     end
-    agent = Orchestration::RuntimeAgentBuilder.new(action: action, tool_classes: stubbed_tools, pipeline_model: pipeline_model).build
+    agent = Orchestration::RuntimeAgentBuilder.new(
+      action: action,
+      tool_classes: stubbed_tools,
+      pipeline_model: pipeline_model,
+      prompt_override: @prompt&.system_prompt
+    ).build
 
     result = agent.ask(record.input.to_json)
 

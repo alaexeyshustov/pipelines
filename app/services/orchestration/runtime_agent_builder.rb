@@ -16,9 +16,6 @@ module Orchestration
       tools = resolved_tools
       agent.with_tools(*tools, replace: true) if tools.present?
 
-      params = resolved_params
-      agent.with_params(**params) if params.present?
-
       schema = resolved_generation_schema
       agent.with_schema(schema) if schema.present?
 
@@ -29,6 +26,11 @@ module Orchestration
 
     def resolved_output_schema
       agent_record.output_schema.presence || @action.output_schema
+    end
+
+    def resolved_params
+      base_params = agent_record.params.presence || @action.params || {}
+      base_params.merge(@step_params || {})
     end
 
     def snapshot
@@ -81,11 +83,6 @@ module Orchestration
       rescue NameError
         raise ArgumentError, "Unknown tool class: #{tool}"
       end
-    end
-
-    def resolved_params
-      base_params = agent_record.params.presence || @action.params || {}
-      base_params.merge(@step_params || {})
     end
 
     def resolved_generation_schema

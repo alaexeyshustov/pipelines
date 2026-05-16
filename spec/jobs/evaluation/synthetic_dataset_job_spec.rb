@@ -144,6 +144,14 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
         expect(generation["status"]).to eq("error")
         expect(generation["error_message"]).to be_present
       end
+
+      it "logs the failure to the job logger" do
+        allow(described_class.logger).to receive(:error)
+
+        described_class.perform_now(**params)
+
+        expect(described_class.logger).to have_received(:error).with(/SyntheticDatasetJob.*#{draft_token}/)
+      end
     end
 
     context "when LLM returns a non-array JSON value" do

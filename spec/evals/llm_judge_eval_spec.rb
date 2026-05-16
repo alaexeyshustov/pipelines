@@ -24,11 +24,13 @@ RSpec.describe LLMJudgeEval do
       ])
       { id: "chatcmpl-01", object: "chat.completion", model: "gpt-5.4", choices: [ { index: 0, message: { role: "assistant", content: scores }, finish_reason: "stop" } ], usage: { prompt_tokens: 200, completion_tokens: 80, total_tokens: 280 } }.to_json
     end
+    let(:prompt_double) { instance_double(Orchestration::Prompt, system_prompt: "You are a classifier.") }
     let(:runner_result) do
       prediction = { tool_calls: [ { tool_name: "classify_email", arguments: { label: "offer" } } ], output: "Classified." }.to_json
       instance_double(
         Leva::RunnerResult,
         prediction: prediction,
+        prompt: prompt_double,
         dataset_record: instance_double(Leva::DatasetRecord, recordable: recordable)
       )
     end
@@ -36,12 +38,6 @@ RSpec.describe LLMJudgeEval do
     before do
       create(:evaluation_metric, agent_name: agent_name, name: "tool_call_accuracy", description: "Score tool call order.")
       create(:evaluation_metric, agent_name: agent_name, name: "output_quality", description: "Score output quality.")
-
-      prompt_double = instance_double(Orchestration::Prompt, system_prompt: "You are a classifier.")
-      prompt_rel = instance_double(ActiveRecord::Relation)
-      allow(Orchestration::Prompt).to receive(:where).with(name: agent_name).and_return(prompt_rel)
-      allow(prompt_rel).to receive(:order).with(version: :desc, id: :desc).and_return(prompt_rel)
-      allow(prompt_rel).to receive(:first).and_return(prompt_double)
 
       allow(Evaluation::ToolCallExtractor).to receive(:call).and_return(
         [ { tool_name: "classify_email", arguments: { label: "offer" }, result: "done" } ]
@@ -88,6 +84,7 @@ RSpec.describe LLMJudgeEval do
         instance_double(
           Leva::RunnerResult,
           prediction: prediction,
+          prompt: prompt_double,
           dataset_record: instance_double(Leva::DatasetRecord, recordable: recordable)
         )
       end
@@ -129,6 +126,7 @@ RSpec.describe LLMJudgeEval do
         instance_double(
           Leva::RunnerResult,
           prediction: nil,
+          prompt: prompt_double,
           dataset_record: instance_double(Leva::DatasetRecord, recordable: recordable)
         )
       end
