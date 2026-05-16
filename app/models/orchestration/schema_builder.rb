@@ -106,7 +106,7 @@ module Orchestration
     end
 
     def add_property(name)
-      return self if name.blank?
+      return self if name.blank? || properties.key?(name)
 
       new_properties = properties.merge(name => SchemaBuilder.new(type: "string"))
       dup_with(properties: new_properties)

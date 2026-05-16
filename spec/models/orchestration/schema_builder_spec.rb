@@ -215,6 +215,13 @@ RSpec.describe Orchestration::SchemaBuilder do
       expect(builder.properties).to be_empty
     end
 
+    it "does not overwrite an existing property" do
+      age_b = described_class.new(type: "integer")
+      builder = described_class.new(type: "object", properties: { "age" => age_b })
+      new_b = builder.add_property("age")
+      expect(new_b.properties["age"].type).to eq("integer")
+    end
+
     it "ignores blank name" do
       builder = described_class.new(type: "object")
       new_b = builder.add_property("")

@@ -1,7 +1,7 @@
 <%# schema-builder controller wraps the Turbo Frame AND the agent form so Stimulus can bridge them %>
 <div data-controller="schema-builder">
-  <%# Turbo Frame for the interactive builder (lives outside the agent form to avoid nested-form HTML) %>
-  <div class="mb-6" data-schema-builder-target="builderFrame">
+  <%# Output schema section - builder view and raw view are separate Stimulus targets %>
+  <div class="mb-6">
     <div class="flex items-center justify-between mb-2">
       <label class="block text-sm font-medium text-gray-700">Output schema builder</label>
       <button type="button"
@@ -12,15 +12,18 @@
       </button>
     </div>
 
-    <%= turbo_frame_tag "schema_builder" do %>
-      <%= render Orchestration::SchemaBuilderComponent.new(
-            builder: Orchestration::SchemaBuilder.from_schema(agent.output_schema || {}),
-            json: agent.output_schema.present? ? agent.output_schema.to_json : "{}"
-          ) %>
-    <% end %>
+    <%# Builder Turbo Frame — hidden when in raw mode %>
+    <div data-schema-builder-target="builderView">
+      <%= turbo_frame_tag "schema_builder" do %>
+        <%= render Orchestration::SchemaBuilderComponent.new(
+              builder: Orchestration::SchemaBuilder.from_schema(agent.output_schema || {}),
+              json: agent.output_schema.present? ? agent.output_schema.to_json : "{}"
+            ) %>
+      <% end %>
+    </div>
 
-    <%# Raw JSON editor (hidden by default; toggled by Stimulus) %>
-    <div style="display:none">
+    <%# Raw JSON editor — hidden by default, shown when in raw mode %>
+    <div data-schema-builder-target="rawView" style="display:none">
       <form action="<%= parse_orchestration_schema_builders_path %>"
             method="post"
             data-turbo-frame="schema_builder">
