@@ -15,6 +15,15 @@ module Orchestration
 
     before_destroy :ensure_not_referenced
 
+    def self.available_tools
+      Dir.glob(Rails.root.join("app/tools/**/*.rb")).filter_map do |path|
+        relative = path.delete_prefix("#{Rails.root}/app/tools/")
+        class_name = relative.delete_suffix(".rb").split("/").map(&:camelize).join("::")
+        namespace = class_name.split("::").first
+        class_name if ALLOWED_TOOL_NAMESPACES.include?(namespace)
+      end.sort
+    end
+
     def self.available_models
       RubyLLM.models.all
         .select { |m| m.type.to_s == "chat" }
