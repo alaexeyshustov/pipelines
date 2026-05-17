@@ -1,0 +1,3 @@
+<%= turbo_frame_tag "schema_builder" do %>
+  <%= render Orchestration::SchemaBuilderComponent.new(builder: @builder, json: @json) %>
+<% end %>

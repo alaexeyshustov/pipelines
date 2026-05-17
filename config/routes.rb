@@ -54,6 +54,15 @@ Rails.application.routes.draw do
   end
 
   namespace :orchestration do
+    resources :schema_builders, only: [] do
+      collection do
+        post :build
+        post :add_property
+        post :remove_property
+        post :change_type
+        post :parse
+      end
+    end
     resources :agents do
       member do
         patch :toggle

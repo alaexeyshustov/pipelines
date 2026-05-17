@@ -1,0 +1,193 @@
+<%# Sync target: Stimulus reads this to update the hidden output_schema field %>
+<% if root? %>
+  <input type="hidden" data-schema-builder-target="schemaData" value="<%= html_escape(json) %>">
+<% end %>
+
+<div class="schema-builder-node border border-gray-200 rounded-lg p-3 space-y-2">
+  <%# Type + description row %>
+  <div class="flex items-start gap-3">
+    <div class="flex-shrink-0">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Type</label>
+      <form action="<%= change_type_url %>" method="post" data-turbo-frame="schema_builder">
+        <%= hidden_field_tag :authenticity_token, helpers.form_authenticity_token %>
+        <input type="hidden" name="json" value="<%= html_escape(json) %>">
+        <input type="hidden" name="path" value="<%= html_escape(path_json) %>">
+        <select name="new_type"
+                class="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                onchange="this.form.requestSubmit()">
+          <% if builder.type.nil? %>
+            <option value="" selected disabled>— select type —</option>
+          <% end %>
+          <% type_options.each do |label, value| %>
+            <option value="<%= value %>" <%= "selected" if builder.type == value %>><%= label %></option>
+          <% end %>
+        </select>
+      </form>
+    </div>
+
+    <div class="flex-1">
+      <label class="block text-xs font-medium text-gray-500 mb-1">Description</label>
+      <form action="<%= helpers.build_orchestration_schema_builders_path %>" method="post" data-turbo-frame="schema_builder">
+        <%= hidden_field_tag :authenticity_token, helpers.form_authenticity_token %>
+        <input type="hidden" name="json" value="<%= html_escape(json) %>">
+        <input type="hidden" name="path" value="<%= html_escape(path_json) %>">
+        <input type="text"
+               name="builder[description]"
+               value="<%= builder.description %>"
+               placeholder="optional description"
+               class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+               onblur="this.form.requestSubmit()">
+      </form>
+    </div>
+  </div>
+
+  <%# enum (string / integer / number) %>
+  <% if Orchestration::SchemaBuilder::ENUM_TYPES.include?(builder.type) %>
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Enum values (one per line)</label>
+      <form action="<%= helpers.build_orchestration_schema_builders_path %>" method="post" data-turbo-frame="schema_builder">
+        <%= hidden_field_tag :authenticity_token, helpers.form_authenticity_token %>
+        <input type="hidden" name="json" value="<%= html_escape(json) %>">
+        <input type="hidden" name="path" value="<%= html_escape(path_json) %>">
+        <textarea name="builder[enum_text]"
+                  rows="3"
+                  placeholder="value1&#10;value2&#10;value3"
+                  class="w-full border border-gray-300 rounded px-2 py-1 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  onblur="this.form.requestSubmit()"><%= builder.enum.join("\n") %></textarea>
+      </form>
+    </div>
+  <% end %>
+
+  <%# minimum / maximum (integer / number) %>
+  <% if Orchestration::SchemaBuilder::NUMERIC_TYPES.include?(builder.type) %>
+    <div class="flex gap-3">
+      <div class="flex-1">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Minimum</label>
+        <form action="<%= helpers.build_orchestration_schema_builders_path %>" method="post" data-turbo-frame="schema_builder">
+          <%= hidden_field_tag :authenticity_token, helpers.form_authenticity_token %>
+          <input type="hidden" name="json" value="<%= html_escape(json) %>">
+          <input type="hidden" name="path" value="<%= html_escape(path_json) %>">
+          <input type="number"
+                 name="builder[minimum]"
+                 value="<%= builder.minimum %>"
+                 step="<%= builder.type == 'integer' ? 1 : 'any' %>"
+                 class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                 onblur="this.form.requestSubmit()">
+        </form>
+      </div>
+      <div class="flex-1">
+        <label class="block text-xs font-medium text-gray-500 mb-1">Maximum</label>
+        <form action="<%= helpers.build_orchestration_schema_builders_path %>" method="post" data-turbo-frame="schema_builder">
+          <%= hidden_field_tag :authenticity_token, helpers.form_authenticity_token %>
+          <input type="hidden" name="json" value="<%= html_escape(json) %>">
+          <input type="hidden" name="path" value="<%= html_escape(path_json) %>">
+          <input type="number"
+                 name="builder[maximum]"
+                 value="<%= builder.maximum %>"
+                 step="<%= builder.type == 'integer' ? 1 : 'any' %>"
+                 class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                 onblur="this.form.requestSubmit()">
+        </form>
+      </div>
+    </div>
+  <% end %>
+
+  <%# items (array) %>
+  <% if builder.type == "array" %>
+    <div class="ml-4 border-l-2 border-indigo-200 pl-3">
+      <p class="text-xs font-medium text-gray-500 mb-1">Items schema</p>
+      <%= render Orchestration::SchemaBuilderComponent.new(
+            builder: builder.items || Orchestration::SchemaBuilder.new(type: "string"),
+            path: path + ["items"],
+            json: json
+          ) %>
+    </div>
+  <% end %>
+
+  <%# properties (object) %>
+  <% if builder.type == "object" %>
+    <div class="space-y-2">
+      <% if builder.properties.any? %>
+        <p class="text-xs font-medium text-gray-500">Properties</p>
+        <% builder.properties.each do |prop_name, prop_builder| %>
+          <div class="ml-4 border-l-2 border-gray-200 pl-3 space-y-1">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-mono font-medium text-gray-700"><%= prop_name %></span>
+                <label class="flex items-center gap-1 text-xs text-gray-500">
+                  <form action="<%= helpers.build_orchestration_schema_builders_path %>" method="post" data-turbo-frame="schema_builder" class="inline">
+                    <%= hidden_field_tag :authenticity_token, helpers.form_authenticity_token %>
+                    <input type="hidden" name="json" value="<%= html_escape(json) %>">
+                    <input type="hidden" name="path" value="<%= html_escape(path_json) %>">
+                    <input type="hidden" name="builder[required_toggle]" value="<%= prop_name %>">
+                    <input type="checkbox"
+                           name="builder[required_checked]"
+                           value="true"
+                           <%= "checked" if required?(prop_name) %>
+                           onchange="this.form.requestSubmit()"
+                           class="rounded border-gray-300">
+                    required
+                  </form>
+                </label>
+              </div>
+              <form action="<%= remove_property_url %>" method="post" data-turbo-frame="schema_builder">
+                <%= hidden_field_tag :authenticity_token, helpers.form_authenticity_token %>
+                <input type="hidden" name="json" value="<%= html_escape(json) %>">
+                <input type="hidden" name="path" value="<%= html_escape(path_json) %>">
+                <input type="hidden" name="property_name" value="<%= prop_name %>">
+                <button type="submit"
+                        class="text-xs text-red-500 hover:text-red-700">
+                  Remove
+                </button>
+              </form>
+            </div>
+            <%= render Orchestration::SchemaBuilderComponent.new(
+                  builder: prop_builder,
+                  path: path + ["properties", prop_name],
+                  json: json
+                ) %>
+          </div>
+        <% end %>
+      <% end %>
+
+      <%# Add property form %>
+      <form action="<%= add_property_url %>" method="post" data-turbo-frame="schema_builder" class="flex gap-2 items-center mt-2">
+        <%= hidden_field_tag :authenticity_token, helpers.form_authenticity_token %>
+        <input type="hidden" name="json" value="<%= html_escape(json) %>">
+        <input type="hidden" name="path" value="<%= html_escape(path_json) %>">
+        <input type="text"
+               name="property_name"
+               placeholder="property name"
+               required
+               pattern="[A-Za-z_][A-Za-z0-9_]*"
+               title="Alphanumeric identifier starting with a letter or underscore"
+               class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500">
+        <button type="submit"
+                class="px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700">
+          Add property
+        </button>
+      </form>
+    </div>
+  <% end %>
+
+  <%# additionalProperties (object) %>
+  <% if builder.type == "object" %>
+    <div class="flex items-center gap-2">
+      <form action="<%= helpers.build_orchestration_schema_builders_path %>" method="post" data-turbo-frame="schema_builder" class="inline">
+        <%= hidden_field_tag :authenticity_token, helpers.form_authenticity_token %>
+        <input type="hidden" name="json" value="<%= html_escape(json) %>">
+        <input type="hidden" name="path" value="<%= html_escape(path_json) %>">
+        <input type="hidden" name="builder[additional_properties_toggle]" value="true">
+        <label class="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+          <input type="checkbox"
+                 name="builder[additional_properties]"
+                 value="true"
+                 <%= "checked" if builder.additional_properties == true %>
+                 onchange="this.form.requestSubmit()"
+                 class="rounded border-gray-300">
+          Allow additional properties
+        </label>
+      </form>
+    </div>
+  <% end %>
+</div>

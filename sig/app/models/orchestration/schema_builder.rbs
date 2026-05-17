@@ -1,0 +1,44 @@
+module Orchestration
+  class SchemaBuilder
+    TYPES: Array[String]
+    ENUM_TYPES: Array[String]
+    NUMERIC_TYPES: Array[String]
+
+    attr_reader type: String?
+    attr_reader description: String?
+    attr_reader required: Array[String]
+    attr_reader additional_properties: bool?
+    attr_reader properties: Hash[String, SchemaBuilder]
+    attr_reader items: SchemaBuilder?
+    attr_reader enum: Array[untyped]
+    attr_reader minimum: Numeric?
+    attr_reader maximum: Numeric?
+
+    def initialize: (
+      ?type: String?,
+      ?description: String?,
+      ?required: Array[String],
+      ?additional_properties: bool?,
+      ?properties: Hash[String, SchemaBuilder],
+      ?items: SchemaBuilder?,
+      ?enum: Array[untyped],
+      ?minimum: Numeric?,
+      ?maximum: Numeric?
+    ) -> void
+
+    def self.from_schema: (untyped schema) -> SchemaBuilder
+    def self.from_params: (untyped params) -> SchemaBuilder
+
+    def to_schema: () -> Hash[String, untyped]
+
+    def add_property: (String name) -> SchemaBuilder
+    def remove_property: (String name) -> SchemaBuilder
+    def with_type: (String new_type) -> SchemaBuilder
+    def with_mutation: (Array[String] path) { (SchemaBuilder) -> SchemaBuilder } -> SchemaBuilder
+
+    private
+
+    def dup_with: (**untyped) -> SchemaBuilder
+    def self.coerce_number: (untyped value, untyped type) -> Numeric?
+  end
+end

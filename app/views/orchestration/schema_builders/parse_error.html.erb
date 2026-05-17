@@ -1,0 +1,6 @@
+<%= turbo_frame_tag "schema_builder" do %>
+  <div class="rounded-lg border border-red-300 bg-red-50 p-3">
+    <p class="text-sm text-red-700"><%= @error %></p>
+    <p class="text-xs text-red-500 mt-1">Please fix the JSON and try again.</p>
+  </div>
+<% end %>

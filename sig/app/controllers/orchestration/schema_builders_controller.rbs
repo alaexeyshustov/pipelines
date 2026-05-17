@@ -1,0 +1,15 @@
+module Orchestration
+  class SchemaBuildersController < ApplicationController
+    def build: () -> void
+    def add_property: () -> void
+    def remove_property: () -> void
+    def change_type: () -> void
+    def parse: () -> void
+
+    private
+
+    def parse_json: () -> Hash[String, untyped]
+    def parse_path: () -> Array[String]
+    def apply_inline_params: (SchemaBuilder root, Array[String] path, untyped builder_params) -> SchemaBuilder
+  end
+end
