@@ -67,7 +67,7 @@ module Orchestration
         :name, :description, :model, :prompt, :params, :output_schema, tools: []
       )
 
-      permitted[:tools] = Array(permitted[:tools]).reject(&:blank?)
+      permitted[:tools] = Array(permitted[:tools]).reject(&:blank?) if permitted.key?(:tools)
 
       begin
         parse_json_field(permitted, :params)

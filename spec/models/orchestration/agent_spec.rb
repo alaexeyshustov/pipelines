@@ -92,6 +92,17 @@ RSpec.describe Orchestration::Agent do
       tools = described_class.available_tools
       expect(tools).to eq(tools.sort)
     end
+
+    it "excludes non-tool helper files in allowed namespaces" do
+      tools = described_class.available_tools
+      expect(tools).not_to include("Records::FuzzyMatcher", "Records::ModelResolver")
+    end
+
+    it "only includes RubyLLM::Tool subclasses" do
+      described_class.available_tools.each do |class_name|
+        expect(class_name.constantize).to be < RubyLLM::Tool
+      end
+    end
   end
 
   describe "#destroy" do

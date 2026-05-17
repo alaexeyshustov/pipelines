@@ -86,7 +86,7 @@
             <% tools.each do |tool| %>
               <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
                 <input type="checkbox" name="orchestration_agent[tools][]" value="<%= tool %>"
-                  <%= "checked" if agent.tools.include?(tool) %>
+                  <%= "checked" if Array(agent.tools).include?(tool) %>
                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                 <%= tool %>
               </label>
