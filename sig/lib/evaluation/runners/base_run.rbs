@@ -1,0 +1,8 @@
+module Evaluation
+  module Runners
+    class BaseRun
+      def execute: (untyped record) -> untyped
+      def execute_and_store: (untyped experiment, untyped dataset_record, untyped prompt) -> Evaluation::RunnerResult
+    end
+  end
+end
