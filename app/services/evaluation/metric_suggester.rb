@@ -45,7 +45,7 @@ module Evaluation
     private
 
     def orchestration_prompt
-      Orchestration::Prompt
+      Evaluation::Prompt
         .where(name: @agent_name)
         .order(version: :desc, id: :desc)
         .first

@@ -221,12 +221,12 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
-    context 'when an Orchestration::Prompt exists for the agent class' do
+    context 'when an Evaluation::Prompt exists for the agent class' do
       let(:chat) { instance_spy(Chat, id: nil) }
 
       before do
         allow(stub_agent).to receive(:chat).and_return(chat)
-        Orchestration::Prompt.create!(
+        Evaluation::Prompt.create!(
           name: "Emails::ClassifyAgent",
           system_prompt: "Custom Leva prompt for classifier",
           user_prompt: "{{input}}"
@@ -234,18 +234,18 @@ RSpec.describe Orchestration::PipelineRunner do
         create(:orchestration_step_action, step: step1, action: action, position: 1)
       end
 
-      it 'applies the Orchestration::Prompt system_prompt as instructions' do
+      it 'applies the Evaluation::Prompt system_prompt as instructions' do
         described_class.new(pipeline_run).call
         expect(chat).to have_received(:with_instructions).with("Custom Leva prompt for classifier")
       end
     end
 
-    context 'when an Orchestration::Prompt exists and action also has a prompt' do
+    context 'when an Evaluation::Prompt exists and action also has a prompt' do
       let(:chat) { instance_spy(Chat, id: nil) }
 
       before do
         allow(stub_agent).to receive(:chat).and_return(chat)
-        Orchestration::Prompt.create!(
+        Evaluation::Prompt.create!(
           name: "Emails::ClassifyAgent",
           system_prompt: "Leva wins over action prompt",
           user_prompt: "{{input}}"
@@ -254,13 +254,13 @@ RSpec.describe Orchestration::PipelineRunner do
         create(:orchestration_step_action, step: step1, action: action, position: 1)
       end
 
-      it 'prefers the Orchestration::Prompt over the action prompt' do
+      it 'prefers the Evaluation::Prompt over the action prompt' do
         described_class.new(pipeline_run).call
         expect(chat).to have_received(:with_instructions).with("Leva wins over action prompt")
       end
     end
 
-    context 'when no Orchestration::Prompt exists but the action has a prompt' do
+    context 'when no Evaluation::Prompt exists but the action has a prompt' do
       let(:chat) { instance_spy(Chat, id: nil) }
 
       before do
@@ -275,7 +275,7 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
-    context 'when no Orchestration::Prompt and no action prompt' do
+    context 'when no Evaluation::Prompt and no action prompt' do
       let(:chat) { instance_spy(Chat, id: nil) }
 
       before do

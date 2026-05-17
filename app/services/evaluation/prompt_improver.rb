@@ -53,11 +53,12 @@ module Evaluation
 
       improved = call_llm(user_message)
 
-      Orchestration::Prompt.create!(
+      Evaluation::Prompt.create!(
         name: current_prompt.name,
         system_prompt: improved[:system_prompt],
         user_prompt: improved[:user_prompt].presence || current_prompt.user_prompt,
-        version: current_prompt.version + 1
+        version: current_prompt.version + 1,
+        output_schema: output_schema
       )
     end
 
@@ -70,12 +71,12 @@ module Evaluation
     def load_evaluation_data
       Evaluation::Justification
         .eager_load(:evaluation_result)
-        .where(leva_evaluation_results: { experiment_id: @experiment.id })
+        .where(evaluation_evaluation_results: { experiment_id: @experiment.id })
         .map { |j| EvaluationEntry.new(metric_name: j.metric_name, score: j.evaluation_result.score, justification: j.justification) }
     end
 
     def load_samples
-      Leva::RunnerResult
+      Evaluation::RunnerResult
         .where(experiment: @experiment)
         .includes(dataset_record: :recordable)
         .order(Arel.sql("RANDOM()"))

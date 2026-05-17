@@ -12,7 +12,7 @@ module Evaluation
     end
 
     def call
-      dataset = Leva::Dataset.find_or_create_by!(name: @agent_name)
+      dataset = Evaluation::Dataset.find_or_create_by!(name: @agent_name)
       created = 0
       skipped = 0
 

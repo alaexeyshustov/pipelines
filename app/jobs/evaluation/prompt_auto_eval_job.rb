@@ -3,11 +3,11 @@ module Evaluation
     queue_as :default
 
     def perform(prompt_id:)
-      prompt = Orchestration::Prompt.find(prompt_id)
+      prompt = Evaluation::Prompt.find(prompt_id)
 
-      previous_experiment = Leva::Experiment
+      previous_experiment = Evaluation::Experiment
         .joins(:prompt)
-        .where(leva_prompts: { name: prompt.name })
+        .where(evaluation_prompts: { name: prompt.name })
         .where(status: :completed)
         .order(id: :desc)
         .first
@@ -17,7 +17,7 @@ module Evaluation
         return
       end
 
-      experiment = Leva::Experiment.create!(
+      experiment = Evaluation::Experiment.create!(
         name: "Auto-eval for #{prompt.name} v#{prompt.version}",
         dataset: previous_experiment.dataset,
         prompt: prompt,
@@ -26,7 +26,7 @@ module Evaluation
         metadata: { triggered_by: "prompt_change" }
       )
 
-      Leva::ExperimentJob.perform_later(experiment)
+      Evaluation::ExperimentJob.perform_later(experiment)
     rescue ActiveRecord::RecordInvalid => e
       logger.error("[PromptAutoEvalJob] Experiment creation failed: #{e.message}")
     end

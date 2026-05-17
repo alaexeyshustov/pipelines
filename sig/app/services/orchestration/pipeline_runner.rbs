@@ -15,6 +15,6 @@ module Orchestration
     def handle_action_failure: (ActionRun action_run, StandardError error, raw_content: untyped) -> void
     def log_action_failure: (ActionRun action_run, NormalizeActionRunFailure::Result failure) -> void
     def structured_output_expected?: (Action action) -> bool
-    def leva_prompt_for: (String? agent_name) -> String?
+    def prompt_for: (String? agent_name) -> String?
   end
 end

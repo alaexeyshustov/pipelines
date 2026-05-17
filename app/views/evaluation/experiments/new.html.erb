@@ -7,11 +7,14 @@
     <% case @step %>
     <% when 1 %>
       <%= render Evaluation::Wizard::AgentPromptStepComponent.new(
-            agent_names:     @agent_names,
-            prompts:         @prompts,
-            agent_name:      @agent_name,
-            prompt_id:       @prompt_id,
-            experiment_name: @experiment_name) %>
+            agent_names:      @agent_names,
+            prompts:          @prompts,
+            agent_name:       @agent_name,
+            prompt_id:        @prompt_id,
+            experiment_name:  @experiment_name,
+            available_models: @available_models,
+            sample_model:     @sample_model,
+            evaluation_model: @evaluation_model) %>
     <% when 2 %>
       <%= render Evaluation::Wizard::MetricsStepComponent.new(
             agent_name: @agent_name,

@@ -38,9 +38,9 @@ RSpec.describe Evaluation::PromptImprover do
       expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: result.id).once
     end
 
-    it "returns a new Orchestration::Prompt" do
+    it "returns a new Evaluation::Prompt" do
       result = described_class.call(experiment: experiment)
-      expect(result).to be_a(Orchestration::Prompt)
+      expect(result).to be_a(Evaluation::Prompt)
       expect(result).to be_persisted
     end
 
@@ -50,7 +50,7 @@ RSpec.describe Evaluation::PromptImprover do
     end
 
     it "creates a new prompt record (does not mutate original)" do
-      expect { described_class.call(experiment: experiment) }.to change(Orchestration::Prompt, :count).by(1)
+      expect { described_class.call(experiment: experiment) }.to change(Evaluation::Prompt, :count).by(1)
     end
 
     it "increments the version from the source prompt" do

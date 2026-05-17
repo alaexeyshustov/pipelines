@@ -1,4 +1,4 @@
-class LLMJudgeEval < Leva::BaseEval
+class LLMJudgeEval < BaseEval
   SYSTEM_PROMPT = <<~PROMPT.freeze
     You are an impartial LLM judge evaluating an AI agent's response.
     You will be given the agent's instructions, the input it received, the expected tool call sequence,
@@ -17,7 +17,7 @@ class LLMJudgeEval < Leva::BaseEval
     attr_accessor :judge_model
   end
 
-  def evaluate(runner_result, recordable)
+  def evaluate(runner_result, recordable, model: self.class.judge_model)
     unless recordable.respond_to?(:input) && recordable.respond_to?(:step_action)
       raise ArgumentError, "LLMJudgeEval requires a recordable with #input and #step_action, got #{recordable.class}"
     end
@@ -40,7 +40,8 @@ class LLMJudgeEval < Leva::BaseEval
       expected_tool_calls: expected_tool_calls,
       actual_tool_calls: prediction.fetch("tool_calls", []),
       output: prediction.fetch("output", ""),
-      metrics: metrics
+      metrics: metrics,
+      model: model
     )
   rescue JSON::ParserError, TypeError => e
     Rails.logger.error("LLMJudgeEval: failed to parse prediction JSON: #{e.message}")
@@ -49,11 +50,12 @@ class LLMJudgeEval < Leva::BaseEval
 
   def evaluate_and_store(experiment, runner_result)
     recordable = runner_result.dataset_record.recordable
-    results = evaluate(runner_result, recordable)
+    judge_model = experiment.evaluation_model.presence || self.class.judge_model
+    results = evaluate(runner_result, recordable, model: judge_model)
 
     results.map do |metric_result|
       ActiveRecord::Base.transaction do
-        eval_result = Leva::EvaluationResult.create!(
+        eval_result = Evaluation::EvaluationResult.create!(
           experiment: experiment,
           dataset_record: runner_result.dataset_record,
           runner_result: runner_result,
@@ -81,7 +83,7 @@ class LLMJudgeEval < Leva::BaseEval
     runner_result.prompt&.system_prompt
   end
 
-  def call_judge(instructions:, input:, expected_tool_calls:, actual_tool_calls:, output:, metrics:)
+  def call_judge(instructions:, input:, expected_tool_calls:, actual_tool_calls:, output:, metrics:, model: self.class.judge_model)
     user_message = build_user_message(
       instructions: instructions,
       input: input,
@@ -91,7 +93,7 @@ class LLMJudgeEval < Leva::BaseEval
       metrics: metrics
     )
 
-    response = RubyLLM.chat(model: self.class.judge_model)
+    response = RubyLLM.chat(model: model)
                       .with_temperature(0)
                       .with_instructions(SYSTEM_PROMPT)
                       .ask(user_message)

@@ -13,11 +13,11 @@ module Evaluation
 
     SYSTEM_PROMPT: String
 
-    def self.call: (experiment: Leva::Experiment) -> Leva::Prompt
+    def self.call: (experiment: Evaluation::Experiment) -> Evaluation::Prompt
 
-    def initialize: (experiment: Leva::Experiment) -> void
+    def initialize: (experiment: Evaluation::Experiment) -> void
 
-    def call: () -> Leva::Prompt
+    def call: () -> Evaluation::Prompt
 
     private
 
@@ -28,7 +28,7 @@ module Evaluation
     def load_samples: () -> Array[{ input: untyped, output: String }]
 
     def build_improvement_message: (
-      current_prompt: Leva::Prompt,
+      current_prompt: Evaluation::Prompt,
       evaluation_data: Array[EvaluationEntry],
       metrics: ActiveRecord::Relation,
       samples: Array[{ input: untyped, output: String }],

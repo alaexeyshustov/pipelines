@@ -6,19 +6,19 @@ module Evaluation
 
     def show
       @agent_summaries = agent_summaries
-      @experiments = Leva::Experiment.includes(:prompt).order(created_at: :desc)
+      @experiments = Evaluation::Experiment.includes(:prompt).order(created_at: :desc)
     end
 
     private
 
     # TODO: move this logic out of controller
     def agent_summaries
-      prompt_names = Leva::Experiment.joins(:prompt).distinct.pluck("leva_prompts.name")
+      prompt_names = Evaluation::Experiment.joins(:prompt).distinct.pluck("evaluation_prompts.name")
       return [] if prompt_names.empty?
 
-      all_experiments = Leva::Experiment
+      all_experiments = Evaluation::Experiment
         .joins(:prompt)
-        .where(leva_prompts: { name: prompt_names })
+        .where(evaluation_prompts: { name: prompt_names })
         .includes(:prompt)
         .order(:created_at)
         .to_a
@@ -29,7 +29,7 @@ module Evaluation
       latest_ids = latest_by_agent.values.compact.map(&:id)
       latest_stats = batch_stats(latest_ids)
 
-      history_avgs = Leva::EvaluationResult
+      history_avgs = Evaluation::EvaluationResult
         .where(experiment_id: all_experiments.map(&:id))
         .group(:experiment_id)
         .average(:score)
@@ -55,7 +55,7 @@ module Evaluation
     def batch_stats(experiment_ids)
       return {} if experiment_ids.empty?
 
-      Leva::EvaluationResult
+      Evaluation::EvaluationResult
         .where(experiment_id: experiment_ids)
         .group(:experiment_id)
         .pluck(:experiment_id, Arel.sql("AVG(score)"), Arel.sql("COUNT(*)"))
@@ -72,7 +72,7 @@ module Evaluation
     end
 
     def active_versions_for(agent_names)
-      Orchestration::Prompt
+      Evaluation::Prompt
         .where(name: agent_names)
         .where("metadata LIKE ?", '%"active":true%')
         .each_with_object({}) do |p, h|

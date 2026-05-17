@@ -7,7 +7,7 @@ module Evaluation
     WIZARD_STEPS = 4
 
     def index
-      @experiments = Leva::Experiment.order(created_at: :desc).includes(:prompt)
+      @experiments = Evaluation::Experiment.order(created_at: :desc).includes(:prompt)
     end
 
     def new
@@ -33,7 +33,7 @@ module Evaluation
     end
 
     def prompt_versions
-      prompts = Orchestration::Prompt
+      prompts = Evaluation::Prompt
         .where(name: params[:agent_name])
         .order(version: :desc)
         .select(:id, :version, :metadata)
@@ -56,10 +56,10 @@ module Evaluation
 
       return unless @experiment.prompt
 
-      @newer_experiment = Leva::Experiment
+      @newer_experiment = Evaluation::Experiment
         .joins(:prompt)
-        .where(leva_prompts: { name: @experiment.prompt.name })
-        .where("leva_experiments.id > ?", @experiment.id)
+        .where(evaluation_prompts: { name: @experiment.prompt.name })
+        .where("evaluation_experiments.id > ?", @experiment.id)
         .order(id: :desc)
         .includes(:prompt)
         .first
@@ -73,9 +73,9 @@ module Evaluation
       @metric_name = params[:metric_name]
       @justifications = Evaluation::Justification
         .joins(:evaluation_result)
-        .where(metric_name: @metric_name, leva_evaluation_results: { experiment_id: @experiment.id })
+        .where(metric_name: @metric_name, evaluation_evaluation_results: { experiment_id: @experiment.id })
         .includes(evaluation_result: [ :runner_result, :dataset_record ])
-        .order("leva_evaluation_results.score DESC")
+        .order("evaluation_evaluation_results.score DESC")
     end
 
     def improve
@@ -95,9 +95,9 @@ module Evaluation
     end
 
     def compare
-      @candidate = Leva::Experiment
+      @candidate = Evaluation::Experiment
         .joins(:prompt)
-        .where(leva_prompts: { name: @experiment.prompt&.name })
+        .where(evaluation_prompts: { name: @experiment.prompt&.name })
         .where.not(id: @experiment.id)
         .find_by(id: params[:candidate_id])
 
@@ -119,11 +119,10 @@ module Evaluation
         return redirect_to evaluation_experiment_path(@experiment), alert: "This experiment has no associated prompt."
       end
 
-      # Reload as Orchestration::Prompt so update! calls go through our subclass
-      prompt = Orchestration::Prompt.find(leva_prompt.id)
+      prompt = Evaluation::Prompt.find(leva_prompt.id)
 
-      Orchestration::Prompt.transaction do
-        Orchestration::Prompt.where(name: prompt.name).where.not(id: prompt.id).find_each do |p|
+      Evaluation::Prompt.transaction do
+        Evaluation::Prompt.where(name: prompt.name).where.not(id: prompt.id).find_each do |p|
           meta = begin
             JSON.parse(p.metadata || "{}")
           rescue JSON::ParserError => e
@@ -151,7 +150,7 @@ module Evaluation
     private
 
     def set_experiment
-      @experiment = Leva::Experiment.find(params[:id])
+      @experiment = Evaluation::Experiment.find(params[:id])
     end
 
     def find_or_create_draft
@@ -161,7 +160,7 @@ module Evaluation
 
     def step_payload(step)
       case step
-      when 1 then params.require(:wizard).permit(:agent_name, :prompt_id, :experiment_name).to_h
+      when 1 then params.require(:wizard).permit(:agent_name, :prompt_id, :experiment_name, :sample_model, :evaluation_model).to_h
       when 2 then {}
       when 3 then params.require(:wizard).permit(:dataset_id).to_h
       else {}
@@ -172,39 +171,42 @@ module Evaluation
       payload = @draft.payload || {}
       case step
       when 1
-        @agent_names     = Orchestration::Prompt.distinct.pluck(:name).sort
-        @prompts         = Orchestration::Prompt.order(version: :desc)
-        @agent_name      = payload["agent_name"]
-        @prompt_id       = payload["prompt_id"]
-        @experiment_name = payload["experiment_name"]
+        @agent_names      = Evaluation::Prompt.distinct.pluck(:name).sort
+        @prompts          = Evaluation::Prompt.order(version: :desc)
+        @agent_name       = payload["agent_name"]
+        @prompt_id        = payload["prompt_id"]
+        @experiment_name  = payload["experiment_name"]
+        @sample_model     = payload["sample_model"]
+        @evaluation_model = payload["evaluation_model"]
+        @available_models = Orchestration::Agent.available_models
       when 2
         @agent_name = payload["agent_name"]
         @metrics    = Evaluation::Metric.for_agent(@agent_name).order(:name)
       when 3
         @agent_name = payload["agent_name"]
-        @datasets   = Leva::Dataset.left_joins(:dataset_records)
-                                   .group("leva_datasets.id")
-                                   .select("leva_datasets.*, COUNT(leva_dataset_records.id) AS record_count")
+        @datasets   = Evaluation::Dataset.left_joins(:dataset_records)
+                                   .group("evaluation_datasets.id")
+                                   .select("evaluation_datasets.*, COUNT(evaluation_dataset_records.id) AS record_count")
                                    .order(:name)
         @selected_dataset_id = payload["dataset_id"]
       when 4
         @agent_name      = payload["agent_name"]
-        @prompt          = Leva::Prompt.find_by(id: payload["prompt_id"])
+        @prompt          = Evaluation::Prompt.find_by(id: payload["prompt_id"])
         @experiment_name = payload["experiment_name"]
         @metrics_count   = Evaluation::Metric.for_agent(@agent_name).active.count
-        @dataset         = Leva::Dataset.find_by(id: payload["dataset_id"])
+        @dataset         = Evaluation::Dataset.find_by(id: payload["dataset_id"])
       end
     end
 
     def create_experiment_from_draft(draft)
       payload    = draft.payload || {}
       prompt_id  = payload["prompt_id"].presence ||
-                   Orchestration::Prompt
+                   Evaluation::Prompt
                      .where(name: payload["agent_name"])
                      .order(version: :desc, id: :desc)
                      .pick(:id)
                      &.to_s
-      agent_name = Orchestration::Prompt.find_by(id: prompt_id)&.name
+      agent_name = Evaluation::Prompt.find_by(id: prompt_id)&.name
 
       if agent_name.present? && Evaluation::Metric.for_agent(agent_name).active.none?
         begin
@@ -214,15 +216,17 @@ module Evaluation
         end
       end
 
-      experiment = Leva::Experiment.create!(
+      experiment = Evaluation::Experiment.create!(
         name:              payload["experiment_name"].presence || "Manual eval",
         dataset_id:        payload["dataset_id"],
         prompt_id:         prompt_id,
         runner_class:      "StubbedAgentRun",
         evaluator_classes: [ "LLMJudgeEval" ],
-        metadata:          { "triggered_by" => "manual" }
+        metadata:          { "triggered_by" => "manual" },
+        sample_model:      payload["sample_model"].presence,
+        evaluation_model:  payload["evaluation_model"].presence
       )
-      Leva::ExperimentJob.perform_later(experiment)
+      Evaluation::ExperimentJob.perform_later(experiment)
       draft.destroy
       session.delete(:wizard_token)
       redirect_to evaluation_experiment_path(experiment), notice: "Experiment '#{experiment.name}' started."
@@ -247,11 +251,11 @@ module Evaluation
     end
 
     def per_metric_averages(experiment)
-      conn = Leva::EvaluationResult.connection
-      results_table        = conn.quote_table_name(Leva::EvaluationResult.table_name)
+      conn = Evaluation::EvaluationResult.connection
+      results_table        = conn.quote_table_name(Evaluation::EvaluationResult.table_name)
       justifications_table = conn.quote_table_name(Evaluation::Justification.table_name)
 
-      Leva::EvaluationResult
+      Evaluation::EvaluationResult
         .joins(
           "INNER JOIN #{justifications_table} " \
           "ON #{justifications_table}.evaluation_result_id = #{results_table}.id"

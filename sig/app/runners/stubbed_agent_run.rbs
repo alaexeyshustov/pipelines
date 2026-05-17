@@ -1,4 +1,4 @@
-class StubbedAgentRun < Leva::BaseRun
+class StubbedAgentRun < BaseRun
   def execute: (Orchestration::ActionRun record) -> String
 
   private

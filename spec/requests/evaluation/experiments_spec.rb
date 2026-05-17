@@ -61,7 +61,7 @@ RSpec.describe "Evaluation::Experiments" do
 
         it "shows the average metric score" do
           runner_result = create(:leva_runner_result, experiment: experiment)
-          eval_result = Leva::EvaluationResult.create!(
+          eval_result = Evaluation::EvaluationResult.create!(
             experiment: experiment, dataset_record: runner_result.dataset_record,
             runner_result: runner_result, evaluator_class: "LLMJudgeEval", score: 4.0
           )
@@ -72,7 +72,7 @@ RSpec.describe "Evaluation::Experiments" do
 
         it "shows overall average" do
           runner_result = create(:leva_runner_result, experiment: experiment)
-          eval_result = Leva::EvaluationResult.create!(
+          eval_result = Evaluation::EvaluationResult.create!(
             experiment: experiment, dataset_record: runner_result.dataset_record,
             runner_result: runner_result, evaluator_class: "LLMJudgeEval", score: 4.0
           )
@@ -225,7 +225,7 @@ RSpec.describe "Evaluation::Experiments" do
       let!(:prompt)  { create(:orchestration_prompt) }
       let!(:metric)  { create(:evaluation_metric, agent_name: prompt.name) }
 
-      before { allow(Leva::ExperimentJob).to receive(:perform_later) }
+      before { allow(Evaluation::ExperimentJob).to receive(:perform_later) }
 
       def navigate_to_step4(prompt:, dataset:)
         post wizard_step_evaluation_experiments_path, params: { current_step: 1, wizard: { agent_name: "Agent", experiment_name: "Eval Exp", prompt_id: prompt.id.to_s } }
@@ -237,14 +237,14 @@ RSpec.describe "Evaluation::Experiments" do
         navigate_to_step4(prompt: prompt, dataset: dataset)
         expect {
           post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
-        }.to change(Leva::Experiment, :count).by(1)
-        expect(response).to redirect_to(evaluation_experiment_path(Leva::Experiment.last))
+        }.to change(Evaluation::Experiment, :count).by(1)
+        expect(response).to redirect_to(evaluation_experiment_path(Evaluation::Experiment.last))
       end
 
-      it "enqueues Leva::ExperimentJob on completion" do
+      it "enqueues Evaluation::ExperimentJob on completion" do
         navigate_to_step4(prompt: prompt, dataset: dataset)
         post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
-        expect(Leva::ExperimentJob).to have_received(:perform_later).once
+        expect(Evaluation::ExperimentJob).to have_received(:perform_later).once
       end
 
       it "clears wizard_token from session on completion" do
@@ -261,9 +261,9 @@ RSpec.describe "Evaluation::Experiments" do
         navigate_to_step4(prompt: prompt, dataset: dataset)
         expect {
           post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
-        }.to change(Leva::Experiment, :count).by(1)
+        }.to change(Evaluation::Experiment, :count).by(1)
         expect(Evaluation::Metric.for_agent(prompt.name).active.count).to be >= 1
-        expect(response).to redirect_to(evaluation_experiment_path(Leva::Experiment.last))
+        expect(response).to redirect_to(evaluation_experiment_path(Evaluation::Experiment.last))
       end
 
       it "creates the experiment even when MetricSuggester fails" do
@@ -273,8 +273,8 @@ RSpec.describe "Evaluation::Experiments" do
         navigate_to_step4(prompt: prompt, dataset: dataset)
         expect {
           post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
-        }.to change(Leva::Experiment, :count).by(1)
-        expect(response).to redirect_to(evaluation_experiment_path(Leva::Experiment.last))
+        }.to change(Evaluation::Experiment, :count).by(1)
+        expect(response).to redirect_to(evaluation_experiment_path(Evaluation::Experiment.last))
       end
     end
   end
@@ -315,7 +315,7 @@ RSpec.describe "Evaluation::Experiments" do
     context "when evaluation results exist for the metric" do
       let!(:runner_result) { create(:leva_runner_result, experiment: experiment, prediction: "Predicted text") }
       let!(:eval_result) do
-        Leva::EvaluationResult.create!(
+        Evaluation::EvaluationResult.create!(
           experiment: experiment, dataset_record: runner_result.dataset_record,
           runner_result: runner_result, evaluator_class: "LLMJudgeEval", score: 3.5
         )

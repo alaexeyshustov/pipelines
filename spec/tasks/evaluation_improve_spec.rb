@@ -28,14 +28,14 @@ RSpec.describe "evaluation:improve rake task" do # rubocop:disable RSpec/Describ
   end
 
   context "when a completed experiment exists" do
-    it "creates an improved Orchestration::Prompt" do
+    it "creates an improved Evaluation::Prompt" do
       expect { Rake::Task[task_name].invoke(agent_name) }
-        .to change(Orchestration::Prompt, :count).by(1)
+        .to change(Evaluation::Prompt, :count).by(1)
     end
 
     it "enqueues PromptAutoEvalJob for the new prompt" do
       Rake::Task[task_name].invoke(agent_name)
-      new_prompt = Orchestration::Prompt.where(name: agent_name).order(id: :desc).first
+      new_prompt = Evaluation::Prompt.where(name: agent_name).order(id: :desc).first
       expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: new_prompt.id).once
     end
 

@@ -88,7 +88,7 @@ module Orchestration
         builder = RuntimeAgentBuilder.new(
           action: action,
           pipeline_model: @pipeline_run.pipeline.model,
-          prompt_override: leva_prompt_for(action.agent&.name),
+          prompt_override: prompt_for(action.agent&.name),
           step_params: action_run.step_action.params
         )
         agent = builder.build
@@ -175,11 +175,11 @@ module Orchestration
       )
     end
 
-    def leva_prompt_for(agent_class)
+    def prompt_for(agent_class)
       @prompt_cache ||= {} # : Hash[String?, String?]
       return @prompt_cache[agent_class] if @prompt_cache.key?(agent_class)
 
-      @prompt_cache[agent_class] = Orchestration::Prompt
+      @prompt_cache[agent_class] = Evaluation::Prompt
         .where(name: agent_class)
         .order(version: :desc, id: :desc)
         .first

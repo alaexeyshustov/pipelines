@@ -24,14 +24,14 @@ RSpec.describe LLMJudgeEval do
       ])
       { id: "chatcmpl-01", object: "chat.completion", model: "gpt-5.4", choices: [ { index: 0, message: { role: "assistant", content: scores }, finish_reason: "stop" } ], usage: { prompt_tokens: 200, completion_tokens: 80, total_tokens: 280 } }.to_json
     end
-    let(:prompt_double) { instance_double(Orchestration::Prompt, system_prompt: "You are a classifier.") }
+    let(:prompt_double) { instance_double(Evaluation::Prompt, system_prompt: "You are a classifier.") }
     let(:runner_result) do
       prediction = { tool_calls: [ { tool_name: "classify_email", arguments: { label: "offer" } } ], output: "Classified." }.to_json
       instance_double(
-        Leva::RunnerResult,
+        Evaluation::RunnerResult,
         prediction: prediction,
         prompt: prompt_double,
-        dataset_record: instance_double(Leva::DatasetRecord, recordable: recordable)
+        dataset_record: instance_double(Evaluation::DatasetRecord, recordable: recordable)
       )
     end
 
@@ -50,7 +50,7 @@ RSpec.describe LLMJudgeEval do
     context "when recordable does not implement the duck-type interface" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       it "raises ArgumentError with a descriptive message" do
         chat = create(:chat)
-        runner_result = instance_double(Leva::RunnerResult, prediction: "{}")
+        runner_result = instance_double(Evaluation::RunnerResult, prediction: "{}")
         expect { eval_instance.evaluate(runner_result, chat) }.to raise_error(ArgumentError, /#input.*#step_action|#step_action.*#input/)
       end
     end
@@ -82,10 +82,10 @@ RSpec.describe LLMJudgeEval do
           output: { results: [ { id: "abc123", tags: [ "job", "application" ] } ] }
         }.to_json
         instance_double(
-          Leva::RunnerResult,
+          Evaluation::RunnerResult,
           prediction: prediction,
           prompt: prompt_double,
-          dataset_record: instance_double(Leva::DatasetRecord, recordable: recordable)
+          dataset_record: instance_double(Evaluation::DatasetRecord, recordable: recordable)
         )
       end
 
@@ -124,10 +124,10 @@ RSpec.describe LLMJudgeEval do
     context "when prediction is nil" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       let(:runner_result) do
         instance_double(
-          Leva::RunnerResult,
+          Evaluation::RunnerResult,
           prediction: nil,
           prompt: prompt_double,
-          dataset_record: instance_double(Leva::DatasetRecord, recordable: recordable)
+          dataset_record: instance_double(Evaluation::DatasetRecord, recordable: recordable)
         )
       end
 
@@ -161,18 +161,18 @@ RSpec.describe LLMJudgeEval do
   end
 
   describe "#evaluate_and_store" do
-    let!(:leva_dataset) { Leva::Dataset.create!(name: "test_dataset") }
-    let!(:leva_prompt) { Orchestration::Prompt.create!(name: agent_name, system_prompt: "You are a classifier.", user_prompt: "Classify: {{input}}") }
-    let!(:leva_experiment) { Leva::Experiment.create!(name: "test_exp", dataset: leva_dataset, status: :pending, prompt: leva_prompt, runner_class: "StubbedAgentRun", evaluator_classes: [ "LLMJudgeEval" ]) }
+    let!(:leva_dataset) { Evaluation::Dataset.create!(name: "test_dataset") }
+    let!(:leva_prompt) { Evaluation::Prompt.create!(name: agent_name, system_prompt: "You are a classifier.", user_prompt: "Classify: {{input}}") }
+    let!(:leva_experiment) { Evaluation::Experiment.create!(name: "test_exp", dataset: leva_dataset, status: :pending, prompt: leva_prompt, runner_class: "StubbedAgentRun", evaluator_classes: [ "LLMJudgeEval" ]) }
     let!(:leva_dataset_record) do
       classify_agent = create(:orchestration_agent, name: agent_name)
       action = create(:orchestration_action, kind: :agent, agent: classify_agent)
       step_action = create(:orchestration_step_action, action: action)
       action_run = create(:orchestration_action_run, step_action: step_action, status: "completed")
-      Leva::DatasetRecord.create!(dataset: leva_dataset, recordable: action_run)
+      Evaluation::DatasetRecord.create!(dataset: leva_dataset, recordable: action_run)
     end
     let!(:leva_runner_result) do
-      Leva::RunnerResult.create!(
+      Evaluation::RunnerResult.create!(
         experiment: leva_experiment,
         dataset_record: leva_dataset_record,
         prompt: leva_prompt,
@@ -198,7 +198,7 @@ RSpec.describe LLMJudgeEval do
     it "creates one EvaluationResult per metric" do
       expect {
         eval_instance.evaluate_and_store(leva_experiment, leva_runner_result)
-      }.to change(Leva::EvaluationResult, :count).by(2)
+      }.to change(Evaluation::EvaluationResult, :count).by(2)
     end
 
     it "creates one Justification per metric" do
@@ -209,12 +209,12 @@ RSpec.describe LLMJudgeEval do
 
     it "stores scores between 1 and 5" do
       eval_instance.evaluate_and_store(leva_experiment, leva_runner_result)
-      expect(Leva::EvaluationResult.last(2).map(&:score)).to all(be_between(1, 5))
+      expect(Evaluation::EvaluationResult.last(2).map(&:score)).to all(be_between(1, 5))
     end
 
     it "links justifications to their evaluation results" do
       eval_instance.evaluate_and_store(leva_experiment, leva_runner_result)
-      expect(Evaluation::Justification.last.evaluation_result).to be_a(Leva::EvaluationResult)
+      expect(Evaluation::Justification.last.evaluation_result).to be_a(Evaluation::EvaluationResult)
     end
   end
 

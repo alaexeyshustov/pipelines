@@ -19,7 +19,7 @@ module Evaluation
     end
 
     def call
-      prompt = Orchestration::Prompt.where(name: @agent_name).order(version: :desc, id: :desc).first
+      prompt = Evaluation::Prompt.where(name: @agent_name).order(version: :desc, id: :desc).first
       raise ArgumentError, "No prompt found for agent: #{@agent_name}" if prompt.nil?
 
       response = RubyLLM.chat(model: DEFAULT_MODEL)

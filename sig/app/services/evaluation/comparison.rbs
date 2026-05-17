@@ -19,20 +19,20 @@ module Evaluation
     end
 
     def self.call: (
-      baseline_experiment: Leva::Experiment,
-      candidate_experiment: Leva::Experiment
+      baseline_experiment: Evaluation::Experiment,
+      candidate_experiment: Evaluation::Experiment
     ) -> ComparisonResult
 
     def initialize: (
-      baseline_experiment: Leva::Experiment,
-      candidate_experiment: Leva::Experiment
+      baseline_experiment: Evaluation::Experiment,
+      candidate_experiment: Evaluation::Experiment
     ) -> void
 
     def call: () -> ComparisonResult
 
     private
 
-    def per_metric_averages: (Leva::Experiment experiment) -> Hash[String, Float]
-    def overall_average: (Leva::Experiment experiment) -> Float?
+    def per_metric_averages: (Evaluation::Experiment experiment) -> Hash[String, Float]
+    def overall_average: (Evaluation::Experiment experiment) -> Float?
   end
 end

@@ -8,7 +8,6 @@ gem "aasm", "~> 5.5"
 gem "view_component", "~> 4.6"
 
 # Evaluation framework
-gem "leva"
 gem "liquid"
 
 # LLM

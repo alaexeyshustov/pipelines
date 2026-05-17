@@ -1,0 +1,44 @@
+module Evaluation
+  class Experiment < ApplicationRecord
+    def self.table_name: () -> String
+    def self.find: (Integer id) -> Experiment
+    def self.find_by: (**untyped attrs) -> Experiment?
+    def self.create!: (**untyped attrs) -> Experiment
+    def self.where: (**untyped attrs) -> ActiveRecord::Relation
+    def self.joins: (*untyped) -> ActiveRecord::Relation
+    def self.includes: (*untyped) -> ActiveRecord::Relation
+    def self.order: (*untyped) -> ActiveRecord::Relation
+
+    def id: () -> Integer
+    def name: () -> String?
+    def name=: (String?) -> String?
+    def description: () -> String?
+    def runner_class: () -> String?
+    def runner_class=: (String?) -> String?
+    def evaluator_classes: () -> Array[String]
+    def evaluator_classes=: (Array[String]) -> Array[String]
+    def metadata: () -> Hash[String, untyped]?
+    def metadata=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def status: () -> String
+    def status=: (String | Symbol) -> (String | Symbol)
+    def sample_model: () -> String?
+    def sample_model=: (String?) -> String?
+    def evaluation_model: () -> String?
+    def evaluation_model=: (String?) -> String?
+
+    def dataset: () -> Evaluation::Dataset
+    def dataset=: (Evaluation::Dataset) -> Evaluation::Dataset
+    def prompt: () -> Evaluation::Prompt?
+    def prompt=: (Evaluation::Prompt?) -> Evaluation::Prompt?
+
+    def runner_results: () -> ActiveRecord::Associations::CollectionProxy
+    def evaluation_results: () -> ActiveRecord::Associations::CollectionProxy
+
+    def pending?: () -> bool
+    def running?: () -> bool
+    def completed?: () -> bool
+    def failed?: () -> bool
+
+    def update!: (**untyped attrs) -> Experiment
+  end
+end

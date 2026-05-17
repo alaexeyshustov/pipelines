@@ -1,6 +1,6 @@
 require "rails_helper"
 
-RSpec.describe Orchestration::Prompt do
+RSpec.describe Evaluation::Prompt do
   it "enqueues PromptAutoEvalJob when a new prompt is created" do
     prompt = create(:orchestration_prompt)
     expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: prompt.id)

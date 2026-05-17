@@ -1,0 +1,35 @@
+module Evaluation
+  class Prompt < ApplicationRecord
+    def self.table_name: () -> String
+    def self.find: (Integer id) -> Prompt
+    def self.find_by: (**untyped attrs) -> Prompt?
+    def self.create!: (**untyped attrs) -> Prompt
+    def self.where: (**untyped attrs) -> ActiveRecord::Relation
+    def self.order: (*untyped) -> ActiveRecord::Relation
+    def self.transaction: () { () -> void } -> void
+    def self.distinct: () -> ActiveRecord::Relation
+
+    def id: () -> Integer
+    def name: () -> String?
+    def name=: (String?) -> String?
+    def system_prompt: () -> String?
+    def system_prompt=: (String?) -> String?
+    def user_prompt: () -> String?
+    def user_prompt=: (String?) -> String?
+    def version: () -> Integer?
+    def version=: (Integer?) -> Integer?
+    def metadata: () -> String?
+    def metadata=: (String?) -> String?
+    def output_schema: () -> untyped?
+    def output_schema=: (untyped?) -> untyped?
+
+    def experiments: () -> ActiveRecord::Associations::CollectionProxy
+    def runner_results: () -> ActiveRecord::Associations::CollectionProxy
+
+    def update!: (**untyped attrs) -> Prompt
+
+    private
+
+    def increment_version: () -> Integer
+  end
+end

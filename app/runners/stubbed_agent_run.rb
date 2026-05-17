@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class StubbedAgentRun < Leva::BaseRun
+class StubbedAgentRun < BaseRun
   def execute(record)
     raise ArgumentError, "StubbedAgentRun requires an Orchestration::ActionRun, got #{record.class}" unless record.is_a?(Orchestration::ActionRun)
 
@@ -13,11 +13,7 @@ class StubbedAgentRun < Leva::BaseRun
 
     tool_classes = resolve_tools(agent_record)
     stubbed_tools = tool_classes.map { |tool_class| stub_tool(tool_class, registry) }
-    pipeline_model = if @experiment
-      meta = @experiment.metadata
-      meta = JSON.parse(meta) if meta.is_a?(String)
-      meta&.[]("pipeline_model")
-    end
+    pipeline_model = @experiment&.sample_model
     agent = Orchestration::RuntimeAgentBuilder.new(
       action: action,
       tool_classes: stubbed_tools,
