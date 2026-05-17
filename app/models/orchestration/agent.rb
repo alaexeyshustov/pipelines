@@ -20,7 +20,10 @@ module Orchestration
         relative = path.delete_prefix("#{Rails.root}/app/tools/")
         class_name = relative.delete_suffix(".rb").split("/").map(&:camelize).join("::")
         namespace = class_name.split("::").first
-        class_name if ALLOWED_TOOL_NAMESPACES.include?(namespace)
+        next unless ALLOWED_TOOL_NAMESPACES.include?(namespace)
+        class_name if class_name.constantize < RubyLLM::Tool
+      rescue NameError
+        nil
       end.sort
     end
 
