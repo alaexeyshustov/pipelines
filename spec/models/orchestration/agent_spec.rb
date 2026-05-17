@@ -77,6 +77,23 @@ RSpec.describe Orchestration::Agent do
     end
   end
 
+  describe ".available_tools" do
+    it "returns tool class name strings from app/tools/" do
+      tools = described_class.available_tools
+      expect(tools).to include("Emails::GetTool", "Records::ReadRowsTool")
+    end
+
+    it "only includes tools from allowed namespaces" do
+      namespaces = described_class.available_tools.map { |t| t.split("::").first }.uniq
+      expect(Orchestration::Agent::ALLOWED_TOOL_NAMESPACES).to include(*namespaces)
+    end
+
+    it "returns tools in sorted order" do
+      tools = described_class.available_tools
+      expect(tools).to eq(tools.sort)
+    end
+  end
+
   describe "#destroy" do
     let!(:persisted_agent) { create(:orchestration_agent, name: "Emails::ClassifyAgent") }
 

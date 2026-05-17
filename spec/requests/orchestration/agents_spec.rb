@@ -43,7 +43,7 @@ RSpec.describe "Orchestration::Agents" do
             name: "Emails::ClassifyAgent",
             description: "Classifies emails",
             model: "mistral-small",
-            tools: "[]",
+            tools: [],
             prompt: "Classify this payload",
             params: '{"mode":"strict"}',
             output_schema: '{"type":"object","required":["result"],"properties":{"result":{"type":"array"}}}'
@@ -76,7 +76,7 @@ RSpec.describe "Orchestration::Agents" do
         post orchestration_agents_path, params: {
           orchestration_agent: {
             name: "Emails::ClassifyAgent",
-            tools: '["Records::TempFileTool"]',
+            tools: [ "Records::TempFileTool" ],
             params: '{"mode":"strict"}',
             output_schema: "{invalid"
           }
