@@ -728,6 +728,7 @@ DEPENDENCIES
   ruby-lsp
   ruby_llm!
   ruby_llm-monitoring
+  ruby_llm-schema
   rubycritic
   simplecov
   sqlite-vec

@@ -12,6 +12,7 @@ gem "liquid"
 
 # LLM
 gem "ruby_llm", github: "crmne/ruby_llm", branch: "main"
+gem "ruby_llm-schema"
 gem "ruby_llm-monitoring"
 
 # Email providers

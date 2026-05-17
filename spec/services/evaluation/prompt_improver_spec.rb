@@ -98,12 +98,12 @@ RSpec.describe Evaluation::PromptImprover do
                output_schema: { "type" => "object", "properties" => { "results" => { "type" => "array" } } })
       end
 
-      it "includes the schema in the request but instructs not to embed it in the prompt" do
+      it "includes the schema in the user message" do
         described_class.call(experiment: experiment)
         expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
           body = JSON.parse(req.body)
-          text = body["messages"].to_s
-          text.include?("API-enforced") && text.include?("DO NOT include")
+          user_message = body["messages"].find { |m| m["role"] == "user" }&.fetch("content", "")
+          user_message.include?("<output_schema>") && user_message.include?("\"results\"")
         }
       end
     end

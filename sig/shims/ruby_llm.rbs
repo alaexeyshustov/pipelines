@@ -5,6 +5,8 @@ module RubyLLM
 
   class Chat
     def with_instructions: (String instructions) -> self
+    def with_schema: (untyped schema) -> self
+    def with_temperature: (Numeric temperature) -> self
     def ask: (String prompt) -> Message
   end
 
@@ -22,6 +24,10 @@ module RubyLLM
   end
 
   class Schema
+    def self.string: (Symbol name, ?required: bool, ?description: String) -> void
+    def self.integer: (Symbol name, ?required: bool, ?description: String) -> void
+    def self.boolean: (Symbol name, ?required: bool, ?description: String) -> void
+    def self.array: (Symbol name, ?required: bool, ?description: String) -> void
   end
 
   def self.chat: (?model: String) -> Chat

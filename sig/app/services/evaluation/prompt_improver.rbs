@@ -11,7 +11,10 @@ module Evaluation
       def self.new: (metric_name: String, score: Float, justification: String) -> EvaluationEntry
     end
 
-    SYSTEM_PROMPT: String
+    class ImprovementSchema < RubyLLM::Schema
+    end
+
+    IMPROVEMENT_PROMPT: String
 
     def self.call: (experiment: Evaluation::Experiment) -> Evaluation::Prompt
 
@@ -37,6 +40,6 @@ module Evaluation
 
     def call_llm: (String user_message) -> { system_prompt: String, user_prompt: String }
 
-    def parse_response: (String content) -> { system_prompt: String, user_prompt: String }
+    def parse_response: (String | Hash[untyped, untyped] content) -> { system_prompt: String, user_prompt: String }
   end
 end

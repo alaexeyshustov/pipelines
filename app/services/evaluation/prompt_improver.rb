@@ -57,7 +57,7 @@ module Evaluation
         name: current_prompt.name,
         system_prompt: improved[:system_prompt],
         user_prompt: improved[:user_prompt].presence || current_prompt.user_prompt,
-        version: current_prompt.version + 1,
+        version: current_prompt.version,
         output_schema: output_schema
       )
     end
@@ -82,8 +82,12 @@ module Evaluation
         .order(Arel.sql("RANDOM()"))
         .limit(5)
         .filter_map do |rr|
-          prediction = JSON.parse(rr.prediction) rescue next
-          { input: rr.dataset_record.recordable.input, output: prediction.fetch("output", "") }
+          prediction = JSON.parse(rr.prediction)
+          recordable = rr.dataset_record&.recordable
+          next unless recordable
+          { input: recordable.input, output: prediction.fetch("output", "") }
+        rescue JSON::ParserError
+          next
         end
     end
 
@@ -131,14 +135,14 @@ module Evaluation
         #{sample_lines.presence || "(no samples available)"}
         </samples>
 
-        #{schema_section}
+        #{schema_section&.chomp}
       MSG
     end
 
     def call_llm(user_message)
       response = RubyLLM.chat(model:)
                         .with_instructions(IMPROVEMENT_PROMPT)
-                        .witch_schema(ImprovementSchema)
+                        .with_schema(ImprovementSchema)
                         .ask(user_message)
 
       parse_response(response.content)
@@ -150,7 +154,7 @@ module Evaluation
     end
 
     def parse_response(content)
-      parsed = JSON.parse(content)
+      parsed = content.is_a?(Hash) ? content : JSON.parse(content)
       raise Error, "Expected JSON object" unless parsed.is_a?(Hash)
       raise Error, "Missing system_prompt in LLM response" if parsed["system_prompt"].blank?
 

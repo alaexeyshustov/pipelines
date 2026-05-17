@@ -45,7 +45,7 @@ module ApplicationPipeline
     # Use async-job adapter backed by Async::Job::Processor::Inline.
     config.active_job.queue_adapter = :async_job
 
-    # Autoload app/pipeline, app/tools, app/evals, and app/runners in addition to standard Rails paths.
-    config.autoload_paths += %w[pipeline tools evals runners].map { |d| Rails.root.join("app", d).to_s }
+    # Autoload app/pipeline and app/tools in addition to standard Rails paths.
+    config.autoload_paths += %w[pipeline tools].map { |d| Rails.root.join("app", d).to_s }
   end
 end

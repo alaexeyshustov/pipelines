@@ -63,7 +63,7 @@ RSpec.describe "Evaluation::Experiments" do
           runner_result = create(:leva_runner_result, experiment: experiment)
           eval_result = Evaluation::EvaluationResult.create!(
             experiment: experiment, dataset_record: runner_result.dataset_record,
-            runner_result: runner_result, evaluator_class: "LLMJudgeEval", score: 4.0
+            runner_result: runner_result, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
           )
           Evaluation::Justification.create!(evaluation_result: eval_result, metric_name: "Accuracy", justification: "Good")
           get evaluation_experiment_path(experiment)
@@ -74,7 +74,7 @@ RSpec.describe "Evaluation::Experiments" do
           runner_result = create(:leva_runner_result, experiment: experiment)
           eval_result = Evaluation::EvaluationResult.create!(
             experiment: experiment, dataset_record: runner_result.dataset_record,
-            runner_result: runner_result, evaluator_class: "LLMJudgeEval", score: 4.0
+            runner_result: runner_result, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
           )
           Evaluation::Justification.create!(evaluation_result: eval_result, metric_name: "Accuracy", justification: "Good")
           get evaluation_experiment_path(experiment)
@@ -317,7 +317,7 @@ RSpec.describe "Evaluation::Experiments" do
       let!(:eval_result) do
         Evaluation::EvaluationResult.create!(
           experiment: experiment, dataset_record: runner_result.dataset_record,
-          runner_result: runner_result, evaluator_class: "LLMJudgeEval", score: 3.5
+          runner_result: runner_result, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 3.5
         )
       end
       let!(:justification) do # rubocop:disable RSpec/LetSetup

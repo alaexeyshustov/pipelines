@@ -47,8 +47,6 @@ RSpec.describe Evaluation::Wizard::AgentPromptStepComponent, type: :component do
   end
 
   context "with available_models" do
-    let(:available_models) { [ [ "openai", [ "gpt-4o", "gpt-4o-mini" ] ], [ "mistral", [ "mistral-large-latest" ] ] ] }
-
     subject(:rendered) do
       render_inline(described_class.new(
         agent_names: agent_names,
@@ -56,6 +54,9 @@ RSpec.describe Evaluation::Wizard::AgentPromptStepComponent, type: :component do
         available_models: available_models
       ))
     end
+
+    let(:available_models) { [ [ "openai", [ "gpt-4o", "gpt-4o-mini" ] ], [ "mistral", [ "mistral-large-latest" ] ] ] }
+
 
     it "renders a sample_model dropdown" do
       expect(rendered.css("select[name='wizard[sample_model]']")).to be_present

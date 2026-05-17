@@ -1,7 +1,7 @@
 module Evaluation
   class Metric < ApplicationRecord
     def self.table_name: () -> String
-    def self.for_agent: (String agent_name) -> ActiveRecord::Relation
+    def self.for_agent: (String agent_name) -> untyped
     def self.active: () -> ActiveRecord::Relation
 
     def agent_name: () -> String?

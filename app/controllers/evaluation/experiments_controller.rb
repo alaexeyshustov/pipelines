@@ -52,7 +52,7 @@ module Evaluation
       meta = @experiment.metadata || {}
       agent = @agent_name ? Orchestration::Agent.find_by(name: @agent_name) : nil
       @runner_model = meta["pipeline_model"].presence || agent&.model.presence
-      @judge_model  = LLMJudgeEval.judge_model
+      @judge_model  = Evaluation::Evaluators::LLMJudgeEval.judge_model
 
       return unless @experiment.prompt
 
@@ -220,8 +220,8 @@ module Evaluation
         name:              payload["experiment_name"].presence || "Manual eval",
         dataset_id:        payload["dataset_id"],
         prompt_id:         prompt_id,
-        runner_class:      "StubbedAgentRun",
-        evaluator_classes: [ "LLMJudgeEval" ],
+        runner_class:      "Evaluation::Runners::StubbedAgentRun",
+        evaluator_classes: [ "Evaluation::Evaluators::LLMJudgeEval" ],
         metadata:          { "triggered_by" => "manual" },
         sample_model:      payload["sample_model"].presence,
         evaluation_model:  payload["evaluation_model"].presence

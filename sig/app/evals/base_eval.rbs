@@ -1,4 +1,0 @@
-class BaseEval
-  def evaluate: (untyped runner_result, untyped recordable) -> untyped
-  def evaluate_and_store: (untyped experiment, untyped runner_result) -> Evaluation::EvaluationResult
-end

@@ -12,8 +12,8 @@ FactoryBot.define do
   factory :leva_experiment, class: "Evaluation::Experiment" do
     sequence(:name) { |n| "experiment_#{n}" }
     status { :pending }
-    runner_class { "StubbedAgentRun" }
-    evaluator_classes { [ "LLMJudgeEval" ] }
+    runner_class { "Evaluation::Runners::StubbedAgentRun" }
+    evaluator_classes { [ "Evaluation::Evaluators::LLMJudgeEval" ] }
     association :dataset, factory: :leva_dataset
     association :prompt, factory: :orchestration_prompt
   end
@@ -25,14 +25,14 @@ FactoryBot.define do
 
   factory :leva_runner_result, class: "Evaluation::RunnerResult" do
     prediction { { tool_calls: [], output: "classified" }.to_json }
-    runner_class { "StubbedAgentRun" }
+    runner_class { "Evaluation::Runners::StubbedAgentRun" }
     association :experiment, factory: :leva_experiment
     association :dataset_record, factory: :leva_dataset_record
     association :prompt, factory: :orchestration_prompt
   end
 
   factory :leva_evaluation_result, class: "Evaluation::EvaluationResult" do
-    evaluator_class { "LLMJudgeEval" }
+    evaluator_class { "Evaluation::Evaluators::LLMJudgeEval" }
     score { 4.0 }
     association :dataset_record, factory: :leva_dataset_record
     association :runner_result, factory: :leva_runner_result

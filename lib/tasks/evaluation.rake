@@ -111,8 +111,8 @@ namespace :evaluation do
       name: "#{agent_name} eval w/ #{model_label} (#{Date.today})",
       dataset: dataset,
       prompt: prompt,
-      runner_class: "StubbedAgentRun",
-      evaluator_classes: [ "LLMJudgeEval" ],
+      runner_class: "Evaluation::Runners::StubbedAgentRun",
+      evaluator_classes: [ "Evaluation::Evaluators::LLMJudgeEval" ],
       metadata: args[:model].presence ? { "pipeline_model" => args[:model] } : nil
     )
 
