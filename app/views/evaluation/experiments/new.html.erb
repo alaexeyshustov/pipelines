@@ -1,37 +1,5 @@
 <%= render UI::PageHeaderComponent.new(title: "New Experiment") %>
 
 <div class="max-w-3xl mx-auto space-y-6">
-  <%= render Evaluation::Wizard::StepNavComponent.new(current_step: @step) %>
-
-  <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-    <% case @step %>
-    <% when 1 %>
-      <%= render Evaluation::Wizard::AgentPromptStepComponent.new(
-            agent_names:      @form.agent_names,
-            prompts:          @form.prompts,
-            agent_name:       @form.agent_name,
-            prompt_id:        @form.prompt_id,
-            experiment_name:  @form.experiment_name,
-            available_models: @form.available_models,
-            sample_model:     @form.sample_model,
-            evaluation_model: @form.evaluation_model) %>
-    <% when 2 %>
-      <%= render Evaluation::Wizard::MetricsStepComponent.new(
-            agent_name: @form.agent_name,
-            metrics:    @form.metrics) %>
-    <% when 3 %>
-      <%= render Evaluation::Wizard::DatasetStepComponent.new(
-            agent_name:          @form.agent_name,
-            datasets:            @form.datasets,
-            selected_dataset_id: @form.selected_dataset_id,
-            draft_token:         @form.draft_token) %>
-    <% when 4 %>
-      <%= render Evaluation::Wizard::ReviewStepComponent.new(
-            agent_name:      @form.agent_name,
-            prompt:          @form.prompt,
-            experiment_name: @form.experiment_name,
-            metrics_count:   @form.metrics_count,
-            dataset:         @form.dataset) %>
-    <% end %>
-  </div>
+  <%= render Evaluation::WizardComponent.new(current_step: @wizard_form.step, form: @wizard_form) %>
 </div>

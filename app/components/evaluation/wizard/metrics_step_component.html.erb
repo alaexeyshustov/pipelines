@@ -65,7 +65,7 @@
   </div>
 
   <%# Advance wizard %>
-  <%= form_with url: wizard_step_evaluation_experiments_path, method: :post do |f| %>
+  <%= form_with url: evaluation_experiments_path, method: :post do |f| %>
     <%= f.hidden_field :current_step, value: 2 %>
     <div class="flex justify-end pt-2 border-t border-gray-100">
       <button type="submit" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">

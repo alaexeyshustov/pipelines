@@ -3,7 +3,7 @@
 module Evaluation
   class PromptDiffsController < ApplicationController
     def show
-      @prompt = Evaluation::Prompt.find(params[:id])
+      @prompt = Evaluation::Prompt.find(params[:id].to_i)
       @other_version = Evaluation::Prompt.where(name: @prompt.name).where.not(id: @prompt.id).order(version: :desc, id: :desc).first
     end
   end

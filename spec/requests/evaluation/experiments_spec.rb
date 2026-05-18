@@ -196,9 +196,9 @@ RSpec.describe "Evaluation::Experiments" do
     end
   end
 
-  describe "POST /evaluation/experiments/wizard_step" do
+  describe "POST /evaluation/experiments" do
     it "redirects to step 2 after step 1 submission" do
-      post wizard_step_evaluation_experiments_path, params: {
+      post evaluation_experiments_path, params: {
         current_step: 1,
         wizard: { agent_name: "Emails::ClassifyAgent", experiment_name: "My Exp", prompt_id: "" }
       }
@@ -206,7 +206,7 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     it "persists agent_name in draft payload" do
-      post wizard_step_evaluation_experiments_path, params: {
+      post evaluation_experiments_path, params: {
         current_step: 1,
         wizard: { agent_name: "Emails::ClassifyAgent", experiment_name: "My Exp", prompt_id: "" }
       }
@@ -216,7 +216,7 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     it "redirects to step 3 after step 2 (no payload)" do
-      post wizard_step_evaluation_experiments_path, params: { current_step: 2 }
+      post evaluation_experiments_path, params: { current_step: 2 }
       expect(response).to redirect_to(new_evaluation_experiment_path(step: 3))
     end
 
@@ -228,28 +228,28 @@ RSpec.describe "Evaluation::Experiments" do
       before { allow(Evaluation::ExperimentJob).to receive(:perform_later) }
 
       def navigate_to_step4(prompt:, dataset:)
-        post wizard_step_evaluation_experiments_path, params: { current_step: 1, wizard: { agent_name: "Agent", experiment_name: "Eval Exp", prompt_id: prompt.id.to_s } }
-        post wizard_step_evaluation_experiments_path, params: { current_step: 2 }
-        post wizard_step_evaluation_experiments_path, params: { current_step: 3, wizard: { dataset_id: dataset.id.to_s } }
+        post evaluation_experiments_path, params: { current_step: 1, wizard: { agent_name: "Agent", experiment_name: "Eval Exp", prompt_id: prompt.id.to_s } }
+        post evaluation_experiments_path, params: { current_step: 2 }
+        post evaluation_experiments_path, params: { current_step: 3, wizard: { dataset_id: dataset.id.to_s } }
       end
 
       it "creates an experiment and redirects to show page" do
         navigate_to_step4(prompt: prompt, dataset: dataset)
         expect {
-          post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
+          post evaluation_experiments_path, params: { current_step: 4 }
         }.to change(Evaluation::Experiment, :count).by(1)
         expect(response).to redirect_to(evaluation_experiment_path(Evaluation::Experiment.last))
       end
 
       it "enqueues Evaluation::ExperimentJob on completion" do
         navigate_to_step4(prompt: prompt, dataset: dataset)
-        post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
+        post evaluation_experiments_path, params: { current_step: 4 }
         expect(Evaluation::ExperimentJob).to have_received(:perform_later).once
       end
 
       it "clears wizard_token from session on completion" do
         navigate_to_step4(prompt: prompt, dataset: dataset)
-        post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
+        post evaluation_experiments_path, params: { current_step: 4 }
         expect(session[:wizard_token]).to be_nil
       end
 
@@ -260,7 +260,7 @@ RSpec.describe "Evaluation::Experiments" do
         ])
         navigate_to_step4(prompt: prompt, dataset: dataset)
         expect {
-          post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
+          post evaluation_experiments_path, params: { current_step: 4 }
         }.to change(Evaluation::Experiment, :count).by(1)
         expect(Evaluation::Metric.for_agent(prompt.name).active.count).to be >= 1
         expect(response).to redirect_to(evaluation_experiment_path(Evaluation::Experiment.last))
@@ -272,7 +272,7 @@ RSpec.describe "Evaluation::Experiments" do
           .and_raise(Evaluation::MetricSuggester::Error, "LLM unavailable")
         navigate_to_step4(prompt: prompt, dataset: dataset)
         expect {
-          post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
+          post evaluation_experiments_path, params: { current_step: 4 }
         }.to change(Evaluation::Experiment, :count).by(1)
         expect(response).to redirect_to(evaluation_experiment_path(Evaluation::Experiment.last))
       end

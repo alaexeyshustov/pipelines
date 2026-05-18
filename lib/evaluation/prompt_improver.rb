@@ -1,6 +1,6 @@
 module Evaluation
   class PromptImprover
-    Error = Class.new(StandardError)
+    class Error < StandardError; end
 
     def self.call(experiment:, model: ENV.fetch("EVALUATION_LLM_MODEL", "gpt-5.4"))
       new(experiment:, model:).call
@@ -31,13 +31,14 @@ module Evaluation
     private
 
     def evaluation_data
-      Evaluation::Justification
+      Justification
         .eager_load(:evaluation_result)
         .where(evaluation_evaluation_results: { experiment_id: @experiment.id })
+        .to_a
     end
 
     def metrics
-      Metric.where(agent_name: @experiment.prompt.name, active: true)
+      Metric.where(agent_name: @experiment.prompt.name, active: true).to_a
     end
 
 

@@ -46,6 +46,6 @@ module ApplicationPipeline
     config.active_job.queue_adapter = :async_job
 
     # Autoload app/pipeline and app/tools in addition to standard Rails paths.
-    config.autoload_paths += %w[pipeline tools].map { |d| Rails.root.join("app", d).to_s }
+    config.autoload_paths += %w[pipeline tools forms].map { |d| Rails.root.join("app", d).to_s }
   end
 end

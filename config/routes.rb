@@ -46,7 +46,6 @@ Rails.application.routes.draw do
         get "metrics/:metric_name", action: :metric_results, as: :metric_results
       end
       collection do
-        post :wizard_step
         get :prompt_versions
       end
     end

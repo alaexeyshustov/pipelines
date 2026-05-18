@@ -72,6 +72,16 @@ _Avoid_: response format, output format, JSON shape
 > **Dev:** "The auto-eval for the new prompt version scored lower on Tag Relevance — should I trigger another improvement?"
 > **Domain expert:** "Check the justifications first. If the judge flagged format non-compliance, the issue is probably an output schema mismatch, not tag quality. Fix the schema constraint in the improver before re-running."
 
+## Design decisions
+
+### Evaluation wizard
+
+**`Evaluation::WizardForm`** encapsulates all multi-step wizard logic: finding or creating the draft, extracting step params, building step-specific forms, and finalising the experiment from the draft. It receives `wizard_token:` as a plain string — the controller owns reading and writing `session[:wizard_token]`.
+
+**`Evaluation::WizardComponent`** accepts `form: <WizardForm>` and `current_step:` and decides internally which step sub-component to render. The view template (`new.html.erb`) stays unconditional; no dispatch logic leaks into it.
+
+**`Evaluation::ExperimentDetailComponent`** accepts `experiment:` and exposes all derived display values (`agent_name`, `metrics`, `runner_result_count`, `per_metric_avg`, `runner_model`, `judge_model`, `newer_experiment`) as component methods, replacing the corresponding instance variables in `ExperimentsController#show`.
+
 ## Flagged ambiguities
 
 - "prompt" is used loosely to mean both a raw instruction string and a versioned `Orchestration::Prompt` record — resolved: use **prompt version** for the DB record, **instructions** for the raw string value.

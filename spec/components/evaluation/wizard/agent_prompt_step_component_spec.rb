@@ -11,8 +11,8 @@ RSpec.describe Evaluation::Wizard::AgentPromptStepComponent, type: :component do
   let(:prompts) { build_list(:orchestration_prompt, 2) }
 
 
-  it "renders a form posting to wizard_step" do
-    expect(rendered.css("form").first["action"]).to include("wizard_step")
+  it "renders a form posting to evaluation_experiments_path" do
+    expect(rendered.css("form").first["action"]).to include("/evaluation/experiments")
   end
 
   it "renders agent name options" do

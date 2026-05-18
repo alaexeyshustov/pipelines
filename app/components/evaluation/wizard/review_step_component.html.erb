@@ -31,7 +31,7 @@
     </div>
   <% end %>
 
-  <%= form_with url: wizard_step_evaluation_experiments_path, method: :post do |f| %>
+  <%= form_with url: evaluation_experiments_path, method: :post do |f| %>
     <%= f.hidden_field :current_step, value: 4 %>
     <div class="flex justify-end">
       <button type="submit"
