@@ -10,14 +10,14 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     it "lists experiments" do
-      experiment = create(:leva_experiment)
+      experiment = create(:evaluation_experiment)
       get evaluation_experiments_path
       expect(response.body).to include(experiment.name)
     end
   end
 
   describe "GET /evaluation/experiments/:id" do
-    let(:experiment) { create(:leva_experiment) }
+    let(:experiment) { create(:evaluation_experiment) }
 
     it "returns 200" do
       get evaluation_experiment_path(experiment)
@@ -60,10 +60,10 @@ RSpec.describe "Evaluation::Experiments" do
       end
 
         it "shows the average metric score" do
-          runner_result = create(:leva_runner_result, experiment: experiment)
-          eval_result = Leva::EvaluationResult.create!(
+          runner_result = create(:evaluation_runner_result, experiment: experiment)
+          eval_result = Evaluation::EvaluationResult.create!(
             experiment: experiment, dataset_record: runner_result.dataset_record,
-            runner_result: runner_result, evaluator_class: "LLMJudgeEval", score: 4.0
+            runner_result: runner_result, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
           )
           Evaluation::Justification.create!(evaluation_result: eval_result, metric_name: "Accuracy", justification: "Good")
           get evaluation_experiment_path(experiment)
@@ -71,10 +71,10 @@ RSpec.describe "Evaluation::Experiments" do
         end
 
         it "shows overall average" do
-          runner_result = create(:leva_runner_result, experiment: experiment)
-          eval_result = Leva::EvaluationResult.create!(
+          runner_result = create(:evaluation_runner_result, experiment: experiment)
+          eval_result = Evaluation::EvaluationResult.create!(
             experiment: experiment, dataset_record: runner_result.dataset_record,
-            runner_result: runner_result, evaluator_class: "LLMJudgeEval", score: 4.0
+            runner_result: runner_result, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
           )
           Evaluation::Justification.create!(evaluation_result: eval_result, metric_name: "Accuracy", justification: "Good")
           get evaluation_experiment_path(experiment)
@@ -84,7 +84,7 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
   describe "POST /evaluation/experiments/:id/improve" do
-    let(:experiment) { create(:leva_experiment) }
+    let(:experiment) { create(:evaluation_experiment) }
     let(:new_prompt) { build(:orchestration_prompt) }
 
     before do
@@ -117,11 +117,11 @@ RSpec.describe "Evaluation::Experiments" do
   end
 
   describe "GET /evaluation/experiments/:id/compare/:candidate_id" do
-    let(:baseline) { create(:leva_experiment, status: :completed) }
+    let(:baseline) { create(:evaluation_experiment, status: :completed) }
     let(:prompt) { baseline.prompt }
 
     context "when candidate is completed" do
-      let(:candidate) { create(:leva_experiment, status: :completed, prompt: prompt) }
+      let(:candidate) { create(:evaluation_experiment, status: :completed, prompt: prompt) }
 
       before do
         allow(Evaluation::Comparison).to receive(:call).and_return(
@@ -148,7 +148,7 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     context "when candidate is pending" do
-      let(:candidate) { create(:leva_experiment, status: :pending, prompt: prompt) }
+      let(:candidate) { create(:evaluation_experiment, status: :pending, prompt: prompt) }
 
       it "returns 200 with loading state" do
         get compare_evaluation_experiment_path(baseline, candidate_id: candidate.id)
@@ -159,7 +159,7 @@ RSpec.describe "Evaluation::Experiments" do
   end
 
   describe "POST /evaluation/experiments/:id/activate" do
-    let(:experiment) { create(:leva_experiment) }
+    let(:experiment) { create(:evaluation_experiment) }
 
     it "redirects to show with notice" do
       post activate_evaluation_experiment_path(experiment)
@@ -196,9 +196,9 @@ RSpec.describe "Evaluation::Experiments" do
     end
   end
 
-  describe "POST /evaluation/experiments/wizard_step" do
+  describe "POST /evaluation/experiments" do
     it "redirects to step 2 after step 1 submission" do
-      post wizard_step_evaluation_experiments_path, params: {
+      post evaluation_experiments_path, params: {
         current_step: 1,
         wizard: { agent_name: "Emails::ClassifyAgent", experiment_name: "My Exp", prompt_id: "" }
       }
@@ -206,7 +206,7 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     it "persists agent_name in draft payload" do
-      post wizard_step_evaluation_experiments_path, params: {
+      post evaluation_experiments_path, params: {
         current_step: 1,
         wizard: { agent_name: "Emails::ClassifyAgent", experiment_name: "My Exp", prompt_id: "" }
       }
@@ -216,40 +216,40 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     it "redirects to step 3 after step 2 (no payload)" do
-      post wizard_step_evaluation_experiments_path, params: { current_step: 2 }
+      post evaluation_experiments_path, params: { current_step: 2 }
       expect(response).to redirect_to(new_evaluation_experiment_path(step: 3))
     end
 
     context "when submitting step 4 (final review)" do
-      let!(:dataset) { create(:leva_dataset) }
+      let!(:dataset) { create(:evaluation_dataset) }
       let!(:prompt)  { create(:orchestration_prompt) }
       let!(:metric)  { create(:evaluation_metric, agent_name: prompt.name) }
 
-      before { allow(Leva::ExperimentJob).to receive(:perform_later) }
+      before { allow(Evaluation::ExperimentJob).to receive(:perform_later) }
 
       def navigate_to_step4(prompt:, dataset:)
-        post wizard_step_evaluation_experiments_path, params: { current_step: 1, wizard: { agent_name: "Agent", experiment_name: "Eval Exp", prompt_id: prompt.id.to_s } }
-        post wizard_step_evaluation_experiments_path, params: { current_step: 2 }
-        post wizard_step_evaluation_experiments_path, params: { current_step: 3, wizard: { dataset_id: dataset.id.to_s } }
+        post evaluation_experiments_path, params: { current_step: 1, wizard: { agent_name: "Agent", experiment_name: "Eval Exp", prompt_id: prompt.id.to_s } }
+        post evaluation_experiments_path, params: { current_step: 2 }
+        post evaluation_experiments_path, params: { current_step: 3, wizard: { dataset_id: dataset.id.to_s } }
       end
 
       it "creates an experiment and redirects to show page" do
         navigate_to_step4(prompt: prompt, dataset: dataset)
         expect {
-          post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
-        }.to change(Leva::Experiment, :count).by(1)
-        expect(response).to redirect_to(evaluation_experiment_path(Leva::Experiment.last))
+          post evaluation_experiments_path, params: { current_step: 4 }
+        }.to change(Evaluation::Experiment, :count).by(1)
+        expect(response).to redirect_to(evaluation_experiment_path(Evaluation::Experiment.last))
       end
 
-      it "enqueues Leva::ExperimentJob on completion" do
+      it "enqueues Evaluation::ExperimentJob on completion" do
         navigate_to_step4(prompt: prompt, dataset: dataset)
-        post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
-        expect(Leva::ExperimentJob).to have_received(:perform_later).once
+        post evaluation_experiments_path, params: { current_step: 4 }
+        expect(Evaluation::ExperimentJob).to have_received(:perform_later).once
       end
 
       it "clears wizard_token from session on completion" do
         navigate_to_step4(prompt: prompt, dataset: dataset)
-        post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
+        post evaluation_experiments_path, params: { current_step: 4 }
         expect(session[:wizard_token]).to be_nil
       end
 
@@ -260,10 +260,10 @@ RSpec.describe "Evaluation::Experiments" do
         ])
         navigate_to_step4(prompt: prompt, dataset: dataset)
         expect {
-          post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
-        }.to change(Leva::Experiment, :count).by(1)
+          post evaluation_experiments_path, params: { current_step: 4 }
+        }.to change(Evaluation::Experiment, :count).by(1)
         expect(Evaluation::Metric.for_agent(prompt.name).active.count).to be >= 1
-        expect(response).to redirect_to(evaluation_experiment_path(Leva::Experiment.last))
+        expect(response).to redirect_to(evaluation_experiment_path(Evaluation::Experiment.last))
       end
 
       it "creates the experiment even when MetricSuggester fails" do
@@ -272,15 +272,15 @@ RSpec.describe "Evaluation::Experiments" do
           .and_raise(Evaluation::MetricSuggester::Error, "LLM unavailable")
         navigate_to_step4(prompt: prompt, dataset: dataset)
         expect {
-          post wizard_step_evaluation_experiments_path, params: { current_step: 4 }
-        }.to change(Leva::Experiment, :count).by(1)
-        expect(response).to redirect_to(evaluation_experiment_path(Leva::Experiment.last))
+          post evaluation_experiments_path, params: { current_step: 4 }
+        }.to change(Evaluation::Experiment, :count).by(1)
+        expect(response).to redirect_to(evaluation_experiment_path(Evaluation::Experiment.last))
       end
     end
   end
 
   describe "GET /evaluation/experiments/:id/status_frame" do
-    let!(:experiment) { create(:leva_experiment) }
+    let!(:experiment) { create(:evaluation_experiment) }
 
     it "returns 200" do
       get status_frame_evaluation_experiment_path(experiment)
@@ -294,7 +294,7 @@ RSpec.describe "Evaluation::Experiments" do
   end
 
   describe "GET /evaluation/experiments/:id/metrics/:metric_name" do
-    let(:experiment) { create(:leva_experiment) }
+    let(:experiment) { create(:evaluation_experiment) }
     let(:metric_name) { "Accuracy" }
 
     it "returns 200" do
@@ -313,11 +313,11 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     context "when evaluation results exist for the metric" do
-      let!(:runner_result) { create(:leva_runner_result, experiment: experiment, prediction: "Predicted text") }
+      let!(:runner_result) { create(:evaluation_runner_result, experiment: experiment, prediction: "Predicted text") }
       let!(:eval_result) do
-        Leva::EvaluationResult.create!(
+        Evaluation::EvaluationResult.create!(
           experiment: experiment, dataset_record: runner_result.dataset_record,
-          runner_result: runner_result, evaluator_class: "LLMJudgeEval", score: 3.5
+          runner_result: runner_result, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 3.5
         )
       end
       let!(:justification) do # rubocop:disable RSpec/LetSetup

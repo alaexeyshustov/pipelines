@@ -1,0 +1,13 @@
+module Evaluation
+  class ExperimentDetailComponent < ViewComponent::Base
+    def initialize: (experiment: Experiment) -> void
+
+    def agent_name: () -> String?
+    def metrics: () -> ActiveRecord::Relation
+    def runner_result_count: () -> Integer
+    def per_metric_avg: () -> Hash[String, Float]
+    def runner_model: () -> String?
+    def judge_model: () -> String
+    def newer_experiment: () -> Experiment?
+  end
+end

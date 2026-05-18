@@ -130,7 +130,7 @@ RSpec.describe Orchestration::PipelineRunner do
         create(:orchestration_step_action, step: step1, action: action, position: 1, params: { "limit" => 2 })
         allow(RubyLLM::Agent).to receive(:new).and_return(serialized_agent)
         allow(serialized_chat).to receive(:with_instructions)
-        allow(serialized_agent).to receive_messages(with_model: serialized_agent, with_tools: serialized_agent, with_params: serialized_agent, with_schema: serialized_agent, ask: instance_double(RubyLLM::Message, content: { "result" => [ { "id" => "mail-1" } ] }))
+        allow(serialized_agent).to receive_messages(with_model: serialized_agent, with_tools: serialized_agent, with_schema: serialized_agent, ask: instance_double(RubyLLM::Message, content: { "result" => [ { "id" => "mail-1" } ] }))
       end
 
       it 'executes without relying on a Ruby agent subclass' do
@@ -142,10 +142,11 @@ RSpec.describe Orchestration::PipelineRunner do
         expect(action_run.output).to eq({ "result" => [ { "id" => "mail-1" } ] })
       end
 
-      it 'applies agent defaults and lets step params override them' do
+      it 'passes merged agent-default and step params into the ask call' do
         described_class.new(pipeline_run).call
 
-        expect(serialized_agent).to have_received(:with_params).with("mode" => "default", "limit" => 2)
+        expect(serialized_agent).to have_received(:ask)
+          .with(satisfy { |json| JSON.parse(json) == { "mode" => "default", "limit" => 2 } })
       end
 
       it 'uses the database output schema for structured output requests' do # rubocop:disable RSpec/ExampleLength
@@ -190,7 +191,7 @@ RSpec.describe Orchestration::PipelineRunner do
         allow(RubyLLM::Agent).to receive(:new).and_return(snapshot_agent)
         allow(snapshot_agent).to receive_messages(
           with_model: snapshot_agent, with_tools: snapshot_agent,
-          with_params: snapshot_agent, with_schema: snapshot_agent,
+          with_schema: snapshot_agent,
           ask: instance_double(RubyLLM::Message, content: "result")
         )
         allow(snapshot_agent.chat).to receive(:with_instructions)
@@ -220,12 +221,12 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
-    context 'when an Orchestration::Prompt exists for the agent class' do
+    context 'when an Evaluation::Prompt exists for the agent class' do
       let(:chat) { instance_spy(Chat, id: nil) }
 
       before do
         allow(stub_agent).to receive(:chat).and_return(chat)
-        Orchestration::Prompt.create!(
+        Evaluation::Prompt.create!(
           name: "Emails::ClassifyAgent",
           system_prompt: "Custom Leva prompt for classifier",
           user_prompt: "{{input}}"
@@ -233,18 +234,18 @@ RSpec.describe Orchestration::PipelineRunner do
         create(:orchestration_step_action, step: step1, action: action, position: 1)
       end
 
-      it 'applies the Orchestration::Prompt system_prompt as instructions' do
+      it 'applies the Evaluation::Prompt system_prompt as instructions' do
         described_class.new(pipeline_run).call
         expect(chat).to have_received(:with_instructions).with("Custom Leva prompt for classifier")
       end
     end
 
-    context 'when an Orchestration::Prompt exists and action also has a prompt' do
+    context 'when an Evaluation::Prompt exists and action also has a prompt' do
       let(:chat) { instance_spy(Chat, id: nil) }
 
       before do
         allow(stub_agent).to receive(:chat).and_return(chat)
-        Orchestration::Prompt.create!(
+        Evaluation::Prompt.create!(
           name: "Emails::ClassifyAgent",
           system_prompt: "Leva wins over action prompt",
           user_prompt: "{{input}}"
@@ -253,13 +254,13 @@ RSpec.describe Orchestration::PipelineRunner do
         create(:orchestration_step_action, step: step1, action: action, position: 1)
       end
 
-      it 'prefers the Orchestration::Prompt over the action prompt' do
+      it 'prefers the Evaluation::Prompt over the action prompt' do
         described_class.new(pipeline_run).call
         expect(chat).to have_received(:with_instructions).with("Leva wins over action prompt")
       end
     end
 
-    context 'when no Orchestration::Prompt exists but the action has a prompt' do
+    context 'when no Evaluation::Prompt exists but the action has a prompt' do
       let(:chat) { instance_spy(Chat, id: nil) }
 
       before do
@@ -274,7 +275,7 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
-    context 'when no Orchestration::Prompt and no action prompt' do
+    context 'when no Evaluation::Prompt and no action prompt' do
       let(:chat) { instance_spy(Chat, id: nil) }
 
       before do
@@ -958,7 +959,6 @@ RSpec.describe Orchestration::PipelineRunner do
         allow(RubyLLM::Agent).to receive(:new).and_return(classify_agent)
         allow(classify_agent).to receive_messages(
           with_model: classify_agent,
-          with_params: classify_agent,
           ask: instance_double(RubyLLM::Message, content: "done")
         )
       end
@@ -988,7 +988,6 @@ RSpec.describe Orchestration::PipelineRunner do
         allow(RubyLLM::Agent).to receive(:new).and_return(classify_agent)
         allow(classify_agent).to receive_messages(
           with_model: classify_agent,
-          with_params: classify_agent,
           ask: instance_double(RubyLLM::Message, content: "done")
         )
       end
@@ -1032,7 +1031,6 @@ RSpec.describe Orchestration::PipelineRunner do
           "properties" => { "mode" => { "type" => "string" } }
         })
         create(:orchestration_step_action, step: step1, action: action, position: 1, params: { "mode" => "strict" })
-        allow(stub_agent).to receive(:with_params).and_return(stub_agent)
       end
 
       it 'does not fail validation because params are merged with resolved input for agent actions' do

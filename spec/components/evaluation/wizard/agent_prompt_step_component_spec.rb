@@ -11,8 +11,8 @@ RSpec.describe Evaluation::Wizard::AgentPromptStepComponent, type: :component do
   let(:prompts) { build_list(:orchestration_prompt, 2) }
 
 
-  it "renders a form posting to wizard_step" do
-    expect(rendered.css("form").first["action"]).to include("wizard_step")
+  it "renders a form posting to evaluation_experiments_path" do
+    expect(rendered.css("form").first["action"]).to include("/evaluation/experiments")
   end
 
   it "renders agent name options" do
@@ -44,5 +44,61 @@ RSpec.describe Evaluation::Wizard::AgentPromptStepComponent, type: :component do
 
   it "renders a Next button" do
     expect(rendered.css("button[type='submit']").text).to include("Next")
+  end
+
+  context "with available_models" do
+    subject(:rendered) do
+      render_inline(described_class.new(
+        agent_names: agent_names,
+        prompts: prompts,
+        available_models: available_models
+      ))
+    end
+
+    let(:available_models) { [ [ "openai", [ "gpt-4o", "gpt-4o-mini" ] ], [ "mistral", [ "mistral-large-latest" ] ] ] }
+
+
+    it "renders a sample_model dropdown" do
+      expect(rendered.css("select[name='wizard[sample_model]']")).to be_present
+    end
+
+    it "renders an evaluation_model dropdown" do
+      expect(rendered.css("select[name='wizard[evaluation_model]']")).to be_present
+    end
+
+    it "renders model options in both dropdowns" do
+      select_names = rendered.css("select[name='wizard[sample_model]'] option, select[name='wizard[evaluation_model]'] option")
+                             .map(&:text)
+      expect(select_names).to include("openai / gpt-4o", "mistral / mistral-large-latest")
+    end
+
+    it "includes a blank default option in both dropdowns" do
+      sample_blank     = rendered.css("select[name='wizard[sample_model]'] option[value='']").first
+      evaluation_blank = rendered.css("select[name='wizard[evaluation_model]'] option[value='']").first
+      expect(sample_blank.text).to include("Use default")
+      expect(evaluation_blank.text).to include("Use default")
+    end
+
+    it "pre-selects sample_model when provided" do
+      rendered = render_inline(described_class.new(
+        agent_names: agent_names,
+        prompts: prompts,
+        available_models: available_models,
+        sample_model: "gpt-4o"
+      ))
+      selected = rendered.css("select[name='wizard[sample_model]'] option[selected]").first
+      expect(selected&.attribute("value")&.value).to eq("gpt-4o")
+    end
+
+    it "pre-selects evaluation_model when provided" do
+      rendered = render_inline(described_class.new(
+        agent_names: agent_names,
+        prompts: prompts,
+        available_models: available_models,
+        evaluation_model: "mistral-large-latest"
+      ))
+      selected = rendered.css("select[name='wizard[evaluation_model]'] option[selected]").first
+      expect(selected&.attribute("value")&.value).to eq("mistral-large-latest")
+    end
   end
 end

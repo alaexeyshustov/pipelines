@@ -2,8 +2,8 @@ require "rails_helper"
 
 RSpec.describe Evaluation::Comparison do
   def make_eval_result(experiment:, score:, metric_name:)
-    runner_result = create(:leva_runner_result, experiment: experiment)
-    eval_result = create(:leva_evaluation_result,
+    runner_result = create(:evaluation_runner_result, experiment: experiment)
+    eval_result = create(:evaluation_evaluation_result,
       experiment: experiment,
       runner_result: runner_result,
       dataset_record: runner_result.dataset_record,
@@ -12,8 +12,8 @@ RSpec.describe Evaluation::Comparison do
     eval_result
   end
 
-  let(:baseline)  { create(:leva_experiment, name: "baseline") }
-  let(:candidate) { create(:leva_experiment, name: "candidate") }
+  let(:baseline)  { create(:evaluation_experiment, name: "baseline") }
+  let(:candidate) { create(:evaluation_experiment, name: "candidate") }
 
   describe ".call" do
     context "when both experiments have the same metrics" do

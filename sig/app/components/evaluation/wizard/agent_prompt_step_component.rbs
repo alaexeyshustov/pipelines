@@ -1,0 +1,19 @@
+module Evaluation
+  module Wizard
+    class AgentPromptStepComponent < ViewComponent::Base
+      def initialize: (
+        agent_names: Array[String],
+        prompts: ActiveRecord::Relation,
+        ?agent_name: String?,
+        ?prompt_id: String?,
+        ?experiment_name: String?,
+        ?available_models: Array[[String, Array[String]]],
+        ?sample_model: String?,
+        ?evaluation_model: String?
+      ) -> void
+
+      def prompt_options: () -> Array[[String, Integer]]
+      def model_options: () -> Array[[String, String]]
+    end
+  end
+end

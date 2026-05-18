@@ -1,0 +1,19 @@
+module Evaluation
+  class CreateExperimentFromDraft
+    def self.call: (draft: Evaluation::WizardDraft) -> Evaluation::Experiment
+
+    def initialize: (draft: Evaluation::WizardDraft) -> void
+
+    def call: () -> Evaluation::Experiment
+
+    private
+
+    attr_reader draft: Evaluation::WizardDraft
+
+    def payload: () -> Hash[String, untyped]
+    def resolve_prompt: () -> void
+    def maybe_auto_generate_metrics: () -> void
+    def auto_generate_metrics: (String agent_name) -> void
+    def create_experiment!: () -> Evaluation::Experiment
+  end
+end

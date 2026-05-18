@@ -10,7 +10,7 @@ namespace :evaluation do
     end
   end
 
-  desc "Seed a Leva dataset from historical action runs (e.g. rake evaluation:seed_dataset[Emails::ClassifyAgent,20])"
+  desc "Seed an evaluation dataset from historical action runs (e.g. rake evaluation:seed_dataset[Emails::ClassifyAgent,20])"
   task :seed_dataset, [ :agent_name, :sample_size ] => :environment do |_, args|
     agent_name  = args[:agent_name]  or raise ArgumentError, "Usage: rake evaluation:seed_dataset[AgentName,sample_size]"
     sample_size = (args[:sample_size] || 20).to_i
@@ -37,7 +37,7 @@ namespace :evaluation do
     puts "Seeded metrics for #{agent_name}: #{created} created, #{updated} updated."
   end
 
-  desc "Migrate hardcoded agent instructions into Leva::Prompt records"
+  desc "Migrate hardcoded agent instructions into Evaluation::Prompt records"
   task migrate_prompts: :environment do
     agent_classes = %w[
       Emails::ClassifyAgent
@@ -53,14 +53,14 @@ namespace :evaluation do
       klass = agent_class.constantize
       raise "#{agent_class} has no instructions" if klass.instructions.blank?
 
-      Orchestration::Prompt.find_or_initialize_by(name: agent_class).tap do |prompt|
+      Evaluation::Prompt.find_or_initialize_by(name: agent_class).tap do |prompt|
         prompt.system_prompt = klass.instructions
         # user_prompt is intentionally preserved on re-runs to avoid clobbering manual edits
         prompt.user_prompt = prompt.user_prompt.presence || "{{input}}"
         prompt.save!
       end
     end
-    Rails.logger.info "Migrated #{agent_classes.size} agent prompts to Orchestration::Prompt."
+    Rails.logger.info "Migrated #{agent_classes.size} agent prompts to Evaluation::Prompt."
   end
 
   desc "Compare two experiments and print per-metric deltas (e.g. rake evaluation:compare[1,2])"
@@ -68,8 +68,8 @@ namespace :evaluation do
     baseline_id  = args[:baseline_id]  or raise ArgumentError, "Usage: rake evaluation:compare[baseline_id,candidate_id]"
     candidate_id = args[:candidate_id] or raise ArgumentError, "Usage: rake evaluation:compare[baseline_id,candidate_id]"
 
-    baseline  = Leva::Experiment.find(baseline_id)
-    candidate = Leva::Experiment.find(candidate_id)
+    baseline  = Evaluation::Experiment.find(baseline_id)
+    candidate = Evaluation::Experiment.find(candidate_id)
 
     result = Evaluation::Comparison.call(baseline_experiment: baseline, candidate_experiment: candidate)
 
@@ -101,22 +101,22 @@ namespace :evaluation do
   task :run, [ :agent_name, :model ] => :environment do |_, args|
     agent_name = args[:agent_name] or raise ArgumentError, "Usage: rake evaluation:run[agent_name,model]"
 
-    prompt = Orchestration::Prompt.where(name: agent_name).order(version: :desc, id: :desc).first
+    prompt = Evaluation::Prompt.where(name: agent_name).order(version: :desc, id: :desc).first
     raise ArgumentError, "No active prompt found for #{agent_name}" unless prompt
 
-    dataset = Leva::Dataset.find_by!(name: agent_name)
+    dataset = Evaluation::Dataset.find_by!(name: agent_name)
 
     model_label = args[:model].presence || "default"
-    experiment = Leva::Experiment.create!(
+    experiment = Evaluation::Experiment.create!(
       name: "#{agent_name} eval w/ #{model_label} (#{Date.today})",
       dataset: dataset,
       prompt: prompt,
-      runner_class: "StubbedAgentRun",
-      evaluator_classes: [ "LLMJudgeEval" ],
+      runner_class: "Evaluation::Runners::StubbedAgentRun",
+      evaluator_classes: [ "Evaluation::Evaluators::LLMJudgeEval" ],
       metadata: args[:model].presence ? { "pipeline_model" => args[:model] } : nil
     )
 
-    Leva::ExperimentJob.perform_later(experiment)
+    Evaluation::ExperimentJob.perform_later(experiment)
     puts "Created experiment ##{experiment.id} for #{agent_name}"
   end
 
@@ -125,20 +125,20 @@ namespace :evaluation do
     model = args[:model].presence
 
     Orchestration::Agent.pluck(:name).each do |agent_name|
-      prompt = Orchestration::Prompt.where(name: agent_name).order(version: :desc, id: :desc).first
+      prompt = Evaluation::Prompt.where(name: agent_name).order(version: :desc, id: :desc).first
       unless prompt
         puts "#{agent_name}: skipped (no prompt)"
         next
       end
 
-      dataset = Leva::Dataset.find_by(name: agent_name)
+      dataset = Evaluation::Dataset.find_by(name: agent_name)
       unless dataset
         puts "#{agent_name}: skipped (no dataset)"
         next
       end
 
       model_label = model || "default"
-      experiment = Leva::Experiment.create!(
+      experiment = Evaluation::Experiment.create!(
         name: "#{agent_name} eval w/ #{model_label} (#{Date.today})",
         dataset: dataset,
         prompt: prompt,
@@ -147,7 +147,7 @@ namespace :evaluation do
         metadata: model ? { "pipeline_model" => model } : nil
       )
 
-      Leva::ExperimentJob.perform_later(experiment)
+      Evaluation::ExperimentJob.perform_later(experiment)
       puts "#{agent_name}: created experiment ##{experiment.id}"
     end
   end
@@ -165,20 +165,20 @@ namespace :evaluation do
       .count
     # steep:ignore:end
 
-    latest_exp_ids = Leva::Experiment
+    latest_exp_ids = Evaluation::Experiment
       .joins(:prompt)
-      .where(leva_prompts: { name: agent_names })
-      .group("leva_prompts.name")
+      .where(evaluation_prompts: { name: agent_names })
+      .group("evaluation_prompts.name")
       .maximum(:id)
 
-    experiments_by_id = Leva::Experiment.where(id: latest_exp_ids.values).index_by(&:id)
+    experiments_by_id = Evaluation::Experiment.where(id: latest_exp_ids.values).index_by(&:id)
     exp_by_agent      = latest_exp_ids.transform_values { |id| experiments_by_id[id] }
 
     avg_scores = latest_exp_ids.any? ?
-      Leva::EvaluationResult.where(experiment_id: latest_exp_ids.values).group(:experiment_id).average(:score) :
+      Evaluation::EvaluationResult.where(experiment_id: latest_exp_ids.values).group(:experiment_id).average(:score) :
       {}
 
-    prompt_versions = Orchestration::Prompt
+    prompt_versions = Evaluation::Prompt
       .where(name: agent_names)
       .group(:name)
       .maximum(:version)
@@ -203,9 +203,9 @@ namespace :evaluation do
   task :improve, [ :agent_name ] => :environment do |_, args|
     agent_name = args[:agent_name] or raise ArgumentError, "Usage: rake evaluation:improve[AgentName]"
 
-    experiment = Leva::Experiment
+    experiment = Evaluation::Experiment
       .joins(:prompt)
-      .where(leva_prompts: { name: agent_name })
+      .where(evaluation_prompts: { name: agent_name })
       .where(status: :completed)
       .order(id: :desc)
       .first

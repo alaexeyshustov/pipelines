@@ -20,11 +20,11 @@ RSpec.describe Evaluation::MetricExtractor do
       usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 }
     }.to_json
   end
-  let(:prompt_double) { instance_double(Orchestration::Prompt, system_prompt: instructions) }
+  let(:prompt_double) { instance_double(Evaluation::Prompt, system_prompt: instructions) }
   let(:prompt_relation) { instance_double(ActiveRecord::Relation) }
 
   before do
-    allow(Orchestration::Prompt).to receive(:where).with(name: agent_name).and_return(prompt_relation)
+    allow(Evaluation::Prompt).to receive(:where).with(name: agent_name).and_return(prompt_relation)
     allow(prompt_relation).to receive(:order).with(version: :desc, id: :desc).and_return(prompt_relation)
     allow(prompt_relation).to receive(:first).and_return(prompt_double)
 

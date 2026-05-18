@@ -35,9 +35,9 @@ RSpec.describe Orchestration::ActionRun do
     end
   end
 
-  describe 'Leva::Recordable' do
-    it 'includes Leva::Recordable' do
-      expect(described_class.ancestors).to include(Leva::Recordable)
+  describe 'Evaluation::Recordable' do
+    it 'includes Evaluation::Recordable' do
+      expect(described_class.ancestors).to include(Evaluation::Recordable)
     end
 
     it 'has dataset_records association' do

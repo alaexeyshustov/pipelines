@@ -1,0 +1,13 @@
+module Evaluation
+  module Wizard
+    class StepNavComponent < ViewComponent::Base
+      STEPS: Array[String]
+
+      def initialize: (current_step: Integer) -> void
+
+      def step_state: (Integer index) -> (:complete | :active | :upcoming)
+      def step_label: (Integer index) -> String?
+      def steps: () -> Array[Hash[Symbol, untyped]]
+    end
+  end
+end

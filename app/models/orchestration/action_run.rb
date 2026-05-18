@@ -1,6 +1,6 @@
 module Orchestration
   class ActionRun < ApplicationRecord
-    include Leva::Recordable
+    include Evaluation::Recordable
 
     self.table_name = "action_runs"
 

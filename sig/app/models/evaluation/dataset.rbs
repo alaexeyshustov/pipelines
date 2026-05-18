@@ -1,0 +1,18 @@
+module Evaluation
+  class Dataset < ApplicationRecord
+    def self.table_name: () -> String
+    def self.find_or_create_by!: (**untyped attrs) -> Dataset
+    def self.find_by: (**untyped attrs) -> Dataset?
+    def self.where: (**untyped attrs) -> ActiveRecord::Relation
+    def self.left_joins: (*untyped) -> ActiveRecord::Relation
+    def self.create!: (**untyped attrs) -> Dataset
+
+    def name: () -> String?
+    def name=: (String?) -> String?
+    def description: () -> String?
+    def description=: (String?) -> String?
+
+    def dataset_records: () -> ActiveRecord::Associations::CollectionProxy
+    def experiments: () -> ActiveRecord::Associations::CollectionProxy
+  end
+end

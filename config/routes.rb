@@ -6,7 +6,6 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
   mount RubyLLM::Monitoring::Engine, at: "/monitoring"
-  mount Leva::Engine, at: "/leva"
 
   resources :chats, only: [ :index, :show, :destroy ] do
     collection do
@@ -47,7 +46,6 @@ Rails.application.routes.draw do
         get "metrics/:metric_name", action: :metric_results, as: :metric_results
       end
       collection do
-        post :wizard_step
         get :prompt_versions
       end
     end

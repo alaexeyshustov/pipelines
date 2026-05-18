@@ -1,0 +1,26 @@
+module Evaluation
+  module Evaluators
+    class LLMJudgeEval < BaseEval
+      type metric_result = { metric_name: String, score: Float, justification: String }
+
+      SYSTEM_PROMPT: String
+
+      @judge_model: String
+
+      def self.judge_model: () -> String
+      def self.judge_model=: (String model) -> String
+
+      def evaluate: (Evaluation::RunnerResult runner_result, untyped recordable, ?model: String) -> Array[metric_result]
+      def evaluate_and_store: (Evaluation::Experiment experiment, Evaluation::RunnerResult runner_result) -> Array[Evaluation::EvaluationResult]
+
+      private
+
+      def agent_name: (untyped recordable) -> String
+      def fetch_instructions: (Evaluation::RunnerResult runner_result) -> String?
+      def call_judge: (instructions: String?, input: untyped, expected_tool_calls: Array[untyped], actual_tool_calls: Array[untyped], output: String, metrics: untyped, ?model: String) -> Array[metric_result]
+      def build_user_message: (instructions: String?, input: untyped, expected_tool_calls: Array[untyped], actual_tool_calls: Array[untyped], output: String, metrics: untyped) -> String
+      def parse_judge_response: (String content) -> Array[metric_result]
+      def normalize_entry: (untyped entry, Integer index) -> metric_result?
+    end
+  end
+end

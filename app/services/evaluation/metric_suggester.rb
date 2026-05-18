@@ -45,11 +45,7 @@ module Evaluation
     private
 
     def orchestration_prompt
-      Orchestration::Prompt
-        .where(name: @agent_name)
-        .order(version: :desc, id: :desc)
-        .first
-        &.system_prompt
+      Prompt.last_for_agent(@agent_name)&.system_prompt
     end
 
     def parse_response(content)

@@ -1,0 +1,5 @@
+module Evaluation
+  class DatasetsController < ApplicationController
+    def generate: () -> void
+  end
+end

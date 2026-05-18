@@ -1,0 +1,19 @@
+module Evaluation
+  class PromptImprover
+    class Error < StandardError
+    end
+
+    def self.call: (experiment: Experiment, ?model: String) -> Prompt
+
+    def initialize: (experiment: Experiment, model: String) -> void
+    def call: () -> Prompt
+
+    private
+
+    def evaluation_data: () -> Array[Justification]
+    def metrics: () -> Array[Metric]
+    def build_improvement_message: (current_prompt: Prompt, evaluation_data: Array[Justification], metrics: Array[Metric]) -> String
+    def run_agent: (String input) -> Hash[Symbol, String]
+    def parse_response: (String | Hash[untyped, untyped] content) -> Hash[Symbol, String]
+  end
+end

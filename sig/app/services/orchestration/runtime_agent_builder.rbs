@@ -10,6 +10,7 @@ module Orchestration
     ) -> void
     def build: () -> untyped
     def resolved_output_schema: () -> Hash[String, untyped]?
+    def resolved_params: () -> Hash[String, untyped]
     # Returns symbol-keyed hash at runtime; keys become strings after JSON round-trip on ActionRun#agent_snapshot.
     def snapshot: () -> Hash[Symbol, untyped]
 
@@ -21,7 +22,6 @@ module Orchestration
     def resolved_model: () -> String?
     def resolved_prompt: () -> String?
     def resolved_tools: () -> Array[untyped]?
-    def resolved_params: () -> Hash[String, untyped]
     def resolved_generation_schema: () -> untyped
   end
 end

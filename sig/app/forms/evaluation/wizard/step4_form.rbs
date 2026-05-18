@@ -1,0 +1,13 @@
+module Evaluation
+  module Wizard
+    class Step4Form
+      def initialize: (draft_payload: Hash[String, untyped]) -> void
+
+      def agent_name: () -> String?
+      def experiment_name: () -> String?
+      def prompt: () -> Evaluation::Prompt?
+      def dataset: () -> Evaluation::Dataset?
+      def metrics_count: () -> Integer
+    end
+  end
+end

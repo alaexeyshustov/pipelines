@@ -1,0 +1,10 @@
+module Evaluation
+  module Wizard
+    class MetricsStepComponent < ViewComponent::Base
+      def initialize: (agent_name: String?, metrics: ActiveRecord::Relation) -> void
+
+      def metrics_list_id: () -> String
+      def empty?: () -> bool
+    end
+  end
+end

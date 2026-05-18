@@ -5,11 +5,19 @@ module RubyLLM
 
   class Chat
     def with_instructions: (String instructions) -> self
+    def with_schema: (untyped schema) -> self
+    def with_temperature: (Numeric temperature) -> self
     def ask: (String prompt) -> Message
   end
 
   class Agent
     def self.create: () -> instance
+    def self.chat_model: (untyped model) -> void
+    def self.model: (String model) -> void
+    def self.tools: (*untyped tools) -> void
+    def self.schema: () { () -> void } -> void
+    def self.instructions: (String instructions) -> void
+    def self.string: (Symbol name, ?required: bool, ?description: String) -> void
 
     def with_model: (String model) -> self
     def with_schema: (untyped schema) -> self
@@ -22,6 +30,10 @@ module RubyLLM
   end
 
   class Schema
+    def self.string: (Symbol name, ?required: bool, ?description: String) -> void
+    def self.integer: (Symbol name, ?required: bool, ?description: String) -> void
+    def self.boolean: (Symbol name, ?required: bool, ?description: String) -> void
+    def self.array: (Symbol name, ?required: bool, ?description: String) -> void
   end
 
   def self.chat: (?model: String) -> Chat

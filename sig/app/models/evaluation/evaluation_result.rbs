@@ -1,0 +1,27 @@
+module Evaluation
+  class EvaluationResult < ApplicationRecord
+    def self.table_name: () -> String
+    def self.create!: (**untyped attrs) -> EvaluationResult
+    def self.where: (**untyped attrs) -> ActiveRecord::Relation
+    def self.joins: (*untyped) -> ActiveRecord::Relation
+    def self.group: (*untyped) -> ActiveRecord::Relation
+    def self.average: (Symbol column) -> Float?
+    def self.pluck: (*untyped) -> Array[untyped]
+    def self.connection: () -> untyped
+    def self.per_metric_averages: (Evaluation::Experiment experiment) -> Hash[String, Float]
+
+    def score: () -> Float?
+    def score=: (Float | Integer | nil) -> (Float | Integer | nil)
+    def evaluator_class: () -> String?
+    def evaluator_class=: (String?) -> String?
+
+    def experiment: () -> Evaluation::Experiment?
+    def experiment=: (Evaluation::Experiment?) -> Evaluation::Experiment?
+    def dataset_record: () -> Evaluation::DatasetRecord
+    def dataset_record=: (Evaluation::DatasetRecord) -> Evaluation::DatasetRecord
+    def runner_result: () -> Evaluation::RunnerResult
+    def runner_result=: (Evaluation::RunnerResult) -> Evaluation::RunnerResult
+
+    def justifications: () -> ActiveRecord::Associations::CollectionProxy
+  end
+end

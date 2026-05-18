@@ -22,7 +22,7 @@ RSpec.describe Evaluation::Wizard::MetricsStepComponent, type: :component do
   end
 
   it "renders a Next button to advance the wizard" do
-    expect(rendered.css("form[action*='wizard_step'] button[type='submit']").text).to include("Next")
+    expect(rendered.css("form[action*='/evaluation/experiments'] button[type='submit']").text).to include("Next")
   end
 
   it "renders empty state when no metrics exist" do
