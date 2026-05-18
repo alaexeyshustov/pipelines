@@ -10,14 +10,14 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     it "lists experiments" do
-      experiment = create(:leva_experiment)
+      experiment = create(:evaluation_experiment)
       get evaluation_experiments_path
       expect(response.body).to include(experiment.name)
     end
   end
 
   describe "GET /evaluation/experiments/:id" do
-    let(:experiment) { create(:leva_experiment) }
+    let(:experiment) { create(:evaluation_experiment) }
 
     it "returns 200" do
       get evaluation_experiment_path(experiment)
@@ -60,7 +60,7 @@ RSpec.describe "Evaluation::Experiments" do
       end
 
         it "shows the average metric score" do
-          runner_result = create(:leva_runner_result, experiment: experiment)
+          runner_result = create(:evaluation_runner_result, experiment: experiment)
           eval_result = Evaluation::EvaluationResult.create!(
             experiment: experiment, dataset_record: runner_result.dataset_record,
             runner_result: runner_result, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
@@ -71,7 +71,7 @@ RSpec.describe "Evaluation::Experiments" do
         end
 
         it "shows overall average" do
-          runner_result = create(:leva_runner_result, experiment: experiment)
+          runner_result = create(:evaluation_runner_result, experiment: experiment)
           eval_result = Evaluation::EvaluationResult.create!(
             experiment: experiment, dataset_record: runner_result.dataset_record,
             runner_result: runner_result, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
@@ -84,7 +84,7 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
   describe "POST /evaluation/experiments/:id/improve" do
-    let(:experiment) { create(:leva_experiment) }
+    let(:experiment) { create(:evaluation_experiment) }
     let(:new_prompt) { build(:orchestration_prompt) }
 
     before do
@@ -117,11 +117,11 @@ RSpec.describe "Evaluation::Experiments" do
   end
 
   describe "GET /evaluation/experiments/:id/compare/:candidate_id" do
-    let(:baseline) { create(:leva_experiment, status: :completed) }
+    let(:baseline) { create(:evaluation_experiment, status: :completed) }
     let(:prompt) { baseline.prompt }
 
     context "when candidate is completed" do
-      let(:candidate) { create(:leva_experiment, status: :completed, prompt: prompt) }
+      let(:candidate) { create(:evaluation_experiment, status: :completed, prompt: prompt) }
 
       before do
         allow(Evaluation::Comparison).to receive(:call).and_return(
@@ -148,7 +148,7 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     context "when candidate is pending" do
-      let(:candidate) { create(:leva_experiment, status: :pending, prompt: prompt) }
+      let(:candidate) { create(:evaluation_experiment, status: :pending, prompt: prompt) }
 
       it "returns 200 with loading state" do
         get compare_evaluation_experiment_path(baseline, candidate_id: candidate.id)
@@ -159,7 +159,7 @@ RSpec.describe "Evaluation::Experiments" do
   end
 
   describe "POST /evaluation/experiments/:id/activate" do
-    let(:experiment) { create(:leva_experiment) }
+    let(:experiment) { create(:evaluation_experiment) }
 
     it "redirects to show with notice" do
       post activate_evaluation_experiment_path(experiment)
@@ -221,7 +221,7 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     context "when submitting step 4 (final review)" do
-      let!(:dataset) { create(:leva_dataset) }
+      let!(:dataset) { create(:evaluation_dataset) }
       let!(:prompt)  { create(:orchestration_prompt) }
       let!(:metric)  { create(:evaluation_metric, agent_name: prompt.name) }
 
@@ -280,7 +280,7 @@ RSpec.describe "Evaluation::Experiments" do
   end
 
   describe "GET /evaluation/experiments/:id/status_frame" do
-    let!(:experiment) { create(:leva_experiment) }
+    let!(:experiment) { create(:evaluation_experiment) }
 
     it "returns 200" do
       get status_frame_evaluation_experiment_path(experiment)
@@ -294,7 +294,7 @@ RSpec.describe "Evaluation::Experiments" do
   end
 
   describe "GET /evaluation/experiments/:id/metrics/:metric_name" do
-    let(:experiment) { create(:leva_experiment) }
+    let(:experiment) { create(:evaluation_experiment) }
     let(:metric_name) { "Accuracy" }
 
     it "returns 200" do
@@ -313,7 +313,7 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     context "when evaluation results exist for the metric" do
-      let!(:runner_result) { create(:leva_runner_result, experiment: experiment, prediction: "Predicted text") }
+      let!(:runner_result) { create(:evaluation_runner_result, experiment: experiment, prediction: "Predicted text") }
       let!(:eval_result) do
         Evaluation::EvaluationResult.create!(
           experiment: experiment, dataset_record: runner_result.dataset_record,

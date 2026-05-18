@@ -7,7 +7,7 @@ RSpec.describe "evaluation:improve rake task" do # rubocop:disable RSpec/Describ
   let(:task_name) { "evaluation:improve" }
   let(:agent_name) { "Emails::ClassifyAgent" }
   let!(:prompt) { create(:orchestration_prompt, name: agent_name, system_prompt: "Classify emails.", user_prompt: "{{input}}") }
-  let(:experiment) { create(:leva_experiment, prompt: prompt, status: :completed) }
+  let(:experiment) { create(:evaluation_experiment, prompt: prompt, status: :completed) }
 
   def stub_llm(system_prompt: "Improved prompt.", user_prompt: "{{input}}")
     body = {
@@ -46,7 +46,7 @@ RSpec.describe "evaluation:improve rake task" do # rubocop:disable RSpec/Describ
   end
 
   context "when no completed experiment exists" do
-    let(:experiment) { create(:leva_experiment, prompt: prompt, status: :pending) }
+    let(:experiment) { create(:evaluation_experiment, prompt: prompt, status: :pending) }
 
     it "raises ArgumentError" do
       expect { Rake::Task[task_name].invoke(agent_name) }

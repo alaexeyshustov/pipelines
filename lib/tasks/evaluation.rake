@@ -10,7 +10,7 @@ namespace :evaluation do
     end
   end
 
-  desc "Seed a Leva dataset from historical action runs (e.g. rake evaluation:seed_dataset[Emails::ClassifyAgent,20])"
+  desc "Seed an evaluation dataset from historical action runs (e.g. rake evaluation:seed_dataset[Emails::ClassifyAgent,20])"
   task :seed_dataset, [ :agent_name, :sample_size ] => :environment do |_, args|
     agent_name  = args[:agent_name]  or raise ArgumentError, "Usage: rake evaluation:seed_dataset[AgentName,sample_size]"
     sample_size = (args[:sample_size] || 20).to_i

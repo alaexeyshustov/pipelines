@@ -18,8 +18,8 @@ RSpec.describe "evaluation:run_all rake task" do # rubocop:disable RSpec/Describ
     create(:orchestration_agent, name: filter_agent_name)
     create(:orchestration_prompt, name: classify_agent_name)
     create(:orchestration_prompt, name: filter_agent_name)
-    create(:leva_dataset, name: classify_agent_name)
-    create(:leva_dataset, name: filter_agent_name)
+    create(:evaluation_dataset, name: classify_agent_name)
+    create(:evaluation_dataset, name: filter_agent_name)
   end
 
   def run_task(model = nil)

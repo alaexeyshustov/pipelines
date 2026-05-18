@@ -24,7 +24,7 @@ module Evaluation
           raise ArgumentError, "LLMJudgeEval requires a recordable with #input and #step_action, got #{recordable.class}"
         end
 
-        metrics = Evaluation::Metric.for_agent(agent_name(recordable)).active
+        metrics = Metric.for_agent(agent_name(recordable)).active
         return [] if metrics.none?
 
         if runner_result.prediction.blank?
@@ -34,7 +34,7 @@ module Evaluation
 
         prompt_text = fetch_instructions(runner_result)
         prediction = JSON.parse(runner_result.prediction)
-        expected_tool_calls = Evaluation::ToolCallExtractor.call(recordable.chat)
+        expected_tool_calls = ToolCallExtractor.call(recordable.chat)
         default_tool_calls = [] #: Array[untyped]
         actual_tool_calls = prediction.fetch("tool_calls", default_tool_calls)
 

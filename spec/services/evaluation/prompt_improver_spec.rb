@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe Evaluation::PromptImprover do
   let(:agent_name) { "Emails::ClassifyAgent" }
   let(:prompt) { create(:orchestration_prompt, name: agent_name, system_prompt: "You classify emails.", user_prompt: "{{input}}") }
-  let!(:experiment) { create(:leva_experiment, prompt: prompt, status: :completed) }
+  let!(:experiment) { create(:evaluation_experiment, prompt: prompt, status: :completed) }
 
   def stub_llm(system_prompt: "Improved system.", user_prompt: "{{input}}")
     body = {
@@ -17,8 +17,8 @@ RSpec.describe Evaluation::PromptImprover do
   end
 
   def make_eval_result(score:, metric_name:, justification: "Good job.")
-    runner_result = create(:leva_runner_result, experiment: experiment)
-    eval_result = create(:leva_evaluation_result,
+    runner_result = create(:evaluation_runner_result, experiment: experiment)
+    eval_result = create(:evaluation_evaluation_result,
       experiment: experiment,
       runner_result: runner_result,
       dataset_record: runner_result.dataset_record,
@@ -109,7 +109,7 @@ RSpec.describe Evaluation::PromptImprover do
     end
 
     context "when experiment has no associated prompt" do
-      let(:experiment) { create(:leva_experiment, prompt: nil, status: :completed) }
+      let(:experiment) { create(:evaluation_experiment, prompt: nil, status: :completed) }
 
       it "raises ArgumentError" do
         expect { described_class.call(experiment: experiment) }

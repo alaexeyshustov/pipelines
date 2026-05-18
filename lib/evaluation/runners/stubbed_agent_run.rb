@@ -6,8 +6,8 @@ module Evaluation
       def execute(record)
         raise ArgumentError, "StubbedAgentRun requires an Orchestration::ActionRun, got #{record.class}" unless record.is_a?(Orchestration::ActionRun)
 
-        expected_tool_calls = Evaluation::ToolCallExtractor.call(record.chat)
-        registry = Evaluation::ToolStubRegistry.new(expected_tool_calls)
+        expected_tool_calls = ToolCallExtractor.call(record.chat)
+        registry = ToolStubRegistry.new(expected_tool_calls)
 
         action = record.step_action.action
         agent_record = action.agent

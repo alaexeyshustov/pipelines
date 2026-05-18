@@ -12,7 +12,7 @@ module Evaluation
         @prompt = prompt
         @dataset_record = dataset_record
         result = execute(dataset_record.recordable)
-        Evaluation::RunnerResult.create!(
+        RunnerResult.create!(
           experiment: experiment,
           dataset_record: dataset_record,
           prompt: prompt,

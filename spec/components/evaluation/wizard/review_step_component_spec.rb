@@ -14,7 +14,7 @@ RSpec.describe Evaluation::Wizard::ReviewStepComponent, type: :component do
   end
 
   let(:prompt)  { build(:orchestration_prompt, name: "classify_agent", version: 3) }
-  let(:dataset) { build(:leva_dataset, name: "emails_dataset") }
+  let(:dataset) { build(:evaluation_dataset, name: "emails_dataset") }
 
   it "renders the experiment name" do
     expect(rendered.text).to include("My Eval")

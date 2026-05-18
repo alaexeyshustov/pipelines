@@ -161,21 +161,21 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
   end
 
   describe "#evaluate_and_store" do
-    let!(:leva_dataset) { Evaluation::Dataset.create!(name: "test_dataset") }
-    let!(:leva_prompt) { Evaluation::Prompt.create!(name: agent_name, system_prompt: "You are a classifier.", user_prompt: "Classify: {{input}}") }
-    let!(:leva_experiment) { Evaluation::Experiment.create!(name: "test_exp", dataset: leva_dataset, status: :pending, prompt: leva_prompt, runner_class: "Evaluation::Runners::StubbedAgentRun", evaluator_classes: [ "Evaluation::Evaluators::LLMJudgeEval" ]) }
-    let!(:leva_dataset_record) do
+    let!(:evaluation_dataset) { Evaluation::Dataset.create!(name: "test_dataset") }
+    let!(:evaluation_prompt) { Evaluation::Prompt.create!(name: agent_name, system_prompt: "You are a classifier.", user_prompt: "Classify: {{input}}") }
+    let!(:evaluation_experiment) { Evaluation::Experiment.create!(name: "test_exp", dataset: evaluation_dataset, status: :pending, prompt: evaluation_prompt, runner_class: "Evaluation::Runners::StubbedAgentRun", evaluator_classes: [ "Evaluation::Evaluators::LLMJudgeEval" ]) }
+    let!(:evaluation_dataset_record) do
       classify_agent = create(:orchestration_agent, name: agent_name)
       action = create(:orchestration_action, kind: :agent, agent: classify_agent)
       step_action = create(:orchestration_step_action, action: action)
       action_run = create(:orchestration_action_run, step_action: step_action, status: "completed")
-      Evaluation::DatasetRecord.create!(dataset: leva_dataset, recordable: action_run)
+      Evaluation::DatasetRecord.create!(dataset: evaluation_dataset, recordable: action_run)
     end
-    let!(:leva_runner_result) do
+    let!(:evaluation_runner_result) do
       Evaluation::RunnerResult.create!(
-        experiment: leva_experiment,
-        dataset_record: leva_dataset_record,
-        prompt: leva_prompt,
+        experiment: evaluation_experiment,
+        dataset_record: evaluation_dataset_record,
+        prompt: evaluation_prompt,
         prediction: { tool_calls: [], output: "classified" }.to_json,
         runner_class: "Evaluation::Runners::StubbedAgentRun"
       )
@@ -197,23 +197,23 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
 
     it "creates one EvaluationResult per metric" do
       expect {
-        eval_instance.evaluate_and_store(leva_experiment, leva_runner_result)
+        eval_instance.evaluate_and_store(evaluation_experiment, evaluation_runner_result)
       }.to change(Evaluation::EvaluationResult, :count).by(2)
     end
 
     it "creates one Justification per metric" do
       expect {
-        eval_instance.evaluate_and_store(leva_experiment, leva_runner_result)
+        eval_instance.evaluate_and_store(evaluation_experiment, evaluation_runner_result)
       }.to change(Evaluation::Justification, :count).by(2)
     end
 
     it "stores scores between 1 and 5" do
-      eval_instance.evaluate_and_store(leva_experiment, leva_runner_result)
+      eval_instance.evaluate_and_store(evaluation_experiment, evaluation_runner_result)
       expect(Evaluation::EvaluationResult.last(2).map(&:score)).to all(be_between(1, 5))
     end
 
     it "links justifications to their evaluation results" do
-      eval_instance.evaluate_and_store(leva_experiment, leva_runner_result)
+      eval_instance.evaluate_and_store(evaluation_experiment, evaluation_runner_result)
       expect(Evaluation::Justification.last.evaluation_result).to be_a(Evaluation::EvaluationResult)
     end
   end

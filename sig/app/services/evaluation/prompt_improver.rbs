@@ -3,43 +3,18 @@ module Evaluation
     class Error < StandardError
     end
 
-    class EvaluationEntry
-      attr_reader metric_name: String
-      attr_reader score: Float
-      attr_reader justification: String
+    def self.call: (experiment: Evaluation::Experiment, ?model: String) -> Evaluation::Prompt
 
-      def self.new: (metric_name: String, score: Float, justification: String) -> EvaluationEntry
-    end
-
-    class ImprovementSchema < RubyLLM::Schema
-    end
-
-    IMPROVEMENT_PROMPT: String
-
-    def self.call: (experiment: Evaluation::Experiment) -> Evaluation::Prompt
-
-    def initialize: (experiment: Evaluation::Experiment) -> void
+    def initialize: (experiment: Evaluation::Experiment, model: String) -> void
 
     def call: () -> Evaluation::Prompt
 
     private
 
-    def model: () -> String
-
-    def load_evaluation_data: () -> Array[EvaluationEntry]
-
-    def load_samples: () -> Array[{ input: untyped, output: String }]
-
-    def build_improvement_message: (
-      current_prompt: Evaluation::Prompt,
-      evaluation_data: Array[EvaluationEntry],
-      metrics: ActiveRecord::Relation,
-      samples: Array[{ input: untyped, output: String }],
-      output_schema: untyped
-    ) -> String
-
-    def call_llm: (String user_message) -> { system_prompt: String, user_prompt: String }
-
-    def parse_response: (String | Hash[untyped, untyped] content) -> { system_prompt: String, user_prompt: String }
+    def evaluation_data: () -> ActiveRecord::Relation
+    def metrics: () -> ActiveRecord::Relation
+    def build_improvement_message: (current_prompt: Evaluation::Prompt, evaluation_data: ActiveRecord::Relation, metrics: ActiveRecord::Relation) -> String
+    def run_agent: (String input) -> Hash[Symbol, String]
+    def parse_response: (String | Hash[untyped, untyped] content) -> Hash[Symbol, String]
   end
 end

@@ -1,0 +1,13 @@
+module Evaluation
+  module Improvement
+    class LoadSamplesTool < ::RubyLLM::Tool
+      def name: () -> String
+      def execute: (experiment_id: Integer, ?number_of_samples: Integer) -> untyped
+
+      private
+
+      def load_samples: (Integer experiment_id, Integer number_of_samples) -> ActiveRecord::Relation
+      def filter_samples: (ActiveRecord::Relation samples) -> Array[{ input: untyped, output: String }]
+    end
+  end
+end

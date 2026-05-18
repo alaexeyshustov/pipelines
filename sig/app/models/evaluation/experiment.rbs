@@ -10,6 +10,7 @@ module Evaluation
     def self.order: (*untyped) -> ActiveRecord::Relation
 
     def id: () -> Integer
+    def created_at: () -> Time
     def name: () -> String?
     def name=: (String?) -> String?
     def description: () -> String?

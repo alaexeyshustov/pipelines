@@ -8,6 +8,7 @@ module Evaluation
     def self.average: (Symbol column) -> Float?
     def self.pluck: (*untyped) -> Array[untyped]
     def self.connection: () -> untyped
+    def self.per_metric_averages: (Evaluation::Experiment experiment) -> Hash[String, Float]
 
     def score: () -> Float?
     def score=: (Float | Integer | nil) -> (Float | Integer | nil)

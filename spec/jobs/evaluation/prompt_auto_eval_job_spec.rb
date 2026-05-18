@@ -2,10 +2,10 @@ require "rails_helper"
 
 RSpec.describe Evaluation::PromptAutoEvalJob do
   let(:agent_name) { "Emails::ClassifyAgent" }
-  let(:dataset) { create(:leva_dataset) }
+  let(:dataset) { create(:evaluation_dataset) }
   let(:previous_prompt) { create(:orchestration_prompt, name: agent_name) }
   let(:previous_experiment) do
-    create(:leva_experiment,
+    create(:evaluation_experiment,
       prompt: previous_prompt,
       dataset: dataset,
       status: :completed,
@@ -51,7 +51,7 @@ RSpec.describe Evaluation::PromptAutoEvalJob do
 
     context "when no completed experiment exists for the prompt name" do
       let(:previous_experiment) do
-        create(:leva_experiment, prompt: previous_prompt, dataset: dataset, status: :pending)
+        create(:evaluation_experiment, prompt: previous_prompt, dataset: dataset, status: :pending)
       end
 
       it "does not create an experiment" do

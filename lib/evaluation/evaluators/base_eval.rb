@@ -12,7 +12,7 @@ module Evaluation
         @runner_result = runner_result
         recordable = runner_result.dataset_record.recordable
         result = evaluate(runner_result, recordable)
-        Evaluation::EvaluationResult.create!(
+        EvaluationResult.create!(
           experiment: experiment,
           dataset_record: runner_result.dataset_record,
           runner_result: runner_result,

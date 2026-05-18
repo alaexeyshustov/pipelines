@@ -3,12 +3,12 @@ require "rake"
 
 RSpec.describe "evaluation:compare rake task" do # rubocop:disable RSpec/DescribeClass
   let(:task_name) { "evaluation:compare" }
-  let(:baseline)  { create(:leva_experiment, name: "baseline-exp") }
-  let(:candidate) { create(:leva_experiment, name: "candidate-exp") }
+  let(:baseline)  { create(:evaluation_experiment, name: "baseline-exp") }
+  let(:candidate) { create(:evaluation_experiment, name: "candidate-exp") }
 
   def make_eval_result(experiment:, score:, metric_name:)
-    runner_result = create(:leva_runner_result, experiment: experiment)
-    eval_result = create(:leva_evaluation_result,
+    runner_result = create(:evaluation_runner_result, experiment: experiment)
+    eval_result = create(:evaluation_evaluation_result,
       experiment: experiment,
       runner_result: runner_result,
       dataset_record: runner_result.dataset_record,

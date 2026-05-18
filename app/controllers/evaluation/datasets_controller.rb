@@ -3,7 +3,7 @@
 module Evaluation
   class DatasetsController < ApplicationController
     def generate
-      Evaluation::SyntheticDatasetGenerator.call(
+      SyntheticDatasetJob.perform_later(
         draft_token:  params[:draft_token],
         agent_name:   params[:agent_name],
         dataset_name: params[:dataset_name],

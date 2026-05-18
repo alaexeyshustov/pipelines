@@ -7,7 +7,7 @@ RSpec.describe "evaluation:run rake task" do # rubocop:disable RSpec/DescribeCla
   let(:task_name) { "evaluation:run" }
   let(:agent_name) { "Emails::ClassifyAgent" }
   let!(:prompt)  { create(:orchestration_prompt, name: agent_name, version: 1) }
-  let!(:dataset) { create(:leva_dataset, name: agent_name) }
+  let!(:dataset) { create(:evaluation_dataset, name: agent_name) }
 
   before do
     Rails.application.load_tasks if Rake::Task.tasks.empty?

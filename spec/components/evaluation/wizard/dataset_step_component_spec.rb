@@ -12,7 +12,7 @@ RSpec.describe Evaluation::Wizard::DatasetStepComponent, type: :component do
   end
 
   let(:agent_name) { "Emails::ClassifyAgent" }
-  let(:datasets) { build_list(:leva_dataset, 2) }
+  let(:datasets) { build_list(:evaluation_dataset, 2) }
   let(:draft_token) { "abc123" }
 
 
@@ -21,7 +21,7 @@ RSpec.describe Evaluation::Wizard::DatasetStepComponent, type: :component do
   end
 
   it "marks selected dataset when selected_dataset_id provided" do
-    selected = create(:leva_dataset)
+    selected = create(:evaluation_dataset)
     rendered = render_inline(described_class.new(
       agent_name: agent_name,
       datasets: [ selected ],

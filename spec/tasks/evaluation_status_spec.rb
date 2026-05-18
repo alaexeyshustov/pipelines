@@ -53,22 +53,22 @@ RSpec.describe "evaluation:status rake task" do # rubocop:disable RSpec/Describe
   end
 
   context "when an experiment with results exists" do # rubocop:disable RSpec/MultipleMemoizedHelpers
-    let(:dataset) { create(:leva_dataset, name: agent_name) }
+    let(:dataset) { create(:evaluation_dataset, name: agent_name) }
     let(:experiment) do
-      create(:leva_experiment,
+      create(:evaluation_experiment,
              prompt: prompt,
              dataset: dataset,
              status: :completed)
     end
-    let(:runner_result) { create(:leva_runner_result, experiment: experiment) }
+    let(:runner_result) { create(:evaluation_runner_result, experiment: experiment) }
 
     before do
-      create(:leva_evaluation_result,
+      create(:evaluation_evaluation_result,
              experiment: experiment,
              runner_result: runner_result,
              dataset_record: runner_result.dataset_record,
              score: 4.0)
-      create(:leva_evaluation_result,
+      create(:evaluation_evaluation_result,
              experiment: experiment,
              runner_result: runner_result,
              dataset_record: runner_result.dataset_record,

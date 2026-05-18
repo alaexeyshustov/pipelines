@@ -12,6 +12,12 @@ module RubyLLM
 
   class Agent
     def self.create: () -> instance
+    def self.chat_model: (untyped model) -> void
+    def self.model: (String model) -> void
+    def self.tools: (*untyped tools) -> void
+    def self.schema: () { () -> void } -> void
+    def self.instructions: (String instructions) -> void
+    def self.string: (Symbol name, ?required: bool, ?description: String) -> void
 
     def with_model: (String model) -> self
     def with_schema: (untyped schema) -> self

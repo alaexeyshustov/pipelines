@@ -2,6 +2,8 @@ module Orchestration
   class Agent < ApplicationRecord
     ALLOWED_TOOL_NAMESPACES: Array[String]
 
+    def self.available_models: () -> Array[[String, Array[String]]]
+
     def actions: () -> ActiveRecord::Associations::CollectionProxy
 
     def name: () -> String

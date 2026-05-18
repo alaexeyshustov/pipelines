@@ -12,6 +12,10 @@ module Evaluation
 
     before_save :increment_version
 
+    def self.last_for_agent(agent_name)
+      where(name: agent_name).order(version: :desc, id: :desc).first
+    end
+
     private
 
     def increment_version

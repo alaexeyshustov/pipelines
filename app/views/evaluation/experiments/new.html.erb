@@ -7,31 +7,31 @@
     <% case @step %>
     <% when 1 %>
       <%= render Evaluation::Wizard::AgentPromptStepComponent.new(
-            agent_names:      @agent_names,
-            prompts:          @prompts,
-            agent_name:       @agent_name,
-            prompt_id:        @prompt_id,
-            experiment_name:  @experiment_name,
-            available_models: @available_models,
-            sample_model:     @sample_model,
-            evaluation_model: @evaluation_model) %>
+            agent_names:      @form.agent_names,
+            prompts:          @form.prompts,
+            agent_name:       @form.agent_name,
+            prompt_id:        @form.prompt_id,
+            experiment_name:  @form.experiment_name,
+            available_models: @form.available_models,
+            sample_model:     @form.sample_model,
+            evaluation_model: @form.evaluation_model) %>
     <% when 2 %>
       <%= render Evaluation::Wizard::MetricsStepComponent.new(
-            agent_name: @agent_name,
-            metrics:    @metrics) %>
+            agent_name: @form.agent_name,
+            metrics:    @form.metrics) %>
     <% when 3 %>
       <%= render Evaluation::Wizard::DatasetStepComponent.new(
-            agent_name:          @agent_name,
-            datasets:            @datasets,
-            selected_dataset_id: @selected_dataset_id,
-            draft_token:         session[:wizard_token]) %>
+            agent_name:          @form.agent_name,
+            datasets:            @form.datasets,
+            selected_dataset_id: @form.selected_dataset_id,
+            draft_token:         @form.draft_token) %>
     <% when 4 %>
       <%= render Evaluation::Wizard::ReviewStepComponent.new(
-            agent_name:      @agent_name,
-            prompt:          @prompt,
-            experiment_name: @experiment_name,
-            metrics_count:   @metrics_count,
-            dataset:         @dataset) %>
+            agent_name:      @form.agent_name,
+            prompt:          @form.prompt,
+            experiment_name: @form.experiment_name,
+            metrics_count:   @form.metrics_count,
+            dataset:         @form.dataset) %>
     <% end %>
   </div>
 </div>

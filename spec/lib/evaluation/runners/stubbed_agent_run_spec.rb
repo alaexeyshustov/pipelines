@@ -132,14 +132,14 @@ RSpec.describe Evaluation::Runners::StubbedAgentRun do # rubocop:disable RSpec/M
     end
 
     context "when the runner has a Leva prompt" do # rubocop:disable RSpec/MultipleMemoizedHelpers
-      let(:leva_prompt) do
+      let(:evaluation_prompt) do
         create(:orchestration_prompt,
                name: "Emails::ClassifyAgent",
                system_prompt: "Custom instructions for evaluation.",
                user_prompt: "{{input}}")
       end
 
-      before { runner.instance_variable_set(:@prompt, leva_prompt) }
+      before { runner.instance_variable_set(:@prompt, evaluation_prompt) }
 
       it "passes the prompt system_prompt as prompt_override to RuntimeAgentBuilder" do
         allow(Orchestration::RuntimeAgentBuilder).to receive(:new).and_call_original
@@ -151,7 +151,7 @@ RSpec.describe Evaluation::Runners::StubbedAgentRun do # rubocop:disable RSpec/M
 
     context "when experiment has a sample_model" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       let(:experiment) do
-        create(:leva_experiment,
+        create(:evaluation_experiment,
                runner_class: "Evaluation::Runners::StubbedAgentRun",
                sample_model: "mistral-small-latest")
       end

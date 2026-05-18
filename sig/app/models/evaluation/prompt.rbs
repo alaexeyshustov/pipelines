@@ -1,5 +1,7 @@
 module Evaluation
   class Prompt < ApplicationRecord
+    def self.last_for_agent: (String agent_name) -> Prompt?
+
     def self.table_name: () -> String
     def self.find: (Integer id) -> Prompt
     def self.find_by: (**untyped attrs) -> Prompt?
