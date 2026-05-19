@@ -17,6 +17,11 @@ RSpec.describe "ApplicationMails" do
   end
 
   describe "GET /application_mails" do
+    it_behaves_like "a searchable and paginable index" do
+      let(:resource_path) { application_mails_path }
+      let(:record_factory) { :application_mail }
+    end
+
     it "returns 200 with empty state" do
       get application_mails_path
       expect(response).to have_http_status(:ok)
@@ -29,13 +34,6 @@ RSpec.describe "ApplicationMails" do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Acme Corp")
       expect(response.body).to include("Engineer")
-    end
-
-    it "paginates when records exceed page size" do
-      create_list(:application_mail, 21)
-      get application_mails_path
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include('aria-label="Pages"')
     end
 
     it "sorts by a valid column ascending" do
@@ -57,42 +55,6 @@ RSpec.describe "ApplicationMails" do
     it "ignores invalid sort column and defaults to date desc" do
       get application_mails_path, params: { sort: "injected", direction: "asc" }
       expect(response).to have_http_status(:ok)
-    end
-
-    it "respects per_page param" do
-      create_list(:application_mail, 30)
-      get application_mails_path, params: { per_page: 50 }
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include("50")
-    end
-
-    it "ignores invalid per_page and uses default" do
-      get application_mails_path, params: { per_page: 999 }
-      expect(response).to have_http_status(:ok)
-    end
-
-    it "filters by company name" do
-      create(:application_mail, company: "Acme Corp",  job_title: "SRE")
-      create(:application_mail, company: "Other Corp", job_title: "SRE")
-      get application_mails_path, params: { q: "Acme" }
-      expect(response.body).to     include("Acme Corp")
-      expect(response.body).not_to include("Other Corp")
-    end
-
-    it "filters by job title" do
-      create(:application_mail, company: "Acme", job_title: "Backend Engineer")
-      create(:application_mail, company: "Beta", job_title: "Product Manager")
-      get application_mails_path, params: { q: "Engineer" }
-      expect(response.body).to     include("Backend Engineer")
-      expect(response.body).not_to include("Product Manager")
-    end
-
-    it "shows all records when query is blank" do
-      create(:application_mail, company: "Acme", job_title: "Backend")
-      create(:application_mail, company: "Beta", job_title: "Frontend")
-      get application_mails_path, params: { q: "" }
-      expect(response.body).to include("Acme")
-      expect(response.body).to include("Beta")
     end
 
     it "preserves the search query in sort column links" do

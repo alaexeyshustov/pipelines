@@ -16,6 +16,11 @@ RSpec.describe "Interviews" do
   end
 
   describe "GET /interviews" do
+    it_behaves_like "a searchable and paginable index" do
+      let(:resource_path) { interviews_path }
+      let(:record_factory) { :interview }
+    end
+
     it "returns 200 with empty state" do
       get interviews_path
       expect(response).to have_http_status(:ok)
@@ -28,49 +33,6 @@ RSpec.describe "Interviews" do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Acme Corp")
       expect(response.body).to include("Backend Engineer")
-    end
-
-    it "paginates when records exceed page size" do
-      create_list(:interview, 21)
-      get interviews_path
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include('aria-label="Pages"')
-    end
-
-    it "respects per_page param" do
-      create_list(:interview, 25)
-      get interviews_path, params: { per_page: 20 }
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include("20")
-    end
-
-    it "ignores invalid per_page and uses default" do
-      get interviews_path, params: { per_page: 999 }
-      expect(response).to have_http_status(:ok)
-    end
-
-    it "filters by company name" do
-      create(:interview, company: "Acme Corp",  job_title: "Backend")
-      create(:interview, company: "Other Corp", job_title: "Frontend")
-      get interviews_path, params: { q: "Acme" }
-      expect(response.body).to     include("Acme Corp")
-      expect(response.body).not_to include("Other Corp")
-    end
-
-    it "filters by job title" do
-      create(:interview, company: "Acme", job_title: "Backend Engineer")
-      create(:interview, company: "Beta", job_title: "Product Manager")
-      get interviews_path, params: { q: "Engineer" }
-      expect(response.body).to     include("Backend Engineer")
-      expect(response.body).not_to include("Product Manager")
-    end
-
-    it "shows all records when query is blank" do
-      create(:interview, company: "Acme", job_title: "Backend")
-      create(:interview, company: "Beta", job_title: "Frontend")
-      get interviews_path, params: { q: "" }
-      expect(response.body).to include("Acme")
-      expect(response.body).to include("Beta")
     end
   end
 

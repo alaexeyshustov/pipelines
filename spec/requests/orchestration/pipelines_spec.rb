@@ -31,7 +31,7 @@ RSpec.describe "Orchestration::Pipelines" do
       get new_orchestration_pipeline_path
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("name")
+      expect(response.body).to include('name="orchestration_pipeline[name]"')
     end
   end
 
@@ -326,8 +326,7 @@ RSpec.describe "Orchestration::Pipelines" do
           initial_input: { "date" => "2026-04-03" }
         }
         expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
-        follow_redirect!
-        expect(response.body).to include("missing required key")
+        expect(flash[:alert]).to include("missing required key")
       end
     end
 
@@ -380,8 +379,7 @@ RSpec.describe "Orchestration::Pipelines" do
       post run_orchestration_pipeline_path(pipeline)
 
       expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
-      follow_redirect!
-      expect(response.body).to include("Pipeline run triggered.")
+      expect(flash[:notice]).to include("Pipeline run triggered.")
     end
 
     it "does not create a second run and redirects with alert when a pending run already exists" do
@@ -393,8 +391,7 @@ RSpec.describe "Orchestration::Pipelines" do
       }.not_to change(Orchestration::PipelineRun, :count)
 
       expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
-      follow_redirect!
-      expect(response.body).to include("A run is already pending.")
+      expect(flash[:alert]).to include("A run is already pending.")
     end
 
     it "does not create a run and redirects with alert when a run is already running" do

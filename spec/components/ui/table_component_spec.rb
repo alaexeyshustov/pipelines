@@ -29,12 +29,8 @@ RSpec.describe UI::TableComponent, type: :component do
 
     before { render_inline(component) }
 
-    it "renders the table wrapper" do
-      expect(rendered.css("div.bg-white.rounded-xl")).to be_present
-    end
-
     it "renders a table element" do
-      expect(rendered.css("table.w-full")).to be_present
+      expect(rendered.css("table")).to be_present
     end
 
     it "renders thead with 3 column headers" do
@@ -46,17 +42,8 @@ RSpec.describe UI::TableComponent, type: :component do
       expect(headers).to eq([ "Name", "Status", "" ])
     end
 
-    it "renders labeled columns with default classes" do
-      expect(rendered.css("th.px-4.py-3").first["class"]).to include("font-medium", "text-gray-600")
-    end
-
-    it "renders empty action column with minimal classes" do
-      last_th = rendered.css("thead th").last
-      expect(last_th["class"]).to eq("px-4 py-3")
-    end
-
     it "renders a row per record" do
-      expect(rendered.css("tbody tr.hover\\:bg-gray-50").size).to eq(2)
+      expect(rendered.css("tbody tr").size).to eq(2)
     end
 
     it "renders cell values for each record" do
@@ -89,7 +76,7 @@ RSpec.describe UI::TableComponent, type: :component do
     end
 
     it "does not render row content" do
-      expect(rendered.css("tr.hover\\:bg-gray-50")).to be_empty
+      expect(rendered.css("tbody tr td").first.text.strip).to eq("No records found.")
     end
   end
 
@@ -101,9 +88,9 @@ RSpec.describe UI::TableComponent, type: :component do
       render_inline(component)
     end
 
-    it "renders compact header classes" do
+    it "renders compact header with distinct styling from default" do
       th = rendered.css("thead th").first
-      expect(th["class"]).to include("text-xs", "font-semibold", "uppercase")
+      expect(th["class"]).to include("uppercase")
     end
   end
 

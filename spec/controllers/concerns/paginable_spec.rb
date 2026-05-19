@@ -3,8 +3,6 @@
 require "rails_helper"
 
 RSpec.describe Paginable do
-  subject(:concern) { stub_class.new }
-
   let(:stub_class) do
     Class.new do
       include Paginable
@@ -14,122 +12,127 @@ RSpec.describe Paginable do
       self.paginable_default_sort      = "date"
       self.paginable_default_direction = :desc
 
-      attr_writer :params
+      attr_reader :filters
 
       def params
         @params ||= ActionController::Parameters.new({})
       end
 
-      def initialize
+      def initialize(param_hash = {})
+        @params  = ActionController::Parameters.new(param_hash)
         @filters = ApplicationController::Filters.new(
           path: "/items", q: nil, per_page: nil, page: nil, sort: nil, direction: nil
         )
+        set_pagination_params
       end
     end
   end
 
-  def with_params(hash)
-    concern.params = ActionController::Parameters.new(hash)
-    concern
+  def build_ctrl(params = {})
+    stub_class.new(params)
   end
 
-  describe "#resolve_sort" do
-    let(:columns) { %w[date company job_title] }
+  describe "#set_pagination_params effect on filters" do
+    context "with no params" do
+      subject(:ctrl) { build_ctrl }
 
-    it "returns the default when no sort param is present" do
-      expect(concern.send(:resolve_sort, columns, default: "date")).to eq("date")
+      it "applies the configured default sort" do
+        expect(ctrl.filters.sort).to eq("date")
+      end
+
+      it "applies the configured default direction" do
+        expect(ctrl.filters.direction).to eq("desc")
+      end
+
+      it "uses the first per_page option as default" do
+        expect(ctrl.filters.per_page).to eq("20")
+      end
     end
 
-    it "returns the column when param is in the allowlist" do
-      with_params(sort: "company")
-      expect(concern.send(:resolve_sort, columns, default: "date")).to eq("company")
+    context "when sort param is in the allowlist" do
+      subject(:ctrl) { build_ctrl(sort: "company") }
+
+      it "uses the param value" do
+        expect(ctrl.filters.sort).to eq("company")
+      end
     end
 
-    it "returns the default when param is not in the allowlist" do
-      with_params(sort: "injected; DROP TABLE users")
-      expect(concern.send(:resolve_sort, columns, default: "date")).to eq("date")
+    context "when sort param is not in the allowlist" do
+      subject(:ctrl) { build_ctrl(sort: "injected; DROP TABLE users") }
+
+      it "falls back to the default sort" do
+        expect(ctrl.filters.sort).to eq("date")
+      end
     end
 
-    it "accepts a symbol default and returns a string" do
-      expect(concern.send(:resolve_sort, columns, default: :date)).to eq("date")
-    end
-  end
+    context "when sort param default is a symbol" do
+      let(:symbol_default_class) do
+        Class.new do
+          include Paginable
 
-  describe "#resolve_direction" do
-    it "returns :desc when no direction param is present" do
-      expect(concern.send(:resolve_direction)).to eq(:desc)
-    end
+          self.paginable_sortable          = %w[date]
+          self.paginable_per_page          = [ 20 ]
+          self.paginable_default_sort      = :date
+          self.paginable_default_direction = :desc
 
-    it "returns :asc when param is 'asc'" do
-      with_params(direction: "asc")
-      expect(concern.send(:resolve_direction)).to eq(:asc)
-    end
+          attr_reader :filters
 
-    it "returns :desc when param is 'desc'" do
-      with_params(direction: "desc")
-      expect(concern.send(:resolve_direction)).to eq(:desc)
-    end
+          def params
+            @params ||= ActionController::Parameters.new({})
+          end
 
-    it "returns :desc when param is invalid" do
-      with_params(direction: "DROP TABLE")
-      expect(concern.send(:resolve_direction)).to eq(:desc)
-    end
+          def initialize
+            @filters = ApplicationController::Filters.new(
+              path: "/items", q: nil, per_page: nil, page: nil, sort: nil, direction: nil
+            )
+            set_pagination_params
+          end
+        end
+      end
 
-    it "accepts a custom default" do
-      expect(concern.send(:resolve_direction, default: :asc)).to eq(:asc)
-    end
-  end
-
-  describe "#resolve_per_page" do
-    let(:options) { [ 20, 50, 100 ] }
-
-    it "returns the first option when no per_page param is present" do
-      expect(concern.send(:resolve_per_page, options)).to eq(20)
+      it "coerces the default sort to a string" do
+        expect(symbol_default_class.new.filters.sort).to eq("date")
+      end
     end
 
-    it "returns the param value when it is a valid option" do
-      with_params(per_page: "50")
-      expect(concern.send(:resolve_per_page, options)).to eq(50)
+    context "when direction param is 'asc'" do
+      subject(:ctrl) { build_ctrl(direction: "asc") }
+
+      it "sets direction to asc" do
+        expect(ctrl.filters.direction).to eq("asc")
+      end
     end
 
-    it "returns the first option when param is not in the list" do
-      with_params(per_page: "999")
-      expect(concern.send(:resolve_per_page, options)).to eq(20)
-    end
-  end
+    context "when direction param is 'desc'" do
+      subject(:ctrl) { build_ctrl(direction: "desc") }
 
-  describe "#set_pagination_params" do
-    it "sets @sort to the configured default when no param" do
-      concern.send(:set_pagination_params)
-      expect(concern.instance_variable_get(:@sort)).to eq("date")
+      it "sets direction to desc" do
+        expect(ctrl.filters.direction).to eq("desc")
+      end
     end
 
-    it "sets @sort to the param value when it is in the allowlist" do
-      with_params(sort: "company")
-      concern.send(:set_pagination_params)
-      expect(concern.instance_variable_get(:@sort)).to eq("company")
+    context "when direction param is invalid" do
+      subject(:ctrl) { build_ctrl(direction: "DROP TABLE") }
+
+      it "falls back to desc" do
+        expect(ctrl.filters.direction).to eq("desc")
+      end
     end
 
-    it "sets @direction to :desc by default" do
-      concern.send(:set_pagination_params)
-      expect(concern.instance_variable_get(:@direction)).to eq(:desc)
+    context "when per_page param matches an option" do
+      subject(:ctrl) { build_ctrl(per_page: "50") }
+
+      it "uses the param value" do
+        expect(ctrl.filters.per_page).to eq("50")
+      end
     end
 
-    it "sets @direction to :asc when param is 'asc'" do
-      with_params(direction: "asc")
-      concern.send(:set_pagination_params)
-      expect(concern.instance_variable_get(:@direction)).to eq(:asc)
-    end
+    context "when per_page param does not match any option" do
+      subject(:ctrl) { build_ctrl(per_page: "999") }
 
-    it "sets @per_page to the first option by default" do
-      concern.send(:set_pagination_params)
-      expect(concern.instance_variable_get(:@per_page)).to eq(20)
-    end
-
-    it "sets @per_page from param when valid" do
-      with_params(per_page: "50")
-      concern.send(:set_pagination_params)
-      expect(concern.instance_variable_get(:@per_page)).to eq(50)
+      it "falls back to the first option" do
+        expect(ctrl.filters.per_page).to eq("20")
+      end
     end
   end
 end

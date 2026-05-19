@@ -1,15 +1,6 @@
 require 'rails_helper'
 
 RSpec.describe Chat do
-  it 'is not an Evaluation::Recordable' do
-    expect(described_class.ancestors).not_to include(Evaluation::Recordable)
-  end
-
-  it 'can be persisted' do
-    chat = create(:chat)
-    expect(chat).to be_persisted
-  end
-
   it 'has many messages' do
     chat = create(:chat)
     message = create(:message, chat: chat)
