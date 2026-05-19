@@ -19,7 +19,6 @@ module Orchestration
           warnings = [] # : Array[Issue]
 
           validate_input_mapping(sa, known_schemas, errors, warnings)
-          validate_input_schema(sa, errors)
 
           results << StepResult.new(
             step_action_id: sa.id,
@@ -28,7 +27,7 @@ module Orchestration
             warnings: warnings
           )
 
-          known_schemas[sa.output_key] = sa.action.output_schema
+          known_schemas[sa.output_key] = sa.action.agent&.output_schema
         end
 
         results
@@ -37,7 +36,7 @@ module Orchestration
       private
 
       def ordered_step_actions
-        @pipeline.steps.includes(step_actions: :action).flat_map do |step|
+        @pipeline.steps.includes(step_actions: { action: :agent }).flat_map do |step|
           step.step_actions.sort_by(&:position)
         end
       end
@@ -111,29 +110,6 @@ module Orchestration
         end
 
         true
-      end
-
-      def validate_input_schema(step_action, errors)
-        schema = step_action.action.input_schema
-        return if schema.nil?
-
-        required_keys = schema["required"]
-        return unless required_keys.is_a?(Array)
-        return if required_keys.empty?
-
-        covered = Set.new((step_action.input_mapping || {}).keys + merge_params(step_action).keys)
-
-        required_keys.each do |key|
-          next if covered.include?(key)
-
-          errors << Issue.new(
-            code: :missing_required_key,
-            message: "required input_schema key #{key.inspect} is not provided by input_mapping or params",
-            mapping_key: nil,
-            from: nil,
-            path: nil
-          )
-        end
       end
 
       def merge_params(step_action)

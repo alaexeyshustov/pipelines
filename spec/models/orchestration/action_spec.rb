@@ -69,22 +69,12 @@ RSpec.describe Orchestration::Action do
     end
   end
 
-  describe "input_schema column" do
-    it "round-trips a JSON object" do
-      schema = {
-        "type" => "object",
-        "required" => [ "emails" ],
-        "properties" => { "emails" => { "type" => "array" } }
-      }
-      action = create(:orchestration_action, input_schema: schema)
-      expect(action.reload.input_schema).to eq(schema)
-    end
-
-    it "is nullable" do
-      action = build(:orchestration_action, input_schema: nil)
-      expect(action).to be_valid
-      action.save!
-      expect(action.reload.input_schema).to be_nil
+  describe "columns" do
+    it "does not expose the dropped LLM config attributes" do
+      action = build(:orchestration_action)
+      %i[prompt model tools output_schema input_schema schema_class].each do |attr|
+        expect(action).not_to respond_to(attr)
+      end
     end
   end
 end

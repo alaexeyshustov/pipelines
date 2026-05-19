@@ -70,11 +70,9 @@ module Orchestration
     def execute_action(action_run)
       action_run.update!(status: "running", started_at: Time.current)
       action = action_run.step_action.action
-      input  = action_run.input || {} # : Hash[String, untyped]
-      effective_input = action.agent? ? (action_run.step_action.params || {}).merge(input) : input
-      validate_input!(action, effective_input)
       execution = run_agent(action_run)
-      validate_output!(action, execution[:output], raw_content: execution[:raw_content])
+      # Service-kind actions return output from a controlled Ruby class; no schema validation needed.
+      validate_output!(action, execution[:output], raw_content: execution[:raw_content]) if action.agent?
       action_run.update!(status: "completed", output: execution[:output], error: nil, error_details: nil, finished_at: Time.current)
     rescue StandardError => error
       handle_action_failure(action_run, error, raw_content: execution&.dig(:raw_content))
@@ -118,15 +116,10 @@ module Orchestration
     end
 
     def validate_output!(action, output, raw_content:)
-      schema = if action.agent?
-        action.agent&.output_schema.presence || action.output_schema
-      else
-        action.output_schema
-      end
-
+      schema = action.agent&.output_schema
       SchemaValidator.new(schema).validate!(output)
     rescue SchemaValidator::Error => error
-      raise error unless action.agent? && structured_output_expected?(action)
+      raise error unless structured_output_expected?(action)
 
       raise InvalidModelOutputError.new("Invalid model output: #{error.message}", raw_content: raw_content)
     end
@@ -160,19 +153,8 @@ module Orchestration
       )
     end
 
-    def validate_input!(action, input)
-      schema = action.input_schema
-      return unless schema.present?
-
-      SchemaValidator.new(schema).validate!(input)
-    end
-
     def structured_output_expected?(action)
-      action.agent? && (
-        action.agent&.output_schema.present? ||
-        action.output_schema.present? ||
-        action.schema_class.present?
-      )
+      action.agent&.output_schema.present?
     end
 
     def prompt_for(agent_class)

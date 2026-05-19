@@ -84,19 +84,6 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
-    context 'when the action has a schema_class' do
-      before do
-        action.update!(schema_class: "ApplicationMailsSchema")
-        create(:orchestration_step_action, step: step1, action: action, position: 1)
-        allow(stub_agent).to receive(:with_schema).and_return(stub_agent)
-      end
-
-      it 'calls with_schema on the agent with the constantized class' do
-        described_class.new(pipeline_run).call
-        expect(stub_agent).to have_received(:with_schema).with(ApplicationMailsSchema)
-      end
-    end
-
     context 'with a serialized orchestration agent configuration' do # rubocop:disable RSpec/MultipleMemoizedHelpers
       let(:serialized_chat) { create(:chat) }
       let(:serialized_agent) do
@@ -240,47 +227,47 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
-    context 'when an Evaluation::Prompt exists and action also has a prompt' do
+    context 'when an Evaluation::Prompt exists for the agent' do
       let(:chat) { instance_spy(Chat, id: nil) }
 
       before do
         allow(stub_agent).to receive(:chat).and_return(chat)
         Evaluation::Prompt.create!(
           name: "Emails::ClassifyAgent",
-          system_prompt: "Leva wins over action prompt",
+          system_prompt: "Leva wins over agent prompt",
           user_prompt: "{{input}}"
         )
-        action.update!(prompt: "Action-level prompt")
+        action.agent.update!(prompt: "Agent-level prompt")
         create(:orchestration_step_action, step: step1, action: action, position: 1)
       end
 
-      it 'prefers the Evaluation::Prompt over the action prompt' do
+      it 'prefers the Evaluation::Prompt over the agent prompt' do
         described_class.new(pipeline_run).call
-        expect(chat).to have_received(:with_instructions).with("Leva wins over action prompt")
+        expect(chat).to have_received(:with_instructions).with("Leva wins over agent prompt")
       end
     end
 
-    context 'when no Evaluation::Prompt exists but the action has a prompt' do
+    context 'when no Evaluation::Prompt exists but the agent has a prompt' do
       let(:chat) { instance_spy(Chat, id: nil) }
 
       before do
         allow(stub_agent).to receive(:chat).and_return(chat)
-        action.update!(prompt: "Action-level fallback prompt")
+        action.agent.update!(prompt: "Agent-level fallback prompt")
         create(:orchestration_step_action, step: step1, action: action, position: 1)
       end
 
-      it 'falls back to the action prompt' do
+      it 'falls back to the agent prompt' do
         described_class.new(pipeline_run).call
-        expect(chat).to have_received(:with_instructions).with("Action-level fallback prompt")
+        expect(chat).to have_received(:with_instructions).with("Agent-level fallback prompt")
       end
     end
 
-    context 'when no Evaluation::Prompt and no action prompt' do
+    context 'when no Evaluation::Prompt and no agent prompt' do
       let(:chat) { instance_spy(Chat, id: nil) }
 
       before do
         allow(stub_agent).to receive(:chat).and_return(chat)
-        action.update!(prompt: nil)
+        action.agent.update!(prompt: nil)
         create(:orchestration_step_action, step: step1, action: action, position: 1)
       end
 
@@ -467,10 +454,10 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
-    context 'when the action has an output_schema and the output is invalid' do
+    context 'when the agent has an output_schema and the output is a non-JSON string' do
       before do
-        action.update!(output_schema: { "type" => "object", "required" => [ "result" ],
-                                        "properties" => { "result" => { "type" => "array" } } })
+        action.agent.update!(output_schema: { "type" => "object", "required" => [ "result" ],
+                                              "properties" => { "result" => { "type" => "array" } } })
         create(:orchestration_step_action, step: step1, action: action, position: 1)
         # agent returns a natural-language string — not parseable as a JSON array
         allow(stub_agent).to receive_messages(with_schema: stub_agent, ask: instance_double(RubyLLM::Message, content: "I need more information."))
@@ -515,12 +502,15 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
-    context 'when the action has an output_schema and the output is valid JSON' do
+    context 'when the agent has an output_schema and the output is valid JSON' do
       before do
-        action.update!(output_schema: { "type" => "object", "required" => [ "result" ],
-                                        "properties" => { "result" => { "type" => "array" } } })
+        action.agent.update!(output_schema: { "type" => "object", "required" => [ "result" ],
+                                              "properties" => { "result" => { "type" => "array" } } })
         create(:orchestration_step_action, step: step1, action: action, position: 1)
-        allow(stub_agent).to receive_messages(with_schema: stub_agent, ask: instance_double(RubyLLM::Message, content: '[{"id":1}]'))
+        allow(stub_agent).to receive_messages(
+          with_schema: stub_agent,
+          ask: instance_double(RubyLLM::Message, content: { "result" => [ { "id" => 1 } ] })
+        )
       end
 
       it 'marks the ActionRun as completed with the parsed JSON result' do
@@ -638,29 +628,6 @@ RSpec.describe Orchestration::PipelineRunner do
           .find_by(steps: { name: "ingest" })
 
         expect(ingest_run.input).to eq({})
-      end
-    end
-
-    context 'when output_schema is on the action but not the agent (regression: Run #66)' do
-      let(:store_schema) do
-        { "type" => "object", "required" => [ "result" ], "properties" => { "result" => { "type" => "object" } } }
-      end
-
-      before do
-        store_agent_record = create(:orchestration_agent, name: "Records::StoreAgent")
-        store_action = create(:orchestration_action, agent: store_agent_record, output_schema: store_schema)
-        create(:orchestration_step_action, step: step1, action: store_action, position: 1)
-
-        allow(stub_agent).to receive(:ask)
-          .and_return(instance_double(RubyLLM::Message, content: [ 1, 2, 3 ]))
-      end
-
-      it 'wraps the raw output and fails validation when result is not an object' do
-        described_class.new(pipeline_run).call
-
-        store_run = Orchestration::ActionRun.last
-        expect(store_run.status).to eq("failed")
-        expect(store_run.error).to match(/data\.result must be an object/)
       end
     end
 
@@ -996,47 +963,6 @@ RSpec.describe Orchestration::PipelineRunner do
         described_class.new(pipeline_run).call
         expect(classify_agent).to have_received(:ask)
           .with(satisfy { |json| JSON.parse(json).fetch("emails") == [ { "id" => "e1" } ] })
-      end
-    end
-
-    context 'when the action has an input_schema and the resolved input violates it' do
-      before do
-        action.update!(input_schema: {
-          "type" => "object",
-          "required" => [ "emails" ],
-          "properties" => { "emails" => { "type" => "array" } }
-        })
-        create(:orchestration_step_action, step: step1, action: action, position: 1)
-      end
-
-      it 'marks the action_run failed with the schema error before invoking the agent' do
-        described_class.new(pipeline_run).call
-        action_run = Orchestration::ActionRun.last
-        expect(action_run.status).to eq("failed")
-        expect(action_run.error).to match(/missing required key: emails/)
-        expect(stub_agent).not_to have_received(:ask)
-      end
-
-      it 'marks the pipeline_run as failed' do
-        described_class.new(pipeline_run).call
-        expect(pipeline_run.reload.status).to eq("failed")
-      end
-    end
-
-    context 'when a required input_schema field is supplied via step_action params' do
-      before do
-        action.update!(input_schema: {
-          "type" => "object",
-          "required" => [ "mode" ],
-          "properties" => { "mode" => { "type" => "string" } }
-        })
-        create(:orchestration_step_action, step: step1, action: action, position: 1, params: { "mode" => "strict" })
-      end
-
-      it 'does not fail validation because params are merged with resolved input for agent actions' do
-        described_class.new(pipeline_run).call
-        expect(pipeline_run.reload.status).to eq("completed")
-        expect(stub_agent).to have_received(:ask)
       end
     end
 

@@ -57,7 +57,7 @@ module Orchestration
     end
 
     def render_pipeline_show
-      @steps = @pipeline.steps.includes(step_actions: :action)
+      @steps = @pipeline.steps.includes(step_actions: { action: :agent })
       @actions = Orchestration::Action.order(:name)
       render "orchestration/pipelines/show", status: :unprocessable_entity
     end

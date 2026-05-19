@@ -10,7 +10,6 @@ module Orchestration
     def execute_action: (ActionRun action_run) -> void
     def run_agent: (ActionRun action_run) -> Hash[Symbol, untyped]
     def parse_content: (String | untyped content, bool structured_output_expected) -> untyped
-    def validate_input!: (Action action, Hash[String, untyped] input) -> void
     def validate_output!: (Action action, untyped output, raw_content: untyped) -> void
     def handle_action_failure: (ActionRun action_run, StandardError error, raw_content: untyped) -> void
     def log_action_failure: (ActionRun action_run, NormalizeActionRunFailure::Result failure) -> void

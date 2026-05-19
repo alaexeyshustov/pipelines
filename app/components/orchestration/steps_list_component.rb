@@ -17,7 +17,7 @@ module Orchestration
       @steps.each_with_object({}) do |step, result|
         result[step.id] = seen.dup
         step.step_actions.sort_by(&:position).each do |sa|
-          seen[sa.output_key] = sa.action.output_schema
+          seen[sa.output_key] = sa.action.agent&.output_schema
         end
       end
     end

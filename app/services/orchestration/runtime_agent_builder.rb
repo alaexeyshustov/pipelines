@@ -25,12 +25,11 @@ module Orchestration
     end
 
     def resolved_output_schema
-      agent_record.output_schema.presence || @action.output_schema
+      agent_record.output_schema.presence
     end
 
     def resolved_params
-      base_params = agent_record.params.presence || @action.params || {}
-      base_params.merge(@step_params || {})
+      (agent_record.params || {}).merge(@step_params || {})
     end
 
     def snapshot
@@ -60,17 +59,17 @@ module Orchestration
     end
 
     def resolved_model
-      @pipeline_model.presence || agent_record.model.presence || @action.model
+      @pipeline_model.presence || agent_record.model
     end
 
     def resolved_prompt
-      @prompt_override.presence || agent_record.prompt.presence || @action.prompt
+      @prompt_override.presence || agent_record.prompt
     end
 
     def resolved_tools
       return @tool_classes if @tool_classes.present?
 
-      configured_tools = agent_record.tools.presence || @action.tools
+      configured_tools = agent_record.tools
       configured_tools&.map do |tool|
         next tool if tool.is_a?(Class)
 
@@ -86,10 +85,7 @@ module Orchestration
     end
 
     def resolved_generation_schema
-      return agent_record.output_schema if agent_record.output_schema.present?
-      return @action.schema_class.constantize if @action.schema_class.present?
-
-      nil
+      agent_record.output_schema.presence
     end
   end
 end
