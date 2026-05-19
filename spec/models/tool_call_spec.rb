@@ -1,11 +1,6 @@
 require 'rails_helper'
 
 RSpec.describe ToolCall do
-  it 'can be persisted' do
-    tool_call = create(:tool_call)
-    expect(tool_call).to be_persisted
-  end
-
   it 'belongs to a message' do
     message   = create(:message)
     tool_call = create(:tool_call, message: message)

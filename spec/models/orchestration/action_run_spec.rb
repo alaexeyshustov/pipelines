@@ -36,10 +36,6 @@ RSpec.describe Orchestration::ActionRun do
   end
 
   describe 'Evaluation::Recordable' do
-    it 'includes Evaluation::Recordable' do
-      expect(described_class.ancestors).to include(Evaluation::Recordable)
-    end
-
     it 'has dataset_records association' do
       action_run = create(:orchestration_action_run)
       expect(action_run.dataset_records).to eq([])

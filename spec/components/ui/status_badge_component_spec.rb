@@ -17,15 +17,51 @@ RSpec.describe UI::StatusBadgeComponent, type: :component do
     expect(span["class"]).to include("inline-flex", "items-center", "rounded", "text-xs", "font-medium")
   end
 
-  described_class::VARIANT_CLASSES.each do |v, classes|
-    context "with variant :#{v}" do
-      let(:variant) { v }
+  context "with variant :success" do
+    let(:variant) { :success }
 
-      it "applies #{classes}" do
-        classes.split.each do |klass|
-          expect(rendered.css("span").first["class"]).to include(klass)
-        end
-      end
+    it "applies green styling" do
+      expect(rendered.css("span").first["class"]).to include("bg-green-50", "text-green-700")
+    end
+  end
+
+  context "with variant :warning" do
+    let(:variant) { :warning }
+
+    it "applies yellow styling" do
+      expect(rendered.css("span").first["class"]).to include("bg-yellow-50", "text-yellow-700")
+    end
+  end
+
+  context "with variant :danger" do
+    let(:variant) { :danger }
+
+    it "applies red styling" do
+      expect(rendered.css("span").first["class"]).to include("bg-red-50", "text-red-700")
+    end
+  end
+
+  context "with variant :info" do
+    let(:variant) { :info }
+
+    it "applies blue styling" do
+      expect(rendered.css("span").first["class"]).to include("bg-blue-50", "text-blue-700")
+    end
+  end
+
+  context "with variant :secondary" do
+    let(:variant) { :secondary }
+
+    it "applies purple styling" do
+      expect(rendered.css("span").first["class"]).to include("bg-purple-50", "text-purple-700")
+    end
+  end
+
+  context "with variant :neutral" do
+    let(:variant) { :neutral }
+
+    it "applies gray styling" do
+      expect(rendered.css("span").first["class"]).to include("bg-gray-50", "text-gray-700")
     end
   end
 
