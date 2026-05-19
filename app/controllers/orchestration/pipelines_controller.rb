@@ -32,6 +32,7 @@ module Orchestration
     end
 
     def run
+      # TODO: move out the logic to a form object
       path = orchestration_pipeline_path(@pipeline)
       runs = @pipeline.pipeline_runs
 

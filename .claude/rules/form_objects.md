@@ -157,10 +157,6 @@ end
 | Wrap multi-model saves in `transaction` | Leave database in partial state on failure        |
 | Put UI-only validations here            | Put database integrity rules here                 |
 
-
-## Examples
- - https://dev.to/railsdesigner/add-a-multi-step-formwizard-to-your-rails-app-1clp
-
 ## Common Mistakes
 
 1. **Re-inventing `valid?`** - Don't write a custom `#validate` method. Rely on `ActiveModel::Validations`.

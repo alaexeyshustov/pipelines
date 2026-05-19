@@ -7,6 +7,8 @@ module Evaluation
     has_many :justifications, class_name: "Evaluation::Justification", dependent: :destroy, foreign_key: :evaluation_result_id
     validates :evaluator_class, presence: true
 
+    accepts_nested_attributes_for :justifications, allow_destroy: true
+
     def self.per_metric_averages(experiment)
       results_table        = arel_table
       justifications_table = Justification.arel_table

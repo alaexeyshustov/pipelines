@@ -108,6 +108,38 @@ end
 | Write Previews for every component   | Guess how components look in isolation   |
 | Format display data in the component | Format display data in the Model         |
 
+## Rendering Child Components
+
+**Never call `render ComponentClass.new(...)` inside a ViewComponent template.** This couples the parent to a specific child implementation and bypasses ViewComponent's slot system.
+
+```erb
+<%# WRONG — hardcoded child render inside the template %>
+<%= render UI::StatusBadgeComponent.new(label: @experiment.status, variant: badge_variant) %>
+```
+
+Instead, expose the child as a slot using `renders_one` or `renders_many` and let the caller wire it up:
+
+```ruby
+# RIGHT — parent declares the slot
+class ExperimentRowComponent < ViewComponent::Base
+  renders_one :status_badge, UI::StatusBadgeComponent
+end
+```
+
+```erb
+<%# RIGHT — parent template calls the slot accessor %>
+<%= status_badge %>
+```
+
+```ruby
+# RIGHT — caller populates the slot
+render ExperimentRowComponent.new(experiment: @experiment) do |c|
+  c.with_status_badge(label: @experiment.status, variant: badge_variant)
+end
+```
+
+This rule applies even for a single, always-present child: use `renders_one` and a `with_x` slot rather than a hardcoded `render` call.
+
 ## Common Mistakes
 
 1. **The N+1 Trap** – Running `user.posts.each` inside a component template when `posts` wasn't eager-loaded by the controller. Components cannot control eager loading; they just consume data.

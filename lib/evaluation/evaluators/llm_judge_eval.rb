@@ -30,25 +30,33 @@ module Evaluation
       def evaluate_and_store(experiment, runner_result)
         recordable = runner_result.dataset_record.recordable
         judge_model = experiment.evaluation_model.presence || self.class.judge_model
-        results = evaluate(runner_result, recordable, model: judge_model)
+        metric_results = evaluate(runner_result, recordable, model: judge_model)
 
-        ActiveRecord::Base.transaction do
-          results.map do |metric_result|
-            eval_result = Evaluation::EvaluationResult.create!(
-              experiment: experiment,
-              dataset_record: runner_result.dataset_record,
-              runner_result: runner_result,
-              score: metric_result[:score].to_f,
-              evaluator_class: self.class.name
-            )
-            Evaluation::Justification.create!(
-              evaluation_result: eval_result,
-              metric_name: metric_result[:metric_name],
-              justification: metric_result[:justification]
-            )
-            eval_result
-          end
+        eval_results = metric_results.map do |result|
+           {
+            experiment_id: experiment.id,
+            dataset_record_id: runner_result.dataset_record.id,
+            runner_result_id: runner_result.id,
+            score: result[:score].to_f,
+            evaluator_class: self.class.name
+          }
         end
+
+        ids = [] #: Array[Integer]
+        ActiveRecord::Base.transaction do
+          inserted = EvaluationResult.insert_all!(eval_results)
+          ids = inserted.map { |id| id["id"].to_i }
+          justifications = metric_results.map do |result|
+            {
+              evaluation_result_id: ids.shift,
+              metric_name: result[:metric_name],
+              justification: result[:justification]
+            }
+          end
+          Justification.insert_all!(justifications)
+        end
+
+        EvaluationResult.where(id: ids).to_a
       end
 
       private
