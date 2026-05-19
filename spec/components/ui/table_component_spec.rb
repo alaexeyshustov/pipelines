@@ -75,8 +75,8 @@ RSpec.describe UI::TableComponent, type: :component do
       expect(rendered.css("td").first["colspan"]).to eq("2")
     end
 
-    it "does not render row content" do
-      expect(rendered.css("tbody tr td").first.text.strip).to eq("No records found.")
+    it "does not render data rows" do
+      expect(rendered.css("tbody tr.hover\\:bg-gray-50")).to be_empty
     end
   end
 

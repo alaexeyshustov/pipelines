@@ -11,8 +11,10 @@ RSpec.shared_examples "a searchable and paginable index" do
   end
 
   it "ignores invalid per_page and uses default" do
-    get resource_path, params: { per_page: 999 }
+    create_list(record_factory, 21)
+    get resource_path, params: { per_page: "999" }
     expect(response).to have_http_status(:ok)
+    expect(response.body).to include('aria-label="Pages"')
   end
 
   it "filters results by company name" do
