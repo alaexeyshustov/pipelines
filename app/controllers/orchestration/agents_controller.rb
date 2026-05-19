@@ -64,14 +64,10 @@ module Orchestration
 
     def agent_params
       permitted = params.require(:orchestration_agent).permit(
-        :name, :description, :model, :tools, :prompt, :params, :output_schema
+        :name, :description, :model, :prompt, :params, :output_schema, tools: []
       )
 
-      begin
-        parse_json_field(permitted, :tools)
-      rescue JSON::ParserError
-        permitted[:tools] = []
-      end
+      permitted[:tools] = Array(permitted[:tools]).reject(&:blank?) if permitted.key?(:tools)
 
       begin
         parse_json_field(permitted, :params)

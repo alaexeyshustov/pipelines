@@ -77,6 +77,34 @@ RSpec.describe Orchestration::Agent do
     end
   end
 
+  describe ".available_tools" do
+    it "returns tool class name strings from app/tools/" do
+      tools = described_class.available_tools
+      expect(tools).to include("Emails::GetTool", "Records::ReadRowsTool")
+    end
+
+    it "only includes tools from allowed namespaces" do
+      namespaces = described_class.available_tools.map { |t| t.split("::").first }.uniq
+      expect(Orchestration::Agent::ALLOWED_TOOL_NAMESPACES).to include(*namespaces)
+    end
+
+    it "returns tools in sorted order" do
+      tools = described_class.available_tools
+      expect(tools).to eq(tools.sort)
+    end
+
+    it "excludes non-tool helper files in allowed namespaces" do
+      tools = described_class.available_tools
+      expect(tools).not_to include("Records::FuzzyMatcher", "Records::ModelResolver")
+    end
+
+    it "only includes RubyLLM::Tool subclasses" do
+      described_class.available_tools.each do |class_name|
+        expect(class_name.constantize).to be < RubyLLM::Tool
+      end
+    end
+  end
+
   describe "#destroy" do
     let!(:persisted_agent) { create(:orchestration_agent, name: "Emails::ClassifyAgent") }
 
