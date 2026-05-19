@@ -1,0 +1,6 @@
+module Evaluation
+  module Improvement
+    class Agent < ::RubyLLM::Agent
+    end
+  end
+end

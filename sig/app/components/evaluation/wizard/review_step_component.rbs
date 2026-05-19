@@ -1,0 +1,17 @@
+module Evaluation
+  module Wizard
+    class ReviewStepComponent < ViewComponent::Base
+      def initialize: (
+        agent_name: String?,
+        prompt: Evaluation::Prompt?,
+        experiment_name: String?,
+        metrics_count: Integer,
+        dataset: Evaluation::Dataset?
+      ) -> void
+
+      def no_metrics?: () -> bool
+      def prompt_label: () -> String
+      def dataset_label: () -> String
+    end
+  end
+end

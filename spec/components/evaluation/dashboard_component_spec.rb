@@ -6,7 +6,7 @@ RSpec.describe Evaluation::DashboardComponent, type: :component do
   subject(:rendered) { render_inline(component) }
 
   def build_summary(overrides = {})
-    Evaluation::DashboardController::AgentSummary.new(
+    Evaluation::AgentSummaryQuery::AgentSummary.new(
       agent_name: "TestAgent",
       latest_experiment: nil,
       latest_score: nil,
@@ -38,7 +38,7 @@ RSpec.describe Evaluation::DashboardComponent, type: :component do
   end
 
   context "with one completed experiment" do
-    let(:experiment) { create(:leva_experiment, status: :completed) }
+    let(:experiment) { create(:evaluation_experiment, status: :completed) }
     let(:summary) do
       build_summary(
         agent_name: experiment.prompt.name,
@@ -72,7 +72,7 @@ RSpec.describe Evaluation::DashboardComponent, type: :component do
   end
 
   context "with many experiments — score-over-time chart present" do
-    let(:experiment) { create(:leva_experiment) }
+    let(:experiment) { create(:evaluation_experiment) }
     let(:score_history) do
       [
         { created_at: "2026-01-01", avg_score: 3.0 },

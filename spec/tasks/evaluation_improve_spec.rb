@@ -7,7 +7,7 @@ RSpec.describe "evaluation:improve rake task" do # rubocop:disable RSpec/Describ
   let(:task_name) { "evaluation:improve" }
   let(:agent_name) { "Emails::ClassifyAgent" }
   let!(:prompt) { create(:orchestration_prompt, name: agent_name, system_prompt: "Classify emails.", user_prompt: "{{input}}") }
-  let(:experiment) { create(:leva_experiment, prompt: prompt, status: :completed) }
+  let(:experiment) { create(:evaluation_experiment, prompt: prompt, status: :completed) }
 
   def stub_llm(system_prompt: "Improved prompt.", user_prompt: "{{input}}")
     body = {
@@ -28,14 +28,14 @@ RSpec.describe "evaluation:improve rake task" do # rubocop:disable RSpec/Describ
   end
 
   context "when a completed experiment exists" do
-    it "creates an improved Orchestration::Prompt" do
+    it "creates an improved Evaluation::Prompt" do
       expect { Rake::Task[task_name].invoke(agent_name) }
-        .to change(Orchestration::Prompt, :count).by(1)
+        .to change(Evaluation::Prompt, :count).by(1)
     end
 
     it "enqueues PromptAutoEvalJob for the new prompt" do
       Rake::Task[task_name].invoke(agent_name)
-      new_prompt = Orchestration::Prompt.where(name: agent_name).order(id: :desc).first
+      new_prompt = Evaluation::Prompt.where(name: agent_name).order(id: :desc).first
       expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: new_prompt.id).once
     end
 
@@ -46,7 +46,7 @@ RSpec.describe "evaluation:improve rake task" do # rubocop:disable RSpec/Describ
   end
 
   context "when no completed experiment exists" do
-    let(:experiment) { create(:leva_experiment, prompt: prompt, status: :pending) }
+    let(:experiment) { create(:evaluation_experiment, prompt: prompt, status: :pending) }
 
     it "raises ArgumentError" do
       expect { Rake::Task[task_name].invoke(agent_name) }

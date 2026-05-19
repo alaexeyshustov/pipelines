@@ -1,0 +1,13 @@
+module Evaluation
+  module Runners
+    class StubbedAgentRun < BaseRun
+      def execute: (Orchestration::ActionRun record) -> String
+
+      private
+
+      def resolve_tools: (Orchestration::Agent agent_record) -> Array[Class]
+      def stub_tool: (Class tool_class, Evaluation::ToolStubRegistry registry) -> Class
+      def build_prediction: (untyped agent, untyped result) -> String
+    end
+  end
+end

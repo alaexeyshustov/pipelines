@@ -23,14 +23,14 @@ RSpec.describe Evaluation::DatasetSeeder do
     it "creates a dataset named after the agent" do
       build_action_run
       described_class.call(agent_name: agent_name, sample_size: 10)
-      expect(Leva::Dataset.find_by(name: agent_name)).to be_present
+      expect(Evaluation::Dataset.find_by(name: agent_name)).to be_present
     end
 
     it "creates a dataset record linking the action run as recordable" do
       action_run = build_action_run
       described_class.call(agent_name: agent_name, sample_size: 10)
 
-      dataset = Leva::Dataset.find_by!(name: agent_name)
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
       expect(dataset.dataset_records.first.recordable).to eq(action_run)
     end
 
@@ -38,7 +38,7 @@ RSpec.describe Evaluation::DatasetSeeder do
       build_action_run(status: "failed")
       described_class.call(agent_name: agent_name, sample_size: 10)
 
-      dataset = Leva::Dataset.find_by!(name: agent_name)
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
       expect(dataset.dataset_records.count).to eq(0)
     end
 
@@ -46,7 +46,7 @@ RSpec.describe Evaluation::DatasetSeeder do
       build_action_run(chat: nil)
       described_class.call(agent_name: agent_name, sample_size: 10)
 
-      dataset = Leva::Dataset.find_by!(name: agent_name)
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
       expect(dataset.dataset_records.count).to eq(0)
     end
 
@@ -62,7 +62,7 @@ RSpec.describe Evaluation::DatasetSeeder do
 
       described_class.call(agent_name: agent_name, sample_size: 10)
 
-      dataset = Leva::Dataset.find_by!(name: agent_name)
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
       expect(dataset.dataset_records.count).to eq(0)
     end
 
@@ -78,7 +78,7 @@ RSpec.describe Evaluation::DatasetSeeder do
 
       described_class.call(agent_name: agent_name, sample_size: 10)
 
-      dataset = Leva::Dataset.find_by!(name: agent_name)
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
       expect(dataset.dataset_records.count).to eq(0)
     end
 
@@ -87,7 +87,7 @@ RSpec.describe Evaluation::DatasetSeeder do
 
       described_class.call(agent_name: agent_name, sample_size: 2)
 
-      dataset = Leva::Dataset.find_by!(name: agent_name)
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
       expect(dataset.dataset_records.count).to eq(2)
     end
 
@@ -96,7 +96,7 @@ RSpec.describe Evaluation::DatasetSeeder do
       described_class.call(agent_name: agent_name, sample_size: 10)
       described_class.call(agent_name: agent_name, sample_size: 10)
 
-      dataset = Leva::Dataset.find_by!(name: agent_name)
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
       expect(dataset.dataset_records.count).to eq(1)
     end
 
@@ -105,7 +105,7 @@ RSpec.describe Evaluation::DatasetSeeder do
       described_class.call(agent_name: agent_name, sample_size: 10)
       described_class.call(agent_name: agent_name, sample_size: 10)
 
-      expect(Leva::Dataset.where(name: agent_name).count).to eq(1)
+      expect(Evaluation::Dataset.where(name: agent_name).count).to eq(1)
     end
 
     it "returns a result with agent_name, created, and skipped counts" do

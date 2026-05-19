@@ -1,0 +1,12 @@
+module Evaluation
+  module Improvement
+    class LoadSchemaTool < ::RubyLLM::Tool
+      def name: () -> String
+      def execute: (String prompt_name) -> untyped
+
+      private
+
+      def schema_for: (String prompt_name) -> ::Orchestration::Agent?
+    end
+  end
+end

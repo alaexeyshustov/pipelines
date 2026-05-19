@@ -7,7 +7,7 @@ RSpec.describe "evaluation:run rake task" do # rubocop:disable RSpec/DescribeCla
   let(:task_name) { "evaluation:run" }
   let(:agent_name) { "Emails::ClassifyAgent" }
   let!(:prompt)  { create(:orchestration_prompt, name: agent_name, version: 1) }
-  let!(:dataset) { create(:leva_dataset, name: agent_name) }
+  let!(:dataset) { create(:evaluation_dataset, name: agent_name) }
 
   before do
     Rails.application.load_tasks if Rake::Task.tasks.empty?
@@ -15,35 +15,35 @@ RSpec.describe "evaluation:run rake task" do # rubocop:disable RSpec/DescribeCla
   end
 
   context "when agent_name, prompt, and dataset exist" do
-    it "creates a Leva::Experiment" do
+    it "creates a Evaluation::Experiment" do
       expect { Rake::Task[task_name].invoke(agent_name, nil) }
-        .to change(Leva::Experiment, :count).by(1)
+        .to change(Evaluation::Experiment, :count).by(1)
     end
 
-    it "sets runner_class to StubbedAgentRun" do
+    it "sets runner_class to Evaluation::Runners::StubbedAgentRun" do
       Rake::Task[task_name].invoke(agent_name, nil)
-      expect(Leva::Experiment.last.runner_class).to eq("StubbedAgentRun")
+      expect(Evaluation::Experiment.last.runner_class).to eq("Evaluation::Runners::StubbedAgentRun")
     end
 
-    it "sets evaluator_classes to LLMJudgeEval" do
+    it "sets evaluator_classes to Evaluation::Evaluators::LLMJudgeEval" do
       Rake::Task[task_name].invoke(agent_name, nil)
-      expect(Leva::Experiment.last.evaluator_classes).to eq([ "LLMJudgeEval" ])
+      expect(Evaluation::Experiment.last.evaluator_classes).to eq([ "Evaluation::Evaluators::LLMJudgeEval" ])
     end
 
     it "links the experiment to the active prompt" do
       Rake::Task[task_name].invoke(agent_name, nil)
-      expect(Leva::Experiment.last.prompt_id).to eq(prompt.id)
+      expect(Evaluation::Experiment.last.prompt_id).to eq(prompt.id)
     end
 
     it "links the experiment to the agent dataset" do
       Rake::Task[task_name].invoke(agent_name, nil)
-      expect(Leva::Experiment.last.dataset).to eq(dataset)
+      expect(Evaluation::Experiment.last.dataset).to eq(dataset)
     end
 
-    it "enqueues Leva::ExperimentJob" do
-      allow(Leva::ExperimentJob).to receive(:perform_later)
+    it "enqueues Evaluation::ExperimentJob" do
+      allow(Evaluation::ExperimentJob).to receive(:perform_later)
       Rake::Task[task_name].invoke(agent_name, nil)
-      expect(Leva::ExperimentJob).to have_received(:perform_later).once
+      expect(Evaluation::ExperimentJob).to have_received(:perform_later).once
     end
 
     it "prints the experiment id" do
@@ -56,7 +56,7 @@ RSpec.describe "evaluation:run rake task" do # rubocop:disable RSpec/DescribeCla
 
       it "uses the highest version" do
         Rake::Task[task_name].invoke(agent_name, nil)
-        expect(Leva::Experiment.last.prompt_id).to eq(newer_prompt.id)
+        expect(Evaluation::Experiment.last.prompt_id).to eq(newer_prompt.id)
       end
     end
 
@@ -65,7 +65,7 @@ RSpec.describe "evaluation:run rake task" do # rubocop:disable RSpec/DescribeCla
 
       it "uses the highest id as a tiebreaker" do
         Rake::Task[task_name].invoke(agent_name, nil)
-        expect(Leva::Experiment.last.prompt_id).to eq(second_prompt.id)
+        expect(Evaluation::Experiment.last.prompt_id).to eq(second_prompt.id)
       end
     end
   end
@@ -75,12 +75,12 @@ RSpec.describe "evaluation:run rake task" do # rubocop:disable RSpec/DescribeCla
 
     it "stores the model in experiment metadata" do
       Rake::Task[task_name].invoke(agent_name, model)
-      expect(Leva::Experiment.last.metadata).to include("pipeline_model" => model)
+      expect(Evaluation::Experiment.last.metadata).to include("pipeline_model" => model)
     end
 
     it "includes the model in the experiment name" do
       Rake::Task[task_name].invoke(agent_name, model)
-      expect(Leva::Experiment.last.name).to include(model)
+      expect(Evaluation::Experiment.last.name).to include(model)
     end
   end
 

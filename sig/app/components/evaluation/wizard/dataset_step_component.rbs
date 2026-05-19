@@ -1,0 +1,15 @@
+module Evaluation
+  module Wizard
+    class DatasetStepComponent < ViewComponent::Base
+      def initialize: (
+        agent_name: String?,
+        datasets: ActiveRecord::Relation,
+        draft_token: String?,
+        ?selected_dataset_id: String?
+      ) -> void
+
+      def dataset_selected?: (Dataset dataset) -> bool
+      def record_count: (Dataset dataset) -> Integer
+    end
+  end
+end

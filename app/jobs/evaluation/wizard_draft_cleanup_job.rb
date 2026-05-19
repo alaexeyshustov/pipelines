@@ -6,7 +6,7 @@ module Evaluation
 
     def perform
       deleted = Evaluation::WizardDraft.cleanup_expired
-      Rails.logger.info("[WizardDraftCleanupJob] Deleted #{deleted} expired drafts")
+      logger.info("[WizardDraftCleanupJob] Deleted #{deleted} expired drafts")
     end
   end
 end

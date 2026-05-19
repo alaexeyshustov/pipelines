@@ -4,11 +4,11 @@
     <dl class="divide-y divide-gray-200 text-sm">
       <div class="py-3 grid grid-cols-3 gap-4">
         <dt class="font-medium text-gray-500">Experiment name</dt>
-        <dd class="col-span-2 text-gray-900"><%= @experiment_name.presence || "(untitled)" %></dd>
+        <dd class="col-span-2 text-gray-900"><%= experiment_name.presence || "(untitled)" %></dd>
       </div>
       <div class="py-3 grid grid-cols-3 gap-4">
         <dt class="font-medium text-gray-500">Agent</dt>
-        <dd class="col-span-2 text-gray-900 font-mono text-xs"><%= @agent_name %></dd>
+        <dd class="col-span-2 text-gray-900 font-mono text-xs"><%= agent_name %></dd>
       </div>
       <div class="py-3 grid grid-cols-3 gap-4">
         <dt class="font-medium text-gray-500">Prompt</dt>
@@ -16,7 +16,7 @@
       </div>
       <div class="py-3 grid grid-cols-3 gap-4">
         <dt class="font-medium text-gray-500">Metrics</dt>
-        <dd class="col-span-2 text-gray-900"><%= @metrics_count %> active</dd>
+        <dd class="col-span-2 text-gray-900"><%= metrics_count %> active</dd>
       </div>
       <div class="py-3 grid grid-cols-3 gap-4">
         <dt class="font-medium text-gray-500">Dataset</dt>
@@ -31,7 +31,7 @@
     </div>
   <% end %>
 
-  <%= form_with url: wizard_step_evaluation_experiments_path, method: :post do |f| %>
+  <%= form_with url: evaluation_experiments_path, method: :post do |f| %>
     <%= f.hidden_field :current_step, value: 4 %>
     <div class="flex justify-end">
       <button type="submit"

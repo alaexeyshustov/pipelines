@@ -88,14 +88,13 @@ module Orchestration
         builder = RuntimeAgentBuilder.new(
           action: action,
           pipeline_model: @pipeline_run.pipeline.model,
-          prompt_override: leva_prompt_for(action.agent&.name),
+          prompt_override: prompt_for(action.agent&.name),
           step_params: action_run.step_action.params
         )
         agent = builder.build
         chat_id = agent.respond_to?(:chat) ? agent.chat&.id : agent.id
         action_run.update_columns(chat_id: chat_id, agent_snapshot: builder.snapshot)
-        params = action_run.step_action.params || {}
-        result = agent.ask(params.merge(input).to_json)
+        result = agent.ask(builder.resolved_params.merge(input).to_json)
         output = parse_content(result.content, structured_output_expected?(action))
         normalized_output = action.agent&.output_schema.present? ? output : { "result" => output }
         { output: normalized_output, raw_content: result.content }
@@ -176,11 +175,11 @@ module Orchestration
       )
     end
 
-    def leva_prompt_for(agent_class)
+    def prompt_for(agent_class)
       @prompt_cache ||= {} # : Hash[String?, String?]
       return @prompt_cache[agent_class] if @prompt_cache.key?(agent_class)
 
-      @prompt_cache[agent_class] = Orchestration::Prompt
+      @prompt_cache[agent_class] = Evaluation::Prompt
         .where(name: agent_class)
         .order(version: :desc, id: :desc)
         .first

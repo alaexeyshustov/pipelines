@@ -1,9 +1,10 @@
 <%= render UI::PageHeaderComponent.new(title: "Application Emails", notice: notice, alert: alert) %>
 
-<%= render ApplicationMails::SearchFormComponent.new(
+<%= render UI::SearchFormComponent.new(
       url: application_mails_path,
       query: @query,
-      clear_url: application_mails_path
+      clear_url: application_mails_path,
+      placeholder: "Search by company or job title…"
     ) %>
 
 <div data-controller="batch">

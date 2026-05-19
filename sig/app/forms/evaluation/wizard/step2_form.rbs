@@ -1,0 +1,10 @@
+module Evaluation
+  module Wizard
+    class Step2Form
+      def initialize: (draft_payload: Hash[String, untyped]) -> void
+
+      def agent_name: () -> String?
+      def metrics: () -> ActiveRecord::Relation
+    end
+  end
+end

@@ -1,0 +1,5 @@
+module Evaluation
+  class ExperimentJob < ApplicationJob
+    def perform: (untyped experiment) -> void
+  end
+end

@@ -6,6 +6,7 @@ module Orchestration
     before_action :set_step
 
     def create
+      # TODO: move out the logic to a form object
       action = Orchestration::Action.find_by(id: params.dig(:orchestration_step_action, :action_id))
       unless action
         redirect_to orchestration_pipeline_path(@pipeline), alert: "Invalid action." and return

@@ -3,8 +3,8 @@
 module Evaluation
   class PromptDiffsController < ApplicationController
     def show
-      @prompt = Orchestration::Prompt.find(params[:id])
-      @other_version = Orchestration::Prompt.where(name: @prompt.name).where.not(id: @prompt.id).order(version: :desc, id: :desc).first
+      @prompt = Evaluation::Prompt.find(params[:id].to_i)
+      @other_version = Evaluation::Prompt.where(name: @prompt.name).where.not(id: @prompt.id).order(version: :desc, id: :desc).first
     end
   end
 end

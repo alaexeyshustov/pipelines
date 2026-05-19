@@ -3,11 +3,18 @@
 require "rails_helper"
 
 RSpec.describe Evaluation::Wizard::MetricsStepComponent, type: :component do
-  subject(:rendered) { render_inline(described_class.new(agent_name: agent_name, metrics: metrics)) }
+  subject(:rendered) { render_inline(described_class.new(form: build_form)) }
 
   let(:agent_name) { "Emails::ClassifyAgent" }
-  let(:metrics) { create_list(:evaluation_metric, 2, agent_name: agent_name) }
+  let(:metrics)    { create_list(:evaluation_metric, 2, agent_name: agent_name) }
 
+  def build_form(overrides = {})
+    instance_double(Evaluation::Wizard::Step2Form,
+      agent_name: agent_name,
+      metrics:    metrics,
+      **overrides
+    )
+  end
 
   it "renders metric names" do
     metrics.each { |m| expect(rendered.text).to include(m.name) }
@@ -22,11 +29,11 @@ RSpec.describe Evaluation::Wizard::MetricsStepComponent, type: :component do
   end
 
   it "renders a Next button to advance the wizard" do
-    expect(rendered.css("form[action*='wizard_step'] button[type='submit']").text).to include("Next")
+    expect(rendered.css("form[action*='/evaluation/experiments'] button[type='submit']").text).to include("Next")
   end
 
   it "renders empty state when no metrics exist" do
-    rendered = render_inline(described_class.new(agent_name: agent_name, metrics: []))
+    rendered = render_inline(described_class.new(form: build_form(metrics: [])))
     expect(rendered.text).to include("No metrics")
   end
 end

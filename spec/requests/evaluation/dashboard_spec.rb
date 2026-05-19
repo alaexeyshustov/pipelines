@@ -11,7 +11,7 @@ RSpec.describe "Evaluation::Dashboard" do
 
     it "shows agent names from experiments" do
       prompt = create(:orchestration_prompt, name: "EmailClassifierAgent")
-      create(:leva_experiment, prompt: prompt, status: :completed)
+      create(:evaluation_experiment, prompt: prompt, status: :completed)
       get evaluation_root_path
       expect(response.body).to include("EmailClassifierAgent")
     end

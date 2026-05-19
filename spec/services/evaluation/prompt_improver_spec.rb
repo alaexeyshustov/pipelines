@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe Evaluation::PromptImprover do
   let(:agent_name) { "Emails::ClassifyAgent" }
   let(:prompt) { create(:orchestration_prompt, name: agent_name, system_prompt: "You classify emails.", user_prompt: "{{input}}") }
-  let!(:experiment) { create(:leva_experiment, prompt: prompt, status: :completed) }
+  let!(:experiment) { create(:evaluation_experiment, prompt: prompt, status: :completed) }
 
   def stub_llm(system_prompt: "Improved system.", user_prompt: "{{input}}")
     body = {
@@ -17,8 +17,8 @@ RSpec.describe Evaluation::PromptImprover do
   end
 
   def make_eval_result(score:, metric_name:, justification: "Good job.")
-    runner_result = create(:leva_runner_result, experiment: experiment)
-    eval_result = create(:leva_evaluation_result,
+    runner_result = create(:evaluation_runner_result, experiment: experiment)
+    eval_result = create(:evaluation_evaluation_result,
       experiment: experiment,
       runner_result: runner_result,
       dataset_record: runner_result.dataset_record,
@@ -38,9 +38,9 @@ RSpec.describe Evaluation::PromptImprover do
       expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: result.id).once
     end
 
-    it "returns a new Orchestration::Prompt" do
+    it "returns a new Evaluation::Prompt" do
       result = described_class.call(experiment: experiment)
-      expect(result).to be_a(Orchestration::Prompt)
+      expect(result).to be_a(Evaluation::Prompt)
       expect(result).to be_persisted
     end
 
@@ -50,7 +50,12 @@ RSpec.describe Evaluation::PromptImprover do
     end
 
     it "creates a new prompt record (does not mutate original)" do
-      expect { described_class.call(experiment: experiment) }.to change(Orchestration::Prompt, :count).by(1)
+      expect { described_class.call(experiment: experiment) }.to change(Evaluation::Prompt, :count).by(1)
+    end
+
+    it "increments the version from the source prompt" do
+      result = described_class.call(experiment: experiment)
+      expect(result.version).to eq(prompt.version + 1)
     end
 
     it "uses the improved system prompt from LLM" do
@@ -87,8 +92,24 @@ RSpec.describe Evaluation::PromptImprover do
       }
     end
 
+    context "when the agent has an output schema" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      before do
+        create(:orchestration_agent, name: agent_name,
+               output_schema: { "type" => "object", "properties" => { "results" => { "type" => "array" } } })
+      end
+
+      it "includes the schema in the user message" do
+        described_class.call(experiment: experiment)
+        expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
+          body = JSON.parse(req.body)
+          user_message = body["messages"].find { |m| m["role"] == "user" }&.fetch("content", "")
+          user_message.include?("<output_schema>") && user_message.include?("\"results\"")
+        }
+      end
+    end
+
     context "when experiment has no associated prompt" do
-      let(:experiment) { create(:leva_experiment, prompt: nil, status: :completed) }
+      let(:experiment) { create(:evaluation_experiment, prompt: nil, status: :completed) }
 
       it "raises ArgumentError" do
         expect { described_class.call(experiment: experiment) }

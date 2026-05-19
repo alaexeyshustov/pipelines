@@ -36,20 +36,20 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
     it "creates a dataset named after the agent" do
       task.invoke(agent_name, "1")
 
-      expect(Leva::Dataset.find_by(name: agent_name)).to be_present
+      expect(Evaluation::Dataset.find_by(name: agent_name)).to be_present
     end
 
     it "creates dataset records for each sampled action run" do
       task.invoke(agent_name, "1")
 
-      dataset = Leva::Dataset.find_by!(name: agent_name)
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
       expect(dataset.dataset_records.count).to eq(1)
     end
 
     it "links the dataset record to the action run as recordable" do
       task.invoke(agent_name, "1")
 
-      dataset = Leva::Dataset.find_by!(name: agent_name)
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
       expect(dataset.dataset_records.first.recordable).to eq(action_run)
     end
   end
@@ -65,7 +65,7 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
       task.reenable
       task.invoke(agent_name, "1")
 
-      dataset = Leva::Dataset.find_by!(name: agent_name)
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
       expect(dataset.dataset_records.count).to eq(1)
     end
 
@@ -74,7 +74,7 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
       task.reenable
       task.invoke(agent_name, "1")
 
-      expect(Leva::Dataset.where(name: agent_name).count).to eq(1)
+      expect(Evaluation::Dataset.where(name: agent_name).count).to eq(1)
     end
   end
 
@@ -84,7 +84,7 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
     it "creates an empty dataset" do
       task.invoke(agent_name, "10")
 
-      dataset = Leva::Dataset.find_by(name: agent_name)
+      dataset = Evaluation::Dataset.find_by(name: agent_name)
       expect(dataset).to be_present
       expect(dataset.dataset_records.count).to eq(0)
     end

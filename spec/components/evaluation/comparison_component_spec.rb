@@ -16,8 +16,8 @@ RSpec.describe Evaluation::ComparisonComponent, type: :component do
     )
   end
 
-  let(:baseline) { build(:leva_experiment, name: "baseline") }
-  let(:candidate) { build(:leva_experiment, name: "candidate") }
+  let(:baseline) { build(:evaluation_experiment, name: "baseline") }
+  let(:candidate) { build(:evaluation_experiment, name: "candidate") }
   let(:component) { described_class.new(result: result, baseline_experiment: baseline, candidate_experiment: candidate) }
 
   it "renders metric names" do

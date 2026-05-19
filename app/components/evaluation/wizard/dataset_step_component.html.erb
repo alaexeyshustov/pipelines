@@ -1,11 +1,11 @@
 <div class="space-y-6">
   <h3 class="text-sm font-semibold text-gray-700">Select a dataset</h3>
 
-  <%= form_with url: wizard_step_evaluation_experiments_path, method: :post do |f| %>
+  <%= form_with url: evaluation_experiments_path, method: :post do |f| %>
     <%= f.hidden_field :current_step, value: 3 %>
 
     <div class="space-y-2">
-      <% @datasets.each do |dataset| %>
+      <% datasets.each do |dataset| %>
         <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 <%= dataset_selected?(dataset) ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 bg-white' %>">
           <%= radio_button_tag "wizard[dataset_id]", dataset.id, dataset_selected?(dataset), class: "text-indigo-600" %>
           <div class="flex-1 min-w-0">
@@ -28,8 +28,8 @@
     <summary class="text-sm font-medium text-gray-600 cursor-pointer">Generate Synthetic Dataset with AI</summary>
     <div class="mt-4 space-y-3">
       <%= form_with url: generate_evaluation_datasets_path, method: :post, data: { turbo_frame: "dataset-pending" } do |f| %>
-        <%= f.hidden_field :agent_name, value: @agent_name %>
-        <%= f.hidden_field :draft_token, value: @draft_token %>
+        <%= f.hidden_field :agent_name, value: agent_name %>
+        <%= f.hidden_field :draft_token, value: draft_token %>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-gray-600 mb-1">Dataset name</label>

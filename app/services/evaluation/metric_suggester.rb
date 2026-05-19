@@ -25,7 +25,7 @@ module Evaluation
     end
 
     def call
-      prompt_to_analyze = orchestration_prompt
+      prompt_to_analyze = agent_system_prompt
       raise Error, "No prompt found for agent '#{@agent_name}'" if prompt_to_analyze.blank?
 
       # steep:ignore:start
@@ -44,12 +44,8 @@ module Evaluation
 
     private
 
-    def orchestration_prompt
-      Orchestration::Prompt
-        .where(name: @agent_name)
-        .order(version: :desc, id: :desc)
-        .first
-        &.system_prompt
+    def agent_system_prompt
+      Prompt.last_for_agent(@agent_name)&.system_prompt
     end
 
     def parse_response(content)

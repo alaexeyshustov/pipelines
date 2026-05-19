@@ -29,13 +29,13 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
   before do
     instructions  = "You are an email classifier. Classify emails."
     prompt_rel    = instance_double(ActiveRecord::Relation)
-    prompt_double = instance_double(Orchestration::Prompt, system_prompt: instructions)
+    prompt_double = instance_double(Evaluation::Prompt, system_prompt: instructions)
 
-    allow(Orchestration::Prompt).to receive(:where).with(name: agent_name).and_return(prompt_rel)
+    allow(Evaluation::Prompt).to receive(:where).with(name: agent_name).and_return(prompt_rel)
     allow(prompt_rel).to receive(:order).with(version: :desc, id: :desc).and_return(prompt_rel)
     allow(prompt_rel).to receive(:first).and_return(prompt_double)
 
-    allow(Leva::Dataset).to receive(:where).with(name: agent_name).and_return(
+    allow(Evaluation::Dataset).to receive(:where).with(name: agent_name).and_return(
       instance_double(ActiveRecord::Relation, first: nil)
     )
 
@@ -44,10 +44,10 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
   end
 
   describe "#perform" do
-    it "creates a Leva::Dataset with the given name" do
-      expect { described_class.perform_now(**params) }.to change(Leva::Dataset, :count).by(1)
+    it "creates a Evaluation::Dataset with the given name" do
+      expect { described_class.perform_now(**params) }.to change(Evaluation::Dataset, :count).by(1)
 
-      expect(Leva::Dataset.last.name).to eq("Synthetic emails v1")
+      expect(Evaluation::Dataset.last.name).to eq("Synthetic emails v1")
     end
 
     it "creates one SyntheticRecord per generated input" do
@@ -59,7 +59,7 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
     it "associates each SyntheticRecord with the dataset via DatasetRecord" do
       described_class.perform_now(**params)
 
-      dataset = Leva::Dataset.last
+      dataset = Evaluation::Dataset.last
       expect(dataset.dataset_records.count).to eq(generated_inputs.size)
       expect(dataset.dataset_records.first.recordable).to be_a(Evaluation::SyntheticRecord)
     end
@@ -70,7 +70,7 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
       draft = wizard_draft.reload
       generation = draft.payload["dataset_generation"]
       expect(generation["status"]).to eq("complete")
-      expect(generation["dataset_id"]).to eq(Leva::Dataset.last.id)
+      expect(generation["dataset_id"]).to eq(Evaluation::Dataset.last.id)
     end
 
     it "sends agent instructions in the LLM request" do
@@ -96,9 +96,9 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
     context "when few-shot samples exist" do
       before do
         records_double = instance_double(ActiveRecord::Relation)
-        dataset_double = instance_double(Leva::Dataset)
+        dataset_double = instance_double(Evaluation::Dataset)
 
-        allow(Leva::Dataset).to receive(:where).with(name: agent_name).and_return(
+        allow(Evaluation::Dataset).to receive(:where).with(name: agent_name).and_return(
           instance_double(ActiveRecord::Relation, first: dataset_double)
         )
         allow(dataset_double).to receive(:dataset_records).and_return(records_double)
@@ -143,6 +143,14 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
         generation = wizard_draft.reload.payload["dataset_generation"]
         expect(generation["status"]).to eq("error")
         expect(generation["error_message"]).to be_present
+      end
+
+      it "logs the failure to the job logger" do
+        allow(described_class.logger).to receive(:error)
+
+        described_class.perform_now(**params)
+
+        expect(described_class.logger).to have_received(:error).with(/SyntheticDatasetJob.*#{draft_token}/)
       end
     end
 

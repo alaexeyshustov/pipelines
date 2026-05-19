@@ -1,0 +1,16 @@
+module Evaluation
+  module Wizard
+    class Step1Form
+      def initialize: (draft_payload: Hash[String, untyped]) -> void
+
+      def agent_names: () -> Array[String]
+      def prompts: () -> ActiveRecord::Relation
+      def agent_name: () -> String?
+      def prompt_id: () -> String?
+      def experiment_name: () -> String?
+      def sample_model: () -> String?
+      def evaluation_model: () -> String?
+      def available_models: () -> Array[[String, Array[String]]]
+    end
+  end
+end

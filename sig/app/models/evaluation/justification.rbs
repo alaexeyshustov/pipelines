@@ -5,7 +5,7 @@ module Evaluation
     def self.eager_load: (*untyped) -> ActiveRecord::Relation
     def self.where: (**untyped) -> ActiveRecord::Relation
 
-    def evaluation_result: () -> Leva::EvaluationResult
+    def evaluation_result: () -> Evaluation::EvaluationResult
     def metric_name: () -> String
     def justification: () -> String
   end
