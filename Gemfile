@@ -39,8 +39,9 @@ gem "stimulus-rails"
 
 # Pipeline
 gem "async"
-gem "async-job-adapter-active_job"
 gem "fugit"
+gem "solid_queue"
+gem "mission_control-jobs"
 gem "dotenv-rails"
 gem "dry-cli"
 

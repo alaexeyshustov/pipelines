@@ -6,6 +6,7 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
   mount RubyLLM::Monitoring::Engine, at: "/monitoring"
+  mount MissionControl::Jobs::Engine, at: "/jobs"
 
   resources :chats, only: [ :index, :show, :destroy ] do
     collection do
