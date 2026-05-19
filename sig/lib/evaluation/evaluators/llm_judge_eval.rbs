@@ -15,7 +15,7 @@ module Evaluation
 
       def agent_name: (untyped recordable) -> String
       def fetch_instructions: (Evaluation::RunnerResult runner_result) -> String?
-      def call_judge: (instructions: String?, input: untyped, expected_tool_calls: Array[untyped], actual_tool_calls: Array[untyped], output: String, metrics: untyped, ?model: String) -> Array[metric_result]
+      def call_judge: (user_input: String, ?model: String) -> Array[metric_result]
       def build_user_message: (instructions: String?, input: untyped, expected_tool_calls: Array[untyped], actual_tool_calls: Array[untyped], output: String, metrics: untyped) -> String
       def parse_judge_response: (untyped content) -> Array[metric_result]
       def normalize_entry: (untyped entry, Integer index) -> metric_result?

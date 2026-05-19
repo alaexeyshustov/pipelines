@@ -18,16 +18,18 @@ module Evaluation
         You are an impartial LLM judge evaluating an AI agent's response.
 
         ## Input Schema
-        You will receive a JSON object with:
-        - "instructions": the agent's system prompt text
-        - "input": the input the agent received (JSON)
-        - "expected_tool_calls": the expected tool call sequence (JSON array)
-        - "actual_tool_calls": the actual tool call sequence the agent produced (JSON array)
-        - "output": the agent's final output
-        - "metrics": array of {"name", "description"} rubrics to evaluate against
+        You will receive a JSON object with the following structure:
+        {
+          "instructions": "the agent's system prompt text",
+          "input": { ... },
+          "expected_tool_calls": [ ... ],
+          "actual_tool_calls": [ ... ],
+          "output": "the agent's final output",
+          "metrics": [{ "name": "metric_name", "description": "rubric description" }, ...]
+        }
 
         ## Task
-        For each metric, assign an integer score from 1 to 5 and write a concise justification.
+        For each metric in "metrics", assign an integer score from 1 to 5 and write a concise justification.
         Return all scores via the structured output schema.
       INSTRUCTIONS
     end

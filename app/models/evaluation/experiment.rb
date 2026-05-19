@@ -31,5 +31,9 @@ module Evaluation
         .includes(:prompt)
         .first
     end
+
+    def per_metric_averages
+      EvaluationResult.per_metric_averages(self)
+    end
   end
 end

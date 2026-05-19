@@ -41,5 +41,10 @@ module Evaluation
     def failed?: () -> bool
 
     def update!: (**untyped attrs) -> Experiment
+
+    def agent_name: () -> String?
+    def runner_model: () -> String?
+    def newer_experiment: () -> Experiment?
+    def per_metric_averages: () -> Hash[String, Float]
   end
 end

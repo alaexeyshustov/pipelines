@@ -35,7 +35,7 @@ module Evaluation
     end
 
     def per_metric_avg
-      @per_metric_avg ||= EvaluationResult.per_metric_averages(@experiment)
+      @per_metric_avg ||= @experiment.per_metric_averages
     end
 
     def overall_avg

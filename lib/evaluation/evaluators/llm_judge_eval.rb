@@ -26,15 +26,16 @@ module Evaluation
         default_tool_calls = [] #: Array[untyped]
         actual_tool_calls = prediction.fetch("tool_calls", default_tool_calls)
 
-        call_judge(
+        user_input = build_user_message(
           instructions: prompt_text,
           input: recordable.input,
           expected_tool_calls: expected_tool_calls,
           actual_tool_calls: actual_tool_calls,
           output: prediction.fetch("output", ""),
-          metrics: metrics,
-          model: model
+          metrics: metrics
         )
+
+        call_judge(user_input: user_input, model: model)
       rescue JSON::ParserError, TypeError => e
         Rails.logger.error("LLMJudgeEval: failed to parse prediction JSON: #{e.message}")
         []
@@ -45,8 +46,8 @@ module Evaluation
         judge_model = experiment.evaluation_model.presence || self.class.judge_model
         results = evaluate(runner_result, recordable, model: judge_model)
 
-        results.map do |metric_result|
-          ActiveRecord::Base.transaction do
+        ActiveRecord::Base.transaction do
+          results.map do |metric_result|
             eval_result = Evaluation::EvaluationResult.create!(
               experiment: experiment,
               dataset_record: runner_result.dataset_record,
@@ -75,17 +76,8 @@ module Evaluation
         runner_result.prompt&.system_prompt
       end
 
-      def call_judge(instructions:, input:, expected_tool_calls:, actual_tool_calls:, output:, metrics:, model: self.class.judge_model)
-        user_message = build_user_message(
-          instructions: instructions,
-          input: input,
-          expected_tool_calls: expected_tool_calls,
-          actual_tool_calls: actual_tool_calls,
-          output: output,
-          metrics: metrics
-        )
-
-        response = Evaluation::Judge::Agent.create.with_model(model).ask(user_message)
+      def call_judge(user_input:, model: self.class.judge_model)
+        response = Evaluation::Judge::Agent.create.with_model(model).ask(user_input)
         parse_judge_response(response.content)
       rescue StandardError => e
         Rails.logger.error("LLMJudgeEval: judge call failed: #{e.message}")
@@ -93,27 +85,14 @@ module Evaluation
       end
 
       def build_user_message(instructions:, input:, expected_tool_calls:, actual_tool_calls:, output:, metrics:)
-        rubrics = metrics.map { |m| "- #{m.name}: #{m.description}" }.join("\n")
-
-        <<~MSG
-          ## Agent Instructions
-          #{instructions}
-
-          ## Input
-          #{JSON.pretty_generate(input)}
-
-          ## Expected Tool Call Sequence
-          #{JSON.pretty_generate(expected_tool_calls)}
-
-          ## Actual Tool Call Sequence
-          #{JSON.pretty_generate(actual_tool_calls)}
-
-          ## Agent Output
-          #{output.is_a?(String) ? output : JSON.pretty_generate(output)}
-
-          ## Evaluation Metrics
-          #{rubrics}
-        MSG
+        {
+          instructions: instructions,
+          input: input,
+          expected_tool_calls: expected_tool_calls,
+          actual_tool_calls: actual_tool_calls,
+          output: output,
+          metrics: metrics.map { |m| { name: m.name, description: m.description } }
+        }.to_json
       end
 
       def parse_judge_response(content)
