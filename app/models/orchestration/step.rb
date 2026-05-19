@@ -1,6 +1,6 @@
 module Orchestration
   class Step < ApplicationRecord
-    self.table_name = "steps"
+    self.table_name = "orchestration_steps"
 
     belongs_to :pipeline, class_name: "Orchestration::Pipeline"
     has_many :step_actions, -> { order(:position) }, class_name: "Orchestration::StepAction", dependent: :destroy

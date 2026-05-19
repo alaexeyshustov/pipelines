@@ -9,7 +9,7 @@ module Orchestration
     def index
       @agents = Orchestration::Agent
         .left_joins(:actions)
-        .select("orchestration_agents.*, COUNT(DISTINCT actions.id) AS action_count")
+        .select("orchestration_agents.*, COUNT(DISTINCT orchestration_actions.id) AS action_count")
         .group("orchestration_agents.id")
         .order("orchestration_agents.name")
     end

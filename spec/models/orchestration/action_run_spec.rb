@@ -1,6 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe Orchestration::ActionRun do
+  it { expect(described_class.table_name).to eq("orchestration_action_runs") }
+
+
   describe 'validations' do
     it 'is valid with required attributes' do
       action_run = build(:orchestration_action_run)

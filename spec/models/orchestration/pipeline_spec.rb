@@ -1,6 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe Orchestration::Pipeline do
+  it { expect(described_class.table_name).to eq("orchestration_pipelines") }
+
+
   describe 'validations' do
     it 'is valid with required attributes' do
       pipeline = build(:orchestration_pipeline)
