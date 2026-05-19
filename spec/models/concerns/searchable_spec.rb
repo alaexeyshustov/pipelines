@@ -29,10 +29,16 @@ RSpec.describe Searchable do
     end
 
     context "with ApplicationMail" do
-      it "is also searchable by company" do
+      it "is searchable by company" do
         mail = create(:application_mail, company: "SRE Corp", job_title: "Engineer")
         create(:application_mail, company: "Other Corp", job_title: "Manager")
-        expect(ApplicationMail.search("SRE")).to contain_exactly(mail)
+        expect(ApplicationMail.search("SRE Corp")).to contain_exactly(mail)
+      end
+
+      it "is searchable by job_title" do
+        mail = create(:application_mail, company: "Acme", job_title: "Site Reliability Engineer")
+        create(:application_mail, company: "Beta", job_title: "Product Manager")
+        expect(ApplicationMail.search("reliability")).to contain_exactly(mail)
       end
     end
   end

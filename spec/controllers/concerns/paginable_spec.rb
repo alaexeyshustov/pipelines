@@ -95,6 +95,36 @@ RSpec.describe Paginable do
       end
     end
 
+    context "when a custom default direction is configured" do
+      let(:asc_default_class) do
+        Class.new do
+          include Paginable
+
+          self.paginable_sortable          = %w[date]
+          self.paginable_per_page          = [ 20 ]
+          self.paginable_default_sort      = "date"
+          self.paginable_default_direction = :asc
+
+          attr_reader :filters
+
+          def params
+            @params ||= ActionController::Parameters.new({})
+          end
+
+          def initialize
+            @filters = ApplicationController::Filters.new(
+              path: "/items", q: nil, per_page: nil, page: nil, sort: nil, direction: nil
+            )
+            set_pagination_params
+          end
+        end
+      end
+
+      it "uses the configured default direction when no param is present" do
+        expect(asc_default_class.new.filters.direction).to eq("asc")
+      end
+    end
+
     context "when direction param is 'asc'" do
       subject(:ctrl) { build_ctrl(direction: "asc") }
 
