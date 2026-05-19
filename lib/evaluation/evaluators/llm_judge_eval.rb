@@ -20,22 +20,8 @@ module Evaluation
           return []
         end
 
-        prompt_text = fetch_instructions(runner_result)
-        prediction = JSON.parse(runner_result.prediction)
-        expected_tool_calls = ToolCallExtractor.call(recordable.chat)
-        default_tool_calls = [] #: Array[untyped]
-        actual_tool_calls = prediction.fetch("tool_calls", default_tool_calls)
-
-        user_input = build_user_message(
-          instructions: prompt_text,
-          input: recordable.input,
-          expected_tool_calls: expected_tool_calls,
-          actual_tool_calls: actual_tool_calls,
-          output: prediction.fetch("output", ""),
-          metrics: metrics
-        )
-
-        call_judge(user_input: user_input, model: model)
+        user_input = build_user_message(runner_result:, recordable:, metrics:)
+        call_judge(user_input:, model:)
       rescue JSON::ParserError, TypeError => e
         Rails.logger.error("LLMJudgeEval: failed to parse prediction JSON: #{e.message}")
         []
@@ -84,13 +70,16 @@ module Evaluation
         []
       end
 
-      def build_user_message(instructions:, input:, expected_tool_calls:, actual_tool_calls:, output:, metrics:)
+      def build_user_message(runner_result:, recordable:, metrics:)
+        prediction = JSON.parse(runner_result.prediction)
+        default_tool_calls = [] #: Array[untyped]
+
         {
-          instructions: instructions,
-          input: input,
-          expected_tool_calls: expected_tool_calls,
-          actual_tool_calls: actual_tool_calls,
-          output: output,
+          instructions: fetch_instructions(runner_result),
+          input: recordable.input,
+          expected_tool_calls: ToolCallExtractor.call(recordable.chat),
+          actual_tool_calls: prediction.fetch("tool_calls", default_tool_calls),
+          output: prediction.fetch("output", ""),
           metrics: metrics.map { |m| { name: m.name, description: m.description } }
         }.to_json
       end
