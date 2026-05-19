@@ -44,6 +44,9 @@ module ApplicationPipeline
 
     config.active_job.queue_adapter = :solid_queue
     config.solid_queue.connects_to = { database: { writing: :queue } }
+    # Required for fiber-based job execution: each fiber gets its own isolated state
+    # instead of the default thread-scoped state.
+    config.active_support.isolation_level = :fiber
 
     # Autoload app/pipeline and app/tools in addition to standard Rails paths.
     config.autoload_paths += %w[pipeline tools forms].map { |d| Rails.root.join("app", d).to_s }
