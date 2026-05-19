@@ -14,6 +14,19 @@ GIT
       ruby_llm-schema (~> 0)
       zeitwerk (~> 2)
 
+GIT
+  remote: https://github.com/crmne/solid_queue.git
+  revision: 2f845aaf82084f6391d3bac2cebc8726e9366f20
+  branch: async-worker-execution-mode
+  specs:
+    solid_queue (1.4.0)
+      activejob (>= 7.1)
+      activerecord (>= 7.1)
+      concurrent-ruby (>= 1.3.1)
+      fugit (~> 1.11)
+      railties (>= 7.1)
+      thor (>= 1.3.1)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -117,13 +130,6 @@ GEM
       traces (~> 0.10)
     async-http-cache (0.4.6)
       async-http (~> 0.56)
-    async-job (0.11.1)
-      async (~> 2.9)
-      string-format (~> 0.2)
-    async-job-adapter-active_job (0.19.0)
-      async (~> 2.39)
-      async-job (~> 0.9)
-      async-service (~> 0.12)
     async-pool (0.11.2)
       async (>= 2.0)
     async-service (0.22.0)
@@ -345,6 +351,16 @@ GEM
     minitest (6.0.3)
       drb (~> 2.0)
       prism (~> 1.5)
+    mission_control-jobs (1.1.0)
+      actioncable (>= 7.1)
+      actionpack (>= 7.1)
+      activejob (>= 7.1)
+      activerecord (>= 7.1)
+      importmap-rails (>= 1.2.1)
+      irb (~> 1.13)
+      railties (>= 7.1)
+      stimulus-rails
+      turbo-rails
     multi_json (1.20.0)
     multipart-post (2.4.1)
     mutant (0.16.0)
@@ -693,7 +709,6 @@ PLATFORMS
 DEPENDENCIES
   aasm (~> 5.5)
   async
-  async-job-adapter-active_job
   brakeman
   capybara (~> 3.40)
   csv
@@ -708,6 +723,7 @@ DEPENDENCIES
   jsbundling-rails
   liquid
   mail (~> 2.8)
+  mission_control-jobs
   mutant
   mutant-rspec
   net-imap (~> 0.4)
@@ -731,6 +747,7 @@ DEPENDENCIES
   ruby_llm-schema
   rubycritic
   simplecov
+  solid_queue!
   sqlite-vec
   sqlite3 (>= 2.1)
   steep
@@ -762,8 +779,6 @@ CHECKSUMS
   async-container (0.34.5) sha256=905d950bb4cc5219238214d3a11ac6c4b74d4affecd930027e929ba0b86234bd
   async-http (0.94.3) sha256=c0fcaed8c7609f18e09e3cd21969ff972f6009da48682f5fd7e9e49572e63de2
   async-http-cache (0.4.6) sha256=2038d1f093182f16b50b4db271c25085e3938da10bfcfc2904cadb0530fddfd6
-  async-job (0.11.1) sha256=6a43c732597d490dd0dabc4fa390faed0b0fde9226a3a33f25979ff356a096a1
-  async-job-adapter-active_job (0.19.0) sha256=d2c0e56ef21144419e89c0b1ba4bfa369a49898f40eb5111a120ca3348c5f0a1
   async-pool (0.11.2) sha256=0a43a17b02b04d9c451b7d12fafa9a50e55dc6dd00d4369aca00433f16a7e3ed
   async-service (0.22.0) sha256=84616488145654d42f994c2097eef39811a21548bf0da18d20a7b61813e63b61
   async-utilization (0.3.2) sha256=201a27e0948fe23fc14a01a0ecbe5e420e27cebae3a51f36e56fc45fb31df3b4
@@ -857,6 +872,7 @@ CHECKSUMS
   metrics (0.15.0) sha256=61ded5bac95118e995b1bc9ed4a5f19bc9814928a312a85b200abbdac9039072
   mini_mime (1.1.5) sha256=8681b7e2e4215f2a159f9400b5816d85e9d8c6c6b491e96a12797e798f8bccef
   minitest (6.0.3) sha256=88ac8a1de36c00692420e7cb3cc11a0773bbcb126aee1c249f320160a7d11411
+  mission_control-jobs (1.1.0) sha256=b13da9cde3344fec7c744b79d2a34c3ecd454f45d4d593d4c968ba762315e84c
   multi_json (1.20.0) sha256=c64106fae5114bd7f388d42d7b52ebb83d7726426d47a35ad5099e35bb923e41
   multipart-post (2.4.1) sha256=9872d03a8e552020ca096adadbf5e3cb1cd1cdd6acd3c161136b8a5737cdb4a8
   mutant (0.16.0) sha256=651dfbf4e0c32bb918e823505d41348070d7f3f76430cf046696b06e3887b9c4
@@ -945,6 +961,7 @@ CHECKSUMS
   simplecov (0.22.0) sha256=fe2622c7834ff23b98066bb0a854284b2729a569ac659f82621fc22ef36213a5
   simplecov-html (0.13.2) sha256=bd0b8e54e7c2d7685927e8d6286466359b6f16b18cb0df47b508e8d73c777246
   simplecov_json_formatter (0.1.4) sha256=529418fbe8de1713ac2b2d612aa3daa56d316975d307244399fa4838c601b428
+  solid_queue (1.4.0)
   sorbet-runtime (0.6.13114) sha256=26f71c71bebf432b515b7d561478e6433022eacc151eb5da270c470137c934e8
   sqlite-vec (0.1.9-arm64-darwin) sha256=f319ab08757741811c6f2f7d2b58c1b9009460e899e1b69d99fdab288286d9bf
   sqlite-vec (0.1.9-x86_64-darwin) sha256=8a8d16c86c8d011359b0ab6f933dc9859f1cc265be6a8a9ac20ecd06cb3b8d32

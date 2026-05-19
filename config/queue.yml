@@ -1,0 +1,22 @@
+default: &default
+  dispatchers:
+    - polling_interval: 1
+      batch_size: 500
+      concurrency_maintenance_interval: 600
+  workers:
+    - queues: "*"
+      fibers: 10
+      processes: 1
+      polling_interval: 0.1
+
+development:
+  <<: *default
+
+production:
+  <<: *default
+  # Tune for your workload:
+  #   workers:
+  #     - queues: "*"
+  #       fibers: 50
+  #       processes: <%= ENV.fetch("JOB_PROCESSES", 1) %>
+  #       polling_interval: 0.1

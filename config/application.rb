@@ -42,8 +42,11 @@ module ApplicationPipeline
     # Use SQL schema format so sqlite-vec virtual tables are preserved correctly.
     config.active_record.schema_format = :sql
 
-    # Use async-job adapter backed by Async::Job::Processor::Inline.
-    config.active_job.queue_adapter = :async_job
+    config.active_job.queue_adapter = :solid_queue
+    config.solid_queue.connects_to = { database: { writing: :queue } }
+    # Required for fiber-based job execution: each fiber gets its own isolated state
+    # instead of the default thread-scoped state.
+    config.active_support.isolation_level = :fiber
 
     # Autoload app/pipeline and app/tools in addition to standard Rails paths.
     config.autoload_paths += %w[pipeline tools forms].map { |d| Rails.root.join("app", d).to_s }

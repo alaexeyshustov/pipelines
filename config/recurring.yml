@@ -1,7 +1,3 @@
-# Solid Queue recurring tasks configuration.
-# Requires Solid Queue as the queue adapter.
-# See https://github.com/rails/solid_queue#recurring-tasks
-
 production:
   scheduler:
     class: SchedulerJob
@@ -14,3 +10,8 @@ production:
     schedule: "0 */6 * * *"
     queue: default
     description: "Delete expired evaluation wizard drafts every 6 hours"
+
+  clear_solid_queue_finished_jobs:
+    command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
+    schedule: every hour at minute 12
+    description: "Prune finished Solid Queue job records to keep the queue table lean"
