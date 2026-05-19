@@ -42,7 +42,7 @@ module Evaluation
     end
 
     def status_frame
-      render partial: "status_badge", locals: { experiment: @experiment, with_src: false }
+      render Evaluation::Experiments::StatusBadgeComponent.new(experiment: @experiment, with_src: false)
     end
 
     def metric_results

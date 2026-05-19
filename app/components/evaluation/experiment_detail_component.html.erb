@@ -1,30 +1,20 @@
-<% if newer_experiment&.pending? || newer_experiment&.running? %>
+<% if @experiment.newer_experiment&.pending? || @experiment.newer_experiment&.running? %>
   <meta name="turbo-refresh-interval" content="5000">
   <meta name="turbo-refresh-method" content="replace">
 <% end %>
 
-<%= render UI::PageHeaderComponent.new(
-  title: @experiment.name,
-  parent: { label: "Experiments", url: helpers.evaluation_experiments_path }
-) do |header| %>
-  <% unless newer_experiment %>
-    <% header.with_action(type: :button, label: "Improve Prompt", url: helpers.improve_evaluation_experiment_path(@experiment), method: :post, variant: :primary) %>
-  <% end %>
-  <% if newer_experiment&.completed? %>
-    <% header.with_action(type: :link, label: "View Comparison", url: helpers.compare_evaluation_experiment_path(@experiment, candidate_id: newer_experiment.id), variant: :success) %>
-  <% end %>
-<% end %>
+<%= header %>
 
 <div class="space-y-6 max-w-2xl">
   <div class="rounded-lg border border-gray-200 bg-white p-6">
     <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
       <dt class="font-medium text-gray-500">Status</dt>
-      <dd><%= render "evaluation/experiments/status_badge", experiment: @experiment %></dd>
+      <dd><%= status_badge %></dd>
       <dt class="font-medium text-gray-500">Prompt</dt>
       <dd class="text-gray-700"><%= @experiment.prompt&.name %> v<%= @experiment.prompt&.version %></dd>
-      <% if runner_model.present? %>
+      <% if @experiment.runner_model.present? %>
         <dt class="font-medium text-gray-500">Model</dt>
-        <dd class="text-gray-700 font-mono text-xs"><%= runner_model %></dd>
+        <dd class="text-gray-700 font-mono text-xs"><%= @experiment.runner_model %></dd>
       <% end %>
       <dt class="font-medium text-gray-500">Dataset</dt>
       <dd class="text-gray-700"><%= @experiment.dataset&.name %></dd>
@@ -64,39 +54,20 @@
       <p class="text-sm text-gray-400">No metrics configured for this agent.</p>
     <% else %>
       <div class="divide-y divide-gray-100">
-        <% metrics.each do |metric| %>
-          <div class="flex items-start justify-between py-3 first:pt-0 last:pb-0">
-            <div class="min-w-0 flex-1 pr-4">
-              <%= link_to helpers.metric_results_evaluation_experiment_path(@experiment, metric_name: metric.name),
-                          class: "text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline" do %>
-                <%= metric.name %>
-              <% end %>
-              <p class="text-xs text-gray-500 mt-0.5 leading-relaxed"><%= metric.description %></p>
-            </div>
-            <div class="shrink-0 text-right">
-              <% avg = per_metric_avg[metric.name] %>
-              <% if avg %>
-                <span class="text-sm font-semibold text-gray-900"><%= "%.2f" % avg %></span>
-                <span class="text-xs text-gray-400"> / 5</span>
-              <% else %>
-                <span class="text-xs text-gray-400">no results</span>
-              <% end %>
-            </div>
-          </div>
-        <% end %>
+        <% metric_rows.each do |row| %><%= row %><% end %>
       </div>
-      <% if per_metric_avg.any? %>
+      <% if overall_avg %>
         <div class="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
           <span class="text-sm text-gray-500">Overall average</span>
           <span class="text-sm font-semibold text-gray-900">
-            <%= "%.2f" % (per_metric_avg.values.sum / per_metric_avg.size) %> / 5
+            <%= "%.2f" % overall_avg %> / 5
           </span>
         </div>
       <% end %>
     <% end %>
   </div>
 
-  <% if newer_experiment&.pending? || newer_experiment&.running? %>
+  <% if @experiment.newer_experiment&.pending? || @experiment.newer_experiment&.running? %>
     <div class="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
       Evaluation for improved prompt is pending. This page refreshes automatically.
     </div>

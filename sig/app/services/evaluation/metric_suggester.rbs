@@ -13,7 +13,7 @@ module Evaluation
 
     private
 
-    def orchestration_prompt: () -> String?
+    def agent_system_prompt: () -> String?
     def parse_response: (String) -> Array[{ name: String, description: String, weight: Float }]
   end
 end

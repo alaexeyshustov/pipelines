@@ -1,0 +1,6 @@
+module Evaluation
+  module Judge
+    class Agent < ::RubyLLM::Agent
+    end
+  end
+end

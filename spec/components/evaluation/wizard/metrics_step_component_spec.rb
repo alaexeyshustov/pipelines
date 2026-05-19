@@ -3,11 +3,18 @@
 require "rails_helper"
 
 RSpec.describe Evaluation::Wizard::MetricsStepComponent, type: :component do
-  subject(:rendered) { render_inline(described_class.new(agent_name: agent_name, metrics: metrics)) }
+  subject(:rendered) { render_inline(described_class.new(form: build_form)) }
 
   let(:agent_name) { "Emails::ClassifyAgent" }
-  let(:metrics) { create_list(:evaluation_metric, 2, agent_name: agent_name) }
+  let(:metrics)    { create_list(:evaluation_metric, 2, agent_name: agent_name) }
 
+  def build_form(overrides = {})
+    instance_double(Evaluation::Wizard::Step2Form,
+      agent_name: agent_name,
+      metrics:    metrics,
+      **overrides
+    )
+  end
 
   it "renders metric names" do
     metrics.each { |m| expect(rendered.text).to include(m.name) }
@@ -26,7 +33,7 @@ RSpec.describe Evaluation::Wizard::MetricsStepComponent, type: :component do
   end
 
   it "renders empty state when no metrics exist" do
-    rendered = render_inline(described_class.new(agent_name: agent_name, metrics: []))
+    rendered = render_inline(described_class.new(form: build_form(metrics: [])))
     expect(rendered.text).to include("No metrics")
   end
 end

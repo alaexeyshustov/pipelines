@@ -8,17 +8,17 @@ module Evaluation
     validates :evaluator_class, presence: true
 
     def self.per_metric_averages(experiment)
-      conn = connection
-      results_table        = conn.quote_table_name(table_name)
-      justifications_table = conn.quote_table_name(Justification.table_name)
+      results_table        = arel_table
+      justifications_table = Justification.arel_table
 
       joins(
-        "INNER JOIN #{justifications_table} " \
-        "ON #{justifications_table}.evaluation_result_id = #{results_table}.id"
+        results_table.join(justifications_table)
+          .on(justifications_table[:evaluation_result_id].eq(results_table[:id]))
+          .join_sources
       )
         .where(experiment: experiment)
-        .group("#{justifications_table}.metric_name")
-        .average("#{results_table}.score")
+        .group(justifications_table[:metric_name])
+        .average(results_table[:score])
         .transform_keys(&:to_s)
     end
   end

@@ -3,17 +3,19 @@
 module Evaluation
   module Wizard
     class MetricsStepComponent < ViewComponent::Base
-      def initialize(agent_name:, metrics:)
-        @agent_name = agent_name
-        @metrics    = metrics
+      def initialize(form:)
+        @form = form
       end
 
+      def agent_name = @form.agent_name
+      def metrics    = @form.metrics
+
       def metrics_list_id
-        "metrics-list-#{@agent_name}"
+        "metrics-list-#{agent_name}"
       end
 
       def empty?
-        @metrics.empty?
+        metrics.empty?
       end
     end
   end

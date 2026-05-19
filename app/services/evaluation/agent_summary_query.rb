@@ -73,14 +73,10 @@ module Evaluation
       versions = {} #: Hash[String, Integer?]
       Evaluation::Prompt
         .where(name: agent_names)
-        .where("metadata LIKE ?", '%"active":true%')
+        .where("json_extract(metadata, '$.active') = ?", true)
+        .order(version: :desc)
         .each do |p|
-          next if versions.key?(p.name.to_s)
-
-          meta = JSON.parse(p.metadata || "{}")
-          versions[p.name.to_s] = p.version if meta["active"]
-        rescue JSON::ParserError
-          Rails.logger.warn("Prompt #{p.id} has invalid JSON metadata")
+          versions[p.name.to_s] ||= p.version
         end
       versions
     end

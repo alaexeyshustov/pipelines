@@ -3,13 +3,24 @@
 require "rails_helper"
 
 RSpec.describe Evaluation::Wizard::AgentPromptStepComponent, type: :component do
-  subject(:rendered) do
-    render_inline(described_class.new(agent_names: agent_names, prompts: prompts))
-  end
+  subject(:rendered) { render_inline(described_class.new(form: build_form)) }
 
   let(:agent_names) { %w[Emails::ClassifyAgent Chats::SummaryAgent] }
-  let(:prompts) { build_list(:orchestration_prompt, 2) }
+  let(:prompts)     { build_list(:orchestration_prompt, 2) }
 
+  def build_form(overrides = {})
+    instance_double(Evaluation::Wizard::Step1Form,
+      agent_names:      agent_names,
+      prompts:          prompts,
+      agent_name:       nil,
+      prompt_id:        nil,
+      experiment_name:  nil,
+      available_models: [],
+      sample_model:     nil,
+      evaluation_model: nil,
+      **overrides
+    )
+  end
 
   it "renders a form posting to evaluation_experiments_path" do
     expect(rendered.css("form").first["action"]).to include("/evaluation/experiments")
@@ -24,21 +35,13 @@ RSpec.describe Evaluation::Wizard::AgentPromptStepComponent, type: :component do
   end
 
   it "pre-fills agent_name when provided" do
-    rendered = render_inline(described_class.new(
-      agent_names: agent_names,
-      prompts: prompts,
-      agent_name: "Emails::ClassifyAgent"
-    ))
+    rendered = render_inline(described_class.new(form: build_form(agent_name: "Emails::ClassifyAgent")))
     selected = rendered.css("option[selected]").first
     expect(selected&.text).to eq("Emails::ClassifyAgent")
   end
 
   it "pre-fills experiment_name when provided" do
-    rendered = render_inline(described_class.new(
-      agent_names: agent_names,
-      prompts: prompts,
-      experiment_name: "My Eval Run"
-    ))
+    rendered = render_inline(described_class.new(form: build_form(experiment_name: "My Eval Run")))
     expect(rendered.css("input[name*='experiment_name']").first["value"]).to eq("My Eval Run")
   end
 
@@ -47,16 +50,9 @@ RSpec.describe Evaluation::Wizard::AgentPromptStepComponent, type: :component do
   end
 
   context "with available_models" do
-    subject(:rendered) do
-      render_inline(described_class.new(
-        agent_names: agent_names,
-        prompts: prompts,
-        available_models: available_models
-      ))
-    end
+    subject(:rendered) { render_inline(described_class.new(form: build_form(available_models: available_models))) }
 
     let(:available_models) { [ [ "openai", [ "gpt-4o", "gpt-4o-mini" ] ], [ "mistral", [ "mistral-large-latest" ] ] ] }
-
 
     it "renders a sample_model dropdown" do
       expect(rendered.css("select[name='wizard[sample_model]']")).to be_present
@@ -80,23 +76,13 @@ RSpec.describe Evaluation::Wizard::AgentPromptStepComponent, type: :component do
     end
 
     it "pre-selects sample_model when provided" do
-      rendered = render_inline(described_class.new(
-        agent_names: agent_names,
-        prompts: prompts,
-        available_models: available_models,
-        sample_model: "gpt-4o"
-      ))
+      rendered = render_inline(described_class.new(form: build_form(available_models: available_models, sample_model: "gpt-4o")))
       selected = rendered.css("select[name='wizard[sample_model]'] option[selected]").first
       expect(selected&.attribute("value")&.value).to eq("gpt-4o")
     end
 
     it "pre-selects evaluation_model when provided" do
-      rendered = render_inline(described_class.new(
-        agent_names: agent_names,
-        prompts: prompts,
-        available_models: available_models,
-        evaluation_model: "mistral-large-latest"
-      ))
+      rendered = render_inline(described_class.new(form: build_form(available_models: available_models, evaluation_model: "mistral-large-latest")))
       selected = rendered.css("select[name='wizard[evaluation_model]'] option[selected]").first
       expect(selected&.attribute("value")&.value).to eq("mistral-large-latest")
     end

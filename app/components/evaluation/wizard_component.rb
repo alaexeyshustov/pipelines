@@ -2,47 +2,24 @@
 
 module Evaluation
   class WizardComponent < ViewComponent::Base
+    renders_one :step_nav,    -> { Evaluation::Wizard::StepNavComponent.new(current_step: @current_step) }
+    renders_one :prompts_step, -> { Evaluation::Wizard::AgentPromptStepComponent.new(form: @form.step_form(@current_step)) }
+    renders_one :metrics_step, -> { Evaluation::Wizard::MetricsStepComponent.new(form: @form.step_form(@current_step)) }
+    renders_one :dataset_step, -> { Evaluation::Wizard::DatasetStepComponent.new(form: @form.step_form(@current_step)) }
+    renders_one :review_step,  -> { Evaluation::Wizard::ReviewStepComponent.new(form: @form.step_form(@current_step)) }
+
     def initialize(current_step:, form:)
       @current_step = current_step
       @form = form
     end
 
-    private
-
-    def step_content_component
-      sf = @form.step_form(@current_step)
+    def before_render
+      with_step_nav
       case @current_step
-      when 1
-        Evaluation::Wizard::AgentPromptStepComponent.new(
-          agent_names:      sf.agent_names,
-          prompts:          sf.prompts,
-          agent_name:       sf.agent_name,
-          prompt_id:        sf.prompt_id,
-          experiment_name:  sf.experiment_name,
-          available_models: sf.available_models,
-          sample_model:     sf.sample_model,
-          evaluation_model: sf.evaluation_model
-        )
-      when 2
-        Evaluation::Wizard::MetricsStepComponent.new(
-          agent_name: sf.agent_name,
-          metrics:    sf.metrics
-        )
-      when 3
-        Evaluation::Wizard::DatasetStepComponent.new(
-          agent_name:          sf.agent_name,
-          datasets:            sf.datasets,
-          selected_dataset_id: sf.selected_dataset_id,
-          draft_token:         sf.draft_token
-        )
-      when 4
-        Evaluation::Wizard::ReviewStepComponent.new(
-          agent_name:      sf.agent_name,
-          prompt:          sf.prompt,
-          experiment_name: sf.experiment_name,
-          metrics_count:   sf.metrics_count,
-          dataset:         sf.dataset
-        )
+      when 1 then with_prompts_step
+      when 2 then with_metrics_step
+      when 3 then with_dataset_step
+      when 4 then with_review_step
       end
     end
   end

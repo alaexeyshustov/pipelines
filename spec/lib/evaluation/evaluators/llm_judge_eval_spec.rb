@@ -5,6 +5,18 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
 
   let(:agent_name) { "Emails::ClassifyAgent" }
 
+  def stub_judge_agent(scores: nil)
+    scores ||= [
+      { "metric_name" => "tool_call_accuracy", "score" => 4, "justification" => "Correct tool called." },
+      { "metric_name" => "output_quality",      "score" => 5, "justification" => "Clear output." }
+    ]
+    response_content = { "evaluations" => scores }
+    agent_double = instance_double(Evaluation::Judge::Agent)
+    allow(agent_double).to receive_messages(with_model: agent_double, ask: double(content: response_content))
+    allow(Evaluation::Judge::Agent).to receive(:create).and_return(agent_double)
+    agent_double
+  end
+
   describe "#evaluate" do # rubocop:disable RSpec/MultipleMemoizedHelpers
     let(:orchestration_agent) { create(:orchestration_agent, name: agent_name) }
     let(:action) { create(:orchestration_action, kind: :agent, agent: orchestration_agent) }
@@ -16,13 +28,6 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
              pipeline_run: pipeline_run,
              status: "completed",
              input: { "email" => "subject: Job offer" })
-    end
-    let(:llm_response_body) do
-      scores = JSON.generate([
-        { "metric_name" => "tool_call_accuracy", "score" => 4, "justification" => "Correct tool called." },
-        { "metric_name" => "output_quality", "score" => 5, "justification" => "Clear output." }
-      ])
-      { id: "chatcmpl-01", object: "chat.completion", model: "gpt-5.4", choices: [ { index: 0, message: { role: "assistant", content: scores }, finish_reason: "stop" } ], usage: { prompt_tokens: 200, completion_tokens: 80, total_tokens: 280 } }.to_json
     end
     let(:prompt_double) { instance_double(Evaluation::Prompt, system_prompt: "You are a classifier.") }
     let(:runner_result) do
@@ -42,9 +47,6 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
       allow(Evaluation::ToolCallExtractor).to receive(:call).and_return(
         [ { tool_name: "classify_email", arguments: { label: "offer" }, result: "done" } ]
       )
-
-      stub_request(:post, %r{api\.openai\.com})
-        .to_return(status: 200, body: llm_response_body, headers: { "Content-Type" => "application/json" })
     end
 
     context "when recordable does not implement the duck-type interface" do # rubocop:disable RSpec/MultipleMemoizedHelpers
@@ -55,24 +57,23 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
       end
     end
 
-
-
     it "returns per-metric scores with justifications" do
+      stub_judge_agent
       results = eval_instance.evaluate(runner_result, recordable)
       expect(results.size).to eq(2)
       expect(results.first).to include(metric_name: "tool_call_accuracy", score: 4.0, justification: a_kind_of(String))
     end
 
-    it "includes all metrics in the LLM request" do
+    it "passes tool calls to the judge message" do
+      agent_double = stub_judge_agent
       eval_instance.evaluate(runner_result, recordable)
+      expect(agent_double).to have_received(:ask).with(including("classify_email"))
+    end
 
-      expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
-        body = JSON.parse(req.body)
-        messages_text = body["messages"].to_s
-        messages_text.include?("classify_email") &&
-          messages_text.include?("tool_call_accuracy") &&
-          messages_text.include?("output_quality")
-      }
+    it "passes metric names to the judge message" do
+      agent_double = stub_judge_agent
+      eval_instance.evaluate(runner_result, recordable)
+      expect(agent_double).to have_received(:ask).with(including("tool_call_accuracy").and(including("output_quality")))
     end
 
     context "when output is a hash (structured JSON result)" do # rubocop:disable RSpec/MultipleMemoizedHelpers
@@ -89,34 +90,22 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
         )
       end
 
-      it "sends the output as valid JSON, not Ruby hash syntax" do
+      it "serialises the output as valid JSON (not Ruby inspect) in the judge message" do
+        agent_double = stub_judge_agent
         eval_instance.evaluate(runner_result, recordable)
-
-        expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
-          body = JSON.parse(req.body)
-          messages_text = body["messages"].map { |m| m["content"] }.join
-          # Valid JSON uses colons; Ruby inspect would produce =>
-          messages_text.include?('"id"') && !messages_text.include?("=>")
-        }
+        expect(agent_double).to have_received(:ask) do |message|
+          expect(message).to include('"id"')
+          expect(message).not_to include("=>")
+        end
       end
     end
 
-    it "requests temperature 0 (gpt-5 models normalize this to 1.0 per provider requirements)" do
-      eval_instance.evaluate(runner_result, recordable)
-
-      # gpt-5* models require temperature=1.0 regardless of the requested value;
-      # RubyLLM normalizes it automatically (see providers/openai/temperature.rb).
-      expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
-        JSON.parse(req.body)["temperature"] == 1.0
-      }
-    end
-
-    context "when the LLM returns invalid JSON" do # rubocop:disable RSpec/MultipleMemoizedHelpers
-      let(:llm_response_body) do
-        { id: "chatcmpl-02", object: "chat.completion", model: "gpt-5.4", choices: [ { index: 0, message: { role: "assistant", content: "not json" }, finish_reason: "stop" } ], usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 } }.to_json
-      end
-
+    context "when the judge agent returns unexpected content" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       it "returns an empty array without raising" do
+        agent_double = instance_double(Evaluation::Judge::Agent)
+        allow(agent_double).to receive_messages(with_model: agent_double, ask: double(content: "not a hash"))
+        allow(Evaluation::Judge::Agent).to receive(:create).and_return(agent_double)
+
         expect(eval_instance.evaluate(runner_result, recordable)).to eq([])
       end
     end
@@ -136,15 +125,9 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
       end
     end
 
-    context "when the LLM returns a score outside 1–5" do # rubocop:disable RSpec/MultipleMemoizedHelpers
-      let(:llm_response_body) do
-        scores = JSON.generate([
-          { "metric_name" => "tool_call_accuracy", "score" => 10, "justification" => "Way off." }
-        ])
-        { id: "chatcmpl-03", object: "chat.completion", model: "gpt-5.4", choices: [ { index: 0, message: { role: "assistant", content: scores }, finish_reason: "stop" } ], usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 } }.to_json
-      end
-
+    context "when the judge returns a score outside 1–5" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       it "drops the invalid entry and returns an empty array" do
+        stub_judge_agent(scores: [ { "metric_name" => "tool_call_accuracy", "score" => 10, "justification" => "Way off." } ])
         expect(eval_instance.evaluate(runner_result, recordable)).to eq([])
       end
     end
@@ -152,10 +135,11 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
     context "when no active metrics exist" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       before { Evaluation::Metric.update_all(active: false) }
 
-      it "skips the LLM call and returns an empty array" do
+      it "skips the judge and returns an empty array" do
+        allow(Evaluation::Judge::Agent).to receive(:create)
         result = eval_instance.evaluate(runner_result, recordable)
         expect(result).to eq([])
-        expect(WebMock).not_to have_requested(:post, %r{api\.openai\.com})
+        expect(Evaluation::Judge::Agent).not_to have_received(:create)
       end
     end
   end
@@ -185,14 +169,10 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
       create(:evaluation_metric, agent_name: agent_name, name: "tool_call_accuracy", description: "Tool call accuracy.")
       create(:evaluation_metric, agent_name: agent_name, name: "output_quality", description: "Output quality.")
       allow(Evaluation::ToolCallExtractor).to receive(:call).and_return([])
-
-      scores = JSON.generate([
+      stub_judge_agent(scores: [
         { "metric_name" => "tool_call_accuracy", "score" => 4, "justification" => "Good." },
-        { "metric_name" => "output_quality", "score" => 5, "justification" => "Excellent." }
+        { "metric_name" => "output_quality",      "score" => 5, "justification" => "Excellent." }
       ])
-      body = { id: "chatcmpl-01", object: "chat.completion", model: "gpt-5.4", choices: [ { index: 0, message: { role: "assistant", content: scores }, finish_reason: "stop" } ], usage: { prompt_tokens: 200, completion_tokens: 80, total_tokens: 280 } }.to_json
-      stub_request(:post, %r{api\.openai\.com})
-        .to_return(status: 200, body: body, headers: { "Content-Type" => "application/json" })
     end
 
     it "creates one EvaluationResult per metric" do

@@ -1,18 +1,6 @@
 module Evaluation
   module Evaluators
     class LLMJudgeEval < BaseEval
-      SYSTEM_PROMPT = <<~PROMPT.freeze
-        You are an impartial LLM judge evaluating an AI agent's response.
-        You will be given the agent's instructions, the input it received, the expected tool call sequence,
-        the actual tool call sequence, the output, and a set of evaluation metrics with rubrics.
-
-        For each metric, assign a score from 1 to 5 and provide a justification.
-        Return ONLY a JSON array with no additional text. Each element must have:
-        - "metric_name": the metric name (string)
-        - "score": integer from 1 to 5
-        - "justification": explanation of the score (string)
-      PROMPT
-
       @judge_model = ENV.fetch("JUDGE_LLM_MODEL", "gpt-5.4")
 
       class << self
@@ -97,11 +85,7 @@ module Evaluation
           metrics: metrics
         )
 
-        response = RubyLLM.chat(model: model)
-                          .with_temperature(0)
-                          .with_instructions(SYSTEM_PROMPT)
-                          .ask(user_message)
-
+        response = Evaluation::Judge::Agent.create.with_model(model).ask(user_message)
         parse_judge_response(response.content)
       rescue StandardError => e
         Rails.logger.error("LLMJudgeEval: judge call failed: #{e.message}")
@@ -133,10 +117,10 @@ module Evaluation
       end
 
       def parse_judge_response(content)
-        parsed = JSON.parse(content)
-        raise ArgumentError, "expected Array" unless parsed.is_a?(Array)
+        entries = content.is_a?(Hash) ? Array(content["evaluations"]) : JSON.parse(content)
+        raise ArgumentError, "expected Array" unless entries.is_a?(Array)
 
-        parsed.each_with_index.filter_map { |entry, i| normalize_entry(entry, i) }
+        entries.each_with_index.filter_map { |entry, i| normalize_entry(entry, i) }
       rescue JSON::ParserError, ArgumentError => e
         Rails.logger.error("LLMJudgeEval: failed to parse judge response: #{e.message}")
         []

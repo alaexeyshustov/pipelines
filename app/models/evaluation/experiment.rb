@@ -9,5 +9,27 @@ module Evaluation
     enum :status, { pending: 0, running: 1, completed: 2, failed: 3 }, default: :pending
     serialize :evaluator_classes, coder: JSON, type: Array
     serialize :metadata, coder: JSON
+
+    def agent_name
+      prompt&.name
+    end
+
+    def runner_model
+      meta = metadata || {}
+      agent = agent_name ? Orchestration::Agent.find_by(name: agent_name) : nil
+      meta["pipeline_model"].presence || agent&.model.presence
+    end
+
+    def newer_experiment
+      return unless prompt
+
+      Experiment
+        .joins(:prompt)
+        .where(evaluation_prompts: { name: prompt.name })
+        .where("evaluation_experiments.id > ?", id)
+        .order(id: :desc)
+        .includes(:prompt)
+        .first
+    end
   end
 end

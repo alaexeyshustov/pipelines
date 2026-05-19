@@ -1,5 +1,5 @@
-<%= render Evaluation::Wizard::StepNavComponent.new(current_step: @current_step) %>
+<%= step_nav %>
 
 <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-  <%= render step_content_component %>
+  <%= prompts_step || metrics_step || dataset_step || review_step %>
 </div>

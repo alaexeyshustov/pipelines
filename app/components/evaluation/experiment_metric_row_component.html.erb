@@ -1,0 +1,16 @@
+<div class="flex items-start justify-between py-3 first:pt-0 last:pb-0">
+  <div class="min-w-0 flex-1 pr-4">
+    <%= link_to metric_results_path, class: "text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline" do %>
+      <%= @metric.name %>
+    <% end %>
+    <p class="text-xs text-gray-500 mt-0.5 leading-relaxed"><%= @metric.description %></p>
+  </div>
+  <div class="shrink-0 text-right">
+    <% if avg_label %>
+      <span class="text-sm font-semibold text-gray-900"><%= avg_label %></span>
+      <span class="text-xs text-gray-400"> / 5</span>
+    <% else %>
+      <span class="text-xs text-gray-400">no results</span>
+    <% end %>
+  </div>
+</div>
