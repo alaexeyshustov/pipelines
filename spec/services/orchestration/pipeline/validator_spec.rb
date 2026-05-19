@@ -59,13 +59,14 @@ RSpec.describe Orchestration::Pipeline::Validator do
     end
 
     context 'with a valid from but typo in path against upstream output_schema' do
-      let(:upstream_action) do
-        create(:orchestration_action,
+      let(:upstream_agent) do
+        create(:orchestration_agent,
                output_schema: {
                  "type" => "object",
                  "properties" => { "result" => { "type" => "string" } }
                })
       end
+      let(:upstream_action) { create(:orchestration_action, agent: upstream_agent) }
       let(:step2) { create(:orchestration_step, pipeline: pipeline, position: 2) }
 
       before do
@@ -119,73 +120,6 @@ RSpec.describe Orchestration::Pipeline::Validator do
       end
     end
 
-    context 'with a missing required input_schema key' do
-      let(:action) do
-        create(:orchestration_action,
-               input_schema: {
-                 "type" => "object",
-                 "required" => [ "emails", "date" ]
-               })
-      end
-
-      before do
-        create(:orchestration_step_action,
-               step: step, position: 1, output_key: "fetch",
-               action: action,
-               input_mapping: { "emails" => { "from" => "_initial" } })
-      end
-
-      it 'returns a missing_required_key error naming the missing key' do
-        results = validator.call
-        error = results.first.errors.first
-        expect(error.code).to eq(:missing_required_key)
-        expect(error.message).to include("date")
-      end
-
-      it 'does not error on covered keys' do
-        errors = validator.call.first.errors
-        expect(errors.none? { |e| e.message.include?("emails") }).to be true
-      end
-    end
-
-    context 'when a required input_schema key is covered by step_action params' do
-      let(:action) do
-        create(:orchestration_action,
-               input_schema: { "type" => "object", "required" => [ "date" ] })
-      end
-
-      before do
-        create(:orchestration_step_action,
-               step: step, position: 1, output_key: "fetch",
-               action: action,
-               params: { "date" => "2026-05-10" },
-               input_mapping: nil)
-      end
-
-      it 'returns no error' do
-        expect(validator.call.first.errors).to be_empty
-      end
-    end
-
-    context 'when a required input_schema key is covered by action default params' do
-      let(:action) do
-        create(:orchestration_action,
-               params: { "date" => "default" },
-               input_schema: { "type" => "object", "required" => [ "date" ] })
-      end
-
-      before do
-        create(:orchestration_step_action,
-               step: step, position: 1, output_key: "fetch",
-               action: action,
-               input_mapping: nil)
-      end
-
-      it 'returns no error' do
-        expect(validator.call.first.errors).to be_empty
-      end
-    end
-
     context 'with a key collision between input_mapping and params' do
       let(:action) do
         create(:orchestration_action, params: { "key1" => "default_value" })
@@ -230,23 +164,6 @@ RSpec.describe Orchestration::Pipeline::Validator do
 
       it 'returns no errors for the malformed entry' do
         expect(validator.call.first.errors).to be_empty
-      end
-    end
-
-    context 'with a non-Array required field in input_schema' do
-      let(:action) do
-        create(:orchestration_action,
-               input_schema: { "type" => "object", "required" => "emails" })
-      end
-
-      before do
-        create(:orchestration_step_action,
-               step: step, position: 1, output_key: "fetch",
-               action: action, input_mapping: nil)
-      end
-
-      it 'does not raise' do
-        expect { validator.call }.not_to raise_error
       end
     end
 

@@ -67,9 +67,8 @@ module Orchestration
 
     def action_params
       permitted = params.require(:orchestration_action).permit(
-        :name, :description, :kind, :agent_id, :agent_class, :tools, :prompt, :params
+        :name, :description, :kind, :agent_id, :agent_class, :params
       )
-      parse_json_field(permitted, :tools)
       parse_json_field(permitted, :params)
       permitted
     rescue JSON::ParserError

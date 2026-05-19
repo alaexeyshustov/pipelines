@@ -321,7 +321,7 @@ steps = [
   { name: "Classify Emails",                kind: :agent,   agent_name: "Emails::ClassifyAgent",                                           sa_input_mapping: CLASSIFY_EMAILS_INPUT_MAPPING  },
   { name: "Filter Emails",                  kind: :agent,   agent_name: "Emails::FilterAgent",  sa_params: FILTER_EMAILS_STEP_PARAMS,      sa_input_mapping: FILTER_EMAILS_INPUT_MAPPING    },
   { name: "Ingest Emails",                  kind: :service, agent_class: "Orchestration::IngestionExecutor",  params: INGEST_EMAILS_PARAMS, sa_input_mapping: INGEST_EMAILS_INPUT_MAPPING   },
-  { name: "Map Emails",                     kind: :agent,   agent_name: "Emails::MappingAgent",  schema_class: "ApplicationMailsSchema",   sa_input_mapping: MAP_EMAILS_INPUT_MAPPING       },
+  { name: "Map Emails",                     kind: :agent,   agent_name: "Emails::MappingAgent",                                            sa_input_mapping: MAP_EMAILS_INPUT_MAPPING       },
   { name: "Store Emails",                   kind: :agent,   agent_name: "Records::StoreAgent",   sa_params: STORE_EMAILS_STEP_PARAMS,      sa_input_mapping: STORE_EMAILS_INPUT_MAPPING     },
   { name: "Query Email Records",            kind: :service, agent_class: "Orchestration::QueryExecutor",  params: QUERY_EMAIL_RECORDS_PARAMS, sa_input_mapping: QUERY_EMAIL_RECORDS_INPUT_MAPPING },
   { name: "Normalize Emails",               kind: :agent,   agent_name: "Records::NormalizeAgent",  sa_params: NORMALIZE_EMAILS_STEP_PARAMS, sa_input_mapping: NORMALIZE_EMAILS_INPUT_MAPPING },
@@ -344,12 +344,10 @@ action_records = steps.map do |attrs|
   end
 
   Orchestration::Action.find_or_initialize_by(name: attrs[:name]).tap do |a|
-    a.kind          = attrs[:kind]
-    a.agent         = agent_record
-    a.agent_class   = attrs[:agent_class]
-    a.output_schema = attrs[:output_schema]
-    a.params        = attrs[:params]
-    a.schema_class  = attrs[:schema_class]
+    a.kind        = attrs[:kind]
+    a.agent       = agent_record
+    a.agent_class = attrs[:agent_class]
+    a.params      = attrs[:params]
     a.save!
   end
 end

@@ -110,12 +110,6 @@ FOREIGN KEY ("evaluation_result_id")
 CREATE INDEX "index_evaluation_justifications_on_evaluation_result_id" ON "evaluation_justifications" ("evaluation_result_id") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "orchestration_agents" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "description" text, "model" varchar, "tools" json DEFAULT '[]', "enabled" boolean DEFAULT TRUE NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "prompt" text /*application='ApplicationPipeline'*/, "params" json DEFAULT '{}' NOT NULL /*application='ApplicationPipeline'*/, "output_schema" json /*application='ApplicationPipeline'*/);
 CREATE UNIQUE INDEX "index_orchestration_agents_on_name" ON "orchestration_agents" ("name") /*application='ApplicationPipeline'*/;
-CREATE TABLE IF NOT EXISTS "actions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "agent_class" varchar, "description" text, "model" varchar, "tools" json, "prompt" text, "params" json, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "output_schema" json, "schema_class" varchar, "kind" varchar DEFAULT 'service' NOT NULL, "agent_id" integer, "input_schema" json /*application='ApplicationPipeline'*/, CONSTRAINT "fk_rails_951418a714"
-FOREIGN KEY ("agent_id")
-  REFERENCES "orchestration_agents" ("id")
-);
-CREATE INDEX "index_actions_on_agent_class" ON "actions" ("agent_class") /*application='ApplicationPipeline'*/;
-CREATE INDEX "index_actions_on_agent_id" ON "actions" ("agent_id") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "email_connectors" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "provider" varchar NOT NULL, "configuration" text, "enabled" boolean DEFAULT TRUE NOT NULL, "last_connected_at" datetime(6), "status" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE TABLE IF NOT EXISTS "step_actions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "step_id" integer NOT NULL, "action_id" integer NOT NULL, "position" integer NOT NULL, "params" json, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "input_mapping" json, "output_key" varchar NOT NULL, CONSTRAINT "fk_rails_0b2a35e398"
 FOREIGN KEY ("action_id")
@@ -148,7 +142,14 @@ CREATE INDEX "index_evaluation_evaluation_results_on_runner_result_id" ON "evalu
 CREATE INDEX "index_evaluation_evaluation_results_on_dataset_record_id" ON "evaluation_evaluation_results" ("dataset_record_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_evaluation_results_on_experiment_id" ON "evaluation_evaluation_results" ("experiment_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_prompts_on_name" ON "evaluation_prompts" ("name") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "actions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "agent_class" varchar, "description" text, "params" json, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "kind" varchar DEFAULT 'service' NOT NULL, "agent_id" integer, CONSTRAINT "fk_rails_951418a714"
+FOREIGN KEY ("agent_id")
+  REFERENCES "orchestration_agents" ("id")
+);
+CREATE INDEX "index_actions_on_agent_class" ON "actions" ("agent_class") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_actions_on_agent_id" ON "actions" ("agent_id") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260519000001'),
 ('20260516212546'),
 ('20260516185423'),
 ('20260514000002'),

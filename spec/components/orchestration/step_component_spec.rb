@@ -160,7 +160,7 @@ RSpec.describe Orchestration::StepComponent, type: :component do
       sa = build_stubbed(:orchestration_step_action,
                          id: 99, output_key: "my_action",
                          input_mapping: { "email" => { "from" => "_initial", "path" => nil } },
-                         action: build_stubbed(:orchestration_action, name: "My Action", output_schema: nil)).tap do |s|
+                         action: build_stubbed(:orchestration_action, name: "My Action")).tap do |s|
         allow(s).to receive(:params).and_return(nil)
       end
       the_step = build_stubbed(:orchestration_step, id: 10, pipeline: pipeline, name: "My Step", position: 2, enabled: true).tap do |s|
@@ -193,7 +193,7 @@ RSpec.describe Orchestration::StepComponent, type: :component do
       sa = build_stubbed(:orchestration_step_action,
                          id: 99, output_key: "my_action",
                          input_mapping: { "email" => { "from" => "prior_action", "path" => nil } },
-                         action: build_stubbed(:orchestration_action, name: "My Action", output_schema: nil)).tap do |s|
+                         action: build_stubbed(:orchestration_action, name: "My Action")).tap do |s|
         allow(s).to receive(:params).and_return(nil)
       end
       the_step = build_stubbed(:orchestration_step, id: 10, pipeline: pipeline, name: "My Step", position: 2, enabled: true).tap do |s|
@@ -221,7 +221,7 @@ RSpec.describe Orchestration::StepComponent, type: :component do
       sa = build_stubbed(:orchestration_step_action,
                          id: 99, output_key: "my_action",
                          input_mapping: { "email" => { "from" => "_initial", "path" => nil } },
-                         action: build_stubbed(:orchestration_action, name: "My Action", output_schema: nil)).tap do |s|
+                         action: build_stubbed(:orchestration_action, name: "My Action")).tap do |s|
         allow(s).to receive(:params).and_return(nil)
       end
       the_step = build_stubbed(:orchestration_step, id: 10, pipeline: pipeline, name: "My Step", position: 2, enabled: true).tap do |s|
@@ -249,7 +249,7 @@ RSpec.describe Orchestration::StepComponent, type: :component do
       sa = build_stubbed(:orchestration_step_action,
                          id: 99, output_key: "my_action",
                          input_mapping: {},
-                         action: build_stubbed(:orchestration_action, name: "My Action", output_schema: nil)).tap do |s|
+                         action: build_stubbed(:orchestration_action, name: "My Action")).tap do |s|
         allow(s).to receive(:params).and_return(nil)
       end
       the_step = build_stubbed(:orchestration_step, id: 10, pipeline: pipeline, name: "My Step", position: 2, enabled: true).tap do |s|
@@ -284,7 +284,7 @@ RSpec.describe Orchestration::StepComponent, type: :component do
       sa = build_stubbed(:orchestration_step_action,
                          id: 99, output_key: "my_action",
                          input_mapping: {},
-                         action: build_stubbed(:orchestration_action, name: "My Action", output_schema: nil)).tap do |s|
+                         action: build_stubbed(:orchestration_action, name: "My Action")).tap do |s|
         allow(s).to receive(:params).and_return(nil)
       end
       the_step = build_stubbed(:orchestration_step, id: 10, pipeline: pipeline, name: "My Step", position: 2, enabled: true).tap do |s|
