@@ -26,7 +26,7 @@ module Orchestration
     end
 
     def show
-      @steps = @pipeline.steps.includes(step_actions: :action)
+      @steps = @pipeline.steps.includes(step_actions: { action: :agent })
       @actions = Orchestration::Action.order(:name)
       @latest_run = @pipeline.pipeline_runs.order(created_at: :desc).first
     end

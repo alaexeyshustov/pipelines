@@ -71,6 +71,7 @@ module Orchestration
       action_run.update!(status: "running", started_at: Time.current)
       action = action_run.step_action.action
       execution = run_agent(action_run)
+      # Service-kind actions return output from a controlled Ruby class; no schema validation needed.
       validate_output!(action, execution[:output], raw_content: execution[:raw_content]) if action.agent?
       action_run.update!(status: "completed", output: execution[:output], error: nil, error_details: nil, finished_at: Time.current)
     rescue StandardError => error

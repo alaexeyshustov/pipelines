@@ -36,7 +36,7 @@ module Orchestration
       private
 
       def ordered_step_actions
-        @pipeline.steps.includes(step_actions: :action).flat_map do |step|
+        @pipeline.steps.includes(step_actions: { action: :agent }).flat_map do |step|
           step.step_actions.sort_by(&:position)
         end
       end

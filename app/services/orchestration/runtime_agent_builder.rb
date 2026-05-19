@@ -25,7 +25,7 @@ module Orchestration
     end
 
     def resolved_output_schema
-      agent_record.output_schema
+      agent_record.output_schema.presence
     end
 
     def resolved_params
