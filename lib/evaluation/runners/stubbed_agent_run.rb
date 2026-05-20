@@ -16,12 +16,13 @@ module Evaluation
         tool_classes = resolve_tools(agent_record)
         stubbed_tools = tool_classes.map { |tool_class| stub_tool(tool_class, registry) }
         pipeline_model = @experiment&.sample_model
-        agent = Orchestration::RuntimeAgentBuilder.new(
+        policy = Orchestration::AgentResolutionPolicy.call(
           action: action,
           tool_classes: stubbed_tools,
           pipeline_model: pipeline_model,
           prompt_override: @prompt&.system_prompt
-        ).build
+        )
+        agent = Orchestration::RuntimeAgentBuilder.new(policy: policy).build
 
         result = agent.ask(record.input.to_json)
 

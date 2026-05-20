@@ -1,0 +1,49 @@
+module Orchestration
+  class AgentResolutionPolicy
+    class Result
+      attr_reader model: String?
+      attr_reader prompt: String?
+      attr_reader tools: Array[untyped]?
+      attr_reader params: Hash[String, untyped]
+      attr_reader output_schema: Hash[String, untyped]?
+      attr_reader generation_schema: Hash[String, untyped]?
+
+      def initialize: (
+        model: String?,
+        prompt: String?,
+        tools: Array[untyped]?,
+        params: Hash[String, untyped],
+        output_schema: Hash[String, untyped]?,
+        generation_schema: Hash[String, untyped]?
+      ) -> void
+    end
+
+    def self.call: (
+      action: Action,
+      ?pipeline_model: String?,
+      ?prompt_override: String?,
+      ?step_params: Hash[String, untyped]?,
+      ?tool_classes: Array[untyped]?
+    ) -> Result
+
+    def initialize: (
+      action: Action,
+      ?pipeline_model: String?,
+      ?prompt_override: String?,
+      ?step_params: Hash[String, untyped]?,
+      ?tool_classes: Array[untyped]?
+    ) -> void
+
+    def call: () -> Result
+
+    private
+
+    def agent_record: () -> Agent
+    def resolved_model: () -> String?
+    def resolved_prompt: () -> String?
+    def resolved_tools: () -> Array[untyped]?
+    def resolved_params: () -> Hash[String, untyped]
+    def resolved_output_schema: () -> Hash[String, untyped]?
+    def resolved_generation_schema: () -> Hash[String, untyped]?
+  end
+end

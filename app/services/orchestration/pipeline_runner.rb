@@ -70,31 +70,37 @@ module Orchestration
     def execute_action(action_run)
       action_run.update!(status: "running", started_at: Time.current)
       action = action_run.step_action.action
-      execution = run_agent(action_run)
-      # Service-kind actions return output from a controlled Ruby class; no schema validation needed.
-      validate_output!(action, execution[:output], raw_content: execution[:raw_content]) if action.agent?
+      policy = action.agent? ? resolve_policy(action_run) : nil
+      execution = run_agent(action_run, policy: policy)
+      if action.agent?
+        raise ArgumentError, "policy missing for agent action" unless policy
+        validate_output!(execution[:output], policy: policy, raw_content: execution[:raw_content])
+      end
       action_run.update!(status: "completed", output: execution[:output], error: nil, error_details: nil, finished_at: Time.current)
     rescue StandardError => error
       handle_action_failure(action_run, error, raw_content: execution&.dig(:raw_content))
     end
 
-    def run_agent(action_run)
+    def run_agent(action_run, policy: nil)
       action = action_run.step_action.action
       input  = action_run.input || {} # : Hash[String, untyped]
 
       if action.agent?
-        builder = RuntimeAgentBuilder.new(
-          action: action,
-          pipeline_model: @pipeline_run.pipeline.model,
-          prompt_override: prompt_for(action.agent&.name),
-          step_params: action_run.step_action.params
-        )
+        raise ArgumentError, "policy missing for agent action" unless policy
+        builder = RuntimeAgentBuilder.new(policy: policy)
         agent = builder.build
         chat_id = agent.respond_to?(:chat) ? agent.chat&.id : agent.id
-        action_run.update_columns(chat_id: chat_id, agent_snapshot: builder.snapshot)
-        result = agent.ask(builder.resolved_params.merge(input).to_json)
-        output = parse_content(result.content, structured_output_expected?(action))
-        normalized_output = action.agent&.output_schema.present? ? output : { "result" => output }
+        snapshot = {
+          model: policy.model,
+          prompt: policy.prompt,
+          tools: policy.tools&.map(&:to_s) || [],
+          params: policy.params,
+          output_schema: policy.output_schema
+        }
+        action_run.update_columns(chat_id: chat_id, agent_snapshot: snapshot)
+        result = agent.ask(policy.params.merge(input).to_json)
+        output = parse_content(result.content, policy.output_schema.present?)
+        normalized_output = policy.output_schema.present? ? output : { "result" => output }
         { output: normalized_output, raw_content: result.content }
       else
         klass = action.agent_class&.constantize
@@ -103,6 +109,16 @@ module Orchestration
         params = (action.params || {}).merge(action_run.step_action.params || {})
         { output: klass.call(input, params), raw_content: nil }
       end
+    end
+
+    def resolve_policy(action_run)
+      action = action_run.step_action.action
+      AgentResolutionPolicy.call(
+        action: action,
+        pipeline_model: @pipeline_run.pipeline.model,
+        prompt_override: prompt_for(action.agent&.name),
+        step_params: action_run.step_action.params
+      )
     end
 
     def parse_content(content, structured_output_expected)
@@ -115,11 +131,10 @@ module Orchestration
       content
     end
 
-    def validate_output!(action, output, raw_content:)
-      schema = action.agent&.output_schema
-      SchemaValidator.new(schema).validate!(output)
+    def validate_output!(output, policy:, raw_content:)
+      SchemaValidator.new(policy.output_schema).validate!(output)
     rescue SchemaValidator::Error => error
-      raise error unless structured_output_expected?(action)
+      raise error unless policy.output_schema.present?
 
       raise InvalidModelOutputError.new("Invalid model output: #{error.message}", raw_content: raw_content)
     end
@@ -151,10 +166,6 @@ module Orchestration
           summary: failure.summary
         }.to_json
       )
-    end
-
-    def structured_output_expected?(action)
-      action.agent&.output_schema.present?
     end
 
     def prompt_for(agent_class)
