@@ -54,37 +54,39 @@ RSpec.describe Orchestration::PipelineRunForm do
       end
     end
 
-    context "with initial_input_schema" do
+    context "when pipeline has a schema and initial_input is valid" do
       let(:schema) do
-        { "type" => "object", "required" => ["date"],
+        { "type" => "object", "required" => [ "date" ],
           "properties" => { "date" => { "type" => "string" } } }
       end
       let(:pipeline) { create(:orchestration_pipeline, initial_input_schema: schema) }
+      let(:raw_params) { ActionController::Parameters.new("date" => "2026-05-20") }
+      let(:form) { described_class.new(pipeline: pipeline, initial_input_params: raw_params) }
 
-      context "when initial_input is valid" do
-        let(:raw_params) { ActionController::Parameters.new("date" => "2026-05-20") }
-        let(:form) { described_class.new(pipeline: pipeline, initial_input_params: raw_params) }
+      before { allow(PipelineRunJob).to receive(:perform_later) }
 
-        before { allow(PipelineRunJob).to receive(:perform_later) }
+      it "creates the run with initial_input set" do
+        form.save
+        expect(Orchestration::PipelineRun.last.initial_input).to eq("date" => "2026-05-20")
+      end
+    end
 
-        it "creates the run with initial_input set" do
-          form.save
-          expect(Orchestration::PipelineRun.last.initial_input).to eq("date" => "2026-05-20")
-        end
+    context "when pipeline has a schema and initial_input is missing a required field" do
+      let(:schema) do
+        { "type" => "object", "required" => [ "date" ],
+          "properties" => { "date" => { "type" => "string" } } }
+      end
+      let(:pipeline) { create(:orchestration_pipeline, initial_input_schema: schema) }
+      let(:raw_params) { ActionController::Parameters.new({}) }
+      let(:form) { described_class.new(pipeline: pipeline, initial_input_params: raw_params) }
+
+      it "returns false" do
+        expect(form.save).to be false
       end
 
-      context "when initial_input is missing a required field" do
-        let(:raw_params) { ActionController::Parameters.new({}) }
-        let(:form) { described_class.new(pipeline: pipeline, initial_input_params: raw_params) }
-
-        it "returns false" do
-          expect(form.save).to be false
-        end
-
-        it "adds a schema validation error" do
-          form.save
-          expect(form.errors.full_messages.first).to include("missing required key")
-        end
+      it "adds a schema validation error" do
+        form.save
+        expect(form.errors.full_messages.first).to include("missing required key")
       end
     end
 
