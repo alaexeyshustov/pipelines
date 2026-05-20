@@ -1,6 +1,14 @@
 require 'rails_helper'
 
 RSpec.describe Orchestration::AgentResolutionPolicy do
+  subject(:policy) do
+    described_class.call(
+      action: action,
+      pipeline_model: "mistral-large",
+      step_params: { "limit" => 5 }
+    )
+  end
+
   let(:agent_record) do
     create(:orchestration_agent,
            model: "mistral-small",
@@ -10,14 +18,6 @@ RSpec.describe Orchestration::AgentResolutionPolicy do
            output_schema: { "type" => "object" })
   end
   let(:action) { create(:orchestration_action, agent: agent_record) }
-
-  subject(:policy) do
-    described_class.call(
-      action: action,
-      pipeline_model: "mistral-large",
-      step_params: { "limit" => 5 }
-    )
-  end
 
   describe '#model' do
     it 'prefers pipeline_model over agent model' do

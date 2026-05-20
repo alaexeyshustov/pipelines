@@ -1,6 +1,8 @@
 require 'rails_helper'
 
 RSpec.describe Orchestration::RuntimeAgentBuilder do
+  subject(:builder) { described_class.new(policy: policy) }
+
   let(:policy) do
     Orchestration::AgentResolutionPolicy::Result.new(
       model: "mistral-large-latest",
@@ -11,8 +13,6 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
       generation_schema: { "type" => "object" }
     )
   end
-
-  subject(:builder) { described_class.new(policy: policy) }
 
   describe '#build' do
     it 'returns a RubyLLM::Agent instance' do

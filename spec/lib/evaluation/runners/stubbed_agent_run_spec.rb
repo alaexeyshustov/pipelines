@@ -141,10 +141,10 @@ RSpec.describe Evaluation::Runners::StubbedAgentRun do # rubocop:disable RSpec/M
 
       before { runner.instance_variable_set(:@prompt, evaluation_prompt) }
 
-      it "passes the prompt system_prompt as prompt_override to RuntimeAgentBuilder" do
-        allow(Orchestration::RuntimeAgentBuilder).to receive(:new).and_call_original
+      it "passes the prompt system_prompt as prompt_override to AgentResolutionPolicy" do
+        allow(Orchestration::AgentResolutionPolicy).to receive(:call).and_call_original
         runner.execute(action_run)
-        expect(Orchestration::RuntimeAgentBuilder).to have_received(:new)
+        expect(Orchestration::AgentResolutionPolicy).to have_received(:call)
           .with(hash_including(prompt_override: "Custom instructions for evaluation."))
       end
     end
@@ -158,10 +158,10 @@ RSpec.describe Evaluation::Runners::StubbedAgentRun do # rubocop:disable RSpec/M
 
       before { runner.instance_variable_set(:@experiment, experiment) }
 
-      it "passes sample_model as pipeline_model to RuntimeAgentBuilder" do
-        allow(Orchestration::RuntimeAgentBuilder).to receive(:new).and_call_original
+      it "passes sample_model as pipeline_model to AgentResolutionPolicy" do
+        allow(Orchestration::AgentResolutionPolicy).to receive(:call).and_call_original
         runner.execute(action_run)
-        expect(Orchestration::RuntimeAgentBuilder).to have_received(:new)
+        expect(Orchestration::AgentResolutionPolicy).to have_received(:call)
           .with(hash_including(pipeline_model: "mistral-small-latest"))
       end
     end
