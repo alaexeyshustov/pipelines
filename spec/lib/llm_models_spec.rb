@@ -3,47 +3,67 @@
 require "rails_helper"
 
 RSpec.describe LlmModels do
+  def with_env(key, value)
+    previous = ENV[key]
+    ENV[key] = value
+    yield
+  ensure
+    ENV[key] = previous
+  end
+
   describe ".emails_agent" do
     it "defaults to mistral-large-latest" do
-      expect(described_class.emails_agent).to eq("mistral-large-latest")
+      with_env("EMAILS_AGENT_MODEL", nil) do
+        expect(described_class.emails_agent).to eq("mistral-large-latest")
+      end
     end
 
     it "reads from EMAILS_AGENT_MODEL" do
-      allow(ENV).to receive(:fetch).with("EMAILS_AGENT_MODEL", anything).and_return("custom-model")
-      expect(described_class.emails_agent).to eq("custom-model")
+      with_env("EMAILS_AGENT_MODEL", "custom-model") do
+        expect(described_class.emails_agent).to eq("custom-model")
+      end
     end
   end
 
   describe ".records_agent" do
     it "defaults to gpt-5.1" do
-      expect(described_class.records_agent).to eq("gpt-5.1")
+      with_env("RECORDS_AGENT_MODEL", nil) do
+        expect(described_class.records_agent).to eq("gpt-5.1")
+      end
     end
 
     it "reads from RECORDS_AGENT_MODEL" do
-      allow(ENV).to receive(:fetch).with("RECORDS_AGENT_MODEL", anything).and_return("gpt-4o")
-      expect(described_class.records_agent).to eq("gpt-4o")
+      with_env("RECORDS_AGENT_MODEL", "gpt-4o") do
+        expect(described_class.records_agent).to eq("gpt-4o")
+      end
     end
   end
 
   describe ".evaluation" do
     it "defaults to gpt-5.4" do
-      expect(described_class.evaluation).to eq("gpt-5.4")
+      with_env("EVALUATION_LLM_MODEL", nil) do
+        expect(described_class.evaluation).to eq("gpt-5.4")
+      end
     end
 
     it "reads from EVALUATION_LLM_MODEL" do
-      allow(ENV).to receive(:fetch).with("EVALUATION_LLM_MODEL", anything).and_return("gpt-4-turbo")
-      expect(described_class.evaluation).to eq("gpt-4-turbo")
+      with_env("EVALUATION_LLM_MODEL", "gpt-4-turbo") do
+        expect(described_class.evaluation).to eq("gpt-4-turbo")
+      end
     end
   end
 
   describe ".judge" do
     it "defaults to gpt-5.4" do
-      expect(described_class.judge).to eq("gpt-5.4")
+      with_env("JUDGE_LLM_MODEL", nil) do
+        expect(described_class.judge).to eq("gpt-5.4")
+      end
     end
 
     it "reads from JUDGE_LLM_MODEL" do
-      allow(ENV).to receive(:fetch).with("JUDGE_LLM_MODEL", anything).and_return("claude-3-opus")
-      expect(described_class.judge).to eq("claude-3-opus")
+      with_env("JUDGE_LLM_MODEL", "claude-3-opus") do
+        expect(described_class.judge).to eq("claude-3-opus")
+      end
     end
   end
 end
