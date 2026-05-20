@@ -1,45 +1,23 @@
 module Orchestration
   class RuntimeAgentBuilder
-    def initialize(action:, chat: nil, pipeline_model: nil, prompt_override: nil, step_params: nil, tool_classes: nil)
-      @action = action
+    def initialize(policy:, chat: nil)
+      @policy = policy
       @chat = chat
-      @pipeline_model = pipeline_model
-      @prompt_override = prompt_override
-      @step_params = step_params || {}
-      @tool_classes = tool_classes
     end
 
     def build
       agent = base_agent
-      agent.with_model(resolved_model) if resolved_model.present?
+      agent.with_model(@policy.model) if @policy.model.present?
 
-      tools = resolved_tools
+      tools = @policy.tools
       agent.with_tools(*tools, replace: true) if tools.present?
 
-      schema = resolved_generation_schema
+      schema = @policy.generation_schema
       agent.with_schema(schema) if schema.present?
 
-      prompt = resolved_prompt
+      prompt = @policy.prompt
       agent.chat.with_instructions(prompt) if prompt.present?
       agent
-    end
-
-    def resolved_output_schema
-      agent_record.output_schema.presence
-    end
-
-    def resolved_params
-      (agent_record.params || {}).merge(@step_params || {})
-    end
-
-    def snapshot
-      {
-        model: resolved_model,
-        prompt: resolved_prompt,
-        tools: resolved_tools&.map(&:to_s) || [],
-        params: resolved_params,
-        output_schema: resolved_output_schema
-      }
     end
 
     private
@@ -52,40 +30,6 @@ module Orchestration
 
     def runtime_chat
       @chat || Chat.create!
-    end
-
-    def agent_record
-      @action.agent || raise(ArgumentError, "No agent associated with action #{@action.id}")
-    end
-
-    def resolved_model
-      @pipeline_model.presence || agent_record.model
-    end
-
-    def resolved_prompt
-      @prompt_override.presence || agent_record.prompt
-    end
-
-    def resolved_tools
-      return @tool_classes if @tool_classes.present?
-
-      configured_tools = agent_record.tools
-      configured_tools&.map do |tool|
-        next tool if tool.is_a?(Class)
-
-        namespace = tool.to_s.split("::").first
-        unless Orchestration::Agent::ALLOWED_TOOL_NAMESPACES.include?(namespace)
-          raise ArgumentError, "Tool '#{tool}' is outside allowed namespaces (#{Orchestration::Agent::ALLOWED_TOOL_NAMESPACES.join(', ')})"
-        end
-
-        tool.constantize
-      rescue NameError
-        raise ArgumentError, "Unknown tool class: #{tool}"
-      end
-    end
-
-    def resolved_generation_schema
-      agent_record.output_schema.presence
     end
   end
 end

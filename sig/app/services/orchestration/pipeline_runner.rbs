@@ -8,12 +8,12 @@ module Orchestration
     def run_step: (Step step, Hash[String, Hash[String, untyped]] previous_outputs) -> Array[ActionRun]
     def run_actions_in_parallel: (Array[ActionRun] action_runs) -> void
     def execute_action: (ActionRun action_run) -> void
-    def run_agent: (ActionRun action_run) -> Hash[Symbol, untyped]
+    def run_agent: (ActionRun action_run, ?policy: AgentResolutionPolicy::Result?) -> Hash[Symbol, untyped]
+    def resolve_policy: (ActionRun action_run) -> AgentResolutionPolicy::Result
     def parse_content: (String | untyped content, bool structured_output_expected) -> untyped
-    def validate_output!: (Action action, untyped output, raw_content: untyped) -> void
+    def validate_output!: (untyped output, policy: AgentResolutionPolicy::Result, raw_content: untyped) -> void
     def handle_action_failure: (ActionRun action_run, StandardError error, raw_content: untyped) -> void
     def log_action_failure: (ActionRun action_run, NormalizeActionRunFailure::Result failure) -> void
-    def structured_output_expected?: (Action action) -> bool
     def prompt_for: (String? agent_name) -> String?
   end
 end
