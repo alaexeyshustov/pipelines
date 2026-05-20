@@ -1,17 +1,14 @@
 # frozen_string_literal: true
 
 module Orchestration
-  class InputMappingForm
-    include ActiveModel::Model
-
+  class InputMappingForm < ::BaseForm
     attr_reader :result
 
     validate :new_key_format_valid
 
     def initialize(step_action:, input_mapping:, new_key: nil, new_from: nil, new_path: nil)
       @step_action = step_action
-      raw = input_mapping || {}
-      @base_mapping = (raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h : raw.to_h).deep_stringify_keys
+      @base_mapping = (input_mapping&.to_unsafe_h || {}).deep_stringify_keys
       @new_key = new_key.presence
       @new_from = new_from.presence
       @new_path = new_path.presence
