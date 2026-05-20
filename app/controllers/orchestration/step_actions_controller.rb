@@ -6,45 +6,33 @@ module Orchestration
     before_action :set_step
 
     def create
-      # TODO: move out the logic to a form object
-      action = Orchestration::Action.find_by(id: params.dig(:orchestration_step_action, :action_id))
-      unless action
-        redirect_to orchestration_pipeline_path(@pipeline), alert: "Invalid action." and return
-      end
+      raw = params.dig(:orchestration_step_action, :params)
+      form = Orchestration::StepActionCreateForm.new(
+        step: @step,
+        action_id: params.dig(:orchestration_step_action, :action_id),
+        params_json: raw
+      )
 
-      parsed = step_action_params
-      unless parsed
-        redirect_to orchestration_pipeline_path(@pipeline), alert: "Params must be valid JSON." and return
-      end
-
-      next_position = (@step.step_actions.maximum(:position) || 0) + 1
-      key = Orchestration::OutputKeyDeriver.call(action_name: action.name, step: @step)
-      @step_action = @step.step_actions.build(parsed.merge(position: next_position, output_key: key))
-
-      begin
-        saved = @step_action.save
-      rescue ActiveRecord::RecordNotUnique
-        @step_action.output_key = "#{key}_#{SecureRandom.hex(3)}"
-        saved = @step_action.save
-      end
-
-      if saved
+      if form.save
         redirect_to orchestration_pipeline_path(@pipeline), notice: "Action attached."
       else
-        redirect_to orchestration_pipeline_path(@pipeline), alert: "Could not attach action."
+        redirect_to orchestration_pipeline_path(@pipeline), alert: form.errors.full_messages.first || "Could not attach action."
       end
     end
 
     def update
       @step_action = @step.step_actions.find(params[:id])
-      mapping, key_error = parse_input_mapping
-      if key_error
-        redirect_to orchestration_pipeline_path(@pipeline), alert: key_error and return
-      end
+      sa_params = params[:orchestration_step_action]
+      form = Orchestration::InputMappingForm.new(
+        step_action: @step_action,
+        input_mapping: sa_params&.[](:input_mapping),
+        new_key:  sa_params&.dig(:new_key),
+        new_from: sa_params&.dig(:new_from),
+        new_path: sa_params&.dig(:new_path)
+      )
 
-      result = Orchestration::InputMappingUpdater.call(step_action: @step_action, input_mapping: mapping)
-
-      if result.saved
+      if form.save
+        result = form.result
         notice = if result.warnings.any?
           "Mapping saved. Warning: #{result.warnings.map { |w| "#{w.code}: #{w.message}" }.join("; ")}"
         else
@@ -52,7 +40,11 @@ module Orchestration
         end
         redirect_to orchestration_pipeline_path(@pipeline), notice: notice
       else
-        error_summary = result.errors.map(&:message).join("; ").presence || "Invalid mapping."
+        error_summary = if form.result
+          form.result.errors.map(&:message).join("; ").presence || "Invalid mapping."
+        else
+          form.errors.full_messages.first || "Invalid mapping."
+        end
         redirect_to orchestration_pipeline_path(@pipeline), alert: error_summary
       end
     end
@@ -71,35 +63,6 @@ module Orchestration
 
     def set_step
       @step = @pipeline.steps.find(params[:step_id])
-    end
-
-    def step_action_params
-      permitted = params.require(:orchestration_step_action).permit(:action_id, :params)
-      raw = permitted[:params]
-      permitted[:params] = JSON.parse(raw) if raw.present?
-      permitted
-    rescue JSON::ParserError
-      nil
-    end
-
-    def parse_input_mapping
-      permitted = params.require(:orchestration_step_action).permit(input_mapping: {})
-      mapping   = (permitted[:input_mapping]&.to_h || {}).deep_stringify_keys
-
-      new_key  = params.dig(:orchestration_step_action, :new_key).presence
-      new_from = params.dig(:orchestration_step_action, :new_from).presence
-
-      if new_key
-        unless new_key.match?(Orchestration::StepAction::OUTPUT_KEY_FORMAT)
-          return [ {}, "Key #{new_key.inspect} is invalid: must only contain lowercase letters, digits, and underscores, and start with a letter." ]
-        end
-        if new_from
-          new_path = params.dig(:orchestration_step_action, :new_path).presence
-          mapping[new_key] = { "from" => new_from, "path" => new_path }.compact
-        end
-      end
-
-      [ mapping, nil ]
     end
   end
 end
