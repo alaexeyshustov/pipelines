@@ -1,6 +1,6 @@
 module Orchestration
   class StepAction < ApplicationRecord
-    self.table_name = "step_actions"
+    self.table_name = "orchestration_step_actions"
 
     OUTPUT_KEY_FORMAT = /\A[a-z][a-z0-9_]*\z/
 

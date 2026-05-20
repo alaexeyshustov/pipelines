@@ -2,7 +2,7 @@
 
 module Orchestration
   class Action < ApplicationRecord
-    self.table_name = "actions"
+    self.table_name = "orchestration_actions"
 
     enum :kind, { agent: "agent", service: "service" }, default: :service
 

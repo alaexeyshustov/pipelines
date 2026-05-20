@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Orchestration::Action do
+  it { expect(described_class.table_name).to eq("orchestration_actions") }
+
   describe "validations" do
     context "with kind: :agent" do
       it "is valid with a name and an associated agent" do

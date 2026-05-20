@@ -555,7 +555,7 @@ RSpec.describe Orchestration::PipelineRunner do
         described_class.new(pipeline_run).call
         step2_action_run = Orchestration::ActionRun
           .joins(step_action: :step)
-          .where(steps: { name: "transform" }).first
+          .where(orchestration_steps: { name: "transform" }).first
         expect(step2_action_run.input).to eq({})
       end
     end
@@ -625,7 +625,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
         ingest_run = Orchestration::ActionRun
           .joins(step_action: :step)
-          .find_by(steps: { name: "ingest" })
+          .find_by(orchestration_steps: { name: "ingest" })
 
         expect(ingest_run.input).to eq({})
       end
@@ -989,7 +989,7 @@ RSpec.describe Orchestration::PipelineRunner do
       it 'both parallel outputs are accessible to the next step via their output_keys' do
         described_class.new(pipeline_run).call
         expect(pipeline_run.reload.status).to eq("completed")
-        consume_run = Orchestration::ActionRun.joins(step_action: :step).find_by(steps: { name: "consume" })
+        consume_run = Orchestration::ActionRun.joins(step_action: :step).find_by(orchestration_steps: { name: "consume" })
         expect(consume_run.input).to eq({ "a" => { "data" => "alpha" }, "b" => { "data" => "beta" } })
       end
     end
@@ -1014,7 +1014,7 @@ RSpec.describe Orchestration::PipelineRunner do
         described_class.new(pipeline_run).call
         sib_b_run = Orchestration::ActionRun
           .joins(:step_action)
-          .where(step_actions: { output_key: "sib_b" })
+          .where(orchestration_step_actions: { output_key: "sib_b" })
           .first
         expect(sib_b_run.status).to eq("failed")
         expect(sib_b_run.error).to include('unknown output key: "sib_a"')
@@ -1065,7 +1065,7 @@ RSpec.describe Orchestration::PipelineRunner do
         described_class.new(pipeline_run).call
         classify_run = Orchestration::ActionRun
           .joins(step_action: :step)
-          .find_by(steps: { name: "classify" })
+          .find_by(orchestration_steps: { name: "classify" })
         expect(classify_run.status).to eq("failed")
         expect(classify_run.error).to include("nonexistent.deep")
       end
@@ -1104,7 +1104,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
         ingest_run = Orchestration::ActionRun
           .joins(step_action: :step)
-          .find_by(steps: { name: "ingest" })
+          .find_by(orchestration_steps: { name: "ingest" })
 
         expect(ingest_run.status).to eq("completed")
         expect(ingest_run.output).to eq({ "emails" => [] })

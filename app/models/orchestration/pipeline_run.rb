@@ -1,6 +1,6 @@
 module Orchestration
   class PipelineRun < ApplicationRecord
-    self.table_name = "pipeline_runs"
+    self.table_name = "orchestration_pipeline_runs"
 
     STATUSES = %w[pending running completed failed].freeze
     TRIGGERED_BY = %w[manual schedule].freeze

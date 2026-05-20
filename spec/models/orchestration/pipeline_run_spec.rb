@@ -1,6 +1,8 @@
 require 'rails_helper'
 
 RSpec.describe Orchestration::PipelineRun do
+  it { expect(described_class.table_name).to eq("orchestration_pipeline_runs") }
+
   describe 'validations' do
     it 'is valid with required attributes' do
       run = build(:orchestration_pipeline_run)

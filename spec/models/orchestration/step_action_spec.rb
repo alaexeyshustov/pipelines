@@ -1,6 +1,8 @@
 require 'rails_helper'
 
 RSpec.describe Orchestration::StepAction do
+  it { expect(described_class.table_name).to eq("orchestration_step_actions") }
+
   describe 'validations' do
     it 'is valid with required attributes' do
       step_action = build(:orchestration_step_action)

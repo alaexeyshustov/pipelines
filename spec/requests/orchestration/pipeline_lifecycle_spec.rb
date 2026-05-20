@@ -150,7 +150,7 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
 
       query_run = pipeline_run.action_runs
         .joins(:step_action)
-        .find_by(step_actions: { action_id: query_action.id })
+        .find_by(orchestration_step_actions: { action_id: query_action.id })
 
       expect(query_run.status).to eq("completed")
       expect(query_run.output).to have_key("interviews")
@@ -158,7 +158,7 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
 
       classify_run = pipeline_run.action_runs
         .joins(:step_action)
-        .find_by(step_actions: { action_id: classify_action.id })
+        .find_by(orchestration_step_actions: { action_id: classify_action.id })
 
       expect(classify_run.status).to eq("completed")
       expect(classify_run.output).to have_key("result")

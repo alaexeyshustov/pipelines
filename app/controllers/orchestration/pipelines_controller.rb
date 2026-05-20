@@ -7,9 +7,9 @@ module Orchestration
     def index
       @pipelines = Orchestration::Pipeline
         .left_joins(:steps)
-        .select("pipelines.*, COUNT(steps.id) AS step_count")
-        .group("pipelines.id")
-        .order("pipelines.name")
+        .select("orchestration_pipelines.*, COUNT(orchestration_steps.id) AS step_count")
+        .group("orchestration_pipelines.id")
+        .order("orchestration_pipelines.name")
     end
 
     def new
