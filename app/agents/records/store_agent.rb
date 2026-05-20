@@ -3,7 +3,7 @@ module Records
     chat_model Chat
     tools Emails::GetLabelsTool, Emails::CreateLabelTool, Emails::AddLabelsTool,
     Records::InsertRowsTool, Records::ReadSchemaTool, Emails::GetTool
-    model "mistral-large-latest"
+    model LlmModels.emails_agent
 
     schema do
       integer :rows_inserted, description: "The number of rows inserted into the database"

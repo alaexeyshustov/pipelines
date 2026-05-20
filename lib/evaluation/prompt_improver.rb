@@ -2,7 +2,7 @@ module Evaluation
   class PromptImprover
     class Error < StandardError; end
 
-    def self.call(experiment:, model: ENV.fetch("EVALUATION_LLM_MODEL", "gpt-5.4"))
+    def self.call(experiment:, model: LlmModels.evaluation)
       new(experiment:, model:).call
     end
 

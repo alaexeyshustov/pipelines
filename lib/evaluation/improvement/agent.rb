@@ -2,7 +2,7 @@ module Evaluation
   module Improvement
     class Agent < ::RubyLLM::Agent
       chat_model Chat
-      model "gpt-5.4"
+      model LlmModels.evaluation
       tools LoadSamplesTool
 
       schema do

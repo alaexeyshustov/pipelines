@@ -1,7 +1,7 @@
 module Emails
   class FilterAgent < RubyLLM::Agent
     chat_model Chat
-    model "mistral-large-latest"
+    model LlmModels.emails_agent
     tools Records::TempFileTool
 
     schema do

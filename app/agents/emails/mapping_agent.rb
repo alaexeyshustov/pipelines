@@ -1,7 +1,7 @@
 module Emails
   class MappingAgent < RubyLLM::Agent
     chat_model Chat
-    model "mistral-large-latest"
+    model LlmModels.emails_agent
     tools GetTool, Records::TempFileTool
 
     instructions <<~INSTRUCTIONS

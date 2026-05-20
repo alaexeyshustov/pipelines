@@ -11,7 +11,7 @@ module Evaluation
       the agent's expected input schema. Do not include any explanation or markdown.
     PROMPT
 
-    DEFAULT_MODEL = ENV.fetch("EVALUATION_LLM_MODEL", "gpt-5.4")
+    DEFAULT_MODEL = LlmModels.evaluation
 
     def perform(draft_token:, agent_name:, dataset_name:, count:, hints: "", model: nil)
       system_prompt_text = fetch_system_prompt(agent_name)

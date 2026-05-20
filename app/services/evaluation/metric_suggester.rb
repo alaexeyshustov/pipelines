@@ -11,7 +11,7 @@ module Evaluation
       - "weight": relative importance, float between 0.0 and 1.0
     PROMPT
 
-    DEFAULT_MODEL = ENV.fetch("EVALUATION_LLM_MODEL", "gpt-5.4")
+    DEFAULT_MODEL = LlmModels.evaluation
 
     class Error < StandardError; end
 
