@@ -25,7 +25,7 @@ module Orchestration
       sa_params = params[:orchestration_step_action]
       form = Orchestration::InputMappingForm.new(
         step_action: @step_action,
-        input_mapping: sa_params&.fetch(:input_mapping, nil),
+        input_mapping: sa_params&.[](:input_mapping),
         new_key:  sa_params&.dig(:new_key),
         new_from: sa_params&.dig(:new_from),
         new_path: sa_params&.dig(:new_path)

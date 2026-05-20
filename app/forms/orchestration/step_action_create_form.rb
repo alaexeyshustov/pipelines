@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
 module Orchestration
-  class StepActionCreateForm
-    include ActiveModel::Model
-
+  class StepActionCreateForm < ::BaseForm
     attr_reader :step_action
 
     validate :action_exists
@@ -12,7 +10,14 @@ module Orchestration
     def initialize(step:, action_id:, params_json: nil)
       @step = step
       @action_id = action_id.to_i
-      @params_json = params_json.presence
+      raw = params_json.presence
+      if raw
+        begin
+          @parsed_params = JSON.parse(raw)
+        rescue JSON::ParserError
+          @params_parse_error = true
+        end
+      end
     end
 
     def save
@@ -22,7 +27,7 @@ module Orchestration
       key = Orchestration::OutputKeyDeriver.call(action_name: action.name, step: @step)
       @step_action = @step.step_actions.build(
         action_id: action.id,
-        params: parsed_params,
+        params: @parsed_params,
         position: next_position,
         output_key: key
       )
@@ -44,21 +49,13 @@ module Orchestration
     end
 
     def params_json_valid
-      return if @params_json.nil?
-
-      JSON.parse(@params_json)
-    rescue JSON::ParserError
-      errors.add(:base, "Params must be valid JSON.")
+      errors.add(:base, "Params must be valid JSON.") if @params_parse_error
     end
 
     def action
-      @action ||= Orchestration::Action.find_by(id: @action_id)
-    end
+      return @action if defined?(@action)
 
-    def parsed_params
-      return nil if @params_json.nil?
-
-      JSON.parse(@params_json)
+      @action = Orchestration::Action.find_by(id: @action_id)
     end
   end
 end

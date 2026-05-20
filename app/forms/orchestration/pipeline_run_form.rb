@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
 module Orchestration
-  class PipelineRunForm
-    include ActiveModel::Model
-
+  class PipelineRunForm < ::BaseForm
     attr_reader :pipeline_run
 
     validate :no_active_run
@@ -42,9 +40,13 @@ module Orchestration
     end
 
     def extract_initial_input
-      return nil if @pipeline.initial_input_schema.blank?
+      return @extracted_input if defined?(@extracted_input)
 
-      @initial_input_params&.to_unsafe_h&.deep_stringify_keys
+      @extracted_input = if @pipeline.initial_input_schema.blank?
+        nil
+      else
+        @initial_input_params&.to_unsafe_h&.deep_stringify_keys
+      end
     end
   end
 end
