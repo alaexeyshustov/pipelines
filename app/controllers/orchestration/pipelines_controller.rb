@@ -32,31 +32,14 @@ module Orchestration
     end
 
     def run
-      # TODO: move out the logic to a form object
+      form = Orchestration::PipelineRunForm.new(pipeline: @pipeline, initial_input_params: params[:initial_input])
       path = orchestration_pipeline_path(@pipeline)
-      runs = @pipeline.pipeline_runs
 
-      if runs.exists?(status: %w[pending running])
-        redirect_to path, alert: "A run is already pending."
-        return
-      end
-
-      initial_input = extract_initial_input
-      if @pipeline.initial_input_schema.present?
-        begin
-          Orchestration::SchemaValidator.new(@pipeline.initial_input_schema).validate!(initial_input)
-        rescue Orchestration::SchemaValidator::Error => e
-          redirect_to path, alert: e.message
-          return
-        end
-      end
-
-      pipeline_run = runs.create(status: "pending", triggered_by: "manual", initial_input: initial_input)
-      if pipeline_run.persisted?
-        PipelineRunJob.perform_later(pipeline_run.id)
+      if form.save
+        PipelineRunJob.perform_later(form.pipeline_run.id)
         redirect_to path, notice: "Pipeline run triggered."
       else
-        redirect_to path, alert: "Failed to trigger pipeline run."
+        redirect_to path, alert: form.errors.full_messages.first || "Failed to trigger pipeline run."
       end
     end
 
@@ -90,12 +73,6 @@ module Orchestration
 
     def pipeline_params
       params.require(:orchestration_pipeline).permit(:name, :description, :enabled, :cron_expression, :model)
-    end
-
-    def extract_initial_input
-      return nil if @pipeline.initial_input_schema.blank?
-
-      params[:initial_input].to_unsafe_h.deep_stringify_keys
     end
   end
 end
