@@ -26,6 +26,7 @@ matcher:
   ignore:
     - ApplicationMailsSchema
     - Pipeline
+    # I/O-heavy adapter classes: unit tests exist but network-boundary mutations produce noise, not signal
     - Emails::Adapters::GmailAdapter
     - Emails::Adapters::YahooAdapter
     - Emails::Adapters::ImapBodyParser

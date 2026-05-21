@@ -45,11 +45,13 @@ RSpec.describe Emails::ProviderRegistry do
 
       it 'loads the adapter via from_env and returns it' do
         expect(registry.fetch('yahoo')).to eq(adapter)
+        expect(adapter_class).to have_received(:from_env)
       end
 
-      it 'registers the adapter so subsequent fetches skip auto_load' do
+      it 'calls from_env exactly once even when fetched twice (cached after first load)' do
         registry.fetch('yahoo')
-        expect(registry.providers).to include('yahoo')
+        registry.fetch('yahoo')
+        expect(adapter_class).to have_received(:from_env).once
       end
 
       it 'raises UnknownProviderError for a completely unknown name' do

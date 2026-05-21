@@ -58,6 +58,7 @@ RSpec.describe Records::InsertRowsTool do
 
       result = tool.execute(table: 'interviews', data: [ scopeless_row ].to_json)
 
+      expect(result[:rows_added]).to eq(0)
       expect(result[:duplicate]).to eq([])
       expect(result[:invalids]).not_to be_empty
     end
