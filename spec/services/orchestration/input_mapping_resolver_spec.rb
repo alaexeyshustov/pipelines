@@ -46,7 +46,7 @@ RSpec.describe Orchestration::InputMappingResolver do
 
       it 'raises MissingPath naming the from and path' do
         expect { resolver.resolve }
-          .to raise_error(described_class::MissingPath, /missing path "no_such_key" in output "fetch"/)
+          .to raise_error(described_class::MissingPath, /\Amissing path "no_such_key" in output "fetch"\z/)
       end
     end
 
@@ -90,6 +90,33 @@ RSpec.describe Orchestration::InputMappingResolver do
       end
     end
 
+    context 'with a missing upstream key and no optional field in the spec' do
+      let(:input_mapping) { { "x" => { "from" => "missing" } } }
+
+      it 'raises UnknownOutputKey' do
+        expect { resolver.resolve }
+          .to raise_error(described_class::UnknownOutputKey, /missing/)
+      end
+    end
+
+    context 'when the upstream output is nil (key present, value nil)' do
+      let(:previous_outputs) { { "fetch" => nil } }
+      let(:input_mapping) { { "x" => { "from" => "fetch" } } }
+
+      it 'returns nil without raising' do
+        expect(resolver.resolve["x"]).to be_nil
+      end
+    end
+
+    context 'when the upstream output is nil and a path is also specified' do
+      let(:previous_outputs) { { "fetch" => nil } }
+      let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "foo" } } }
+
+      it 'returns nil without raising' do
+        expect(resolver.resolve["x"]).to be_nil
+      end
+    end
+
     context 'with a whole-output reference (no path)' do
       let(:input_mapping) do
         { "all_fetch" => { "from" => "fetch" } }
@@ -126,6 +153,33 @@ RSpec.describe Orchestration::InputMappingResolver do
       end
     end
 
+    context 'with a two-digit numeric path segment' do
+      let(:previous_outputs) do
+        { "fetch" => { "items" => Array.new(11) { |i| { "id" => i.to_s } } } }
+      end
+      let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "items.10" } } }
+
+      it 'resolves the element at a two-digit index' do
+        expect(resolver.resolve["x"]).to eq({ "id" => "10" })
+      end
+    end
+
+    context 'with an out-of-bounds numeric path segment' do
+      let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "emails.99" } } }
+
+      it 'raises MissingPath' do
+        expect { resolver.resolve }.to raise_error(described_class::MissingPath)
+      end
+    end
+
+    context 'with optional: true and an existing path' do
+      let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "emails", "optional" => true } } }
+
+      it 'returns the resolved value (not nil)' do
+        expect(resolver.resolve["x"]).to eq([ { "id" => "e1", "subject" => "Hello" } ])
+      end
+    end
+
     context 'with a non-numeric string segment against an Array node' do
       let(:input_mapping) do
         { "bad" => { "from" => "fetch", "path" => "emails.subject" } }
@@ -133,7 +187,7 @@ RSpec.describe Orchestration::InputMappingResolver do
 
       it 'raises MissingPath rather than silently coercing the segment to 0' do
         expect { resolver.resolve }
-          .to raise_error(described_class::MissingPath, /missing path "emails\.subject" in output "fetch"/)
+          .to raise_error(described_class::MissingPath, /\Amissing path "emails\.subject" in output "fetch"\z/)
       end
     end
 
@@ -149,96 +203,20 @@ RSpec.describe Orchestration::InputMappingResolver do
 
     context 'with a path through a nil intermediate node' do
       let(:previous_outputs) { { "fetch" => { "meta" => nil } } }
-      let(:input_mapping)    { { "x" => { "from" => "fetch", "path" => "meta.id" } } }
+      let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "meta.id" } } }
 
       it 'raises MissingPath' do
-        expect { resolver.resolve }.to raise_error(described_class::MissingPath, /missing path "meta\.id" in output "fetch"/)
+        expect { resolver.resolve }
+          .to raise_error(described_class::MissingPath, /\Amissing path "meta\.id" in output "fetch"\z/)
       end
     end
 
     context 'with optional: true and a nil intermediate node' do
       let(:previous_outputs) { { "fetch" => { "meta" => nil } } }
-      let(:input_mapping)    { { "x" => { "from" => "fetch", "path" => "meta.id", "optional" => true } } }
+      let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "meta.id", "optional" => true } } }
 
       it 'returns nil without raising' do
         expect(resolver.resolve["x"]).to be_nil
-      end
-    end
-
-    context 'with a missing upstream key and no optional field in the spec' do
-      let(:input_mapping) { { "x" => { "from" => "missing" } } }
-
-      it 'raises UnknownOutputKey' do
-        expect { resolver.resolve }.to raise_error(described_class::UnknownOutputKey, /unknown output key: "missing"/)
-      end
-    end
-
-    context 'when the upstream output value is nil (key present, value nil)' do
-      let(:previous_outputs) { { "fetch" => nil } }
-      let(:input_mapping)    { { "x" => { "from" => "fetch" } } }
-
-      it 'returns nil without raising' do
-        expect(resolver.resolve["x"]).to be_nil
-      end
-    end
-
-    context 'with spec["from"] being nil' do
-      let(:input_mapping) { { "x" => { "from" => nil, "path" => "emails" } } }
-
-      it 'raises UnknownOutputKey' do
-        expect { resolver.resolve }.to raise_error(described_class::UnknownOutputKey, /unknown output key: nil/)
-      end
-    end
-
-    context 'with spec having no "optional" key and a missing path' do
-      let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "no_such" } } }
-
-      it 'raises MissingPath (optional defaults to nil/falsy)' do
-        expect { resolver.resolve }.to raise_error(described_class::MissingPath, /missing path "no_such" in output "fetch"/)
-      end
-    end
-
-    context 'when the upstream output is nil and a path is specified' do
-      let(:previous_outputs) { { "fetch" => nil } }
-      let(:input_mapping)    { { "x" => { "from" => "fetch", "path" => "emails" } } }
-
-      it 'returns nil without raising (upstream nil short-circuits before path traversal)' do
-        expect(resolver.resolve["x"]).to be_nil
-      end
-    end
-
-    context 'with explicit optional: false and a missing path' do
-      let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "no_such", "optional" => false } } }
-
-      it 'raises MissingPath' do
-        expect { resolver.resolve }.to raise_error(described_class::MissingPath, /missing path "no_such" in output "fetch"/)
-      end
-    end
-
-    context 'with a spec that has no "from" key' do
-      let(:input_mapping) { { "x" => {} } }
-
-      it 'raises UnknownOutputKey' do
-        expect { resolver.resolve }.to raise_error(described_class::UnknownOutputKey, /unknown output key: nil/)
-      end
-    end
-
-    context 'with a multi-digit numeric path segment' do
-      let(:previous_outputs) do
-        { "fetch" => { "items" => (0..14).map { |i| { "id" => i.to_s } } } }
-      end
-      let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "items.10" } } }
-
-      it 'resolves the multi-digit index correctly' do
-        expect(resolver.resolve["x"]).to eq({ "id" => "10" })
-      end
-    end
-
-    context 'with an out-of-bounds numeric path segment' do
-      let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "emails.99" } } }
-
-      it 'raises MissingPath' do
-        expect { resolver.resolve }.to raise_error(described_class::MissingPath, /missing path "emails\.99" in output "fetch"/)
       end
     end
 
@@ -256,6 +234,47 @@ RSpec.describe Orchestration::InputMappingResolver do
 
       it 'resolves the _initial slot like any other output key' do
         expect(resolver.resolve["run_date"]).to eq("2026-05-10")
+      end
+    end
+
+    context 'with a spec that has "from" but no "path" key' do
+      let(:input_mapping) { { "x" => { "from" => "fetch" } } }
+
+      it 'returns the full upstream output' do
+        expect(resolver.resolve["x"]).to eq(previous_outputs["fetch"])
+      end
+    end
+
+    context 'with a spec that has no "optional" key and a missing path' do
+      let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "no_such" } } }
+
+      it 'raises MissingPath (optional defaults to nil/falsy)' do
+        expect { resolver.resolve }.to raise_error(described_class::MissingPath)
+      end
+    end
+
+    context 'with spec["from"] being nil' do
+      let(:input_mapping) { { "x" => { "from" => nil, "path" => "emails" } } }
+
+      it 'raises UnknownOutputKey' do
+        expect { resolver.resolve }
+          .to raise_error(described_class::UnknownOutputKey, /nil/)
+      end
+    end
+
+    context 'with spec missing the "from" key entirely' do
+      let(:input_mapping) { { "x" => { "path" => "emails" } } }
+
+      it 'raises UnknownOutputKey' do
+        expect { resolver.resolve }.to raise_error(described_class::UnknownOutputKey)
+      end
+    end
+
+    context 'with optional explicitly set to false and a missing path' do
+      let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "no_such", "optional" => false } } }
+
+      it 'raises MissingPath' do
+        expect { resolver.resolve }.to raise_error(described_class::MissingPath)
       end
     end
   end
