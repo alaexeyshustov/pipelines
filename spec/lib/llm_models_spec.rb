@@ -23,6 +23,13 @@ RSpec.describe LlmModels do
         expect(described_class.emails_agent).to eq("custom-model")
       end
     end
+
+    it "prefers Setting over ENV" do
+      Setting.create!(key: "emails_agent_model", value: "db-model")
+      with_env("EMAILS_AGENT_MODEL", "env-model") do
+        expect(described_class.emails_agent).to eq("db-model")
+      end
+    end
   end
 
   describe ".records_agent" do
@@ -35,6 +42,13 @@ RSpec.describe LlmModels do
     it "reads from RECORDS_AGENT_MODEL" do
       with_env("RECORDS_AGENT_MODEL", "gpt-4o") do
         expect(described_class.records_agent).to eq("gpt-4o")
+      end
+    end
+
+    it "prefers Setting over ENV" do
+      Setting.create!(key: "records_agent_model", value: "db-model")
+      with_env("RECORDS_AGENT_MODEL", "env-model") do
+        expect(described_class.records_agent).to eq("db-model")
       end
     end
   end
@@ -51,6 +65,13 @@ RSpec.describe LlmModels do
         expect(described_class.evaluation).to eq("gpt-4-turbo")
       end
     end
+
+    it "prefers Setting over ENV" do
+      Setting.create!(key: "evaluation_llm_model", value: "db-model")
+      with_env("EVALUATION_LLM_MODEL", "env-model") do
+        expect(described_class.evaluation).to eq("db-model")
+      end
+    end
   end
 
   describe ".judge" do
@@ -63,6 +84,13 @@ RSpec.describe LlmModels do
     it "reads from JUDGE_LLM_MODEL" do
       with_env("JUDGE_LLM_MODEL", "claude-3-opus") do
         expect(described_class.judge).to eq("claude-3-opus")
+      end
+    end
+
+    it "prefers Setting over ENV" do
+      Setting.create!(key: "judge_llm_model", value: "db-model")
+      with_env("JUDGE_LLM_MODEL", "env-model") do
+        expect(described_class.judge).to eq("db-model")
       end
     end
   end

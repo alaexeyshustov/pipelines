@@ -1,0 +1,11 @@
+class Setting < ApplicationRecord
+  KEYS: Array[String]
+
+  def self.fetch: (String key) -> String?
+  def self.set: (String key, String value) -> void
+
+  def key: () -> String?
+  def key=: (String?) -> String?
+  def value: () -> String?
+  def value=: (String?) -> String?
+end
