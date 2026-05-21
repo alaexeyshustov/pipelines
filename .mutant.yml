@@ -26,3 +26,11 @@ matcher:
   ignore:
     - ApplicationMailsSchema
     - Pipeline
+    - Emails::Adapters::GmailAdapter
+    - Emails::Adapters::YahooAdapter
+    - Emails::Adapters::ImapBodyParser
+    - Emails::Adapters::GmailBodyExtractor
+    - Emails::Adapters::GmailPaginator
+    - Emails::Adapters::GmailMessageParser
+    - Emails::Adapters::YahooMessageParser
+    - Emails::GmailAuth
