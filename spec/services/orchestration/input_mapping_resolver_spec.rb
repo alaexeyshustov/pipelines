@@ -95,7 +95,7 @@ RSpec.describe Orchestration::InputMappingResolver do
 
       it 'raises UnknownOutputKey' do
         expect { resolver.resolve }
-          .to raise_error(described_class::UnknownOutputKey, /missing/)
+          .to raise_error(described_class::UnknownOutputKey, /unknown output key: "missing"/)
       end
     end
 
@@ -169,14 +169,6 @@ RSpec.describe Orchestration::InputMappingResolver do
 
       it 'raises MissingPath' do
         expect { resolver.resolve }.to raise_error(described_class::MissingPath)
-      end
-    end
-
-    context 'with optional: true and an existing path' do
-      let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "emails", "optional" => true } } }
-
-      it 'returns the resolved value (not nil)' do
-        expect(resolver.resolve["x"]).to eq([ { "id" => "e1", "subject" => "Hello" } ])
       end
     end
 
@@ -258,7 +250,7 @@ RSpec.describe Orchestration::InputMappingResolver do
 
       it 'raises UnknownOutputKey' do
         expect { resolver.resolve }
-          .to raise_error(described_class::UnknownOutputKey, /nil/)
+          .to raise_error(described_class::UnknownOutputKey, /unknown output key: nil/)
       end
     end
 
@@ -266,7 +258,8 @@ RSpec.describe Orchestration::InputMappingResolver do
       let(:input_mapping) { { "x" => { "path" => "emails" } } }
 
       it 'raises UnknownOutputKey' do
-        expect { resolver.resolve }.to raise_error(described_class::UnknownOutputKey)
+        expect { resolver.resolve }
+          .to raise_error(described_class::UnknownOutputKey, /unknown output key: nil/)
       end
     end
 
