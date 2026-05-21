@@ -4,15 +4,14 @@ require "rails_helper"
 require "rake"
 
 RSpec.describe "evaluation:run rake task" do # rubocop:disable RSpec/DescribeClass
+  include RakeTaskHelpers
+
   let(:task_name) { "evaluation:run" }
   let(:agent_name) { "Emails::ClassifyAgent" }
   let!(:prompt)  { create(:orchestration_prompt, name: agent_name, version: 1) }
   let!(:dataset) { create(:evaluation_dataset, name: agent_name) }
 
-  before do
-    Rails.application.load_tasks if Rake::Task.tasks.empty?
-    Rake::Task[task_name].reenable
-  end
+  before { load_rake_task(task_name) }
 
   context "when agent_name, prompt, and dataset exist" do
     it "creates a Evaluation::Experiment" do
