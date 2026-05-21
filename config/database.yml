@@ -22,10 +22,14 @@ test:
   primary:
     <<: *default
     database: storage/test.sqlite3
+    pragmas: &wal_pragmas
+      journal_mode: wal
+      synchronous: normal
   queue:
     <<: *default
     database: storage/test_queue.sqlite3
     migrations_paths: db/queue_migrate
+    pragmas: *wal_pragmas
 
 production:
   primary:

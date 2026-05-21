@@ -41,6 +41,27 @@ RSpec.describe Records::InsertRowsTool do
       expect(result[:rows_added]).to eq(0)
       expect(result[:duplicate]).to eq([ { existing_id: existing.id } ])
     end
+
+    it 'inserts when only the scope column differs (same job_title, different company)' do
+      create(:interview, company: 'Globex', job_title: 'Developer')
+      other_company_row = { 'company' => 'OtherCorp', 'job_title' => 'Developer', 'status' => 'pending_reply' }
+
+      result = tool.execute(table: 'interviews', data: [ other_company_row ].to_json)
+
+      expect(result[:rows_added]).to eq(1)
+      expect(result[:duplicate]).to eq([])
+    end
+
+    it 'does not find a duplicate when the scope column is absent; reports as invalid instead' do
+      create(:interview, company: 'Globex', job_title: 'Developer')
+      scopeless_row = { 'job_title' => 'Developer', 'status' => 'pending_reply' }
+
+      result = tool.execute(table: 'interviews', data: [ scopeless_row ].to_json)
+
+      expect(result[:rows_added]).to eq(0)
+      expect(result[:duplicate]).to eq([])
+      expect(result[:invalids]).not_to be_empty
+    end
   end
 
   it 'raises ArgumentError when data is not a JSON array' do
