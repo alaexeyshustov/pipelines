@@ -31,6 +31,7 @@ module Evaluation
         recordable = runner_result.dataset_record.recordable
         judge_model = experiment.evaluation_model.presence || self.class.judge_model
         metric_results = evaluate(runner_result, recordable, model: judge_model)
+        return [] if metric_results.empty?
 
         eval_results = metric_results.map do |result|
            {
@@ -42,21 +43,23 @@ module Evaluation
           }
         end
 
-        ids = [] #: Array[Integer]
+        inserted_ids = [] #: Array[Integer]
         ActiveRecord::Base.transaction do
           inserted = EvaluationResult.insert_all!(eval_results)
-          ids = inserted.map { |id| id["id"].to_i }
+          inserted_ids = inserted.map { |id| id["id"].to_i }
+          justification_ids = inserted_ids.dup
           justifications = metric_results.map do |result|
-            {
-              evaluation_result_id: ids.shift,
-              metric_name: result[:metric_name],
-              justification: result[:justification]
-            }
+           {
+             evaluation_result_id: justification_ids.shift,
+             metric_name: result[:metric_name],
+             justification: result[:justification]
+           }
           end
           Justification.insert_all!(justifications)
         end
 
-        EvaluationResult.where(id: ids).to_a
+        results_by_id = EvaluationResult.where(id: inserted_ids).index_by(&:id)
+        inserted_ids.filter_map { |id| results_by_id[id] }
       end
 
       private

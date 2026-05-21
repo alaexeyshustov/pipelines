@@ -4,6 +4,9 @@ module Evaluation
   class RunEvalJob < ApplicationJob
     queue_as :default
 
+    # TODO: move to s state machine: init -> samples -> evals -> done
+    # TODO: rename runner results into samples
+
     def perform(experiment_id, dataset_record_id)
       experiment = Evaluation::Experiment.find(experiment_id)
       dataset_record = Evaluation::DatasetRecord.find(dataset_record_id)

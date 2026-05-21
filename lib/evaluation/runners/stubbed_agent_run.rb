@@ -2,6 +2,7 @@
 
 module Evaluation
   module Runners
+    # TODO: rename to param mapper
     class StubbedAgentRun < BaseRun
       def execute(record)
         raise ArgumentError, "StubbedAgentRun requires an Orchestration::ActionRun, got #{record.class}" unless record.is_a?(Orchestration::ActionRun)

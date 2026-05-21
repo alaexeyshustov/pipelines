@@ -1,6 +1,6 @@
 module Orchestration
   class AgentResolutionPolicy
-    Result = Data.define(:model, :prompt, :tools, :params, :output_schema, :generation_schema)
+    Result = Data.define(:model, :prompt, :tools, :params, :output_schema)
 
     def self.call(action:, pipeline_model: nil, prompt_override: nil, step_params: nil, tool_classes: nil)
       new(action:, pipeline_model:, prompt_override:, step_params:, tool_classes:).call
@@ -20,8 +20,7 @@ module Orchestration
         prompt: resolved_prompt,
         tools: resolved_tools,
         params: resolved_params,
-        output_schema: resolved_output_schema,
-        generation_schema: resolved_generation_schema
+        output_schema: resolved_output_schema
       )
     end
 
@@ -58,15 +57,34 @@ module Orchestration
     end
 
     def resolved_params
-      (agent_record.params || {}).merge(@step_params || {})
+      normalized_hash(agent_record.params, field_name: "agent params")
+        .merge(normalized_hash(@step_params, field_name: "step params"))
     end
 
     def resolved_output_schema
       agent_record.output_schema.presence
     end
 
-    def resolved_generation_schema
-      agent_record.output_schema.presence
+    def normalized_hash(value, field_name:)
+      return {} if value.nil?
+
+      parsed =
+        case value
+        when Hash
+          value
+        when String
+          return {} if value.blank?
+
+          JSON.parse(value)
+        else
+          raise ArgumentError, "#{field_name} must be a Hash or JSON object string, got #{value.class}"
+        end
+
+      return parsed.transform_keys(&:to_s) if parsed.is_a?(Hash)
+
+      raise ArgumentError, "#{field_name} must be a JSON object, got #{parsed.class}"
+    rescue JSON::ParserError => e
+      raise ArgumentError, "#{field_name} must be valid JSON: #{e.message}"
     end
   end
 end

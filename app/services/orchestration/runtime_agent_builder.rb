@@ -12,7 +12,7 @@ module Orchestration
       tools = @policy.tools
       agent.with_tools(*tools, replace: true) if tools.present?
 
-      schema = @policy.generation_schema
+      schema = @policy.output_schema
       agent.with_schema(schema) if schema.present?
 
       prompt = @policy.prompt

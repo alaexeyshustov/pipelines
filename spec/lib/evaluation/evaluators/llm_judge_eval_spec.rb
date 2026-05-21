@@ -196,6 +196,13 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
       eval_instance.evaluate_and_store(evaluation_experiment, evaluation_runner_result)
       expect(Evaluation::Justification.last.evaluation_result).to be_a(Evaluation::EvaluationResult)
     end
+
+    it "returns the created evaluation results" do
+      results = eval_instance.evaluate_and_store(evaluation_experiment, evaluation_runner_result)
+
+      expect(results).to all(be_a(Evaluation::EvaluationResult))
+      expect(results.map(&:score)).to eq([ 4.0, 5.0 ])
+    end
   end
 
   describe "judge_model configuration" do

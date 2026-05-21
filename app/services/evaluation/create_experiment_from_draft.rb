@@ -11,6 +11,7 @@ module Evaluation
     end
 
     def call
+      # TODO: add transaction
       resolve_prompt
       maybe_auto_generate_metrics
       experiment = create_experiment!

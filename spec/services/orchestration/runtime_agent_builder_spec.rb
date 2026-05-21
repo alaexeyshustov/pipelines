@@ -9,8 +9,7 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
       prompt: "Classify this email",
       tools: [ Records::TempFileTool ],
       params: { "mode" => "fast" },
-      output_schema: { "type" => "object" },
-      generation_schema: { "type" => "object" }
+      output_schema: { "type" => "object" }
     )
   end
 

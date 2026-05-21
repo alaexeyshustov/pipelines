@@ -45,5 +45,6 @@ module Orchestration
     def resolved_params: () -> Hash[String, untyped]
     def resolved_output_schema: () -> Hash[String, untyped]?
     def resolved_generation_schema: () -> Hash[String, untyped]?
+    def normalized_hash: (Hash[untyped, untyped] | String | nil value, field_name: String) -> Hash[String, untyped]
   end
 end

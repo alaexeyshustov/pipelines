@@ -31,22 +31,31 @@ _Avoid_: agent state, agent config
 
 ### Evaluation (Leva)
 
-**Experiment**: A single evaluation run of an agent against a dataset using one specific prompt version.
+**Experiment**: A single evaluation run of an agent against a dataset using one specific prompt version. Progresses through four phases: `pending → sampling → evaluating → completed` (or `failed`).
 _Avoid_: eval run, test run
 
 **Prompt version**: A versioned, named snapshot of a system prompt and user prompt stored in `leva_prompts`. Each improvement produces a new version; the version number auto-increments.
 _Avoid_: prompt, instructions
 
-**Dataset**: A named collection of input records used as test cases for an experiment.
+**Dataset**: A named collection of dataset samples used as test cases for an experiment.
 _Avoid_: test set, sample set
 
-**Metric**: A named rubric scoped to an agent that defines one dimension of output quality (e.g. "Tag Relevance"). Scored 1–5 by the judge.
+**Dataset sample**: A single test case within a dataset. Holds the `input` fed to the agent and an optional `expected_tool_calls` trace (present when seeded from a production run, absent for synthetic inputs).
+_Avoid_: dataset record, test record, test case
+
+**Sample**: The sampler's output for one dataset sample — the full execution trace captured during sampling: tool calls with arguments and real results, and the agent's final output.
+_Avoid_: runner result, prediction
+
+**Sampler**: The component that runs an agent against a dataset sample with real tool calls. Write tools (those where `readonly?` returns false) are blocked and return a sentinel value; read tools execute normally.
+_Avoid_: runner, agent runner
+
+**Metric**: A named rubric scoped to an agent that defines one dimension of output quality (e.g. "Tag Relevance"). Scored 1–5 by the judge. Metrics are a prerequisite for creating an experiment — if none exist for an agent, they must be generated before the experiment is created.
 _Avoid_: criterion, rule, dimension
 
-**Judge**: The LLM instance that scores agent output against the active metrics for an experiment. Configured via `JUDGE_LLM_MODEL`.
+**Judge**: The LLM instance that scores a sample against the active metrics for an experiment. When `expected_tool_calls` is present on the dataset sample, the judge compares actual vs. expected tool-calling behaviour as one dimension of quality. Configured via `JUDGE_LLM_MODEL`.
 _Avoid_: evaluator LLM, scoring model
 
-**Justification**: The judge's written reasoning for the score it assigned on one metric for one dataset record.
+**Justification**: The judge's written reasoning for the score it assigned on one metric for one sample.
 _Avoid_: explanation, rationale
 
 **Improvement**: An LLM-generated revision of a prompt version, produced by `PromptImprover` from the scores and justifications of a completed experiment.
@@ -63,7 +72,10 @@ _Avoid_: response format, output format, JSON shape
 - A **Pipeline** has one or more **Steps**; each **Step** is bound to one **Action**
 - An **Action** may reference an **Agent** (agent-kind) or invoke a service directly
 - An **Experiment** uses one **Dataset** and one **Prompt version**
-- An **Experiment** produces one **Justification** per **Metric** per dataset record
+- A **Dataset** contains one or more **Dataset samples**; each holds an input and optional expected tool call trace
+- The **Sampler** produces one **Sample** per **Dataset sample** during the sampling phase
+- An **Experiment** produces one **Justification** per **Metric** per **Sample** during the evaluating phase
+- **Metrics** must exist for an agent before an experiment can be created
 - A **Prompt version** has a fixed **Output schema** that the **Judge** must not contradict when evaluating format compliance
 - Each **Improvement** creates a new **Prompt version** and triggers an **Auto-eval**
 
