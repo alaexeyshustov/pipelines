@@ -28,6 +28,19 @@ RSpec.describe Setting do
     it "returns nil when key is absent" do
       expect(described_class.fetch("emails_agent_model")).to be_nil
     end
+
+    context "with a warm cache" do
+      let(:cache) { ActiveSupport::Cache::MemoryStore.new }
+
+      before { allow(Rails).to receive(:cache).and_return(cache) }
+
+      it "returns the cached value without querying the database" do
+        cache.write("setting/emails_agent_model", "cached-model")
+        allow(described_class).to receive(:find_by)
+        described_class.fetch("emails_agent_model")
+        expect(described_class).not_to have_received(:find_by)
+      end
+    end
   end
 
   describe ".set" do
@@ -40,6 +53,24 @@ RSpec.describe Setting do
       create(:setting, key: "emails_agent_model", value: "old-model")
       described_class.set("emails_agent_model", "new-model")
       expect(described_class.fetch("emails_agent_model")).to eq("new-model")
+    end
+
+    context "with write-through caching" do
+      let(:cache) { ActiveSupport::Cache::MemoryStore.new }
+
+      before { allow(Rails).to receive(:cache).and_return(cache) }
+
+      it "writes the value into the cache after saving to the database" do
+        described_class.set("emails_agent_model", "new-model")
+        expect(cache.read("setting/emails_agent_model")).to eq("new-model")
+      end
+
+      it "subsequent fetch reads from cache without a DB query" do
+        described_class.set("emails_agent_model", "cached-model")
+        allow(described_class).to receive(:find_by)
+        described_class.fetch("emails_agent_model")
+        expect(described_class).not_to have_received(:find_by)
+      end
     end
   end
 
