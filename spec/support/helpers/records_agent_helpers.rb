@@ -1,13 +1,11 @@
 # frozen_string_literal: true
 
 module RecordsAgentHelpers
-  def openai_completions_url
-    'https://api.openai.com/v1/chat/completions'
-  end
+  OPENAI_COMPLETIONS_URL  = 'https://api.openai.com/v1/chat/completions'
+  MISTRAL_COMPLETIONS_URL = 'https://api.mistral.ai/v1/chat/completions'
 
-  def mistral_completions_url
-    'https://api.mistral.ai/v1/chat/completions'
-  end
+  def openai_completions_url  = OPENAI_COMPLETIONS_URL
+  def mistral_completions_url = MISTRAL_COMPLETIONS_URL
 
   def stub_openai_agent_response(content:)
     stub_request(:post, openai_completions_url)
