@@ -133,7 +133,7 @@ RSpec.describe Orchestration::InputMappingResolver do
 
       it 'raises MissingPath rather than silently coercing the segment to 0' do
         expect { resolver.resolve }
-          .to raise_error(described_class::MissingPath, /missing path "emails.subject" in output "fetch"/)
+          .to raise_error(described_class::MissingPath, /missing path "emails\.subject" in output "fetch"/)
       end
     end
 
@@ -152,7 +152,7 @@ RSpec.describe Orchestration::InputMappingResolver do
       let(:input_mapping)    { { "x" => { "from" => "fetch", "path" => "meta.id" } } }
 
       it 'raises MissingPath' do
-        expect { resolver.resolve }.to raise_error(described_class::MissingPath, /missing path "meta.id" in output "fetch"/)
+        expect { resolver.resolve }.to raise_error(described_class::MissingPath, /missing path "meta\.id" in output "fetch"/)
       end
     end
 
@@ -238,7 +238,7 @@ RSpec.describe Orchestration::InputMappingResolver do
       let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "emails.99" } } }
 
       it 'raises MissingPath' do
-        expect { resolver.resolve }.to raise_error(described_class::MissingPath, /missing path "emails.99" in output "fetch"/)
+        expect { resolver.resolve }.to raise_error(described_class::MissingPath, /missing path "emails\.99" in output "fetch"/)
       end
     end
 
