@@ -56,7 +56,6 @@ RSpec.describe Orchestration::InputMappingResolver do
       end
 
       it 'returns nil without raising' do
-        expect { resolver.resolve }.not_to raise_error
         expect(resolver.resolve["maybe"]).to be_nil
       end
     end
@@ -77,7 +76,6 @@ RSpec.describe Orchestration::InputMappingResolver do
       end
 
       it 'returns nil without raising when the upstream key is absent' do
-        expect { resolver.resolve }.not_to raise_error
         expect(resolver.resolve["maybe"]).to be_nil
       end
     end
@@ -196,7 +194,7 @@ RSpec.describe Orchestration::InputMappingResolver do
       let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "no_such" } } }
 
       it 'raises MissingPath (optional defaults to nil/falsy)' do
-        expect { resolver.resolve }.to raise_error(described_class::MissingPath)
+        expect { resolver.resolve }.to raise_error(described_class::MissingPath, /missing path "no_such" in output "fetch"/)
       end
     end
 
@@ -213,7 +211,7 @@ RSpec.describe Orchestration::InputMappingResolver do
       let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "no_such", "optional" => false } } }
 
       it 'raises MissingPath' do
-        expect { resolver.resolve }.to raise_error(described_class::MissingPath)
+        expect { resolver.resolve }.to raise_error(described_class::MissingPath, /missing path "no_such" in output "fetch"/)
       end
     end
 
@@ -240,7 +238,7 @@ RSpec.describe Orchestration::InputMappingResolver do
       let(:input_mapping) { { "x" => { "from" => "fetch", "path" => "emails.99" } } }
 
       it 'raises MissingPath' do
-        expect { resolver.resolve }.to raise_error(described_class::MissingPath)
+        expect { resolver.resolve }.to raise_error(described_class::MissingPath, /missing path "emails.99" in output "fetch"/)
       end
     end
 
