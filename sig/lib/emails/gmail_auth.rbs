@@ -1,5 +1,8 @@
 module Emails
   class GmailAuth
+    class InteractiveAuthorizationRequired < StandardError
+    end
+
     USER_ID: String
 
     @credentials_path: String
@@ -15,5 +18,7 @@ module Emails
     private
 
     def build_authorizer: (callback_uri: String) -> untyped
+    def interactive_authorization_allowed?: () -> bool
+    def open_authorization_url: (String) -> bool
   end
 end

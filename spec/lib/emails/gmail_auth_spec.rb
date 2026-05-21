@@ -5,9 +5,9 @@ require "rails_helper"
 RSpec.describe Emails::GmailAuth do
   let(:credentials_path) { "credentials.json" }
   let(:token_path) { "token.yaml" }
-  let(:scope) { Emails::Adapters::GmailAdapter::SCOPE }
   let(:callback_uri) { "http://localhost:3000/settings/email_connectors/oauth_callback" }
-  let(:auth) { described_class.new(credentials_path:, token_path:, scope:) }
+  let(:output) { StringIO.new }
+  let(:auth) { described_class.new(credentials_path:, token_path:, scope: Emails::Adapters::GmailAdapter::SCOPE, output:) }
 
   let(:authorizer) { instance_double(Google::Auth::UserAuthorizer) }
 
@@ -16,9 +16,7 @@ RSpec.describe Emails::GmailAuth do
     token_store = instance_double(Google::Auth::Stores::FileTokenStore)
     allow(Google::Auth::ClientId).to receive(:from_file).with(credentials_path).and_return(client_id)
     allow(Google::Auth::Stores::FileTokenStore).to receive(:new).with(file: token_path).and_return(token_store)
-    allow(Google::Auth::UserAuthorizer).to receive(:new)
-      .with(client_id, scope, token_store, callback_uri:)
-      .and_return(authorizer)
+    allow(Google::Auth::UserAuthorizer).to receive(:new).and_return(authorizer)
   end
 
   describe "#authorization_url" do
@@ -27,6 +25,24 @@ RSpec.describe Emails::GmailAuth do
       allow(authorizer).to receive(:get_authorization_url).with(base_url: callback_uri).and_return(url)
 
       expect(auth.authorization_url(callback_uri:)).to eq(url)
+    end
+  end
+
+  describe "#credentials" do
+    it "raises without opening a browser when interactive auth would be required in test" do
+      tcp_server = instance_double(TCPServer, addr: [ nil, 3000 ], close: nil)
+      url = "https://accounts.google.com/o/oauth2/auth?scope=gmail"
+
+      allow(TCPServer).to receive(:new).with("localhost", 0).and_return(tcp_server)
+      allow(authorizer).to receive(:get_credentials).with(described_class::USER_ID).and_return(nil)
+      allow(authorizer).to receive(:get_authorization_url).with(base_url: "http://localhost:3000").and_return(url)
+      allow(auth).to receive(:system)
+
+      expect { auth.credentials }
+        .to raise_error(described_class::InteractiveAuthorizationRequired, /#{Regexp.escape(url)}/)
+
+      expect(auth).not_to have_received(:system)
+      expect(tcp_server).to have_received(:close)
     end
   end
 
