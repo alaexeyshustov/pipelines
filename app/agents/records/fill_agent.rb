@@ -2,7 +2,7 @@ module Records
   class FillAgent < RubyLLM::Agent
     chat_model Chat
     tools Records::UpdateRowsTool, Emails::GetTool
-    model "gpt-5.1"
+    model LlmModels.records_agent
 
     schema do
       integer :rows_updated, description: "The number of rows updated in the database"

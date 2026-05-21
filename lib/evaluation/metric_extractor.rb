@@ -6,7 +6,7 @@ module Evaluation
       Return ONLY the JSON array with no additional text.
     PROMPT
 
-    DEFAULT_MODEL = ENV.fetch("EVALUATION_LLM_MODEL", "gpt-5.4")
+    DEFAULT_MODEL = LlmModels.evaluation
 
     def self.call(agent_name)
       new(agent_name).call

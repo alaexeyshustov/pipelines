@@ -145,7 +145,7 @@ RECONCILE_EMAILS_INPUT_MAPPING = {
 # Seeds cover fresh installs; the migration covers existing installations.
 AGENT_DEFINITIONS = {
   "Emails::ClassifyAgent" => {
-    model:         "mistral-large-latest",
+    model:         LlmModels.emails_agent,
     tools:         [ "Records::TempFileTool" ],
     output_schema: CLASSIFY_EMAILS_OUTPUT_SCHEMA,
     prompt:        <<~PROMPT
@@ -164,7 +164,7 @@ AGENT_DEFINITIONS = {
     PROMPT
   },
   "Emails::FilterAgent" => {
-    model:         "mistral-large-latest",
+    model:         LlmModels.emails_agent,
     tools:         [ "Records::TempFileTool" ],
     output_schema: FILTER_EMAILS_OUTPUT_SCHEMA,
     prompt:        <<~PROMPT
@@ -189,7 +189,7 @@ AGENT_DEFINITIONS = {
     PROMPT
   },
   "Emails::MappingAgent" => {
-    model:  "mistral-large-latest",
+    model:  LlmModels.emails_agent,
     tools:  [ "Emails::GetTool", "Records::TempFileTool" ],
     prompt: <<~PROMPT
       Your task is to map raw email data to a structured format for database insertion.
@@ -206,7 +206,7 @@ AGENT_DEFINITIONS = {
     PROMPT
   },
   "Records::StoreAgent" => {
-    model:         "mistral-large-latest",
+    model:         LlmModels.emails_agent,
     tools:         [ "Emails::GetLabelsTool", "Emails::CreateLabelTool", "Emails::AddLabelsTool",
                     "Records::InsertRowsTool", "Records::ReadSchemaTool", "Emails::GetTool" ],
     output_schema: STORE_EMAILS_OUTPUT_SCHEMA,
@@ -231,7 +231,7 @@ AGENT_DEFINITIONS = {
     PROMPT
   },
   "Records::NormalizeAgent" => {
-    model:  "gpt-5.1",
+    model:  LlmModels.records_agent,
     tools:  [ "Records::ListRowsTool", "Records::ReadRowsTool", "Records::UpdateRowsTool",
               "Records::ReadSchemaTool", "Records::SearchSimilarTool" ],
     prompt: <<~PROMPT
@@ -260,7 +260,7 @@ AGENT_DEFINITIONS = {
     PROMPT
   },
   "Records::ReconcileAgent" => {
-    model:  "gpt-5.1",
+    model:  LlmModels.records_agent,
     tools:  [ "Records::ReadSchemaTool", "Records::TempFileTool", "Records::SearchSimilarTool",
               "Records::InsertRowsTool", "Records::UpdateRowsTool", "Records::ReadRowsTool" ],
     prompt: <<~PROMPT
@@ -297,7 +297,7 @@ AGENT_DEFINITIONS = {
     PROMPT
   },
   "Records::FillAgent" => {
-    model:  "gpt-5.1",
+    model:  LlmModels.records_agent,
     tools:  [ "Records::UpdateRowsTool", "Emails::GetTool" ],
     prompt: <<~PROMPT
       Your task is to fill missing values in the <destination_table> table using the original email content.

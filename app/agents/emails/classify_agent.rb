@@ -2,7 +2,7 @@ module Emails
   class ClassifyAgent < RubyLLM::Agent
     chat_model Chat
     tools Records::TempFileTool
-    model "mistral-large-latest"
+    model LlmModels.emails_agent
 
     schema do
       array :results do

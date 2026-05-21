@@ -2,7 +2,7 @@ module Evaluation
   module Judge
     class Agent < ::RubyLLM::Agent
       chat_model Chat
-      model "gpt-5.4"
+      model LlmModels.judge
 
       # steep:ignore:start
       schema do

@@ -1,7 +1,7 @@
 module Evaluation
   module Evaluators
     class LLMJudgeEval < BaseEval
-      @judge_model = ENV.fetch("JUDGE_LLM_MODEL", "gpt-5.4")
+      @judge_model = LlmModels.judge
 
       class << self
         attr_accessor :judge_model

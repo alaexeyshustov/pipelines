@@ -2,7 +2,7 @@ module Records
   class ReconcileAgent < RubyLLM::Agent
     chat_model Chat
     tools ReadSchemaTool, TempFileTool, SearchSimilarTool, InsertRowsTool, UpdateRowsTool, ReadRowsTool
-    model "gpt-5.1"
+    model LlmModels.records_agent
 
     schema do
       integer :rows_inserted, description: "The number of rows inserted into the database"

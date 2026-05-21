@@ -1,0 +1,6 @@
+module LlmModels
+  def self.emails_agent: () -> String
+  def self.records_agent: () -> String
+  def self.evaluation: () -> String
+  def self.judge: () -> String
+end
