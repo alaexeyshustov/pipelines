@@ -3,3 +3,4 @@ credentials.json
 token.yaml
 storage/development.sqlite3
 storage/test.sqlite3
+node_modules/

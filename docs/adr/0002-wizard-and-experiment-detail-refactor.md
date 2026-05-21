@@ -1,3 +1,7 @@
+---
+status: finished
+---
+
 # Evaluation wizard refactor and ExperimentDetailComponent extraction
 
 ## Context

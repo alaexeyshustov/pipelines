@@ -1,3 +1,7 @@
+---
+status: finished
+---
+
 # PRD: LLM Provider Error Observability for Agentic Pipelines
 
 ## Summary

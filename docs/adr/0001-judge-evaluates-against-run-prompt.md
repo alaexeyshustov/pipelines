@@ -1,3 +1,7 @@
+---
+status: finished
+---
+
 # Judge evaluates against the prompt the run actually used
 
 When `LLMJudgeEval` scores an agent's output it needs a reference point for "Agent Instructions." Two options exist: use the prompt version the runner actually executed with (stored on `leva_runner_results.prompt_id`), or always fetch the current-latest prompt version for that agent.

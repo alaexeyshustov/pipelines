@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: finished
 ---
 
 # Extract agent resolution policy from RuntimeAgentBuilder
