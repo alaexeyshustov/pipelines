@@ -35,12 +35,5 @@ RSpec.describe Records::ReconcileJob do
     end
   end
 
-  it "ignores IDs not in the database" do
-    described_class.perform_now([ 0 ])
-
-    expect(agent).to have_received(:ask) do |input|
-      parsed = JSON.parse(input)
-      expect(parsed["emailsto_reconcile"]).to be_empty
-    end
-  end
+  it_behaves_like 'a records job that ignores missing IDs', 'emailsto_reconcile'
 end

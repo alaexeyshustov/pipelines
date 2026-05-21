@@ -22,12 +22,5 @@ RSpec.describe Records::FillJob do
     end
   end
 
-  it "ignores IDs not in the database" do
-    described_class.perform_now([ 0 ])
-
-    expect(agent).to have_received(:ask) do |input|
-      parsed = JSON.parse(input)
-      expect(parsed["emails"]).to be_empty
-    end
-  end
+  it_behaves_like 'a records job that ignores missing IDs', 'emails'
 end

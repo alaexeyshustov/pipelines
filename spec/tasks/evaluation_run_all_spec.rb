@@ -4,14 +4,15 @@ require "rails_helper"
 require "rake"
 
 RSpec.describe "evaluation:run_all rake task" do # rubocop:disable RSpec/DescribeClass
+  include RakeTaskHelpers
+
   let(:task_name) { "evaluation:run_all" }
 
   let(:classify_agent_name) { "Emails::ClassifyAgent" }
   let(:filter_agent_name)   { "Emails::FilterAgent" }
 
   before do
-    Rails.application.load_tasks if Rake::Task.tasks.empty?
-    Rake::Task[task_name].reenable
+    load_rake_task(task_name)
     allow(Evaluation::ExperimentJob).to receive(:perform_later)
 
     create(:orchestration_agent, name: classify_agent_name)

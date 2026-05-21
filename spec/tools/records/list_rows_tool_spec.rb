@@ -46,8 +46,5 @@ RSpec.describe Records::ListRowsTool do
     end
   end
 
-  it 'returns an error for an unknown table' do
-    result = tool.execute(table: 'unknown')
-    expect(result[:error]).to match(/Unknown table/)
-  end
+  it_behaves_like 'a records tool that handles unknown tables'
 end
