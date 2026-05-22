@@ -119,7 +119,7 @@ RSpec.describe Evaluation::CreateExperimentFromDraft do
 
       it "does not call MetricSuggester" do
         allow(Evaluation::MetricSuggester).to receive(:call)
-        described_class.call(draft: draft) rescue Evaluation::NoMetricsError
+        expect { described_class.call(draft: draft) }.to raise_error(Evaluation::NoMetricsError)
         expect(Evaluation::MetricSuggester).not_to have_received(:call)
       end
     end

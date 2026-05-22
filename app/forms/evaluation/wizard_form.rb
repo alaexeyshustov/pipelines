@@ -7,6 +7,7 @@ module Evaluation
     WIZARD_STEPS = 4
 
     validate :dataset_selected
+    validate :active_metrics_present, if: :complete?
 
     def initialize(wizard_token:, step_param: nil)
       @wizard_token = wizard_token
@@ -51,6 +52,13 @@ module Evaluation
 
     def dataset_selected
       errors.add(:dataset, "must be selected") if (draft.payload || {})["dataset_id"].blank?
+    end
+
+    def active_metrics_present
+      agent_name = (draft.payload || {})["agent_name"]
+      return if agent_name.blank?
+      return if Evaluation::Metric.for_agent(agent_name).active.any?
+      errors.add(:base, "No active metrics exist for this agent. Please go back to the Metrics step and generate or add metrics.")
     end
 
     def draft

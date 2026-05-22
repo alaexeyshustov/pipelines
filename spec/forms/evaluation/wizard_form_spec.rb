@@ -134,6 +134,22 @@ create(:evaluation_wizard_draft,
         expect(form.errors[:dataset]).to be_present
       end
     end
+
+    context "when at step 4 (complete) with no active metrics for the agent" do
+      before do
+        create(:evaluation_wizard_draft, session_token: token, step: 4,
+               payload: { "experiment_name" => "Eval", "dataset_id" => "7", "agent_name" => "SomeAgent" })
+      end
+
+      it "returns false" do
+        expect(form.valid?).to be false
+      end
+
+      it "adds a base error about metrics" do
+        form.valid?
+        expect(form.errors[:base]).to be_present
+      end
+    end
   end
 
   describe "#complete?" do

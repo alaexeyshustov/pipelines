@@ -258,6 +258,23 @@ RSpec.describe "Evaluation::Experiments" do
       end
     end
 
+    context "when metrics are deactivated between step 2 and step 4 (race condition)" do
+      let!(:dataset) { create(:evaluation_dataset) }
+      let!(:prompt)  { create(:orchestration_prompt) }
+
+      before { allow(Evaluation::ExperimentJob).to receive(:perform_later) }
+
+      it "re-renders with unprocessable_content instead of raising 500" do
+        metric = create(:evaluation_metric, agent_name: prompt.name, active: true)
+        post evaluation_experiments_path, params: { current_step: 1, wizard: { agent_name: prompt.name, experiment_name: "Race", prompt_id: prompt.id.to_s } }
+        post evaluation_experiments_path, params: { current_step: 2 }
+        post evaluation_experiments_path, params: { current_step: 3, wizard: { dataset_id: dataset.id.to_s } }
+        metric.update!(active: false)
+        post evaluation_experiments_path, params: { current_step: 4 }
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+    end
+
     context "when posting step 2 with no active metrics for the agent" do
       let!(:prompt) { create(:orchestration_prompt) }
 

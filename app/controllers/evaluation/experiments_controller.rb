@@ -22,14 +22,12 @@ module Evaluation
         session.delete(:wizard_token)
         redirect_to evaluation_experiment_path(experiment), notice: "Experiment '#{experiment.name}' started."
       elsif @wizard_form.complete?
-        flash.now[:alert] = @wizard_form.errors.full_messages.to_sentence
-        render :new, status: :unprocessable_entity
+        render_wizard_error
       else
         if @wizard_form.advance!(@wizard_form.step, wizard_params)
           redirect_to new_evaluation_experiment_path(step: @wizard_form.step + 1)
         else
-          flash.now[:alert] = @wizard_form.errors.full_messages.to_sentence
-          render :new, status: :unprocessable_entity
+          render_wizard_error
         end
       end
     end
@@ -119,6 +117,11 @@ module Evaluation
 
     def wizard_params
       params.fetch(:wizard, {}).permit(:agent_name, :prompt_id, :experiment_name, :sample_model, :evaluation_model, :dataset_id).to_h
+    end
+
+    def render_wizard_error
+      flash.now[:alert] = @wizard_form.errors.full_messages.to_sentence
+      render :new, status: :unprocessable_entity
     end
   end
 end
