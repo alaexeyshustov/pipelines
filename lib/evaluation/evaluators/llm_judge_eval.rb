@@ -48,10 +48,11 @@ module Evaluation
         ActiveRecord::Base.transaction do
           inserted = EvaluationResult.insert_all!(eval_results)
           inserted_ids = inserted.map { |id| id["id"].to_i }
-          justification_ids = inserted_ids.dup
-          justifications = metric_results.map do |result|
+          justifications = inserted_ids.zip(metric_results).filter_map do |id, result|
+            next unless result
+
             {
-              evaluation_result_id: justification_ids.shift,
+              evaluation_result_id: id,
               metric_name: result[:metric_name],
               justification: result[:justification]
             }

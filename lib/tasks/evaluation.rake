@@ -142,7 +142,6 @@ namespace :evaluation do
         name: "#{agent_name} eval w/ #{model_label} (#{Date.today})",
         dataset: dataset,
         prompt: prompt,
-        runner_class: "Evaluation::Sampler",
         evaluator_classes: [ "LLMJudgeEval" ],
         metadata: model ? { "pipeline_model" => model } : nil
       )

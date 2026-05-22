@@ -47,7 +47,6 @@ module Evaluation
         name:              payload["experiment_name"].presence || "Manual eval",
         dataset_id:        payload["dataset_id"],
         prompt_id:         @prompt_id,
-        runner_class:      "Evaluation::Sampler",
         evaluator_classes: [ "Evaluation::Evaluators::LLMJudgeEval" ],
         metadata:          { "triggered_by" => "manual" },
         sample_model:      payload["sample_model"].presence,

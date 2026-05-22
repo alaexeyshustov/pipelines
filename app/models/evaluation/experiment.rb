@@ -7,7 +7,7 @@ module Evaluation
     has_many :samples, class_name: "Evaluation::Sample", dependent: :destroy
     has_many :evaluation_results, through: :samples, class_name: "Evaluation::EvaluationResult"
 
-    validates :name, :dataset, :runner_class, :evaluator_classes, presence: true
+    validates :name, :dataset, :evaluator_classes, presence: true
 
     enum :status, { pending: 0, running: 1, completed: 2, failed: 3 }, default: :pending
     serialize :evaluator_classes, coder: JSON, type: Array

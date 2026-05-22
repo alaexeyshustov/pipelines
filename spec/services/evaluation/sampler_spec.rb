@@ -147,6 +147,67 @@ RSpec.describe Evaluation::Sampler do # rubocop:disable RSpec/MultipleMemoizedHe
       end
     end
 
+    context "when the agent tool is read-only" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      let(:orchestration_agent) do
+        create(:orchestration_agent,
+               name: "Emails::ClassifyAgent",
+               model: "mistral-large-latest",
+               tools: [ "Records::ReadRowsTool" ])
+      end
+
+      let(:mistral_tool_call_response) do
+        {
+          id: "chatcmpl-1", object: "chat.completion", model: "mistral-large-latest",
+          choices: [ {
+            index: 0,
+            message: {
+              role: "assistant", content: nil,
+              tool_calls: [ { id: "call_abc", type: "function",
+                              function: { name: "read_rows",
+                                          arguments: { table: "emails", filters: {} }.to_json } } ]
+            },
+            finish_reason: "tool_calls"
+          } ],
+          usage: { prompt_tokens: 100, completion_tokens: 20, total_tokens: 120 }
+        }
+      end
+
+      it "does not return the sentinel for read-only tools" do
+        expect(sample.tool_calls.first["result"]).not_to eq("[write tool blocked during sampling]")
+      end
+    end
+
+    context "when the agent returns output without calling any tools" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      let(:mistral_no_tool_response) do
+        {
+          id: "chatcmpl-1", object: "chat.completion", model: "mistral-large-latest",
+          choices: [ {
+            index: 0,
+            message: { role: "assistant", content: final_output },
+            finish_reason: "stop"
+          } ],
+          usage: { prompt_tokens: 50, completion_tokens: 10, total_tokens: 60 }
+        }
+      end
+
+      before do
+        stub_request(:post, "https://api.mistral.ai/v1/chat/completions")
+          .to_return(
+            status: 200,
+            body: mistral_no_tool_response.to_json,
+            headers: { "Content-Type" => "application/json" }
+          )
+      end
+
+      it "creates the sample with an empty tool_calls array" do
+        expect(sample.tool_calls).to eq([])
+      end
+
+      it "captures the final output" do
+        expect(sample.output).to eq(final_output)
+      end
+    end
+
     context "when no agent is found for the experiment" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       it "raises ArgumentError" do
         other_experiment = create(:evaluation_experiment)

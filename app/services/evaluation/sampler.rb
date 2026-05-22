@@ -60,7 +60,18 @@ module Evaluation
 
     def resolve_tools(agent_record)
       configured = agent_record.tools.presence
-      return configured.map(&:constantize) if configured
+      if configured
+        return configured.map do |tool|
+          namespace = tool.to_s.split("::").first
+          unless Orchestration::Agent::ALLOWED_TOOL_NAMESPACES.include?(namespace)
+            raise ArgumentError, "Tool '#{tool}' is outside allowed namespaces"
+          end
+
+          tool.constantize
+        rescue NameError
+          raise ArgumentError, "Unknown tool class: #{tool}"
+        end
+      end
 
       agent_class = agent_record.name.safe_constantize
       return agent_class.tools if agent_class.respond_to?(:tools)
@@ -70,18 +81,19 @@ module Evaluation
 
     def wrap_write_tools(tool_classes)
       tool_classes.map do |tool_class|
-        next tool_class if tool_class.readonly? # steep:ignore
+        next tool_class if tool_class.respond_to?(:readonly?) && tool_class.readonly? # steep:ignore
 
         block_write_tool(tool_class)
       end
     end
 
     def block_write_tool(tool_class)
+      sentinel = WRITE_BLOCKED_SENTINEL
       # steep:ignore:start
       Class.new(tool_class) do
         define_method(:execute) do |**kwargs|
           Rails.logger.info("Sampler: blocked write tool #{name} (#{kwargs.keys.inspect})")
-          Evaluation::Sampler::WRITE_BLOCKED_SENTINEL
+          sentinel
         end
       end
       # steep:ignore:end
