@@ -1,4 +1,4 @@
-<% if @candidate.pending? || @candidate.running? %>
+<% if @candidate.pending? || @candidate.sampling? || @candidate.evaluating? %>
   <meta name="turbo-refresh-interval" content="5000">
   <meta name="turbo-refresh-method" content="replace">
 <% end %>

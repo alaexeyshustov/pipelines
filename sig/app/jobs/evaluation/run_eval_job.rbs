@@ -1,9 +1,0 @@
-module Evaluation
-  class RunEvalJob < ApplicationJob
-    def perform: (Integer experiment_id, Integer dataset_sample_id) -> void
-
-    private
-
-    def last?: (untyped experiment) -> bool
-  end
-end
