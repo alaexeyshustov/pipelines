@@ -11,7 +11,8 @@ module Evaluation
         @experiment = experiment
         @prompt = prompt
         result = JSON.parse(execute(dataset_sample))
-        tool_calls = result.fetch("tool_calls", []) #: Array[untyped]
+        empty_array = [] #: Array[untyped]
+        tool_calls = result.fetch("tool_calls", empty_array)
         raw_output = result.fetch("output", "")
         Sample.create!(
           experiment: experiment,
