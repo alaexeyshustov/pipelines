@@ -1,8 +1,8 @@
 integration: rspec
 usage: opensource
 jobs: 2
-# Minimum mutation score threshold: 90% (enforced in .github/workflows/mutation.yml for focused subjects)
-# Raise this after establishing a stable baseline.
+# Minimum mutation score threshold: 90% (MUTATION_SCORE_THRESHOLD in .github/workflows/mutation.yml)
+# Raise MUTATION_SCORE_THRESHOLD after establishing a stable baseline.
 includes:
   - app/agents
   - app/controllers

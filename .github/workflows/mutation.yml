@@ -5,6 +5,9 @@ on:
     - cron: '0 3 * * *'
   workflow_dispatch:
 
+env:
+  MUTATION_SCORE_THRESHOLD: "90.0"
+
 jobs:
   mutation:
     name: Mutation Testing
@@ -28,15 +31,18 @@ jobs:
 
       - name: Run mutation testing
         run: |
+          # Run only the focused high-logic subjects; positional args override .mutant.yml matcher.
           bundle exec mutant run --jobs 4 \
             'Orchestration::PipelineRunner' \
             'Orchestration::NormalizeActionRunFailure' \
             'Orchestration::IngestionExecutor' \
-            'Orchestration::InputMappingResolver' | tee mutant_output.txt || true
-          score=$(grep "Coverage:" mutant_output.txt | grep -oE '[0-9]+\.[0-9]+')
+            'Orchestration::InputMappingResolver' 2>&1 | tee mutant_output.txt || true
+          score=$(grep "Coverage:" mutant_output.txt | tail -1 | grep -oE '[0-9]+(\.[0-9]+)?')
           echo "Mutation score: ${score}%"
           if [ -z "$score" ]; then
             echo "::error::Could not parse mutation score from output"
             exit 1
           fi
-          awk -v s="$score" 'BEGIN { if (s+0 < 90.0) { print "::error::Mutation score " s "% is below the 90% minimum threshold"; exit 1 } }'
+          awk -v s="$score" -v t="$MUTATION_SCORE_THRESHOLD" \
+            'BEGIN { if (s+0 < t+0) { print "::error::Mutation score " s "% is below the " t "% minimum threshold"; exit 1 } }' \
+            || exit 1
