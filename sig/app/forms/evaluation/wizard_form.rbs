@@ -8,7 +8,7 @@ module Evaluation
 
     def step: () -> Integer
     def complete?: () -> bool
-    def advance!: (Integer step, Hash[String, untyped] payload) -> void
+    def advance!: (Integer step, Hash[String, untyped] payload) -> bool
     def complete!: () -> Experiment
     def step_form: (Integer step) -> (Wizard::Step1Form | Wizard::Step2Form | Wizard::Step3Form | Wizard::Step4Form)?
   end

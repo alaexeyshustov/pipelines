@@ -39,13 +39,51 @@ RSpec.describe Evaluation::WizardForm do
   end
 
   describe "#advance!" do
-    before { create(:evaluation_wizard_draft, session_token: token, step: 1) }
+    context "when advancing from step 1" do
+      before { create(:evaluation_wizard_draft, session_token: token, step: 1) }
 
-    it "advances the draft to the next step and persists the payload" do
-      form.advance!(1, { "agent_name" => "MyAgent" })
-      draft = Evaluation::WizardDraft.find_by(session_token: token)
-      expect(draft.step).to eq(2)
-      expect(draft.payload["agent_name"]).to eq("MyAgent")
+      it "advances the draft to the next step and persists the payload" do
+        form.advance!(1, { "agent_name" => "MyAgent" })
+        draft = Evaluation::WizardDraft.find_by(session_token: token)
+        expect(draft.step).to eq(2)
+        expect(draft.payload["agent_name"]).to eq("MyAgent")
+      end
+    end
+
+    context "when advancing from step 2 with active metrics" do
+      before do
+        create(:evaluation_metric, agent_name: "MyAgent", active: true)
+        create(:evaluation_wizard_draft, session_token: token, step: 2,
+               payload: { "agent_name" => "MyAgent" })
+      end
+
+      it "returns true and advances the draft" do
+        result = form.advance!(2, {})
+        expect(result).to be(true)
+        expect(Evaluation::WizardDraft.find_by(session_token: token).step).to eq(3)
+      end
+    end
+
+    context "when advancing from step 2 with no active metrics" do
+      before do
+        create(:evaluation_wizard_draft, session_token: token, step: 2,
+               payload: { "agent_name" => "MyAgent" })
+      end
+
+      it "returns false" do
+        result = form.advance!(2, {})
+        expect(result).to be(false)
+      end
+
+      it "adds a base error" do
+        form.advance!(2, {})
+        expect(form.errors[:base]).to be_present
+      end
+
+      it "does not advance the draft step" do
+        form.advance!(2, {})
+        expect(Evaluation::WizardDraft.find_by(session_token: token).step).to eq(2)
+      end
     end
   end
 
@@ -94,6 +132,22 @@ create(:evaluation_wizard_draft,
       it "adds a meaningful error" do
         form.valid?
         expect(form.errors[:dataset]).to be_present
+      end
+    end
+
+    context "when at step 4 (complete) with no active metrics for the agent" do
+      before do
+        create(:evaluation_wizard_draft, session_token: token, step: 4,
+               payload: { "experiment_name" => "Eval", "dataset_id" => "7", "agent_name" => "SomeAgent" })
+      end
+
+      it "returns false" do
+        expect(form.valid?).to be false
+      end
+
+      it "adds a base error about metrics" do
+        form.valid?
+        expect(form.errors[:base]).to be_present
       end
     end
   end

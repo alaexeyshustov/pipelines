@@ -217,7 +217,7 @@ RSpec.describe "Evaluation::Experiments" do
       expect(draft.payload["agent_name"]).to eq("Emails::ClassifyAgent")
     end
 
-    it "redirects to step 3 after step 2 (no payload)" do
+    it "redirects to step 3 after step 2 (no agent in draft)" do
       post evaluation_experiments_path, params: { current_step: 2 }
       expect(response).to redirect_to(new_evaluation_experiment_path(step: 3))
     end
@@ -225,12 +225,14 @@ RSpec.describe "Evaluation::Experiments" do
     context "when submitting step 4 (final review)" do
       let!(:dataset) { create(:evaluation_dataset) }
       let!(:prompt)  { create(:orchestration_prompt) }
-      let!(:metric)  { create(:evaluation_metric, agent_name: prompt.name) }
 
-      before { allow(Evaluation::ExperimentJob).to receive(:perform_later) }
+      before do
+        create(:evaluation_metric, agent_name: prompt.name, active: true)
+        allow(Evaluation::ExperimentJob).to receive(:perform_later)
+      end
 
       def navigate_to_step4(prompt:, dataset:)
-        post evaluation_experiments_path, params: { current_step: 1, wizard: { agent_name: "Agent", experiment_name: "Eval Exp", prompt_id: prompt.id.to_s } }
+        post evaluation_experiments_path, params: { current_step: 1, wizard: { agent_name: prompt.name, experiment_name: "Eval Exp", prompt_id: prompt.id.to_s } }
         post evaluation_experiments_path, params: { current_step: 2 }
         post evaluation_experiments_path, params: { current_step: 3, wizard: { dataset_id: dataset.id.to_s } }
       end
@@ -254,29 +256,44 @@ RSpec.describe "Evaluation::Experiments" do
         post evaluation_experiments_path, params: { current_step: 4 }
         expect(session[:wizard_token]).to be_nil
       end
+    end
 
-      it "auto-generates metrics and creates the experiment when no active metrics exist" do
+    context "when metrics are deactivated between step 2 and step 4 (race condition)" do
+      let!(:dataset) { create(:evaluation_dataset) }
+      let!(:prompt)  { create(:orchestration_prompt) }
+
+      before { allow(Evaluation::ExperimentJob).to receive(:perform_later) }
+
+      it "re-renders with unprocessable_content instead of raising 500" do
+        metric = create(:evaluation_metric, agent_name: prompt.name, active: true)
+        post evaluation_experiments_path, params: { current_step: 1, wizard: { agent_name: prompt.name, experiment_name: "Race", prompt_id: prompt.id.to_s } }
+        post evaluation_experiments_path, params: { current_step: 2 }
+        post evaluation_experiments_path, params: { current_step: 3, wizard: { dataset_id: dataset.id.to_s } }
         metric.update!(active: false)
-        allow(Evaluation::MetricSuggester).to receive(:call).and_return([
-          { name: "Accuracy", description: "Correct output", weight: 1.0 }
-        ])
-        navigate_to_step4(prompt: prompt, dataset: dataset)
-        expect {
-          post evaluation_experiments_path, params: { current_step: 4 }
-        }.to change(Evaluation::Experiment, :count).by(1)
-        expect(Evaluation::Metric.for_agent(prompt.name).active.count).to be >= 1
-        expect(response).to redirect_to(evaluation_experiment_path(Evaluation::Experiment.last))
+        post evaluation_experiments_path, params: { current_step: 4 }
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+    end
+
+    context "when posting step 2 with no active metrics for the agent" do
+      let!(:prompt) { create(:orchestration_prompt) }
+
+      it "re-renders step 2 with unprocessable_entity status" do
+        post evaluation_experiments_path, params: {
+          current_step: 1, wizard: { agent_name: prompt.name, experiment_name: "Eval", prompt_id: prompt.id.to_s }
+        }
+        post evaluation_experiments_path, params: { current_step: 2 }
+        expect(response).to have_http_status(:unprocessable_content)
       end
 
-      it "creates the experiment even when MetricSuggester fails" do
-        metric.update!(active: false)
-        allow(Evaluation::MetricSuggester).to receive(:call)
-          .and_raise(Evaluation::MetricSuggester::Error, "LLM unavailable")
-        navigate_to_step4(prompt: prompt, dataset: dataset)
-        expect {
-          post evaluation_experiments_path, params: { current_step: 4 }
-        }.to change(Evaluation::Experiment, :count).by(1)
-        expect(response).to redirect_to(evaluation_experiment_path(Evaluation::Experiment.last))
+      it "does not advance the draft past step 2" do
+        post evaluation_experiments_path, params: {
+          current_step: 1, wizard: { agent_name: prompt.name, experiment_name: "Eval", prompt_id: prompt.id.to_s }
+        }
+        post evaluation_experiments_path, params: { current_step: 2 }
+        token = session[:wizard_token]
+        draft = Evaluation::WizardDraft.find_by(session_token: token)
+        expect(draft.step).to eq(2)
       end
     end
   end
