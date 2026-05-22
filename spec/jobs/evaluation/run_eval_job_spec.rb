@@ -4,40 +4,37 @@ require "rails_helper"
 
 RSpec.describe Evaluation::RunEvalJob do
   let(:experiment) { create(:evaluation_experiment, status: :running) }
-  let(:dataset_record) { create(:evaluation_dataset_record, dataset: experiment.dataset) }
-
-  let(:runner_result) { create(:evaluation_runner_result, experiment: experiment, dataset_record: dataset_record) }
+  let(:dataset_sample) { create(:evaluation_dataset_sample, dataset: experiment.dataset) }
+  let(:sample) { create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_sample) }
 
   before do
-    runner_double = instance_double(Evaluation::Runners::StubbedAgentRun)
-    allow(runner_double).to receive(:execute_and_store).and_return(runner_result)
-    allow(Evaluation::Runners::StubbedAgentRun).to receive(:new).and_return(runner_double)
+    the_sample = sample
+    runner_stub = Class.new { define_method(:execute_and_store) { |*| the_sample } }.new
+    allow(Evaluation::Runners::StubbedAgentRun).to receive(:new).and_return(runner_stub)
 
-    eval_double = instance_double(Evaluation::Evaluators::LLMJudgeEval)
-    allow(eval_double).to receive(:evaluate_and_store)
-    allow(Evaluation::Evaluators::LLMJudgeEval).to receive(:new).and_return(eval_double)
+    eval_stub = Class.new { define_method(:evaluate_and_store) { |*| nil } }.new
+    allow(Evaluation::Evaluators::LLMJudgeEval).to receive(:new).and_return(eval_stub)
   end
 
   describe "#perform" do
     it "invokes the runner's execute_and_store" do
-      described_class.perform_now(experiment.id, dataset_record.id)
+      described_class.perform_now(experiment.id, dataset_sample.id)
       expect(Evaluation::Runners::StubbedAgentRun).to have_received(:new)
     end
 
     it "invokes each evaluator's evaluate_and_store" do
-      described_class.perform_now(experiment.id, dataset_record.id)
+      described_class.perform_now(experiment.id, dataset_sample.id)
       expect(Evaluation::Evaluators::LLMJudgeEval).to have_received(:new)
     end
 
-    it "marks the experiment as completed when all records have been processed" do
-      # This is the only dataset record, so it is the last one
-      described_class.perform_now(experiment.id, dataset_record.id)
+    it "marks the experiment as completed when all samples have been processed" do
+      described_class.perform_now(experiment.id, dataset_sample.id)
       expect(experiment.reload.status).to eq("completed")
     end
 
-    it "does not mark the experiment as completed when more records remain" do
-      create(:evaluation_dataset_record, dataset: experiment.dataset)
-      described_class.perform_now(experiment.id, dataset_record.id)
+    it "does not mark the experiment as completed when more samples remain" do
+      create(:evaluation_dataset_sample, dataset: experiment.dataset)
+      described_class.perform_now(experiment.id, dataset_sample.id)
       expect(experiment.reload.status).to eq("running")
     end
   end

@@ -16,21 +16,17 @@ module Evaluation
       private
 
       def load_samples(experiment_id, number_of_samples)
-        RunnerResult
+        Sample
           .where(experiment_id: experiment_id)
-          .includes(dataset_record: :recordable)
+          .includes(:dataset_sample)
           .order(Arel.sql("RANDOM()"))
           .limit(number_of_samples)
       end
 
       def filter_samples(samples)
-        samples.filter_map do |rr|
-          prediction = JSON.parse(rr.prediction)
-          recordable = rr.dataset_record&.recordable
-          next unless recordable
-          { input: recordable.input, output: prediction.fetch("output", "") }
-        rescue JSON::ParserError
-          next
+        samples.filter_map do |s|
+          next unless s.dataset_sample
+          { input: s.dataset_sample.input, output: s.output || "" }
         end
       end
     end

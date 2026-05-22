@@ -50,18 +50,24 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
       expect(Evaluation::Dataset.last.name).to eq("Synthetic emails v1")
     end
 
-    it "creates one SyntheticRecord per generated input" do
+    it "creates one DatasetSample per generated input" do
       expect {
         described_class.perform_now(**params)
-      }.to change(Evaluation::SyntheticRecord, :count).by(generated_inputs.size)
+      }.to change(Evaluation::DatasetSample, :count).by(generated_inputs.size)
     end
 
-    it "associates each SyntheticRecord with the dataset via DatasetRecord" do
+    it "associates each DatasetSample with the dataset" do
       described_class.perform_now(**params)
 
       dataset = Evaluation::Dataset.last
-      expect(dataset.dataset_records.count).to eq(generated_inputs.size)
-      expect(dataset.dataset_records.first.recordable).to be_a(Evaluation::SyntheticRecord)
+      expect(dataset.dataset_samples.count).to eq(generated_inputs.size)
+    end
+
+    it "stores generated inputs in DatasetSample" do
+      described_class.perform_now(**params)
+
+      first_sample = Evaluation::DatasetSample.last(generated_inputs.size).first
+      expect(first_sample.input).to eq(generated_inputs.first)
     end
 
     it "updates WizardDraft payload with complete status and dataset_id" do
@@ -93,22 +99,20 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
       end
     end
 
-    context "when few-shot samples exist" do
+    context "when few-shot samples exist" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       before do
-        records_double = instance_double(ActiveRecord::Relation)
-        dataset_double = instance_double(Evaluation::Dataset)
-
-        allow(Evaluation::Dataset).to receive(:where).with(name: agent_name).and_return(
-          instance_double(ActiveRecord::Relation, first: dataset_double)
-        )
-        allow(dataset_double).to receive(:dataset_records).and_return(records_double)
-        allow(records_double).to receive_messages(joins: records_double, limit: records_double, pluck: [ { "subject" => "Real email", "body" => "See attached" }.to_json ])
+        ds = create(:evaluation_dataset, name: agent_name)
+        create(:evaluation_dataset_sample,
+               dataset: ds,
+               input: { "subject" => "Real email", "body" => "See attached" },
+               source_run_id: 1)
+        allow(Evaluation::Dataset).to receive(:where).with(name: agent_name).and_call_original
       end
 
       it "still creates the dataset and records" do
         expect {
           described_class.perform_now(**params)
-        }.to change(Evaluation::SyntheticRecord, :count).by(generated_inputs.size)
+        }.to change(Evaluation::DatasetSample, :count).by(generated_inputs.size)
       end
 
       it "includes few-shot samples in the LLM user message" do
@@ -134,7 +138,7 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
       it "does not create any records" do
         expect {
           described_class.perform_now(**params)
-        }.not_to change(Evaluation::SyntheticRecord, :count)
+        }.not_to change(Evaluation::DatasetSample, :count)
       end
 
       it "updates WizardDraft payload with error status" do

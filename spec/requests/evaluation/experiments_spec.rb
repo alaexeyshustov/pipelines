@@ -60,10 +60,11 @@ RSpec.describe "Evaluation::Experiments" do
       end
 
         it "shows the average metric score" do
-          runner_result = create(:evaluation_runner_result, experiment: experiment)
+          dataset_sample = create(:evaluation_dataset_sample, dataset: experiment.dataset)
+          sample = create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_sample)
           eval_result = Evaluation::EvaluationResult.create!(
-            experiment: experiment, dataset_record: runner_result.dataset_record,
-            runner_result: runner_result, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
+            experiment: experiment, dataset_sample: dataset_sample,
+            sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
           )
           Evaluation::Justification.create!(evaluation_result: eval_result, metric_name: "Accuracy", justification: "Good")
           get evaluation_experiment_path(experiment)
@@ -71,10 +72,11 @@ RSpec.describe "Evaluation::Experiments" do
         end
 
         it "shows overall average" do
-          runner_result = create(:evaluation_runner_result, experiment: experiment)
+          dataset_sample = create(:evaluation_dataset_sample, dataset: experiment.dataset)
+          sample = create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_sample)
           eval_result = Evaluation::EvaluationResult.create!(
-            experiment: experiment, dataset_record: runner_result.dataset_record,
-            runner_result: runner_result, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
+            experiment: experiment, dataset_sample: dataset_sample,
+            sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
           )
           Evaluation::Justification.create!(evaluation_result: eval_result, metric_name: "Accuracy", justification: "Good")
           get evaluation_experiment_path(experiment)
@@ -313,11 +315,14 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     context "when evaluation results exist for the metric" do
-      let!(:runner_result) { create(:evaluation_runner_result, experiment: experiment, prediction: "Predicted text") }
+      let!(:sample) do
+        ds = create(:evaluation_dataset_sample, dataset: experiment.dataset)
+        create(:evaluation_sample, experiment: experiment, dataset_sample: ds, output: "Predicted text")
+      end
       let!(:eval_result) do
         Evaluation::EvaluationResult.create!(
-          experiment: experiment, dataset_record: runner_result.dataset_record,
-          runner_result: runner_result, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 3.5
+          experiment: experiment, dataset_sample: sample.dataset_sample,
+          sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 3.5
         )
       end
       let!(:justification) do # rubocop:disable RSpec/LetSetup

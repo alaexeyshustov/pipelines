@@ -1,7 +1,5 @@
 module Orchestration
   class ActionRun < ApplicationRecord
-    include Evaluation::Recordable
-
     self.table_name = "orchestration_action_runs"
 
     STATUSES = %w[pending running completed failed].freeze

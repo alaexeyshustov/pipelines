@@ -37,7 +37,7 @@ RSpec.describe Evaluation::Wizard::Step3Form do
 
     it "includes a record_count attribute" do
       dataset = create(:evaluation_dataset, name: "Test Dataset")
-      create(:evaluation_dataset_record, dataset: dataset)
+      create(:evaluation_dataset_sample, dataset: dataset)
       result = form.datasets.find { |d| d.id == dataset.id }
       expect(result.record_count.to_i).to eq(1)
     end

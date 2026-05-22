@@ -1,7 +1,7 @@
 module Evaluation
   module Runners
     class StubbedAgentRun < BaseRun
-      def execute: (Orchestration::ActionRun record) -> String
+      def execute: (Evaluation::DatasetSample dataset_sample) -> String
 
       private
 

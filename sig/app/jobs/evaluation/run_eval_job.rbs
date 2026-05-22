@@ -1,6 +1,6 @@
 module Evaluation
   class RunEvalJob < ApplicationJob
-    def perform: (Integer experiment_id, Integer dataset_record_id) -> void
+    def perform: (Integer experiment_id, Integer dataset_sample_id) -> void
 
     private
 

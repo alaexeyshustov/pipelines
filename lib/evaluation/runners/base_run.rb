@@ -3,22 +3,40 @@
 module Evaluation
   module Runners
     class BaseRun
-      def execute(record)
+      def execute(dataset_sample)
         raise NotImplementedError, "#{self.class}#execute must be implemented"
       end
 
-      def execute_and_store(experiment, dataset_record, prompt)
+      def execute_and_store(experiment, dataset_sample, prompt)
         @experiment = experiment
         @prompt = prompt
-        @dataset_record = dataset_record
-        result = execute(dataset_record.recordable)
-        RunnerResult.create!(
+        result = JSON.parse(execute(dataset_sample))
+        empty_array = [] #: Array[untyped]
+        tool_calls = result.fetch("tool_calls", empty_array)
+        raw_output = result.fetch("output", "")
+        Sample.create!(
           experiment: experiment,
-          dataset_record: dataset_record,
+          dataset_sample: dataset_sample,
           prompt: prompt,
-          prediction: result,
-          runner_class: self.class.name
+          tool_calls: tool_calls,
+          output: raw_output.is_a?(String) ? raw_output : raw_output.to_json
         )
+      rescue JSON::ParserError => e
+        Rails.logger.error("#{self.class}#execute_and_store: invalid JSON from execute: #{e.message}")
+        raise
+      end
+
+      protected
+
+      def find_agent_record
+        agent_name = @experiment&.agent_name
+        return unless agent_name
+
+        Orchestration::Agent.find_by(name: agent_name)
+      end
+
+      def find_action_for(agent_record)
+        Orchestration::Action.where(kind: :agent, agent_id: agent_record.id).first
       end
     end
   end

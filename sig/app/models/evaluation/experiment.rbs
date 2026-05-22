@@ -32,7 +32,7 @@ module Evaluation
     def prompt: () -> Evaluation::Prompt?
     def prompt=: (Evaluation::Prompt?) -> Evaluation::Prompt?
 
-    def runner_results: () -> ActiveRecord::Associations::CollectionProxy
+    def samples: () -> ActiveRecord::Associations::CollectionProxy
     def evaluation_results: () -> ActiveRecord::Associations::CollectionProxy
 
     def pending?: () -> bool

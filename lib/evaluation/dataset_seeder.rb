@@ -17,11 +17,11 @@ module Evaluation
       skipped = 0
 
       candidate_runs.each do |run|
-        record = dataset.dataset_records.find_or_create_by!(
-          recordable_type: "Orchestration::ActionRun",
-          recordable_id: run.id
-        )
-        if record.previously_new_record?
+        sample = dataset.dataset_samples.find_or_initialize_by(source_run_id: run.id)
+        if sample.new_record?
+          sample.input = run.input
+          sample.expected_tool_calls = ToolCallExtractor.call(run.chat)
+          sample.save!
           created += 1
         else
           skipped += 1

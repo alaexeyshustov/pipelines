@@ -26,7 +26,7 @@ module Evaluation
     def output_schema=: (untyped?) -> untyped?
 
     def experiments: () -> ActiveRecord::Associations::CollectionProxy
-    def runner_results: () -> ActiveRecord::Associations::CollectionProxy
+    def samples: () -> ActiveRecord::Associations::CollectionProxy
 
     def update!: (**untyped attrs) -> Prompt
 

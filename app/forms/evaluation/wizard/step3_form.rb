@@ -14,9 +14,9 @@ module Evaluation
 
       def datasets
         Evaluation::Dataset
-          .left_joins(:dataset_records)
+          .left_joins(:dataset_samples)
           .group("evaluation_datasets.id")
-          .select("evaluation_datasets.*, COUNT(evaluation_dataset_records.id) AS record_count")
+          .select("evaluation_datasets.*, COUNT(evaluation_dataset_samples.id) AS record_count")
           .order(:name)
       end
     end

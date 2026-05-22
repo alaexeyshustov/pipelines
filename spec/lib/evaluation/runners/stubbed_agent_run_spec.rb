@@ -30,24 +30,15 @@ RSpec.describe Evaluation::Runners::StubbedAgentRun do # rubocop:disable RSpec/M
     action = create(:orchestration_action, kind: :agent, agent: orchestration_agent)
     create(:orchestration_step_action, action: action)
   end
-  let(:pipeline_run) { create(:orchestration_pipeline_run, pipeline: step_action.step.pipeline) }
-
-  let(:historical_chat) do
-    chat = create(:chat)
-    msg = create(:message, chat: chat, role: "assistant", content: nil)
-    tc = create(:tool_call, message: msg, name: "temp_file",
-                            arguments: { "action" => "read", "filename" => "emails.txt" })
-    create(:message, chat: chat, role: "tool", content: "emails list content", parent_tool_call: tc)
-    chat
-  end
-
-  let(:action_run) do
-    create(:orchestration_action_run,
-           step_action: step_action,
-           pipeline_run: pipeline_run,
-           status: "completed",
-           chat: historical_chat,
-           input: { "emails" => [ { "id" => "1", "subject" => "Job offer" } ] })
+  let(:classify_prompt) { create(:orchestration_prompt, name: "Emails::ClassifyAgent") }
+  let(:experiment) { create(:evaluation_experiment, prompt: classify_prompt) }
+  let(:dataset_sample) do
+    create(:evaluation_dataset_sample,
+           dataset: experiment.dataset,
+           input: { "emails" => [ { "id" => "1", "subject" => "Job offer" } ] },
+           expected_tool_calls: [
+             { "tool_name" => "temp_file", "arguments" => { "action" => "read", "filename" => "emails.txt" }, "result" => "emails list content" }
+           ])
   end
 
   let(:final_output) { '{"results":[{"id":"1","tags":["job"]}]}' }
@@ -82,6 +73,9 @@ RSpec.describe Evaluation::Runners::StubbedAgentRun do # rubocop:disable RSpec/M
   end
 
   before do
+    orchestration_agent
+    step_action
+    runner.instance_variable_set(:@experiment, experiment)
     stub_request(:post, "https://api.mistral.ai/v1/chat/completions")
       .to_return(
         { status: 200, body: mistral_tool_call_response.to_json, headers: { "Content-Type" => "application/json" } }
@@ -91,22 +85,23 @@ RSpec.describe Evaluation::Runners::StubbedAgentRun do # rubocop:disable RSpec/M
   end
 
   describe "#execute" do # rubocop:disable RSpec/MultipleMemoizedHelpers
-    context "when record is not an ActionRun" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+    context "when no matching agent exists for the experiment" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       it "raises ArgumentError with a descriptive message" do
-        chat = create(:chat)
-        expect { runner.execute(chat) }.to raise_error(ArgumentError, /Orchestration::ActionRun/)
+        runner.instance_variable_set(:@experiment, nil)
+        ds = create(:evaluation_dataset_sample)
+        expect { runner.execute(ds) }.to raise_error(ArgumentError, /No agent found/)
       end
     end
 
     it "returns a JSON string prediction" do
-      result = runner.execute(action_run)
+      result = runner.execute(dataset_sample)
 
       expect(result).to be_a(String)
       expect { JSON.parse(result) }.not_to raise_error
     end
 
     it "includes the tool calls made during the run" do
-      result = runner.execute(action_run)
+      result = runner.execute(dataset_sample)
       parsed = JSON.parse(result)
 
       expect(parsed["tool_calls"]).to be_an(Array)
@@ -114,7 +109,7 @@ RSpec.describe Evaluation::Runners::StubbedAgentRun do # rubocop:disable RSpec/M
     end
 
     it "includes the final agent output" do
-      result = runner.execute(action_run)
+      result = runner.execute(dataset_sample)
       parsed = JSON.parse(result)
 
       expect(parsed["output"]).to eq(JSON.parse(final_output))
@@ -128,7 +123,7 @@ RSpec.describe Evaluation::Runners::StubbedAgentRun do # rubocop:disable RSpec/M
         .and_call_original
       # rubocop:enable RSpec/AnyInstance
 
-      runner.execute(action_run)
+      runner.execute(dataset_sample)
     end
 
     context "when the runner has a Leva prompt" do # rubocop:disable RSpec/MultipleMemoizedHelpers
@@ -143,7 +138,7 @@ RSpec.describe Evaluation::Runners::StubbedAgentRun do # rubocop:disable RSpec/M
 
       it "passes the prompt system_prompt as prompt_override to AgentResolutionPolicy" do
         allow(Orchestration::AgentResolutionPolicy).to receive(:call).and_call_original
-        runner.execute(action_run)
+        runner.execute(dataset_sample)
         expect(Orchestration::AgentResolutionPolicy).to have_received(:call)
           .with(hash_including(prompt_override: "Custom instructions for evaluation."))
       end
@@ -152,6 +147,7 @@ RSpec.describe Evaluation::Runners::StubbedAgentRun do # rubocop:disable RSpec/M
     context "when experiment has a sample_model" do # rubocop:disable RSpec/MultipleMemoizedHelpers
       let(:experiment) do
         create(:evaluation_experiment,
+               prompt: classify_prompt,
                runner_class: "Evaluation::Runners::StubbedAgentRun",
                sample_model: "mistral-small-latest")
       end
@@ -160,7 +156,7 @@ RSpec.describe Evaluation::Runners::StubbedAgentRun do # rubocop:disable RSpec/M
 
       it "passes sample_model as pipeline_model to AgentResolutionPolicy" do
         allow(Orchestration::AgentResolutionPolicy).to receive(:call).and_call_original
-        runner.execute(action_run)
+        runner.execute(dataset_sample)
         expect(Orchestration::AgentResolutionPolicy).to have_received(:call)
           .with(hash_including(pipeline_model: "mistral-small-latest"))
       end
@@ -190,9 +186,10 @@ RSpec.describe Evaluation::Runners::StubbedAgentRun do # rubocop:disable RSpec/M
                  }
                })
       end
+      let(:classify_prompt) { create(:orchestration_prompt, name: "Reusable email classifier") }
 
       it "replays the configured tools and structured output through the generic runtime" do
-        result = runner.execute(action_run)
+        result = runner.execute(dataset_sample)
         parsed = JSON.parse(result)
 
         expect(parsed["tool_calls"].first["tool_name"]).to eq("temp_file")

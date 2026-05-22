@@ -135,18 +135,13 @@ end
 
 module Leva
   class BaseRun
-    def execute: (untyped record) -> untyped
-    def execute_and_store: (untyped experiment, untyped dataset_record, untyped prompt) -> untyped
+    def execute: (untyped dataset_sample) -> untyped
+    def execute_and_store: (untyped experiment, untyped dataset_sample, untyped prompt) -> untyped
   end
 
   class BaseEval
-    def evaluate: (RunnerResult runner_result, untyped recordable) -> untyped
-    def evaluate_and_store: (untyped experiment, RunnerResult runner_result) -> untyped
-  end
-
-  class RunnerResult
-    def prediction: () -> String
-    def dataset_record: () -> DatasetRecord
+    def evaluate: (untyped sample, untyped dataset_sample) -> untyped
+    def evaluate_and_store: (untyped experiment, untyped sample) -> untyped
   end
 
   class Dataset
@@ -156,21 +151,27 @@ module Leva
     def self.where: (**untyped attrs) -> untyped
 
     def name: () -> String
-    def dataset_records: () -> DatasetRecordRelation
+    def dataset_samples: () -> DatasetSampleRelation
   end
 
-  class DatasetRecordRelation
-    def where: (**untyped attrs) -> DatasetRecordRelation
+  class DatasetSampleRelation
+    def where: (**untyped attrs) -> DatasetSampleRelation
+    def not: (**untyped attrs) -> DatasetSampleRelation
     def pluck: (Symbol column) -> Array[untyped]
-    def create!: (**untyped attrs) -> DatasetRecord
-    def find_or_create_by!: (**untyped attrs) -> DatasetRecord
+    def create!: (**untyped attrs) -> DatasetSample
+    def find_or_initialize_by: (**untyped attrs) -> DatasetSample
     def count: () -> Integer
-    def first: () -> DatasetRecord?
+    def first: () -> DatasetSample?
+    def limit: (Integer n) -> DatasetSampleRelation
   end
 
-  class DatasetRecord
-    def recordable: () -> untyped
-    def previously_new_record?: () -> bool
+  class DatasetSample
+    def input: () -> untyped
+    def input=: (untyped) -> untyped
+    def expected_tool_calls: () -> Array[untyped]?
+    def source_run_id: () -> Integer?
+    def new_record?: () -> bool
+    def save!: () -> bool
   end
 
   class Experiment

@@ -1,12 +1,10 @@
 module Evaluation
   module Runners
     class BaseRun
-      def execute: (Recordable record) -> untyped
-      def execute_and_store: (Experiment experiment, DatasetRecord dataset_record, Prompt prompt) -> RunnerResult
-
-      private
-
-      def build_predictions: (untyped result) -> String
+      def execute: (DatasetSample dataset_sample) -> untyped
+      def execute_and_store: (Experiment experiment, DatasetSample dataset_sample, Prompt prompt) -> Sample
+      def find_agent_record: () -> Orchestration::Agent?
+      def find_action_for: (Orchestration::Agent agent_record) -> Orchestration::Action?
     end
   end
 end

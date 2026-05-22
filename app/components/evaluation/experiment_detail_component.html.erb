@@ -19,7 +19,7 @@
       <dt class="font-medium text-gray-500">Dataset</dt>
       <dd class="text-gray-700"><%= @experiment.dataset&.name %></dd>
       <dt class="font-medium text-gray-500">Records evaluated</dt>
-      <dd class="text-gray-700"><%= runner_result_count %></dd>
+      <dd class="text-gray-700"><%= sample_count %></dd>
       <dt class="font-medium text-gray-500">Created</dt>
       <dd class="text-gray-700"><%= @experiment.created_at.strftime("%Y-%m-%d %H:%M") %></dd>
     </dl>

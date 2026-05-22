@@ -9,9 +9,17 @@ RSpec.describe Evaluation::DatasetSeeder do
   let(:action) { create(:orchestration_action, kind: :agent, agent: orchestration_agent) }
   let(:step_action) { create(:orchestration_step_action, action: action) }
 
+  before do
+    allow(Evaluation::ToolCallExtractor).to receive(:call).and_return([])
+  end
+
   def completed_action_run(chat: nil)
     chat ||= create(:chat)
-    create(:orchestration_action_run, step_action: step_action, status: "completed", chat: chat)
+    create(:orchestration_action_run,
+           step_action: step_action,
+           status: "completed",
+           chat: chat,
+           input: { "email" => "subject: Job offer" })
   end
 
   describe ".call" do
@@ -26,26 +34,38 @@ RSpec.describe Evaluation::DatasetSeeder do
         .not_to change(Evaluation::Dataset, :count)
     end
 
-    it "creates DatasetRecords for completed ActionRuns belonging to the agent" do
+    it "creates DatasetSamples for completed ActionRuns belonging to the agent" do
       completed_action_run
       expect { described_class.call(agent_name: agent_name) }
-        .to change(Evaluation::DatasetRecord, :count).by(1)
+        .to change(Evaluation::DatasetSample, :count).by(1)
     end
 
-    it "does not create DatasetRecords for ActionRuns with a different agent" do
+    it "does not create DatasetSamples for ActionRuns with a different agent" do
       other_agent = create(:orchestration_agent, name: "Other::Agent")
       other_action = create(:orchestration_action, kind: :agent, agent: other_agent)
       other_step = create(:orchestration_step_action, action: other_action)
-      create(:orchestration_action_run, step_action: other_step, status: "completed", chat: create(:chat))
+      create(:orchestration_action_run, step_action: other_step, status: "completed", chat: create(:chat),
+             input: { "other" => true })
 
       expect { described_class.call(agent_name: agent_name) }
-        .not_to change(Evaluation::DatasetRecord, :count)
+        .not_to change(Evaluation::DatasetSample, :count)
     end
 
     it "skips ActionRuns with no associated chat" do
       create(:orchestration_action_run, step_action: step_action, status: "completed", chat: nil)
       expect { described_class.call(agent_name: agent_name) }
-        .not_to change(Evaluation::DatasetRecord, :count)
+        .not_to change(Evaluation::DatasetSample, :count)
+    end
+
+    it "stores expected_tool_calls extracted from the chat" do
+      allow(Evaluation::ToolCallExtractor).to receive(:call).and_return(
+        [ { "tool_name" => "classify_email", "arguments" => { "label" => "offer" } } ]
+      )
+      completed_action_run
+      described_class.call(agent_name: agent_name)
+      expect(Evaluation::DatasetSample.last.expected_tool_calls).to eq(
+        [ { "tool_name" => "classify_email", "arguments" => { "label" => "offer" } } ]
+      )
     end
 
     it "returns a Result with the correct created count" do
@@ -58,7 +78,7 @@ RSpec.describe Evaluation::DatasetSeeder do
     it "returns a Result with the correct skipped count for existing records" do
       run = completed_action_run
       Evaluation::Dataset.create!(name: agent_name).tap do |ds|
-        ds.dataset_records.create!(recordable: run)
+        ds.dataset_samples.create!(input: run.input, source_run_id: run.id)
       end
       result = described_class.call(agent_name: agent_name)
       expect(result.created).to eq(0)

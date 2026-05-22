@@ -8,42 +8,37 @@ RSpec.describe Evaluation::Improvement::LoadSamplesTool do
   let(:experiment) { create(:evaluation_experiment) }
 
   describe "#execute" do
-    it "returns an empty array when the experiment has no runner results" do
+    it "returns an empty array when the experiment has no samples" do
       expect(tool.execute(experiment_id: experiment.id)).to eq([])
     end
 
-    it "returns input/output pairs for runner results with valid JSON predictions" do
-      dataset_record = create(:evaluation_dataset_record, dataset: experiment.dataset)
-      recordable = dataset_record.recordable
-      allow(recordable).to receive(:input).and_return("test input") if recordable.respond_to?(:input)
-
-      create(:evaluation_runner_result,
+    it "returns input/output pairs for samples" do # rubocop:disable RSpec/ExampleLength
+      dataset_sample = create(:evaluation_dataset_sample,
+                               dataset: experiment.dataset,
+                               input: { "email" => "test" })
+      create(:evaluation_sample,
              experiment: experiment,
-             dataset_record: dataset_record,
-             prediction: { "output" => "test output", "tool_calls" => [] }.to_json)
+             dataset_sample: dataset_sample,
+             tool_calls: [],
+             output: "test output")
 
       result = tool.execute(experiment_id: experiment.id)
       expect(result).to be_an(Array)
-      expect(result.first).to include(:output)
+      expect(result.first).to include(input: { "email" => "test" }, output: "test output")
     end
 
-    it "skips runner results with invalid JSON predictions" do
-      dataset_record = create(:evaluation_dataset_record, dataset: experiment.dataset)
-      create(:evaluation_runner_result,
-             experiment: experiment,
-             dataset_record: dataset_record,
-             prediction: "not valid json")
+    it "returns empty output string when output is nil" do
+      dataset_sample = create(:evaluation_dataset_sample, dataset: experiment.dataset, input: { "x" => 1 })
+      create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_sample, output: nil)
 
-      expect(tool.execute(experiment_id: experiment.id)).to eq([])
+      result = tool.execute(experiment_id: experiment.id)
+      expect(result.first[:output]).to eq("")
     end
 
     it "respects the number_of_samples limit" do
       3.times do
-        dr = create(:evaluation_dataset_record, dataset: experiment.dataset)
-        create(:evaluation_runner_result,
-               experiment: experiment,
-               dataset_record: dr,
-               prediction: { "output" => "x", "tool_calls" => [] }.to_json)
+        ds = create(:evaluation_dataset_sample, dataset: experiment.dataset, input: { "n" => rand })
+        create(:evaluation_sample, experiment: experiment, dataset_sample: ds, output: "x")
       end
 
       result = tool.execute(experiment_id: experiment.id, number_of_samples: 2)

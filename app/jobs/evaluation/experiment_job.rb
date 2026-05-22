@@ -8,8 +8,8 @@ module Evaluation
       return if experiment.completed? || experiment.running?
 
       experiment.update!(status: :running)
-      experiment.dataset.dataset_records.each_with_index do |record, index|
-        RunEvalJob.set(wait: 3.seconds * index).perform_later(experiment.id, record.id)
+      experiment.dataset.dataset_samples.each_with_index do |dataset_sample, index|
+        RunEvalJob.set(wait: 3.seconds * index).perform_later(experiment.id, dataset_sample.id)
       end
     end
   end

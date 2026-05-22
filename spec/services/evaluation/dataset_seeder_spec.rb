@@ -26,12 +26,12 @@ RSpec.describe Evaluation::DatasetSeeder do
       expect(Evaluation::Dataset.find_by(name: agent_name)).to be_present
     end
 
-    it "creates a dataset record linking the action run as recordable" do
+    it "creates a dataset sample linking the action run via source_run_id" do
       action_run = build_action_run
       described_class.call(agent_name: agent_name, sample_size: 10)
 
       dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_records.first.recordable).to eq(action_run)
+      expect(dataset.dataset_samples.first.source_run_id).to eq(action_run.id)
     end
 
     it "skips action runs with status other than completed" do
@@ -39,7 +39,7 @@ RSpec.describe Evaluation::DatasetSeeder do
       described_class.call(agent_name: agent_name, sample_size: 10)
 
       dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_records.count).to eq(0)
+      expect(dataset.dataset_samples.count).to eq(0)
     end
 
     it "skips action runs without a chat" do
@@ -47,7 +47,7 @@ RSpec.describe Evaluation::DatasetSeeder do
       described_class.call(agent_name: agent_name, sample_size: 10)
 
       dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_records.count).to eq(0)
+      expect(dataset.dataset_samples.count).to eq(0)
     end
 
     it "skips action runs with service-kind step actions" do # rubocop:disable RSpec/ExampleLength
@@ -63,7 +63,7 @@ RSpec.describe Evaluation::DatasetSeeder do
       described_class.call(agent_name: agent_name, sample_size: 10)
 
       dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_records.count).to eq(0)
+      expect(dataset.dataset_samples.count).to eq(0)
     end
 
     it "skips action runs for a different agent name" do # rubocop:disable RSpec/ExampleLength
@@ -79,7 +79,7 @@ RSpec.describe Evaluation::DatasetSeeder do
       described_class.call(agent_name: agent_name, sample_size: 10)
 
       dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_records.count).to eq(0)
+      expect(dataset.dataset_samples.count).to eq(0)
     end
 
     it "respects sample_size limit" do
@@ -88,16 +88,16 @@ RSpec.describe Evaluation::DatasetSeeder do
       described_class.call(agent_name: agent_name, sample_size: 2)
 
       dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_records.count).to eq(2)
+      expect(dataset.dataset_samples.count).to eq(2)
     end
 
-    it "does not duplicate dataset records when called twice" do
+    it "does not duplicate dataset samples when called twice" do
       build_action_run
       described_class.call(agent_name: agent_name, sample_size: 10)
       described_class.call(agent_name: agent_name, sample_size: 10)
 
       dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_records.count).to eq(1)
+      expect(dataset.dataset_samples.count).to eq(1)
     end
 
     it "does not duplicate the dataset when called twice" do
