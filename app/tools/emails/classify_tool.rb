@@ -1,5 +1,7 @@
 module Emails
   class ClassifyTool < RubyLLM::Tool
+    def self.readonly? = true
+
     description "Classify a batch of emails and return tags for each one."
 
     param :emails,

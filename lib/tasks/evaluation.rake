@@ -111,7 +111,7 @@ namespace :evaluation do
       name: "#{agent_name} eval w/ #{model_label} (#{Date.today})",
       dataset: dataset,
       prompt: prompt,
-      runner_class: "Evaluation::Runners::StubbedAgentRun",
+      runner_class: "Evaluation::Sampler",
       evaluator_classes: [ "Evaluation::Evaluators::LLMJudgeEval" ],
       metadata: args[:model].presence ? { "pipeline_model" => args[:model] } : nil
     )
@@ -142,7 +142,6 @@ namespace :evaluation do
         name: "#{agent_name} eval w/ #{model_label} (#{Date.today})",
         dataset: dataset,
         prompt: prompt,
-        runner_class: "StubbedAgentRun",
         evaluator_classes: [ "LLMJudgeEval" ],
         metadata: model ? { "pipeline_model" => model } : nil
       )

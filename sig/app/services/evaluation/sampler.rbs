@@ -1,0 +1,20 @@
+module Evaluation
+  class Sampler
+    WRITE_BLOCKED_SENTINEL: String
+
+    def self.call: (experiment: Evaluation::Experiment, dataset_sample: Evaluation::DatasetSample, prompt: Evaluation::Prompt?) -> Evaluation::Sample
+
+    def initialize: (experiment: Evaluation::Experiment, dataset_sample: Evaluation::DatasetSample, prompt: Evaluation::Prompt?) -> void
+
+    def call: () -> Evaluation::Sample
+
+    private
+
+    def find_agent_record: () -> Orchestration::Agent?
+    def find_action_for: (Orchestration::Agent agent_record) -> Orchestration::Action?
+    def resolve_tools: (Orchestration::Agent agent_record) -> Array[Class]
+    def wrap_write_tools: (Array[Class] tool_classes) -> Array[Class]
+    def block_write_tool: (Class tool_class) -> Class
+    def capture_tool_calls: (untyped agent) -> Array[Hash[String, untyped]]
+  end
+end

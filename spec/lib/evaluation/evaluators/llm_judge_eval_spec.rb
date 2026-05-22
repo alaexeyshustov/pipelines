@@ -108,6 +108,26 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
       end
     end
 
+    context "when expected_tool_calls is nil on the dataset_sample" do
+      let(:dataset_sample_without_expected) do
+        create(:evaluation_dataset_sample,
+               input: { "email" => "subject: Job offer" },
+               expected_tool_calls: nil)
+      end
+
+      it "omits expected_tool_calls from the judge message" do
+        judge_stub = stub_judge_agent
+        eval_instance.evaluate(sample, dataset_sample_without_expected, agent_name: agent_name)
+        expect(judge_stub).not_to have_received(:ask).with(including("expected_tool_calls"))
+      end
+
+      it "still calls the judge with input and actual tool calls" do
+        judge_stub = stub_judge_agent
+        eval_instance.evaluate(sample, dataset_sample_without_expected, agent_name: agent_name)
+        expect(judge_stub).to have_received(:ask).with(including("classify_email"))
+      end
+    end
+
     context "when no active metrics exist" do
       before { Evaluation::Metric.update_all(active: false) }
 
@@ -123,7 +143,7 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
   describe "#evaluate_and_store" do
     let!(:evaluation_prompt) { Evaluation::Prompt.create!(name: agent_name, system_prompt: "You are a classifier.", user_prompt: "Classify: {{input}}") }
     let!(:evaluation_dataset) { Evaluation::Dataset.create!(name: "test_dataset") }
-    let!(:evaluation_experiment) { Evaluation::Experiment.create!(name: "test_exp", dataset: evaluation_dataset, status: :pending, prompt: evaluation_prompt, runner_class: "Evaluation::Runners::StubbedAgentRun", evaluator_classes: [ "Evaluation::Evaluators::LLMJudgeEval" ]) }
+    let!(:evaluation_experiment) { Evaluation::Experiment.create!(name: "test_exp", dataset: evaluation_dataset, status: :pending, prompt: evaluation_prompt, evaluator_classes: [ "Evaluation::Evaluators::LLMJudgeEval" ]) }
     let!(:evaluation_dataset_sample) { Evaluation::DatasetSample.create!(dataset: evaluation_dataset, input: { "email" => "test" }) }
     let!(:evaluation_sample) do
       Evaluation::Sample.create!(

@@ -2,6 +2,8 @@ module Records
   class ReadSchemaTool < RubyLLM::Tool
     include ModelResolver
 
+    def self.readonly? = true
+
     description "Return the column names for a database table."
 
     param :table, type: :string,

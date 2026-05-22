@@ -4,6 +4,8 @@ module Records
   class UpdateRowsTool < RubyLLM::Tool
     include ModelResolver
 
+    def self.readonly? = false
+
     description "Update rows in a database table. Duplicate or invalid rows are skipped."
 
     param :table, type: :string, desc: "Table name: application_mails or interviews", required: true

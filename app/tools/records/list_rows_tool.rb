@@ -2,6 +2,8 @@ module Records
   class ListRowsTool < RubyLLM::Tool
     include ModelResolver
 
+    def self.readonly? = true
+
     description "List rows in a database table."
 
     param :table,  type: :string,  desc: "Table name: application_mails or interviews", required: true

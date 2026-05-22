@@ -1,6 +1,6 @@
 module Evaluation
   module Evaluators
-    class LLMJudgeEval < BaseEval
+    class LLMJudgeEval
       type metric_result = { metric_name: String, score: Float, justification: String }
 
       @judge_model: String

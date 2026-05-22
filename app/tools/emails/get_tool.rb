@@ -1,5 +1,7 @@
 module Emails
   class GetTool < RubyLLM::Tool
+    def self.readonly? = true
+
     CACHE_DIR = Rails.root.join("tmp/cache/emails").freeze
 
     description "Get the full content of a specific email by its message ID or IMAP UID."
