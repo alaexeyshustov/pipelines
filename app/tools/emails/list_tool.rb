@@ -1,5 +1,7 @@
 module Emails
   class ListTool < RubyLLM::Tool
+    def self.readonly? = true
+
     description "List recent emails from Gmail or Yahoo Mail inbox."
 
     param :provider,     type: :string,  desc: 'Email provider: "gmail" or "yahoo"', required: true

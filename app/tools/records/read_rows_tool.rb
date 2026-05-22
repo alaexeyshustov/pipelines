@@ -2,6 +2,8 @@ module Records
   class ReadRowsTool < RubyLLM::Tool
     include ModelResolver
 
+    def self.readonly? = true
+
     description "Query rows from a database table filtering by a column value. For example by id, email, or company name."
 
     param :table,        type: :string, desc: "Table name: application_mails or interviews", required: true

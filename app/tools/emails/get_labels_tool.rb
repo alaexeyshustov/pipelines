@@ -1,5 +1,7 @@
 module Emails
   class GetLabelsTool < RubyLLM::Tool
+    def self.readonly? = true
+
     description "List all available labels for a mail provider. " \
                 "Gmail returns label IDs and names. Yahoo returns folder names."
 

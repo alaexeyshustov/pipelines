@@ -4,6 +4,8 @@ module Records
   class InsertRowsTool < RubyLLM::Tool
     include ModelResolver
 
+    def self.readonly? = false
+
     description "Insert rows into a database table. Duplicate or invalid rows are skipped."
 
     param :table, type: :string, desc: "Table name: application_mails or interviews", required: true

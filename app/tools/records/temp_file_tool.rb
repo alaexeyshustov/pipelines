@@ -1,5 +1,7 @@
 module Records
   class TempFileTool < RubyLLM::Tool
+    def self.readonly? = false
+
     description "Read and write temporary files in the /tmp directory. " \
                 "Supports actions: 'read' (read file content), 'write' (write content to file), 'delete' (delete a file)."
 

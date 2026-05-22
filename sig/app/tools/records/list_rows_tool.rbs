@@ -2,6 +2,7 @@ module Records
   class ListRowsTool < RubyLLM::Tool
     include ModelResolver
 
+    def self.readonly?: () -> bool
     def name: () -> String
     def execute: (table: String, ?limit: Integer, ?offset: Integer) -> ({ headers: Array[String], rows: Array[Hash[String, String?]], row_count: Integer } | { error: String })
   end

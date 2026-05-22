@@ -1,5 +1,7 @@
 module Emails
   class AddLabelsTool < RubyLLM::Tool
+    def self.readonly? = false
+
     description "Add one or more labels/flags to a specific email. " \
                 'Gmail: use label IDs (e.g. "STARRED"). ' \
                 'Yahoo: use IMAP flags (e.g. "\\Flagged", "\\Seen").'

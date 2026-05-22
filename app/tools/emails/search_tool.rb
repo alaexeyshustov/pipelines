@@ -1,5 +1,7 @@
 module Emails
   class SearchTool < RubyLLM::Tool
+    def self.readonly? = true
+
     description "Search Gmail or Yahoo Mail using a query string and return matching emails."
 
     param :provider,    type: :string,  desc: 'Email provider: "gmail" or "yahoo"', required: true

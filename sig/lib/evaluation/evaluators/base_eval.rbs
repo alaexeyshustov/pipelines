@@ -1,8 +1,0 @@
-module Evaluation
-  module Evaluators
-    class BaseEval
-      def evaluate: (untyped sample, untyped dataset_sample) -> untyped
-      def evaluate_and_store: (untyped experiment, untyped sample) -> untyped
-    end
-  end
-end

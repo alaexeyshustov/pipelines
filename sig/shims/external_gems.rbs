@@ -134,16 +134,6 @@ class Pagy
 end
 
 module Leva
-  class BaseRun
-    def execute: (untyped dataset_sample) -> untyped
-    def execute_and_store: (untyped experiment, untyped dataset_sample, untyped prompt) -> untyped
-  end
-
-  class BaseEval
-    def evaluate: (untyped sample, untyped dataset_sample) -> untyped
-    def evaluate_and_store: (untyped experiment, untyped sample) -> untyped
-  end
-
   class Dataset
     def self.find_or_create_by!: (**untyped attrs) -> Dataset
     def self.find_by: (**untyped attrs) -> Dataset?

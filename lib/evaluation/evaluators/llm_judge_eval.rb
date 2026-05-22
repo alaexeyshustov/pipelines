@@ -1,6 +1,6 @@
 module Evaluation
   module Evaluators
-    class LLMJudgeEval < BaseEval
+    class LLMJudgeEval
       @judge_model = LlmModels.judge
 
       class << self
@@ -78,14 +78,16 @@ module Evaluation
       end
 
       def build_user_message(sample:, dataset_sample:, metrics:)
-        {
+        message = {
           instructions: fetch_instructions(sample),
           input: dataset_sample.input,
-          expected_tool_calls: dataset_sample.expected_tool_calls || [],
           actual_tool_calls: sample.tool_calls || [],
           output: parse_output(sample.output),
           metrics: metrics.map { |m| { name: m.name, description: m.description } }
-        }.to_json
+        }
+        expected = dataset_sample.expected_tool_calls
+        message[:expected_tool_calls] = expected unless expected.nil?
+        message.to_json
       end
 
       def parse_output(output)

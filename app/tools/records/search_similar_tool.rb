@@ -2,6 +2,8 @@ module Records
   class SearchSimilarTool < RubyLLM::Tool
     include ModelResolver
 
+    def self.readonly? = true
+
     description "Search a database column for values similar to a given string. " \
                 "Matches on substrings in both directions and word-level edit distance. " \
                 "Useful for finding variant spellings of company names or job titles before normalizing."

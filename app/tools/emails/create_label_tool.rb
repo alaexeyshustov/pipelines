@@ -1,5 +1,7 @@
 module Emails
   class CreateLabelTool < RubyLLM::Tool
+    def self.readonly? = false
+
     description "Create a new label (Gmail) or folder (Yahoo) in the mail provider."
 
     param :provider, type: :string, desc: 'Email provider: "gmail" or "yahoo"', required: true

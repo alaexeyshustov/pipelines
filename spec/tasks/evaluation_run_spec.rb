@@ -19,9 +19,9 @@ RSpec.describe "evaluation:run rake task" do # rubocop:disable RSpec/DescribeCla
         .to change(Evaluation::Experiment, :count).by(1)
     end
 
-    it "sets runner_class to Evaluation::Runners::StubbedAgentRun" do
+    it "sets runner_class to Evaluation::Sampler" do
       Rake::Task[task_name].invoke(agent_name, nil)
-      expect(Evaluation::Experiment.last.runner_class).to eq("Evaluation::Runners::StubbedAgentRun")
+      expect(Evaluation::Experiment.last.runner_class).to eq("Evaluation::Sampler")
     end
 
     it "sets evaluator_classes to Evaluation::Evaluators::LLMJudgeEval" do
