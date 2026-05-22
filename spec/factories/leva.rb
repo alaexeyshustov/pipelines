@@ -28,8 +28,19 @@ FactoryBot.define do
     tool_calls { [] }
     output { "classified" }
     association :experiment, factory: :evaluation_experiment
-    association :dataset_sample, factory: :evaluation_dataset_sample
     association :prompt, factory: :orchestration_prompt
+
+    after(:build) do |sample|
+      if sample.experiment && sample.dataset_sample.nil?
+        sample.dataset_sample = build(:evaluation_dataset_sample, dataset: sample.experiment.dataset)
+      end
+    end
+
+    after(:create) do |sample|
+      if sample.experiment && sample.dataset_sample.nil?
+        sample.dataset_sample = create(:evaluation_dataset_sample, dataset: sample.experiment.dataset)
+      end
+    end
   end
 
   factory :evaluation_evaluation_result, class: "Evaluation::EvaluationResult" do

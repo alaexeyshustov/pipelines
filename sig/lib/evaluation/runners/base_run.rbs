@@ -3,6 +3,8 @@ module Evaluation
     class BaseRun
       def execute: (DatasetSample dataset_sample) -> untyped
       def execute_and_store: (Experiment experiment, DatasetSample dataset_sample, Prompt prompt) -> Sample
+      def find_agent_record: () -> Orchestration::Agent?
+      def find_action_for: (Orchestration::Agent agent_record) -> Orchestration::Action?
     end
   end
 end

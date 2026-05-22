@@ -12,7 +12,7 @@ module Evaluation
     def description: () -> String?
     def description=: (String?) -> String?
 
-    def dataset_records: () -> ActiveRecord::Associations::CollectionProxy
+    def dataset_samples: () -> ActiveRecord::Associations::CollectionProxy
     def experiments: () -> ActiveRecord::Associations::CollectionProxy
   end
 end

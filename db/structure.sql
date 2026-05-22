@@ -91,8 +91,6 @@ FOREIGN KEY ("pipeline_id")
 );
 CREATE TABLE IF NOT EXISTS "evaluation_wizard_drafts" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "session_token" varchar NOT NULL, "step" integer DEFAULT 1 NOT NULL, "payload" json, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_evaluation_wizard_drafts_on_session_token" ON "evaluation_wizard_drafts" ("session_token") /*application='ApplicationPipeline'*/;
-CREATE TABLE IF NOT EXISTS "evaluation_synthetic_records" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "agent_name" varchar NOT NULL, "input" json NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
-CREATE INDEX "index_evaluation_synthetic_records_on_agent_name" ON "evaluation_synthetic_records" ("agent_name") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_experiments_on_prompt_id" ON "evaluation_experiments" ("prompt_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_experiments_on_dataset_id" ON "evaluation_experiments" ("dataset_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_prompts_on_name" ON "evaluation_prompts" ("name") /*application='ApplicationPipeline'*/;

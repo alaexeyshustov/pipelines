@@ -32,17 +32,6 @@ module Evaluation
 
       private
 
-      def find_agent_record
-        agent_name = @experiment&.agent_name
-        return unless agent_name
-
-        Orchestration::Agent.find_by(name: agent_name)
-      end
-
-      def find_action_for(agent_record)
-        Orchestration::Action.where(kind: :agent, agent_id: agent_record.id).first
-      end
-
       def resolve_tools(agent_record)
         configured = agent_record.tools.presence
         return configured.map(&:constantize) if configured

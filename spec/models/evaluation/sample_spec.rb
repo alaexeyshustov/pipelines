@@ -10,7 +10,8 @@ RSpec.describe Evaluation::Sample do
     end
 
     it "requires dataset_sample" do
-      sample = build(:evaluation_sample, dataset_sample: nil)
+      sample = build(:evaluation_sample)
+      sample.dataset_sample = nil
       expect(sample).not_to be_valid
       expect(sample.errors[:dataset_sample]).to be_present
     end
@@ -21,9 +22,10 @@ RSpec.describe Evaluation::Sample do
       expect(sample.errors[:prompt]).to be_present
     end
 
-    it "allows nil experiment" do
+    it "requires experiment" do
       sample = build(:evaluation_sample, experiment: nil)
-      expect(sample).to be_valid
+      expect(sample).not_to be_valid
+      expect(sample.errors[:experiment]).to be_present
     end
   end
 
