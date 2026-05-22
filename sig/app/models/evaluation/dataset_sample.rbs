@@ -1,0 +1,18 @@
+module Evaluation
+  class DatasetSample < ApplicationRecord
+    def self.table_name: () -> String
+    def self.create!: (**untyped attrs) -> DatasetSample
+    def self.find: (Integer id) -> DatasetSample
+    def self.find_or_initialize_by: (**untyped attrs) -> DatasetSample
+
+    def dataset: () -> Evaluation::Dataset
+    def dataset=: (Evaluation::Dataset) -> Evaluation::Dataset
+    def input: () -> untyped
+    def input=: (untyped) -> untyped
+    def expected_tool_calls: () -> Array[untyped]?
+    def expected_tool_calls=: (Array[untyped]?) -> Array[untyped]?
+    def source_run_id: () -> Integer?
+
+    def samples: () -> ActiveRecord::Associations::CollectionProxy
+  end
+end

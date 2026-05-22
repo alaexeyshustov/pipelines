@@ -43,17 +43,10 @@ RSpec.describe Evaluation::AgentSummaryQuery do
       let!(:exp)   { create(:evaluation_experiment, prompt: prompt, status: :completed) }
 
       before do
-        runner_result = create(:evaluation_runner_result, experiment: exp)
-        create(:evaluation_evaluation_result,
-          experiment: exp,
-          runner_result: runner_result,
-          dataset_record: runner_result.dataset_record,
-          score: 3.0)
-        create(:evaluation_evaluation_result,
-          experiment: exp,
-          runner_result: runner_result,
-          dataset_record: runner_result.dataset_record,
-          score: 5.0)
+        dataset_sample = create(:evaluation_dataset_sample, dataset: exp.dataset)
+        sample = create(:evaluation_sample, experiment: exp, dataset_sample: dataset_sample)
+        create(:evaluation_evaluation_result, experiment: exp, sample: sample, dataset_sample: dataset_sample, score: 3.0)
+        create(:evaluation_evaluation_result, experiment: exp, sample: sample, dataset_sample: dataset_sample, score: 5.0)
       end
 
       it "populates latest_score as the rounded average" do

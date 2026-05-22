@@ -4,15 +4,15 @@ module Evaluation
   module Runners
     # TODO: rename to param mapper
     class StubbedAgentRun < BaseRun
-      def execute(record)
-        raise ArgumentError, "StubbedAgentRun requires an Orchestration::ActionRun, got #{record.class}" unless record.is_a?(Orchestration::ActionRun)
-
-        expected_tool_calls = ToolCallExtractor.call(record.chat)
+      def execute(dataset_sample)
+        expected_tool_calls = (dataset_sample.expected_tool_calls || []).map(&:deep_symbolize_keys)
         registry = ToolStubRegistry.new(expected_tool_calls)
 
-        action = record.step_action.action
-        agent_record = action.agent
-        raise ArgumentError, "action #{record.id} is not agent-kind or has no agent" unless agent_record
+        agent_record = find_agent_record
+        raise ArgumentError, "No agent found for experiment" unless agent_record
+
+        action = find_action_for(agent_record)
+        raise ArgumentError, "No action found for agent #{agent_record.name}" unless action
 
         tool_classes = resolve_tools(agent_record)
         stubbed_tools = tool_classes.map { |tool_class| stub_tool(tool_class, registry) }
@@ -25,12 +25,23 @@ module Evaluation
         )
         agent = Orchestration::RuntimeAgentBuilder.new(policy: policy).build
 
-        result = agent.ask(record.input.to_json)
+        result = agent.ask(dataset_sample.input.to_json)
 
         build_prediction(agent, result)
       end
 
       private
+
+      def find_agent_record
+        agent_name = @experiment&.agent_name
+        return unless agent_name
+
+        Orchestration::Agent.find_by(name: agent_name)
+      end
+
+      def find_action_for(agent_record)
+        Orchestration::Action.where(kind: :agent, agent_id: agent_record.id).first
+      end
 
       def resolve_tools(agent_record)
         configured = agent_record.tools.presence

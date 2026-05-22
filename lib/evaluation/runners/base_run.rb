@@ -3,21 +3,20 @@
 module Evaluation
   module Runners
     class BaseRun
-      def execute(record)
+      def execute(dataset_sample)
         raise NotImplementedError, "#{self.class}#execute must be implemented"
       end
 
-      def execute_and_store(experiment, dataset_record, prompt)
+      def execute_and_store(experiment, dataset_sample, prompt)
         @experiment = experiment
         @prompt = prompt
-        @dataset_record = dataset_record
-        result = execute(dataset_record.recordable)
-        RunnerResult.create!(
+        result = JSON.parse(execute(dataset_sample))
+        Sample.create!(
           experiment: experiment,
-          dataset_record: dataset_record,
+          dataset_sample: dataset_sample,
           prompt: prompt,
-          prediction: result,
-          runner_class: self.class.name
+          tool_calls: result.fetch("tool_calls", []),
+          output: result.fetch("output", "")
         )
       end
     end

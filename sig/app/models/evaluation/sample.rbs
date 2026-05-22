@@ -1,0 +1,21 @@
+module Evaluation
+  class Sample < ApplicationRecord
+    def self.table_name: () -> String
+    def self.create!: (**untyped attrs) -> Sample
+    def self.where: (**untyped attrs) -> ActiveRecord::Relation
+    def self.includes: (*untyped) -> ActiveRecord::Relation
+    def self.order: (*untyped) -> ActiveRecord::Relation
+
+    def tool_calls: () -> Array[untyped]?
+    def tool_calls=: (Array[untyped]?) -> Array[untyped]?
+    def output: () -> String?
+    def output=: (String?) -> String?
+
+    def experiment: () -> Evaluation::Experiment?
+    def experiment=: (Evaluation::Experiment?) -> Evaluation::Experiment?
+    def dataset_sample: () -> Evaluation::DatasetSample
+    def dataset_sample=: (Evaluation::DatasetSample) -> Evaluation::DatasetSample
+    def prompt: () -> Evaluation::Prompt
+    def prompt=: (Evaluation::Prompt) -> Evaluation::Prompt
+  end
+end

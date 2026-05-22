@@ -30,8 +30,8 @@ module Evaluation
       @metrics ||= @experiment.agent_name ? Metric.for_agent(@experiment.agent_name).order(:name) : Evaluation::Metric.none
     end
 
-    def runner_result_count
-      @runner_result_count ||= @experiment.runner_results.count
+    def sample_count
+      @sample_count ||= @experiment.samples.count
     end
 
     def per_metric_avg

@@ -37,58 +37,51 @@ RSpec.describe Orchestration::ActionRun do
     end
   end
 
-  describe 'Evaluation::Recordable' do
-    it 'has dataset_records association' do
-      action_run = create(:orchestration_action_run)
-      expect(action_run.dataset_records).to eq([])
+  describe '#ground_truth' do
+    it 'returns the full output value' do
+      action_run = create(:orchestration_action_run, output: { 'classification' => 'offer' })
+      expect(action_run.ground_truth).to eq({ 'classification' => 'offer' })
     end
 
-    describe '#ground_truth' do
-      it 'returns the full output value' do
-        action_run = create(:orchestration_action_run, output: { 'classification' => 'offer' })
-        expect(action_run.ground_truth).to eq({ 'classification' => 'offer' })
-      end
-
-      it 'returns nil when output is blank' do
-        action_run = create(:orchestration_action_run, output: nil)
-        expect(action_run.ground_truth).to be_nil
-      end
+    it 'returns nil when output is blank' do
+      action_run = create(:orchestration_action_run, output: nil)
+      expect(action_run.ground_truth).to be_nil
     end
+  end
 
-    describe '#index_attributes' do
-      it 'returns hash with status and action name' do
-        action_run = create(:orchestration_action_run, status: 'completed')
-        result = action_run.index_attributes
-        expect(result).to include(status: 'completed')
-        expect(result).to have_key(:action)
-      end
+  describe '#index_attributes' do
+    it 'returns hash with status and action name' do
+      action_run = create(:orchestration_action_run, status: 'completed')
+      result = action_run.index_attributes
+      expect(result).to include(status: 'completed')
+      expect(result).to have_key(:action)
     end
+  end
 
-    describe '#show_attributes' do
-      it 'returns hash including input, output, status, and error_details' do # rubocop:disable RSpec/MultipleExpectations
-        action_run = create(:orchestration_action_run,
-                            status: 'completed',
-                            input: { 'email' => 'test' },
-                            output: { 'result' => 'ok' },
-                            error_details: { 'category' => 'provider_http_error' })
-        result = action_run.show_attributes
-        expect(result).to include(status: 'completed')
-        expect(result).to have_key(:input)
-        expect(result).to have_key(:output)
-        expect(result).to have_key(:error_details)
-      end
+  describe '#show_attributes' do
+    it 'returns hash including input, output, status, and error_details' do # rubocop:disable RSpec/MultipleExpectations
+      action_run = create(:orchestration_action_run,
+                          status: 'completed',
+                          input: { 'email' => 'test' },
+                          output: { 'result' => 'ok' },
+                          error_details: { 'category' => 'provider_http_error' })
+      result = action_run.show_attributes
+      expect(result).to include(status: 'completed')
+      expect(result).to have_key(:input)
+      expect(result).to have_key(:output)
+      expect(result).to have_key(:error_details)
     end
+  end
 
-    describe '#to_llm_context' do
-      it 'returns hash with input, action, status, and agent_snapshot' do # rubocop:disable RSpec/MultipleExpectations
-        action_run = create(:orchestration_action_run, input: { 'email' => 'test body' }, agent_snapshot: { 'model' => 'mistral' })
-        result = action_run.to_llm_context
-        expect(result).to have_key(:input)
-        expect(result).to have_key(:action)
-        expect(result).to have_key(:status)
-        expect(result).to have_key(:agent_snapshot)
-        expect(result[:agent_snapshot]).to eq({ 'model' => 'mistral' })
-      end
+  describe '#to_llm_context' do
+    it 'returns hash with input, action, status, and agent_snapshot' do # rubocop:disable RSpec/MultipleExpectations
+      action_run = create(:orchestration_action_run, input: { 'email' => 'test body' }, agent_snapshot: { 'model' => 'mistral' })
+      result = action_run.to_llm_context
+      expect(result).to have_key(:input)
+      expect(result).to have_key(:action)
+      expect(result).to have_key(:status)
+      expect(result).to have_key(:agent_snapshot)
+      expect(result[:agent_snapshot]).to eq({ 'model' => 'mistral' })
     end
   end
 end

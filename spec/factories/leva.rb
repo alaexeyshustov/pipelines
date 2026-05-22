@@ -18,23 +18,24 @@ FactoryBot.define do
     association :prompt, factory: :orchestration_prompt
   end
 
-  factory :evaluation_dataset_record, class: "Evaluation::DatasetRecord" do
+  factory :evaluation_dataset_sample, class: "Evaluation::DatasetSample" do
     association :dataset, factory: :evaluation_dataset
-    association :recordable, factory: :orchestration_action_run
+    input { { "email" => "subject: Job offer" } }
+    expected_tool_calls { nil }
   end
 
-  factory :evaluation_runner_result, class: "Evaluation::RunnerResult" do
-    prediction { { tool_calls: [], output: "classified" }.to_json }
-    runner_class { "Evaluation::Runners::StubbedAgentRun" }
+  factory :evaluation_sample, class: "Evaluation::Sample" do
+    tool_calls { [] }
+    output { "classified" }
     association :experiment, factory: :evaluation_experiment
-    association :dataset_record, factory: :evaluation_dataset_record
+    association :dataset_sample, factory: :evaluation_dataset_sample
     association :prompt, factory: :orchestration_prompt
   end
 
   factory :evaluation_evaluation_result, class: "Evaluation::EvaluationResult" do
     evaluator_class { "Evaluation::Evaluators::LLMJudgeEval" }
     score { 4.0 }
-    association :dataset_record, factory: :evaluation_dataset_record
-    association :runner_result, factory: :evaluation_runner_result
+    association :dataset_sample, factory: :evaluation_dataset_sample
+    association :sample, factory: :evaluation_sample
   end
 end

@@ -14,7 +14,7 @@ RSpec.describe Evaluation::ExperimentJob do
     end
 
     it "enqueues one RunEvalJob per dataset record" do
-      create_list(:evaluation_dataset_record, 3, dataset: experiment.dataset)
+      create_list(:evaluation_dataset_sample, 3, dataset: experiment.dataset)
       described_class.perform_now(experiment)
       expect(Evaluation::RunEvalJob).to have_received(:set).exactly(3).times
     end

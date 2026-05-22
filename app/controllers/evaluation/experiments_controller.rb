@@ -50,7 +50,7 @@ module Evaluation
       @justifications = Justification
         .joins(:evaluation_result)
         .where(metric_name: @metric_name, evaluation_evaluation_results: { experiment_id: @experiment.id })
-        .includes(evaluation_result: [ :runner_result, :dataset_record ])
+        .includes(evaluation_result: [ :sample, :dataset_sample ])
         .order("evaluation_evaluation_results.score DESC")
     end
 

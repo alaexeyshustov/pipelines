@@ -60,18 +60,19 @@ RSpec.describe "evaluation:status rake task" do # rubocop:disable RSpec/Describe
              dataset: dataset,
              status: :completed)
     end
-    let(:runner_result) { create(:evaluation_runner_result, experiment: experiment) }
 
     before do
+      dataset_sample = create(:evaluation_dataset_sample, dataset: experiment.dataset)
+      sample = create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_sample)
       create(:evaluation_evaluation_result,
              experiment: experiment,
-             runner_result: runner_result,
-             dataset_record: runner_result.dataset_record,
+             sample: sample,
+             dataset_sample: dataset_sample,
              score: 4.0)
       create(:evaluation_evaluation_result,
              experiment: experiment,
-             runner_result: runner_result,
-             dataset_record: runner_result.dataset_record,
+             sample: sample,
+             dataset_sample: dataset_sample,
              score: 2.0)
     end
 

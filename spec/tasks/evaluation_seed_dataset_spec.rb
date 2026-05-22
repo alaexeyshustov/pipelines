@@ -16,6 +16,7 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
   before do
     Rails.application.load_tasks if Rake::Task.task_defined?("evaluation:seed_dataset") == false
     task.reenable
+    allow(Evaluation::ToolCallExtractor).to receive(:call).and_return([])
   end
 
   def create_completed_action_run(chat: nil)
@@ -39,18 +40,18 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
       expect(Evaluation::Dataset.find_by(name: agent_name)).to be_present
     end
 
-    it "creates dataset records for each sampled action run" do
+    it "creates dataset samples for each sampled action run" do
       task.invoke(agent_name, "1")
 
       dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_records.count).to eq(1)
+      expect(dataset.dataset_samples.count).to eq(1)
     end
 
-    it "links the dataset record to the action run as recordable" do
+    it "stores the action run input in the dataset sample" do
       task.invoke(agent_name, "1")
 
       dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_records.first.recordable).to eq(action_run)
+      expect(dataset.dataset_samples.first.input).to eq(action_run.input)
     end
   end
 
@@ -60,13 +61,13 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
 
     before { action_run }
 
-    it "does not duplicate dataset records" do
+    it "does not duplicate dataset samples" do
       task.invoke(agent_name, "1")
       task.reenable
       task.invoke(agent_name, "1")
 
       dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_records.count).to eq(1)
+      expect(dataset.dataset_samples.count).to eq(1)
     end
 
     it "does not duplicate the dataset" do
@@ -86,7 +87,7 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
 
       dataset = Evaluation::Dataset.find_by(name: agent_name)
       expect(dataset).to be_present
-      expect(dataset.dataset_records.count).to eq(0)
+      expect(dataset.dataset_samples.count).to eq(0)
     end
   end
 

@@ -7,11 +7,12 @@ RSpec.describe "evaluation:compare rake task" do # rubocop:disable RSpec/Describ
   let(:candidate) { create(:evaluation_experiment, name: "candidate-exp") }
 
   def make_eval_result(experiment:, score:, metric_name:)
-    runner_result = create(:evaluation_runner_result, experiment: experiment)
+    dataset_sample = create(:evaluation_dataset_sample, dataset: experiment.dataset)
+    sample = create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_sample)
     eval_result = create(:evaluation_evaluation_result,
       experiment: experiment,
-      runner_result: runner_result,
-      dataset_record: runner_result.dataset_record,
+      sample: sample,
+      dataset_sample: dataset_sample,
       score: score)
     create(:evaluation_justification, evaluation_result: eval_result, metric_name: metric_name)
   end

@@ -14,28 +14,33 @@ RSpec.describe Evaluation::Runners::BaseRun do
 
   describe "#execute_and_store" do
     let(:experiment) { create(:evaluation_experiment) }
-    let(:dataset_record) { create(:evaluation_dataset_record, dataset: experiment.dataset) }
+    let(:dataset_sample) { create(:evaluation_dataset_sample, dataset: experiment.dataset) }
 
     let(:concrete_run) do
       stub_const("TestConcreteRun", Class.new(described_class) do
-        def execute(_recordable) = '{"output":"ok"}'
+        def execute(_dataset_sample) = '{"tool_calls":[],"output":"ok"}'
       end)
       TestConcreteRun.new
     end
 
-    it "creates a RunnerResult record" do
-      expect { concrete_run.execute_and_store(experiment, dataset_record, experiment.prompt) }
-        .to change(Evaluation::RunnerResult, :count).by(1)
+    it "creates a Sample record" do
+      expect { concrete_run.execute_and_store(experiment, dataset_sample, experiment.prompt) }
+        .to change(Evaluation::Sample, :count).by(1)
     end
 
-    it "stores the prediction returned by execute" do
-      concrete_run.execute_and_store(experiment, dataset_record, experiment.prompt)
-      expect(Evaluation::RunnerResult.last.prediction).to eq('{"output":"ok"}')
+    it "stores the output returned by execute" do
+      concrete_run.execute_and_store(experiment, dataset_sample, experiment.prompt)
+      expect(Evaluation::Sample.last.output).to eq("ok")
+    end
+
+    it "stores empty tool_calls returned by execute" do
+      concrete_run.execute_and_store(experiment, dataset_sample, experiment.prompt)
+      expect(Evaluation::Sample.last.tool_calls).to eq([])
     end
 
     it "links the result to the experiment" do
-      concrete_run.execute_and_store(experiment, dataset_record, experiment.prompt)
-      expect(Evaluation::RunnerResult.last.experiment).to eq(experiment)
+      concrete_run.execute_and_store(experiment, dataset_sample, experiment.prompt)
+      expect(Evaluation::Sample.last.experiment).to eq(experiment)
     end
   end
 end

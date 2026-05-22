@@ -3,19 +3,19 @@
 module Evaluation
   module Evaluators
     class BaseEval
-      def evaluate(runner_result, recordable)
+      def evaluate(sample, dataset_sample)
         raise NotImplementedError, "#{self.class}#evaluate must be implemented"
       end
 
-      def evaluate_and_store(experiment, runner_result)
+      def evaluate_and_store(experiment, sample)
         @experiment = experiment
-        @runner_result = runner_result
-        recordable = runner_result.dataset_record.recordable
-        result = evaluate(runner_result, recordable)
+        @sample = sample
+        dataset_sample = sample.dataset_sample
+        result = evaluate(sample, dataset_sample)
         EvaluationResult.create!(
           experiment: experiment,
-          dataset_record: runner_result.dataset_record,
-          runner_result: runner_result,
+          dataset_sample: dataset_sample,
+          sample: sample,
           score: result,
           evaluator_class: self.class.name
         )
