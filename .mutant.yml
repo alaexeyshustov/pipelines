@@ -1,6 +1,8 @@
 integration: rspec
 usage: opensource
 jobs: 2
+# Minimum mutation score threshold: 90% (MUTATION_SCORE_THRESHOLD in .github/workflows/mutation.yml)
+# Raise MUTATION_SCORE_THRESHOLD after establishing a stable baseline.
 includes:
   - app/agents
   - app/controllers
@@ -35,3 +37,18 @@ matcher:
     - Emails::Adapters::GmailMessageParser
     - Emails::Adapters::YahooMessageParser
     - Emails::GmailAuth
+    # AI classifier classes: LLM-boundary mutations produce noise, not signal
+    - Emails::ClassifyAgent
+    - Emails::ClassifyTool
+    # Controllers: UI routing layer, low mutation testing value
+    - ApplicationController
+    - ApplicationMailsController
+    - InterviewsController
+    - Orchestration::ActionsController
+    - Orchestration::AgentsController
+    - Orchestration::AllPipelineRunsController
+    - Orchestration::PipelineRunsController
+    - Orchestration::PipelinesController
+    - Orchestration::SchemaBuildersController
+    - Orchestration::StepActionsController
+    - Orchestration::StepsController

@@ -728,6 +728,7 @@ DEPENDENCIES
   mutant-rspec
   net-imap (~> 0.4)
   pagy
+  parser (~> 3.3)
   propshaft
   pry
   pry-nav
