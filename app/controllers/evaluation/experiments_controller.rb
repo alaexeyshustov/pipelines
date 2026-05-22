@@ -25,8 +25,12 @@ module Evaluation
         flash.now[:alert] = @wizard_form.errors.full_messages.to_sentence
         render :new, status: :unprocessable_entity
       else
-        @wizard_form.advance!(@wizard_form.step, wizard_params)
-        redirect_to new_evaluation_experiment_path(step: @wizard_form.step + 1)
+        if @wizard_form.advance!(@wizard_form.step, wizard_params)
+          redirect_to new_evaluation_experiment_path(step: @wizard_form.step + 1)
+        else
+          flash.now[:alert] = @wizard_form.errors.full_messages.to_sentence
+          render :new, status: :unprocessable_entity
+        end
       end
     end
 

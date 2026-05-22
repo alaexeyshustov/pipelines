@@ -13,7 +13,7 @@ module Evaluation
     def call
       # TODO: add transaction
       resolve_prompt
-      maybe_auto_generate_metrics
+      raise NoMetricsError, "No active metrics for #{@agent_name}" if no_active_metrics?
       experiment = create_experiment!
       ExperimentJob.perform_later(experiment)
       draft.destroy
@@ -38,26 +38,8 @@ module Evaluation
       @agent_name = Prompt.find_by(id: @prompt_id)&.name
     end
 
-    def maybe_auto_generate_metrics
-      return unless @agent_name.present? && Metric.for_agent(@agent_name).active.none?
-
-      begin
-        auto_generate_metrics(@agent_name)
-      rescue MetricSuggester::Error => e
-        Rails.logger.warn("MetricSuggester failed for #{@agent_name}: #{e.message} — proceeding without auto-generated metrics")
-      end
-    end
-
-    def auto_generate_metrics(agent_name)
-      suggestions = MetricSuggester.call(agent_name: agent_name, model: nil)
-      suggestions.each do |s|
-        Metric.find_or_initialize_by(agent_name: agent_name, name: s[:name]).tap do |m|
-          m.description = s[:description]
-          m.weight      = s[:weight]
-          m.active      = true
-          m.save!
-        end
-      end
+    def no_active_metrics?
+      @agent_name.present? && Metric.for_agent(@agent_name).active.none?
     end
 
     def create_experiment!

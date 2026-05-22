@@ -22,7 +22,15 @@ module Evaluation
     end
 
     def advance!(step, payload)
+      if step == 2
+        agent_name = (draft.payload || {})["agent_name"]
+        if agent_name.present? && Evaluation::Metric.for_agent(agent_name).active.none?
+          errors.add(:base, "Please generate or add at least one active metric before continuing.")
+          return false
+        end
+      end
       draft.advance!(step + 1, payload)
+      true
     end
 
     def complete!

@@ -1,4 +1,7 @@
 module Evaluation
+  class NoMetricsError < StandardError
+  end
+
   class CreateExperimentFromDraft
     def self.call: (draft: Evaluation::WizardDraft) -> Evaluation::Experiment
 
@@ -12,8 +15,7 @@ module Evaluation
 
     def payload: () -> Hash[String, untyped]
     def resolve_prompt: () -> void
-    def maybe_auto_generate_metrics: () -> void
-    def auto_generate_metrics: (String agent_name) -> void
+    def no_active_metrics?: () -> bool
     def create_experiment!: () -> Evaluation::Experiment
   end
 end

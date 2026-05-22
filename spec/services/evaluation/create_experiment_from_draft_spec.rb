@@ -8,9 +8,7 @@ RSpec.describe Evaluation::CreateExperimentFromDraft do
   let!(:metric) { create(:evaluation_metric, agent_name: prompt.name, active: true) }
 
   def build_draft(payload)
-    draft = instance_double(Evaluation::WizardDraft, payload: payload)
-    allow(draft).to receive(:destroy)
-    draft
+    create(:evaluation_wizard_draft, payload: payload, step: 4)
   end
 
   before { allow(Evaluation::ExperimentJob).to receive(:perform_later) }
@@ -19,10 +17,10 @@ RSpec.describe Evaluation::CreateExperimentFromDraft do
     context "when prompt_id is present in the payload" do
       let(:draft) do
         build_draft(
-          "prompt_id"       => prompt.id.to_s,
-          "experiment_name" => "My Eval",
-          "dataset_id"      => dataset.id,
-          "sample_model"    => "gpt-4",
+          "prompt_id"        => prompt.id.to_s,
+          "experiment_name"  => "My Eval",
+          "dataset_id"       => dataset.id,
+          "sample_model"     => "gpt-4",
           "evaluation_model" => "gpt-4"
         )
       end
@@ -52,19 +50,20 @@ RSpec.describe Evaluation::CreateExperimentFromDraft do
       end
 
       it "destroys the draft" do
+        draft_id = draft.id
         described_class.call(draft: draft)
-        expect(draft).to have_received(:destroy)
+        expect(Evaluation::WizardDraft.find_by(id: draft_id)).to be_nil
       end
     end
 
     context "when prompt_id is absent but agent_name is present" do
       let(:draft) do
         build_draft(
-          "prompt_id"       => "",
-          "agent_name"      => prompt.name,
-          "experiment_name" => "Agent Eval",
-          "dataset_id"      => dataset.id,
-          "sample_model"    => nil,
+          "prompt_id"        => "",
+          "agent_name"       => prompt.name,
+          "experiment_name"  => "Agent Eval",
+          "dataset_id"       => dataset.id,
+          "sample_model"     => nil,
           "evaluation_model" => nil
         )
       end
@@ -82,10 +81,10 @@ RSpec.describe Evaluation::CreateExperimentFromDraft do
     context "when experiment_name is absent" do
       let(:draft) do
         build_draft(
-          "prompt_id"       => prompt.id.to_s,
-          "experiment_name" => "",
-          "dataset_id"      => dataset.id,
-          "sample_model"    => nil,
+          "prompt_id"        => prompt.id.to_s,
+          "experiment_name"  => "",
+          "dataset_id"       => dataset.id,
+          "sample_model"     => nil,
           "evaluation_model" => nil
         )
       end
@@ -101,59 +100,37 @@ RSpec.describe Evaluation::CreateExperimentFromDraft do
 
       let(:draft) do
         build_draft(
-          "prompt_id"       => prompt.id.to_s,
-          "experiment_name" => "No Metrics Eval",
-          "dataset_id"      => dataset.id,
-          "sample_model"    => nil,
+          "prompt_id"        => prompt.id.to_s,
+          "experiment_name"  => "No Metrics Eval",
+          "dataset_id"       => dataset.id,
+          "sample_model"     => nil,
           "evaluation_model" => nil
         )
       end
 
-      it "auto-generates metrics via MetricSuggester" do
-        allow(Evaluation::MetricSuggester).to receive(:call).and_return([
-          { name: "Accuracy", description: "Correct output", weight: 1.0 }
-        ])
-        described_class.call(draft: draft)
-        expect(Evaluation::MetricSuggester).to have_received(:call).with(agent_name: prompt.name, model: nil)
-        expect(Evaluation::Metric.for_agent(prompt.name).active.count).to be >= 1
-      end
-    end
-
-    context "when MetricSuggester raises MetricSuggester::Error" do
-      before { metric.update!(active: false) }
-
-      let(:draft) do
-        build_draft(
-          "prompt_id"       => prompt.id.to_s,
-          "experiment_name" => "Fallback Eval",
-          "dataset_id"      => dataset.id,
-          "sample_model"    => nil,
-          "evaluation_model" => nil
-        )
+      it "raises Evaluation::NoMetricsError" do
+        expect { described_class.call(draft: draft) }.to raise_error(Evaluation::NoMetricsError)
       end
 
-      it "still creates the experiment" do
+      it "does not create an experiment" do
+        expect { described_class.call(draft: draft) }.to raise_error(Evaluation::NoMetricsError)
+        expect(Evaluation::Experiment.count).to eq(0)
+      end
+
+      it "does not call MetricSuggester" do
         allow(Evaluation::MetricSuggester).to receive(:call)
-          .and_raise(Evaluation::MetricSuggester::Error, "LLM unavailable")
-        expect { described_class.call(draft: draft) }.to change(Evaluation::Experiment, :count).by(1)
-      end
-
-      it "logs a warning" do
-        allow(Evaluation::MetricSuggester).to receive(:call)
-          .and_raise(Evaluation::MetricSuggester::Error, "LLM unavailable")
-        allow(Rails.logger).to receive(:warn)
-        described_class.call(draft: draft)
-        expect(Rails.logger).to have_received(:warn).with(a_string_including("MetricSuggester failed"))
+        described_class.call(draft: draft) rescue Evaluation::NoMetricsError
+        expect(Evaluation::MetricSuggester).not_to have_received(:call)
       end
     end
 
     context "when Experiment.create! raises ActiveRecord::RecordInvalid" do
       let(:draft) do
         build_draft(
-          "prompt_id"       => prompt.id.to_s,
-          "experiment_name" => "Bad Eval",
-          "dataset_id"      => nil,
-          "sample_model"    => nil,
+          "prompt_id"        => prompt.id.to_s,
+          "experiment_name"  => "Bad Eval",
+          "dataset_id"       => nil,
+          "sample_model"     => nil,
           "evaluation_model" => nil
         )
       end
