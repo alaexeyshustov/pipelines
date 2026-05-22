@@ -104,5 +104,31 @@ RSpec.describe Orchestration::InputMappingUpdater do
         expect(step_action.reload.input_mapping).to have_key("email")
       end
     end
+
+    context "when the input_mapping is empty" do
+      it "saves and returns empty errors and warnings" do
+        result = described_class.call(step_action: step_action, input_mapping: {})
+
+        expect(result.saved).to be true
+        expect(result.errors).to be_empty
+        expect(result.warnings).to be_empty
+      end
+    end
+
+    context "when the step_action does not appear in the validator results" do
+      it "treats missing step_result as no errors and no warnings" do
+        other_step = create(:orchestration_step, pipeline: pipeline)
+        other_action = create(:orchestration_action, name: "Other Action")
+        other_step_action = create(:orchestration_step_action, step: other_step, action: other_action, output_key: "other")
+
+        result = described_class.call(
+          step_action: other_step_action,
+          input_mapping: {}
+        )
+
+        expect(result.errors).to be_empty
+        expect(result.warnings).to be_empty
+      end
+    end
   end
 end

@@ -206,5 +206,126 @@ RSpec.describe Orchestration::IngestionExecutor do
           .to raise_error(ArgumentError, /unknown operation type: explode/)
       end
     end
+
+    context 'when filter_by_ids yields no matches' do
+      let(:params) do
+        {
+          "operations" => [
+            { "type" => "filter_by_ids", "source" => "emails", "ids_from" => "result", "output" => "emails" }
+          ]
+        }
+      end
+
+      it 'returns an empty array for the output key' do
+        result = described_class.call({ "emails" => emails, "result" => [] }, params)
+        expect(result["emails"]).to eq([])
+      end
+    end
+
+    context 'when source items have no id key (item_id returns empty string)' do
+      let(:params) do
+        {
+          "operations" => [
+            { "type" => "filter_by_ids", "source" => "emails", "ids_from" => "result", "output" => "emails" }
+          ]
+        }
+      end
+      let(:emails_without_id) { [ { "subject" => "A" }, { "subject" => "B" } ] }
+
+      it 'excludes items with no id from the filtered output' do
+        result = described_class.call({ "emails" => emails_without_id, "result" => [] }, params)
+        expect(result["emails"]).to eq([])
+      end
+    end
+
+    context 'when ids_from contains non-Hash items' do
+      let(:params) do
+        {
+          "operations" => [
+            { "type" => "filter_by_ids", "source" => "emails", "ids_from" => "result", "output" => "emails" }
+          ]
+        }
+      end
+
+      it 'ignores non-Hash items in ids_from when building the allowed set' do
+        result = described_class.call({ "emails" => emails, "result" => [ "e1", "e3" ] }, params)
+        expect(result["emails"]).to eq([])
+      end
+    end
+
+    context 'when merge_by_index op keys are non-string (Symbol)' do
+      let(:merge_input) do
+        {
+          "emails"     => [ { "email_id" => "abc", "company" => "Acme" } ],
+          "stored_ids" => [ 99 ]
+        }
+      end
+
+      it 'coerces Symbol source key to string for lookup' do
+        params = {
+          "operations" => [
+            { "type" => "merge_by_index", "source" => :emails, "ids" => "stored_ids",
+              "inject" => "id", "output" => "records" }
+          ]
+        }
+        result = described_class.call(merge_input, params)
+        expect(result["records"]).to eq([ { "id" => 99, "email_id" => "abc", "company" => "Acme" } ])
+      end
+
+      it 'coerces Symbol inject key to string in the merged hash' do
+        params = {
+          "operations" => [
+            { "type" => "merge_by_index", "source" => "emails", "ids" => "stored_ids",
+              "inject" => :id, "output" => "records" }
+          ]
+        }
+        result = described_class.call(merge_input, params)
+        expect(result["records"].first).to have_key("id")
+        expect(result["records"].first).not_to have_key(:id)
+      end
+
+      it 'coerces Symbol dest key to string' do
+        params = {
+          "operations" => [
+            { "type" => "merge_by_index", "source" => "emails", "ids" => "stored_ids",
+              "inject" => "id", "output" => :records }
+          ]
+        }
+        result = described_class.call(merge_input, params)
+        expect(result).to have_key("records")
+        expect(result).not_to have_key(:records)
+      end
+    end
+
+    context 'when rename op keys are non-string (Symbol)' do
+      it 'coerces Symbol from key to string before comparing' do
+        params = { "operations" => [ { "type" => "rename", "from" => :emails, "to" => "messages" } ] }
+        result = described_class.call(input, params)
+        expect(result).to have_key("messages")
+        expect(result).not_to have_key("emails")
+      end
+
+      it 'coerces Symbol to key to string in the output' do
+        params = { "operations" => [ { "type" => "rename", "from" => "emails", "to" => :messages } ] }
+        result = described_class.call(input, params)
+        expect(result).to have_key("messages")
+        expect(result).not_to have_key(:messages)
+      end
+    end
+
+    context 'when dig_path has a nil intermediate node' do
+      let(:params) do
+        {
+          "operations" => [
+            { "type" => "filter_by_ids", "source" => "emails", "ids_from" => "result.ids", "output" => "emails" }
+          ]
+        }
+      end
+
+      it 'returns empty when an intermediate path segment is nil' do
+        result = described_class.call({ "emails" => emails, "result" => nil }, params)
+        expect(result["emails"]).to eq([])
+      end
+    end
   end
 end

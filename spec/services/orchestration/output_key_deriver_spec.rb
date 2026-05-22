@@ -41,4 +41,8 @@ RSpec.describe Orchestration::OutputKeyDeriver do
     create(:orchestration_step_action, step: other_step, output_key: "classify_emails", position: 1)
     expect(call("Classify Emails")).to eq("classify_emails")
   end
+
+  it "treats nil action_name as blank and returns 'action'" do
+    expect(call(nil)).to eq("action")
+  end
 end
