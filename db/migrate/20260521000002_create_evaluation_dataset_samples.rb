@@ -9,6 +9,10 @@ class CreateEvaluationDatasetSamples < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :evaluation_dataset_samples, :source_run_id
+    # Unique per-dataset so concurrent seed runs cannot create duplicates.
+    add_index :evaluation_dataset_samples, %i[dataset_id source_run_id],
+              unique: true,
+              where: "source_run_id IS NOT NULL",
+              name: "index_eval_dataset_samples_on_dataset_and_source_run"
   end
 end

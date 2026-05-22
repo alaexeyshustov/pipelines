@@ -11,12 +11,14 @@ module Evaluation
         @experiment = experiment
         @prompt = prompt
         result = JSON.parse(execute(dataset_sample))
+        tool_calls = result.fetch("tool_calls", []) #: Array[untyped]
+        raw_output = result.fetch("output", "")
         Sample.create!(
           experiment: experiment,
           dataset_sample: dataset_sample,
           prompt: prompt,
-          tool_calls: result.fetch("tool_calls", []),
-          output: result.fetch("output", "")
+          tool_calls: tool_calls,
+          output: raw_output.is_a?(String) ? raw_output : raw_output.to_json
         )
       rescue JSON::ParserError => e
         Rails.logger.error("#{self.class}#execute_and_store: invalid JSON from execute: #{e.message}")

@@ -17,10 +17,10 @@ module Evaluation
 
     def experiment: () -> Evaluation::Experiment?
     def experiment=: (Evaluation::Experiment?) -> Evaluation::Experiment?
-    def dataset_sample: () -> Evaluation::DatasetSample
-    def dataset_sample=: (Evaluation::DatasetSample) -> Evaluation::DatasetSample
-    def sample: () -> Evaluation::Sample
-    def sample=: (Evaluation::Sample) -> Evaluation::Sample
+    def dataset_sample: () -> Evaluation::DatasetSample?
+    def dataset_sample=: (Evaluation::DatasetSample?) -> Evaluation::DatasetSample?
+    def sample: () -> Evaluation::Sample?
+    def sample=: (Evaluation::Sample?) -> Evaluation::Sample?
 
     def justifications: () -> ActiveRecord::Associations::CollectionProxy
   end

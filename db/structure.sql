@@ -121,7 +121,7 @@ FOREIGN KEY ("dataset_id")
   REFERENCES "evaluation_datasets" ("id")
 );
 CREATE INDEX "index_evaluation_dataset_samples_on_dataset_id" ON "evaluation_dataset_samples" ("dataset_id") /*application='ApplicationPipeline'*/;
-CREATE INDEX "index_evaluation_dataset_samples_on_source_run_id" ON "evaluation_dataset_samples" ("source_run_id") /*application='ApplicationPipeline'*/;
+CREATE UNIQUE INDEX "index_eval_dataset_samples_on_dataset_and_source_run" ON "evaluation_dataset_samples" ("dataset_id", "source_run_id") WHERE source_run_id IS NOT NULL /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "evaluation_samples" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "experiment_id" integer NOT NULL, "dataset_sample_id" integer NOT NULL, "prompt_id" integer NOT NULL, "tool_calls" json, "output" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_b9ea01d6cf"
 FOREIGN KEY ("experiment_id")
   REFERENCES "evaluation_experiments" ("id")
@@ -135,7 +135,7 @@ FOREIGN KEY ("prompt_id")
 CREATE INDEX "index_evaluation_samples_on_experiment_id" ON "evaluation_samples" ("experiment_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_samples_on_dataset_sample_id" ON "evaluation_samples" ("dataset_sample_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_samples_on_prompt_id" ON "evaluation_samples" ("prompt_id") /*application='ApplicationPipeline'*/;
-CREATE TABLE IF NOT EXISTS "evaluation_evaluation_results" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "experiment_id" integer, "evaluator_class" varchar NOT NULL, "score" float, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "dataset_sample_id" integer NOT NULL, "sample_id" integer NOT NULL, CONSTRAINT "fk_rails_6a68e87f09"
+CREATE TABLE IF NOT EXISTS "evaluation_evaluation_results" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "experiment_id" integer, "evaluator_class" varchar NOT NULL, "score" float, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "dataset_sample_id" integer, "sample_id" integer, CONSTRAINT "fk_rails_6a68e87f09"
 FOREIGN KEY ("dataset_sample_id")
   REFERENCES "evaluation_dataset_samples" ("id")
 , CONSTRAINT "fk_rails_abd844afa6"

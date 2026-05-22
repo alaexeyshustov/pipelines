@@ -2,8 +2,8 @@ module Evaluation
   class EvaluationResult < ApplicationRecord
     self.table_name = "evaluation_evaluation_results"
     belongs_to :experiment, class_name: "Evaluation::Experiment", optional: true
-    belongs_to :dataset_sample, class_name: "Evaluation::DatasetSample"
-    belongs_to :sample, class_name: "Evaluation::Sample"
+    belongs_to :dataset_sample, class_name: "Evaluation::DatasetSample", optional: true
+    belongs_to :sample, class_name: "Evaluation::Sample", optional: true
     has_many :justifications, class_name: "Evaluation::Justification", dependent: :destroy, foreign_key: :evaluation_result_id
     validates :evaluator_class, presence: true
 

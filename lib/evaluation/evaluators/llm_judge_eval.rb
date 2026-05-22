@@ -25,7 +25,11 @@ module Evaluation
 
       def evaluate_and_store(experiment, sample)
         dataset_sample = sample.dataset_sample
+        return [] unless dataset_sample
+
         agent_name = experiment.agent_name
+        return [] unless agent_name
+
         judge_model = experiment.evaluation_model.presence || self.class.judge_model
         metric_results = evaluate(sample, dataset_sample, agent_name: agent_name, model: judge_model)
         return [] if metric_results.empty?
