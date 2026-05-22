@@ -148,5 +148,44 @@ RSpec.describe Orchestration::SchemaValidator do
           .to raise_error(described_class::Error, /must be a boolean/)
       end
     end
+
+    context 'with an object schema that has no properties key' do
+      let(:schema) { { "type" => "object", "required" => [ "id" ] } }
+
+      it 'validates required keys without iterating properties' do
+        expect { validator.validate!({ "id" => 1, "extra" => "ok" }) }.not_to raise_error
+      end
+
+      it 'raises when a required key is missing' do
+        expect { validator.validate!({}) }
+          .to raise_error(described_class::Error, /missing required key: id/)
+      end
+    end
+
+    context 'when a schema property key is absent from the data' do
+      let(:schema) do
+        {
+          "type" => "object",
+          "properties" => { "name" => { "type" => "string" } }
+        }
+      end
+
+      it 'skips validation for the absent property' do
+        expect { validator.validate!({}) }.not_to raise_error
+      end
+    end
+
+    context 'when a nested sub-schema has no type key' do
+      let(:schema) do
+        {
+          "type" => "object",
+          "properties" => { "meta" => {} }
+        }
+      end
+
+      it 'passes without raising for any value' do
+        expect { validator.validate!({ "meta" => "anything" }) }.not_to raise_error
+      end
+    end
   end
 end

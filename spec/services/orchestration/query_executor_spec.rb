@@ -124,5 +124,16 @@ RSpec.describe Orchestration::QueryExecutor do
           .to raise_error(KeyError)
       end
     end
+
+    context 'when an intermediate node in column_values_from path is nil' do
+      let(:params) do
+        { "table" => "application_mails", "column_name" => "id", "column_values_from" => "result.ids" }
+      end
+
+      it 'returns an empty array rather than raising' do
+        result = described_class.call({ "result" => nil }, params)
+        expect(result["application_mails"]).to eq([])
+      end
+    end
   end
 end
