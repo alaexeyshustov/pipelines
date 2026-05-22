@@ -2,6 +2,8 @@ require "rails_helper"
 
 RSpec.describe Orchestration::NormalizeActionRunFailure do
   describe ".call" do
+    let(:model) { "gpt-4.1-mini" }
+
     let(:action_run) do
       create(
         :orchestration_action_run,
@@ -14,7 +16,6 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
     end
 
     context "when the failure is a provider HTTP error" do
-      let(:model) { "gpt-4.1-mini" }
       let(:response) do
         instance_double(
           Faraday::Response,
@@ -53,7 +54,6 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
     end
 
     context "when a provider HTTP error has a nested error.message (no top-level message)" do
-      let(:model) { "gpt-4.1-mini" }
       let(:response) do
         Data.define(:status, :body).new(
           status: 400,
@@ -69,7 +69,6 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
     end
 
     context "when the provider HTTP response body is not valid JSON" do
-      let(:model) { "gpt-4.1-mini" }
       let(:response) { Data.define(:status, :body).new(status: 503, body: "Service Unavailable") }
       let(:error) { RubyLLM::ServiceUnavailableError.new(response, "unavailable") }
 
@@ -81,7 +80,6 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
     end
 
     context "when the provider HTTP response body is a JSON array" do
-      let(:model) { "gpt-4.1-mini" }
       let(:response) { Data.define(:status, :body).new(status: 400, body: '["err1","err2"]') }
       let(:error) { RubyLLM::BadRequestError.new(response, "array errors") }
 
@@ -92,7 +90,6 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
     end
 
     context "when the provider HTTP response has no message or error keys" do
-      let(:model) { "gpt-4.1-mini" }
       let(:response) { Data.define(:status, :body).new(status: 429, body: '{"code":42}') }
       let(:error) { RubyLLM::RateLimitError.new(response, "rate limited fallback") }
 
@@ -103,7 +100,6 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
     end
 
     context "when the parsed message is 'An unknown error occurred'" do
-      let(:model) { "gpt-4.1-mini" }
       let(:response) { Data.define(:status, :body).new(status: 500, body: '{"message":"An unknown error occurred"}') }
       let(:error) { RubyLLM::ServerError.new(response, "real server error") }
 
@@ -114,7 +110,6 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
     end
 
     context "when the agent_snapshot contains sensitive keys" do
-      let(:model) { "gpt-4.1-mini" }
       let(:action_run) do
         create(
           :orchestration_action_run,
@@ -135,7 +130,6 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
     end
 
     context "when the agent_snapshot is blank" do
-      let(:model) { "gpt-4.1-mini" }
       let(:action_run) { create(:orchestration_action_run, chat: create(:chat), agent_snapshot: nil) }
       let(:response) { Data.define(:status, :body).new(status: 429, body: '{"message":"Rate limit"}') }
       let(:error) { RubyLLM::RateLimitError.new(response, "Rate limit exceeded") }

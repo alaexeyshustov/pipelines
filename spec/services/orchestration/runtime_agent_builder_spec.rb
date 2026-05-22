@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe Orchestration::RuntimeAgentBuilder do
   subject(:builder) { described_class.new(policy: policy, chat: chat) }
 
-  let!(:chat) { create(:chat) }
+  let(:chat) { create(:chat) }
 
   let(:policy) do
     Orchestration::AgentResolutionPolicy::Result.new(
@@ -24,6 +24,8 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
       expect(builder.build.chat).to eq(chat)
     end
 
+    # RubyLLM::Agent uses `def_delegators :chat`, so `agent.with_model` → `chat.with_model`.
+    # We stub the chat directly rather than the agent to avoid creating test doubles.
     it 'applies the policy model to the agent' do
       allow(chat).to receive(:with_model).and_return(chat)
       builder.build
@@ -48,7 +50,7 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
       expect(chat).to have_received(:with_instructions).with("Classify this email")
     end
 
-    context 'when policy model is blank' do
+    context 'when all policy fields are blank' do
       let(:policy) do
         Orchestration::AgentResolutionPolicy::Result.new(
           model: nil, prompt: nil, tools: [], params: {}, output_schema: nil
@@ -60,41 +62,17 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
         described_class.new(policy: policy, chat: chat).build
         expect(chat).not_to have_received(:with_model)
       end
-    end
-
-    context 'when policy tools are empty' do
-      let(:policy) do
-        Orchestration::AgentResolutionPolicy::Result.new(
-          model: nil, prompt: nil, tools: [], params: {}, output_schema: nil
-        )
-      end
 
       it 'does not call with_tools' do
         allow(chat).to receive(:with_tools)
         described_class.new(policy: policy, chat: chat).build
         expect(chat).not_to have_received(:with_tools)
       end
-    end
-
-    context 'when policy output_schema is nil' do
-      let(:policy) do
-        Orchestration::AgentResolutionPolicy::Result.new(
-          model: nil, prompt: nil, tools: [], params: {}, output_schema: nil
-        )
-      end
 
       it 'does not call with_schema' do
         allow(chat).to receive(:with_schema)
         described_class.new(policy: policy, chat: chat).build
         expect(chat).not_to have_received(:with_schema)
-      end
-    end
-
-    context 'when policy prompt is blank' do
-      let(:policy) do
-        Orchestration::AgentResolutionPolicy::Result.new(
-          model: nil, prompt: nil, tools: [], params: {}, output_schema: nil
-        )
       end
 
       it 'does not call with_instructions' do

@@ -117,12 +117,10 @@ RSpec.describe Orchestration::InputMappingUpdater do
 
     context "when the step_action does not appear in the validator results" do
       it "treats missing step_result as no errors and no warnings" do
-        other_step = create(:orchestration_step, pipeline: pipeline)
-        other_action = create(:orchestration_action, name: "Other Action")
-        other_step_action = create(:orchestration_step_action, step: other_step, action: other_action, output_key: "other")
+        allow(Orchestration::Pipeline::Validator).to receive(:call).and_return([])
 
         result = described_class.call(
-          step_action: other_step_action,
+          step_action: step_action,
           input_mapping: {}
         )
 
