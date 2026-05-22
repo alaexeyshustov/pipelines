@@ -34,6 +34,25 @@ RSpec.describe Evaluation::DatasetSeeder do
       expect(dataset.dataset_samples.first.source_run_id).to eq(action_run.id)
     end
 
+    it "copies input from the action run's input field" do
+      action_run = build_action_run
+      described_class.call(agent_name: agent_name, sample_size: 10)
+
+      sample = Evaluation::Dataset.find_by!(name: agent_name).dataset_samples.first
+      expect(sample.input).to eq(action_run.input)
+    end
+
+    it "stores expected_tool_calls extracted via ToolCallExtractor" do
+      tool_calls = [ { "tool_name" => "search", "arguments" => { "q" => "jobs" }, "result" => "ok" } ]
+      allow(Evaluation::ToolCallExtractor).to receive(:call).and_return(tool_calls)
+
+      build_action_run
+      described_class.call(agent_name: agent_name, sample_size: 10)
+
+      sample = Evaluation::Dataset.find_by!(name: agent_name).dataset_samples.first
+      expect(sample.expected_tool_calls).to eq(tool_calls)
+    end
+
     it "skips action runs with status other than completed" do
       build_action_run(status: "failed")
       described_class.call(agent_name: agent_name, sample_size: 10)

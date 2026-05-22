@@ -70,6 +70,12 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
       expect(first_sample.input).to eq(generated_inputs.first)
     end
 
+    it "leaves expected_tool_calls nil on created DatasetSamples" do
+      described_class.perform_now(**params)
+
+      expect(Evaluation::DatasetSample.last(generated_inputs.size).map(&:expected_tool_calls)).to all(be_nil)
+    end
+
     it "updates WizardDraft payload with complete status and dataset_id" do
       described_class.perform_now(**params)
 
