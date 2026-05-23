@@ -1,4 +1,4 @@
-<% if @experiment.newer_experiment&.pending? || @experiment.newer_experiment&.running? %>
+<% if @experiment.newer_experiment&.pending? || @experiment.newer_experiment&.in_progress? %>
   <meta name="turbo-refresh-interval" content="5000">
   <meta name="turbo-refresh-method" content="replace">
 <% end %>
@@ -67,7 +67,7 @@
     <% end %>
   </div>
 
-  <% if @experiment.newer_experiment&.pending? || @experiment.newer_experiment&.running? %>
+  <% if @experiment.newer_experiment&.pending? || @experiment.newer_experiment&.in_progress? %>
     <div class="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
       Evaluation for improved prompt is pending. This page refreshes automatically.
     </div>

@@ -6,7 +6,7 @@ module Evaluation
 
     ALLOWED_EVALUATORS = %w[Evaluation::Evaluators::LLMJudgeEval].freeze
 
-    retry_on StandardError, attempts: 3 do |job, _error|
+    retry_on RubyLLM::Error, attempts: 3 do |job, _error|
       experiment = Evaluation::Experiment.find_by(id: job.arguments[0])
       next unless experiment
 

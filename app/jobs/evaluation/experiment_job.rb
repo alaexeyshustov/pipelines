@@ -5,14 +5,24 @@ module Evaluation
     queue_as :default
 
     def perform(experiment)
-      return unless experiment.may_start_sampling?
+      total = nil
 
-      total = experiment.dataset.dataset_samples.count
-      experiment.update!(pending_samples_count: total)
-      experiment.start_sampling!
+      experiment.with_lock do
+        if experiment.may_start_sampling?
+          total = experiment.dataset.dataset_samples.count
+          experiment.update!(pending_samples_count: total)
+          experiment.start_sampling!
+        elsif experiment.sampling? &&
+              experiment.pending_samples_count == experiment.dataset.dataset_samples.count
+          # crash recovery: start_sampling! succeeded but enqueuing didn't complete
+          total = experiment.pending_samples_count
+        end
+      end
+
+      return if total.nil?
 
       if total.zero?
-        experiment.fail!
+        experiment.with_lock { experiment.fail! if experiment.may_fail? }
         return
       end
 

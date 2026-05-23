@@ -4,7 +4,7 @@ module Evaluation
   class SamplingJob < ApplicationJob
     queue_as :default
 
-    retry_on StandardError, attempts: 3 do |job, _error|
+    retry_on RubyLLM::Error, attempts: 3 do |job, _error|
       experiment = Evaluation::Experiment.find_by(id: job.arguments[0])
       next unless experiment
 
@@ -43,7 +43,7 @@ module Evaluation
       total = experiment.dataset.dataset_samples.count
       sample_ids = experiment.samples.ids
 
-      if sample_ids.size >= total * 0.8
+      if sample_ids.size * 10 >= total * 8
         experiment.update!(pending_evaluations_count: sample_ids.size)
         experiment.start_evaluating!
         sample_ids

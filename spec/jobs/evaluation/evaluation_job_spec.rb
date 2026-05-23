@@ -45,7 +45,7 @@ RSpec.describe Evaluation::EvaluationJob do
 
     context "when retries are exhausted" do
       before do
-        allow(Evaluation::Evaluators::LLMJudgeEval).to receive(:new).and_raise(StandardError, "eval failed")
+        allow(Evaluation::Evaluators::LLMJudgeEval).to receive(:new).and_raise(RubyLLM::Error, "eval failed")
       end
 
       it "still decrements the counter on final failure" do

@@ -31,10 +31,18 @@ RSpec.describe Evaluation::ExperimentJob do
       expect(Evaluation::SamplingJob).to have_received(:perform_later).exactly(3).times
     end
 
-    it "does nothing when the experiment is already sampling" do
-      experiment.update!(status: "sampling")
+    it "does not re-enqueue sampling jobs when sampling is already in flight" do
+      create_list(:evaluation_dataset_sample, 3, dataset: experiment.dataset)
+      experiment.update!(status: "sampling", pending_samples_count: 2)
       described_class.perform_now(experiment)
       expect(Evaluation::SamplingJob).not_to have_received(:perform_later)
+    end
+
+    it "re-enqueues sampling jobs when sampling state was set but jobs were never enqueued (crash recovery)" do
+      create_list(:evaluation_dataset_sample, 2, dataset: experiment.dataset)
+      experiment.update!(status: "sampling", pending_samples_count: 2)
+      described_class.perform_now(experiment)
+      expect(Evaluation::SamplingJob).to have_received(:perform_later).exactly(2).times
     end
 
     it "does nothing when the experiment is already completed" do

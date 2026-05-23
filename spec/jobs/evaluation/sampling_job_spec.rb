@@ -74,7 +74,7 @@ RSpec.describe Evaluation::SamplingJob do
 
     context "when retries are exhausted" do
       before do
-        allow(Evaluation::Sampler).to receive(:call).and_raise(StandardError, "sampling failed")
+        allow(Evaluation::Sampler).to receive(:call).and_raise(RubyLLM::Error, "sampling failed")
         create(:evaluation_dataset_sample, dataset: dataset)
       end
 

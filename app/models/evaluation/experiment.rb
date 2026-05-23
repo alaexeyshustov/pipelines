@@ -38,6 +38,10 @@ module Evaluation
       end
     end
 
+    def in_progress?
+      sampling? || evaluating?
+    end
+
     def agent_name
       prompt&.name
     end
