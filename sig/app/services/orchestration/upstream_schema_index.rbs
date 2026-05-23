@@ -1,0 +1,9 @@
+module Orchestration
+  class UpstreamSchemaIndex
+    def self.build: (Orchestration::Pipeline pipeline) -> UpstreamSchemaIndex
+
+    def initialize: (Hash[Integer, Hash[String, untyped]] index) -> void
+
+    def schemas_before: (Orchestration::StepAction step_action) -> Hash[String, untyped]
+  end
+end

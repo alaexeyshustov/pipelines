@@ -15,7 +15,7 @@ module Orchestration
     def initial_input_schema: () -> Hash[String, untyped]?
     def initial_input_schema=: (Hash[String, untyped]?) -> Hash[String, untyped]?
 
-    def validate_steps: () -> Array[Pipeline::Validator::StepResult]
+    def validate_steps: (?index: Orchestration::UpstreamSchemaIndex?) -> Array[Pipeline::Validator::StepResult]
 
     def next_run_at: (?from: Time) -> Time?
 

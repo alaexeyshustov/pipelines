@@ -86,7 +86,8 @@
           <%= render Orchestration::StepsListComponent.new(
                 pipeline: @pipeline,
                 steps: @steps,
-                actions: @actions
+                actions: @actions,
+                index: @index
               ) %>
         </div>
       <% end %>

@@ -2,28 +2,30 @@
 
 module Orchestration
   class StepsListComponent < ViewComponent::Base
-    def initialize(pipeline:, steps:, actions:)
+    def initialize(pipeline:, steps:, actions:, index:)
       @pipeline = pipeline
       @steps    = steps
       @actions  = actions
-      @upstream_schemas_per_step  = compute_upstream_schemas_per_step
+      @index    = index
+      @upstream_schemas_per_step  = derive_upstream_schemas_per_step
       @validator_results_per_step = compute_validator_results_per_step
     end
 
     private
 
-    def compute_upstream_schemas_per_step
-      seen = { "_initial" => @pipeline.initial_input_schema }
+    def derive_upstream_schemas_per_step
       @steps.each_with_object({}) do |step, result|
-        result[step.id] = seen.dup
-        step.step_actions.sort_by(&:position).each do |sa|
-          seen[sa.output_key] = sa.action.agent&.output_schema
+        first_action = step.step_actions.min_by(&:position)
+        result[step.id] = if first_action
+          @index.schemas_before(first_action)
+        else
+          { "_initial" => @pipeline.initial_input_schema }
         end
       end
     end
 
     def compute_validator_results_per_step
-      all_results = @pipeline.validate_steps
+      all_results = @pipeline.validate_steps(index: @index)
       step_action_id_to_step_id = @steps.each_with_object({}) do |step, map|
         step.step_actions.each { |sa| map[sa.id] = step.id }
       end

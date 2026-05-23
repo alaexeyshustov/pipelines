@@ -18,9 +18,9 @@ module Orchestration
         attr_reader warnings: Array[Issue]
       end
 
-      def self.call: (Orchestration::Pipeline pipeline) -> Array[StepResult]
+      def self.call: (Orchestration::Pipeline pipeline, ?index: Orchestration::UpstreamSchemaIndex?) -> Array[StepResult]
 
-      def initialize: (Orchestration::Pipeline pipeline) -> void
+      def initialize: (Orchestration::Pipeline pipeline, Orchestration::UpstreamSchemaIndex index) -> void
       def call: () -> Array[StepResult]
 
       private

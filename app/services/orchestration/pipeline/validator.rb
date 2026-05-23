@@ -4,21 +4,24 @@ module Orchestration
       Issue = Data.define(:code, :message, :mapping_key, :from, :path)
       StepResult = Data.define(:step_action_id, :output_key, :errors, :warnings)
 
-      def self.call(pipeline) = new(pipeline).call
+      def self.call(pipeline, index: nil)
+        index ||= UpstreamSchemaIndex.build(pipeline)
+        new(pipeline, index).call
+      end
 
-      def initialize(pipeline)
+      def initialize(pipeline, index)
         @pipeline = pipeline
+        @index    = index
       end
 
       def call
-        known_schemas = { "_initial" => @pipeline.initial_input_schema }
         results = [] # : Array[StepResult]
 
         ordered_step_actions.each do |sa|
           errors   = [] # : Array[Issue]
           warnings = [] # : Array[Issue]
 
-          validate_input_mapping(sa, known_schemas, errors, warnings)
+          validate_input_mapping(sa, @index.schemas_before(sa), errors, warnings)
 
           results << StepResult.new(
             step_action_id: sa.id,
@@ -26,8 +29,6 @@ module Orchestration
             errors: errors,
             warnings: warnings
           )
-
-          known_schemas[sa.output_key] = sa.action.agent&.output_schema
         end
 
         results
@@ -36,7 +37,7 @@ module Orchestration
       private
 
       def ordered_step_actions
-        @pipeline.steps.includes(step_actions: { action: :agent }).flat_map do |step|
+        @pipeline.steps.flat_map do |step|
           step.step_actions.sort_by(&:position)
         end
       end

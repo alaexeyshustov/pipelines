@@ -29,6 +29,7 @@ module Orchestration
       @steps = @pipeline.steps.includes(step_actions: { action: :agent })
       @actions = Orchestration::Action.order(:name)
       @latest_run = @pipeline.pipeline_runs.order(created_at: :desc).first
+      @index = Orchestration::UpstreamSchemaIndex.build(@pipeline)
     end
 
     def run
