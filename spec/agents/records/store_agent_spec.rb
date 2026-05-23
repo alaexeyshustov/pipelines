@@ -23,7 +23,9 @@ RSpec.describe Records::StoreAgent, type: :model do
       a_request(:post, mistral_completions_url).with { |req|
         messages = JSON.parse(req.body)['messages']
         system_msg = messages.find { |m| m['role'] == 'system' }
-        system_msg['content'].include?('emails processor')
+        system_msg['content'].include?('emails processor') &&
+          system_msg['content'].include?('Yahoo: use the Yahoo folder name itself in label_ids') &&
+          system_msg['content'].include?('do not pass the destination label/folder as mailbox')
       }
     ).to have_been_made
   end

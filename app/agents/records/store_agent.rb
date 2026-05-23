@@ -25,6 +25,11 @@ module Records
         If not, create it using create_label tool.
 
       2. Call add_labels to label the email in its provider:
+         - Gmail: use the Gmail label ID returned by get_labels/create_label.
+         - Yahoo: use the Yahoo folder name itself in label_ids (for example ["applications"]).
+           Only use IMAP flags like "\\Flagged" or "\\Seen" when you specifically want starred/read state.
+           The mailbox argument is the source mailbox containing the message, usually "Inbox" for these inputs;
+           do not pass the destination label/folder as mailbox.
          If add_labels fails, skip labeling but continue processing.
 
       3. Store a new row in the <table> with the mapped data using insert_rows.
