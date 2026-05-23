@@ -5,38 +5,38 @@ It is implemented entirely in-app — no third-party eval framework gem.
 
 ## Infrastructure
 
-Domain logic lives in `app/evals/`, `app/models/evaluation/`, `app/runners/`, and `app/jobs/evaluation/`.
+Domain logic lives in `app/models/evaluation/`, `app/services/evaluation/`, `app/jobs/evaluation/`, and `lib/evaluation/`.
 
 ### Key Models
 
 - **Evaluation::Dataset**: A collection of input/expected-output pairs used for testing agents.
-- **Evaluation::DatasetRecord**: A single record in a dataset, polymorphically linked to a `recordable` (e.g. `Orchestration::ActionRun`).
+- **Evaluation::DatasetSample**: A single test case within a dataset. Holds `input` (JSON fed to the agent) and `expected_tool_calls` (nullable JSON — present when seeded from a production run, absent for synthetic inputs).
 - **Evaluation::Prompt**: Versioned system instructions for an agent. Each version is an immutable snapshot of `system_prompt`, `user_prompt`, and `output_schema` captured at the moment the version was created. Also used by the orchestration subsystem to supply the active prompt to agents at runtime.
-- **Evaluation::Experiment**: A single run of a runner against a dataset. Carries `sample_model` (the agent model used during sampling) and `evaluation_model` (the judge LLM model).
-- **Evaluation::RunnerResult**: The agent's raw prediction for one dataset record during an experiment.
-- **Evaluation::EvaluationResult**: The numeric score assigned to a runner result by an evaluator.
+- **Evaluation::Experiment**: A single run of the sampler against a dataset. Carries `sample_model` (the agent model used during sampling) and `evaluation_model` (the judge LLM model). Has an AASM state machine: `pending → sampling → evaluating → completed` (or `failed`).
+- **Evaluation::Sample**: The sampler's output for one dataset sample. Holds `tool_calls` (full execution trace JSON: tool name, arguments, result for each call) and `output` (the agent's final response). Belongs to `Experiment`, `DatasetSample`, and `Prompt`.
+- **Evaluation::EvaluationResult**: The numeric score (1–5) assigned to a sample by the judge.
 - **Evaluation::Metric**: Defined rubrics (e.g. "Accuracy", "Tone") scoped to an agent, used by the judge.
 - **Evaluation::Justification**: The judge LLM's reasoning for each assigned score.
 
 ## Evaluation Process
 
-1. **Dataset Creation**: Historical chat data or curated examples are added to an `Evaluation::Dataset`.
-2. **Experiment Execution**: A runner processes each dataset record using the agent configured with `sample_model`.
-3. **Judging**: `LLMJudgeEval` takes the agent's output and calls a judge LLM (configured per-experiment via `evaluation_model`).
-4. **Scoring**: The judge returns a JSON array of scores (1–5) and justifications for each active metric.
-5. **Storage**: Results are stored in `evaluation_runner_results`, `evaluation_evaluation_results`, and `evaluation_justifications`.
+1. **Dataset Creation**: Historical action run data or curated/synthetic examples are added to an `Evaluation::Dataset` as `DatasetSample` rows.
+2. **Sampling**: `Evaluation::Sampler` runs the agent against each dataset sample using `sample_model`. Write tools are blocked during sampling and return a sentinel string. The full tool call trace and final output are persisted as an `Evaluation::Sample`.
+3. **80% threshold check**: Once all sampling jobs complete, the experiment transitions to `evaluating` only if at least 80% of samples were produced successfully. Otherwise it transitions to `failed`.
+4. **Judging**: `LLMJudgeEval` takes each sample and calls a judge LLM (configured per-experiment via `evaluation_model`).
+5. **Scoring**: The judge returns a JSON array of scores (1–5) and justifications for each active metric.
+6. **Storage**: Results are stored in `evaluation_evaluation_results` and `evaluation_justifications`.
 
 ## Experiment Jobs
 
-- **Evaluation::ExperimentJob**: Iterates all dataset records and schedules one `RunEvalJob` per record with staggered delays.
-- **Evaluation::RunEvalJob**: Runs a single record through the runner and all evaluators, then marks the experiment complete when it is the last record.
+- **Evaluation::ExperimentJob**: Transitions the experiment to `sampling` and enqueues one `SamplingJob` per dataset sample.
+- **Evaluation::SamplingJob**: Calls `Evaluation::Sampler` for a single dataset sample. When the last sampling job finishes, checks the 80% threshold and either transitions to `evaluating` (enqueuing one `EvaluationJob` per sample) or marks the experiment `failed`.
+- **Evaluation::EvaluationJob**: Runs all evaluators against a single sample, then decrements the pending counter and marks the experiment `completed` when it reaches zero.
 
-## Runners and Evaluators
+## Sampler and Evaluator
 
-- **`BaseRun`** (`app/runners/base_run.rb`): Abstract interface. Subclasses implement `#execute(recordable)`. `execute_and_store` wraps the result in an `Evaluation::RunnerResult`.
-- **`BaseEval`** (`app/evals/base_eval.rb`): Abstract interface. Subclasses implement `#evaluate(runner_result, recordable)`. `evaluate_and_store` wraps the score in an `Evaluation::EvaluationResult`.
-- **`StubbedAgentRun`**: Runs the agent with tool calls stubbed against expected tool call sequences. Uses `experiment.sample_model` as the agent model.
-- **`LLMJudgeEval`**: Calls a judge LLM (via `experiment.evaluation_model`) to score agent responses against active metrics.
+- **`Evaluation::Sampler`** (`app/services/evaluation/sampler.rb`): Runs the agent via `RuntimeAgentBuilder` using `experiment.sample_model`. Before execution, wraps each tool where `tool_class.readonly?` is false with a no-op that returns `"[write tool blocked during sampling]"` and logs the blocked call. Captures the full tool call trace and persists an `Evaluation::Sample`.
+- **`Evaluation::Evaluators::LLMJudgeEval`** (`lib/evaluation/evaluators/llm_judge_eval.rb`): Calls a judge LLM to score agent responses against active metrics. Sources `expected_tool_calls` from `sample.dataset_sample.expected_tool_calls`; omits the tool-calling dimension from the judge prompt when `expected_tool_calls` is nil.
 
 ## Prompt Versioning
 
