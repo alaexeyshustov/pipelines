@@ -1,10 +1,14 @@
 module Orchestration
   class UpstreamSchemaIndex
     def self.build(pipeline)
-      accumulator = { "_initial" => pipeline.initial_input_schema }
-      index = {}
+      build_from_steps(pipeline, pipeline.steps.includes(step_actions: { action: :agent }))
+    end
 
-      pipeline.steps.includes(step_actions: { action: :agent }).each do |step|
+    def self.build_from_steps(pipeline, steps)
+      accumulator = { "_initial" => pipeline.initial_input_schema }
+      index = {} # : Hash[Integer, Hash[String, untyped]]
+
+      steps.each do |step|
         step.step_actions.sort_by(&:position).each do |sa|
           index[sa.id] = accumulator.dup
           accumulator[sa.output_key] = sa.action.agent&.output_schema
@@ -19,7 +23,8 @@ module Orchestration
     end
 
     def schemas_before(step_action)
-      @index.fetch(step_action.id, { "_initial" => nil })
+      not_found = {} # : Hash[String, untyped]
+      @index.fetch(step_action.id, not_found)
     end
   end
 end

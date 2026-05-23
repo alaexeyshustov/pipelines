@@ -38,10 +38,10 @@ RSpec.describe Orchestration::UpstreamSchemaIndex do
       expect(schemas["fetch"]).to eq(agent1.output_schema)
     end
 
-    it "returns a fallback for an unknown step action" do
+    it "returns an empty hash for an unknown step action" do
       unknown_sa = build_stubbed(:orchestration_step_action, id: 9999)
       schemas = index.schemas_before(unknown_sa)
-      expect(schemas).to eq({ "_initial" => nil })
+      expect(schemas).to eq({})
     end
 
     context "with multiple step actions in the same step" do

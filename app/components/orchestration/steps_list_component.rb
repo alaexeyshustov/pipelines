@@ -14,13 +14,11 @@ module Orchestration
     private
 
     def derive_upstream_schemas_per_step
+      last_schemas = { "_initial" => @pipeline.initial_input_schema }
       @steps.each_with_object({}) do |step, result|
         first_action = step.step_actions.min_by(&:position)
-        result[step.id] = if first_action
-          @index.schemas_before(first_action)
-        else
-          { "_initial" => @pipeline.initial_input_schema }
-        end
+        last_schemas = @index.schemas_before(first_action) if first_action
+        result[step.id] = last_schemas
       end
     end
 

@@ -36,6 +36,7 @@ module Orchestration
 
       private
 
+      # step_actions/action associations must already be preloaded (e.g. via UpstreamSchemaIndex.build)
       def ordered_step_actions
         @pipeline.steps.flat_map do |step|
           step.step_actions.sort_by(&:position)
