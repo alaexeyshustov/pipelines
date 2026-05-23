@@ -1047,6 +1047,23 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
+    context 'when the action references an unregistered executor class' do
+      let(:fetch_action) { create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor") }
+
+      before do
+        fetch_action
+        create(:orchestration_step_action, step: step1, action: fetch_action, position: 1)
+        stub_const("Orchestration::PipelineRunner::EXECUTORS", {})
+      end
+
+      it 'marks the action_run as failed with ArgumentError' do
+        described_class.new(pipeline_run).call
+        action_run = Orchestration::ActionRun.last
+        expect(action_run.status).to eq("failed")
+        expect(action_run.error).to match(/Unregistered executor: Emails::FetchExecutor/)
+      end
+    end
+
     context 'when input_mapping references a missing path' do # rubocop:disable RSpec/MultipleMemoizedHelpers
       before do
         fetch_action = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")

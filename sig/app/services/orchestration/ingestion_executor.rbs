@@ -2,8 +2,6 @@ module Orchestration
   class IngestionExecutor
     SUPPORTED_OPERATIONS: Array[String]
 
-    include Executable
-
     def self.call: (json_object input, ?Hash[String, untyped] params) -> Hash[String, untyped]
 
     def self.execute_operation: (json_object output, Hash[String, untyped] op) -> untyped

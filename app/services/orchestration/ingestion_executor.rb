@@ -1,7 +1,5 @@
 module Orchestration
   class IngestionExecutor
-    include Orchestration::Executable
-
     SUPPORTED_OPERATIONS = %w[filter_by_ids rename pick merge_by_index].freeze
 
     def self.call(input, params = {})

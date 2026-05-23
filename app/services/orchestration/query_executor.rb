@@ -1,6 +1,5 @@
 module Orchestration
   class QueryExecutor
-    include Orchestration::Executable
     extend Records::ModelResolver
 
     def self.call(input, params = {})

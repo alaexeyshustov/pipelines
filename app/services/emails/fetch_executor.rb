@@ -1,7 +1,5 @@
 module Emails
   class FetchExecutor
-    include Orchestration::Executable
-
     DEFAULT_DATE = Date.today.to_s
     DEFAULT_PROVIDERS = %w[gmail yahoo].freeze
     DEFAULT_MAX_RESULTS = 10

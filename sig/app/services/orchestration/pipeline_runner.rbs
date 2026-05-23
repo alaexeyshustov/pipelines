@@ -1,5 +1,12 @@
 module Orchestration
   class PipelineRunner
+    type executor_class = singleton(Emails::FetchExecutor)
+                        | singleton(Orchestration::QueryExecutor)
+                        | singleton(Orchestration::IngestionExecutor)
+                        | singleton(Interviews::GistExportExecutor)
+
+    EXECUTORS: Hash[String, executor_class]
+
     def initialize: (PipelineRun pipeline_run) -> void
     def call: () -> void
 

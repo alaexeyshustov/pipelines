@@ -24,9 +24,8 @@ RSpec.describe Orchestration::Action do
     end
 
     context "with kind: :service" do
-      it "is valid with a name and a valid executable class" do
-        stub_const("MyExecutable", Class.new { include Orchestration::Executable })
-        action = build(:orchestration_action, kind: :service, agent: nil, agent_class: "MyExecutable")
+      it "is valid with a name and a registered executor class" do
+        action = build(:orchestration_action, kind: :service, agent: nil, agent_class: "Emails::FetchExecutor")
         expect(action).to be_valid
       end
 
@@ -36,22 +35,14 @@ RSpec.describe Orchestration::Action do
         expect(action.errors[:agent_class]).to include(/can't be blank/)
       end
 
-      it "rejects non-existent class" do
-        action = build(:orchestration_action, kind: :service, agent: nil, agent_class: "NonExistent::Klass")
+      it "rejects an unregistered class name" do
+        action = build(:orchestration_action, kind: :service, agent: nil, agent_class: "NotInRegistry")
         expect(action).not_to be_valid
-        expect(action.errors[:agent_class]).to include(/must be an existing constant/)
-      end
-
-      it "rejects a class that does not include Orchestration::Executable" do
-        stub_const("RegularClass", Class.new)
-        action = build(:orchestration_action, kind: :service, agent: nil, agent_class: "RegularClass")
-        expect(action).not_to be_valid
-        expect(action.errors[:agent_class]).to include(/must include Orchestration::Executable/)
+        expect(action.errors[:agent_class]).to include(/must be a registered executor/)
       end
 
       it "is invalid when agent_id is present" do
-        stub_const("MyExecutable", Class.new { include Orchestration::Executable })
-        action = build(:orchestration_action, kind: :service, agent: nil, agent_class: "MyExecutable")
+        action = build(:orchestration_action, kind: :service, agent: nil, agent_class: "Emails::FetchExecutor")
         action.agent_id = 999
         expect(action).not_to be_valid
         expect(action.errors[:agent_id]).to include(/must be blank/)

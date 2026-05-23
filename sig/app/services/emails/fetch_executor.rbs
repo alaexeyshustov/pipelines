@@ -7,7 +7,6 @@ module Emails
     DEFAULT_PROVIDERS: Array[String]
     DEFAULT_MAX_RESULTS: Integer
 
-    include Orchestration::Executable
     def self.call: (Hash[String, untyped] input, ?Hash[String, untyped] params) -> fetch_result
   end
 end

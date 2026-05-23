@@ -1,5 +1,12 @@
 module Orchestration
   class PipelineRunner
+    EXECUTORS = {
+      "Emails::FetchExecutor"              => Emails::FetchExecutor,
+      "Orchestration::QueryExecutor"       => Orchestration::QueryExecutor,
+      "Orchestration::IngestionExecutor"   => Orchestration::IngestionExecutor,
+      "Interviews::GistExportExecutor"     => Interviews::GistExportExecutor
+    }.freeze
+
     def initialize(pipeline_run)
       @pipeline_run = pipeline_run
     end
@@ -103,8 +110,9 @@ module Orchestration
         normalized_output = policy.output_schema.present? ? output : { "result" => output }
         { output: normalized_output, raw_content: result.content }
       else
-        klass = action.agent_class&.constantize
-        raise ArgumentError, "Service class not found: #{action.agent_class}" unless klass
+        klass = EXECUTORS.fetch(action.agent_class.to_s) do
+          raise ArgumentError, "Unregistered executor: #{action.agent_class}"
+        end
 
         params = (action.params || {}).merge(action_run.step_action.params || {})
         { output: klass.call(input, params), raw_content: nil }

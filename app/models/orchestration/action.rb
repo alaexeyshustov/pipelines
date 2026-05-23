@@ -30,11 +30,8 @@ module Orchestration
         return
       end
 
-      klass = agent_class.safe_constantize
-      return errors.add(:agent_class, "must be an existing constant") if klass.nil?
-
-      unless klass.ancestors.include?(Orchestration::Executable)
-        errors.add(:agent_class, "must include Orchestration::Executable")
+      unless PipelineRunner::EXECUTORS.key?(agent_class)
+        errors.add(:agent_class, "must be a registered executor")
       end
     end
   end
