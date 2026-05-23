@@ -9,8 +9,14 @@ RSpec.describe Evaluation::ExperimentJob do
     before { allow(Evaluation::SamplingJob).to receive(:perform_later) }
 
     it "transitions the experiment to sampling" do
+      create(:evaluation_dataset_sample, dataset: experiment.dataset)
       described_class.perform_now(experiment)
       expect(experiment.reload).to be_sampling
+    end
+
+    it "transitions the experiment to failed when the dataset has no samples" do
+      described_class.perform_now(experiment)
+      expect(experiment.reload).to be_failed
     end
 
     it "sets pending_samples_count to the number of dataset samples" do

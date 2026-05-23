@@ -1,10 +1,10 @@
 module Evaluation
   class EvaluationJob < ApplicationJob
     def perform: (Integer experiment_id, Integer sample_id) -> void
+    def decrement_and_maybe_complete: (Evaluation::Experiment experiment) -> void
 
     private
 
-    def decrement_and_maybe_complete: (Evaluation::Experiment experiment) -> void
     def evaluators_for: (Evaluation::Experiment experiment) -> Array[untyped]
   end
 end

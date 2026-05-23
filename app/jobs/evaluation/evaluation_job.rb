@@ -10,7 +10,7 @@ module Evaluation
       experiment = Evaluation::Experiment.find_by(id: job.arguments[0])
       next unless experiment
 
-      job.send(:decrement_and_maybe_complete, experiment)
+      job.decrement_and_maybe_complete(experiment)
     end
 
     def perform(experiment_id, sample_id)
@@ -22,14 +22,14 @@ module Evaluation
       decrement_and_maybe_complete(experiment)
     end
 
-    private
-
     def decrement_and_maybe_complete(experiment)
       experiment.with_lock do
         experiment.decrement!(:pending_evaluations_count)
         experiment.complete! if experiment.pending_evaluations_count.zero? && experiment.may_complete?
       end
     end
+
+    private
 
     def evaluators_for(experiment)
       experiment.evaluator_classes.compact.reject(&:empty?).map do |klass|
