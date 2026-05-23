@@ -143,7 +143,7 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
   describe "#evaluate_and_store" do
     let!(:evaluation_prompt) { Evaluation::Prompt.create!(name: agent_name, system_prompt: "You are a classifier.", user_prompt: "Classify: {{input}}") }
     let!(:evaluation_dataset) { Evaluation::Dataset.create!(name: "test_dataset") }
-    let!(:evaluation_experiment) { Evaluation::Experiment.create!(name: "test_exp", dataset: evaluation_dataset, status: :pending, prompt: evaluation_prompt, evaluator_classes: [ "Evaluation::Evaluators::LLMJudgeEval" ]) }
+    let!(:evaluation_experiment) { Evaluation::Experiment.create!(name: "test_exp", dataset: evaluation_dataset, status: :pending, prompt: evaluation_prompt) }
     let!(:evaluation_dataset_sample) { Evaluation::DatasetSample.create!(dataset: evaluation_dataset, input: { "email" => "test" }) }
     let!(:evaluation_sample) do
       Evaluation::Sample.create!(

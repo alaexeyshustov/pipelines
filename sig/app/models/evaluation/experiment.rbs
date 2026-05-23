@@ -14,10 +14,6 @@ module Evaluation
     def name: () -> String?
     def name=: (String?) -> String?
     def description: () -> String?
-    def runner_class: () -> String?
-    def runner_class=: (String?) -> String?
-    def evaluator_classes: () -> Array[String]
-    def evaluator_classes=: (Array[String]) -> Array[String]
     def metadata: () -> Hash[String, untyped]?
     def metadata=: (Hash[String, untyped]?) -> Hash[String, untyped]?
     def status: () -> String

@@ -3,6 +3,16 @@
 require "rails_helper"
 
 RSpec.describe Evaluation::Experiment do
+  describe "schema" do
+    it "does not have a runner_class column" do
+      expect(described_class.column_names).not_to include("runner_class")
+    end
+
+    it "does not have an evaluator_classes column" do
+      expect(described_class.column_names).not_to include("evaluator_classes")
+    end
+  end
+
   describe "AASM state machine" do
     subject(:experiment) { create(:evaluation_experiment, status: "pending") }
 

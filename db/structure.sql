@@ -139,16 +139,17 @@ FOREIGN KEY ("sample_id")
 CREATE INDEX "index_evaluation_evaluation_results_on_experiment_id" ON "evaluation_evaluation_results" ("experiment_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_evaluation_results_on_dataset_sample_id" ON "evaluation_evaluation_results" ("dataset_sample_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_evaluation_results_on_sample_id" ON "evaluation_evaluation_results" ("sample_id") /*application='ApplicationPipeline'*/;
-CREATE TABLE IF NOT EXISTS "evaluation_experiments" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "description" text, "dataset_id" integer NOT NULL, "prompt_id" integer, "metadata" text, "runner_class" varchar, "evaluator_classes" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "sample_model" varchar, "evaluation_model" varchar, "status" varchar DEFAULT 'pending' NOT NULL /*application='ApplicationPipeline'*/, "pending_samples_count" integer DEFAULT 0 NOT NULL /*application='ApplicationPipeline'*/, "pending_evaluations_count" integer DEFAULT 0 NOT NULL /*application='ApplicationPipeline'*/, CONSTRAINT "fk_rails_84b997d884"
-FOREIGN KEY ("prompt_id")
-  REFERENCES "evaluation_prompts" ("id")
-, CONSTRAINT "fk_rails_8dce28380f"
+CREATE TABLE IF NOT EXISTS "evaluation_experiments" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "description" text, "dataset_id" integer NOT NULL, "prompt_id" integer, "metadata" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "sample_model" varchar, "evaluation_model" varchar, "status" varchar DEFAULT 'pending' NOT NULL, "pending_samples_count" integer DEFAULT 0 NOT NULL, "pending_evaluations_count" integer DEFAULT 0 NOT NULL, CONSTRAINT "fk_rails_8dce28380f"
 FOREIGN KEY ("dataset_id")
   REFERENCES "evaluation_datasets" ("id")
+, CONSTRAINT "fk_rails_84b997d884"
+FOREIGN KEY ("prompt_id")
+  REFERENCES "evaluation_prompts" ("id")
 );
 CREATE INDEX "index_evaluation_experiments_on_prompt_id" ON "evaluation_experiments" ("prompt_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_experiments_on_dataset_id" ON "evaluation_experiments" ("dataset_id") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260523080923'),
 ('20260522000001'),
 ('20260521000005'),
 ('20260521000004'),
