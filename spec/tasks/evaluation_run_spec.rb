@@ -19,11 +19,6 @@ RSpec.describe "evaluation:run rake task" do # rubocop:disable RSpec/DescribeCla
         .to change(Evaluation::Experiment, :count).by(1)
     end
 
-    it "sets evaluator_classes to Evaluation::Evaluators::LLMJudgeEval" do
-      Rake::Task[task_name].invoke(agent_name, nil)
-      expect(Evaluation::Experiment.last.evaluator_classes).to eq([ "Evaluation::Evaluators::LLMJudgeEval" ])
-    end
-
     it "links the experiment to the active prompt" do
       Rake::Task[task_name].invoke(agent_name, nil)
       expect(Evaluation::Experiment.last.prompt_id).to eq(prompt.id)

@@ -8,8 +8,7 @@ RSpec.describe Evaluation::PromptAutoEvalJob do
     create(:evaluation_experiment,
       prompt: previous_prompt,
       dataset: dataset,
-      status: :completed,
-      evaluator_classes: [ "Evaluation::Evaluators::LLMJudgeEval" ])
+      status: :completed)
   end
   let(:new_prompt) { create(:orchestration_prompt, name: agent_name) }
 
@@ -27,12 +26,6 @@ RSpec.describe Evaluation::PromptAutoEvalJob do
       described_class.perform_now(prompt_id: new_prompt.id)
       new_exp = Evaluation::Experiment.where(prompt: new_prompt).first
       expect(new_exp.dataset).to eq(dataset)
-    end
-
-    it "sets evaluator_classes on the new experiment" do
-      described_class.perform_now(prompt_id: new_prompt.id)
-      new_exp = Evaluation::Experiment.where(prompt: new_prompt).first
-      expect(new_exp.evaluator_classes).to eq([ "Evaluation::Evaluators::LLMJudgeEval" ])
     end
 
     it "tags the experiment metadata with triggered_by: prompt_change" do

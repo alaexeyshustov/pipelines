@@ -44,13 +44,12 @@ module Evaluation
 
     def create_experiment!
       Experiment.create!(
-        name:              payload["experiment_name"].presence || "Manual eval",
-        dataset_id:        payload["dataset_id"],
-        prompt_id:         @prompt_id,
-        evaluator_classes: [ "Evaluation::Evaluators::LLMJudgeEval" ],
-        metadata:          { "triggered_by" => "manual" },
-        sample_model:      payload["sample_model"].presence,
-        evaluation_model:  payload["evaluation_model"].presence
+        name:             payload["experiment_name"].presence || "Manual eval",
+        dataset_id:       payload["dataset_id"],
+        prompt_id:        @prompt_id,
+        metadata:         { "triggered_by" => "manual" },
+        sample_model:     payload["sample_model"].presence,
+        evaluation_model: payload["evaluation_model"].presence
       )
     end
   end

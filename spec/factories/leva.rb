@@ -12,7 +12,6 @@ FactoryBot.define do
   factory :evaluation_experiment, class: "Evaluation::Experiment" do
     sequence(:name) { |n| "experiment_#{n}" }
     status { :pending }
-    evaluator_classes { [ "Evaluation::Evaluators::LLMJudgeEval" ] }
     association :dataset, factory: :evaluation_dataset
     association :prompt, factory: :orchestration_prompt
   end

@@ -21,7 +21,6 @@ module Evaluation
         name: "Auto-eval for #{prompt.name} v#{prompt.version}",
         dataset: previous_experiment.dataset,
         prompt: prompt,
-        evaluator_classes: [ "Evaluation::Evaluators::LLMJudgeEval" ],
         metadata: { triggered_by: "prompt_change" }
       )
 
