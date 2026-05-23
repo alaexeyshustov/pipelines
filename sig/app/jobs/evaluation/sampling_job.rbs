@@ -1,0 +1,10 @@
+module Evaluation
+  class SamplingJob < ApplicationJob
+    def perform: (Integer experiment_id, Integer dataset_sample_id) -> void
+    def decrement_and_transition: (Evaluation::Experiment experiment) -> void
+
+    private
+
+    def evaluate_threshold: (Evaluation::Experiment experiment) -> Array[Integer]
+  end
+end

@@ -61,13 +61,6 @@ FOREIGN KEY ("chat_id")
 );
 CREATE TABLE IF NOT EXISTS "evaluation_datasets" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "description" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE TABLE IF NOT EXISTS "evaluation_prompts" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "version" integer, "system_prompt" text, "user_prompt" text, "metadata" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "output_schema" json /*application='ApplicationPipeline'*/);
-CREATE TABLE IF NOT EXISTS "evaluation_experiments" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "description" text, "dataset_id" integer NOT NULL, "prompt_id" integer, "status" integer, "metadata" text, "runner_class" varchar, "evaluator_classes" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "sample_model" varchar /*application='ApplicationPipeline'*/, "evaluation_model" varchar /*application='ApplicationPipeline'*/, CONSTRAINT "fk_rails_067bfa5025"
-FOREIGN KEY ("dataset_id")
-  REFERENCES "evaluation_datasets" ("id")
-, CONSTRAINT "fk_rails_4aa77a56d1"
-FOREIGN KEY ("prompt_id")
-  REFERENCES "evaluation_prompts" ("id")
-);
 CREATE TABLE IF NOT EXISTS "evaluation_metrics" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "agent_name" varchar NOT NULL, "name" varchar NOT NULL, "description" text NOT NULL, "weight" decimal DEFAULT 1.0 NOT NULL, "active" boolean DEFAULT TRUE NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_evaluation_metrics_on_agent_name_and_name" ON "evaluation_metrics" ("agent_name", "name") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "evaluation_justifications" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "evaluation_result_id" integer NOT NULL, "metric_name" varchar NOT NULL, "justification" text NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_517f4d40a2"
@@ -91,8 +84,6 @@ FOREIGN KEY ("pipeline_id")
 );
 CREATE TABLE IF NOT EXISTS "evaluation_wizard_drafts" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "session_token" varchar NOT NULL, "step" integer DEFAULT 1 NOT NULL, "payload" json, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_evaluation_wizard_drafts_on_session_token" ON "evaluation_wizard_drafts" ("session_token") /*application='ApplicationPipeline'*/;
-CREATE INDEX "index_evaluation_experiments_on_prompt_id" ON "evaluation_experiments" ("prompt_id") /*application='ApplicationPipeline'*/;
-CREATE INDEX "index_evaluation_experiments_on_dataset_id" ON "evaluation_experiments" ("dataset_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_prompts_on_name" ON "evaluation_prompts" ("name") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "orchestration_actions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "agent_class" varchar, "description" text, "params" json, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "kind" varchar DEFAULT 'service' NOT NULL, "agent_id" integer, CONSTRAINT "fk_rails_951418a714"
 FOREIGN KEY ("agent_id")
@@ -148,7 +139,17 @@ FOREIGN KEY ("sample_id")
 CREATE INDEX "index_evaluation_evaluation_results_on_experiment_id" ON "evaluation_evaluation_results" ("experiment_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_evaluation_results_on_dataset_sample_id" ON "evaluation_evaluation_results" ("dataset_sample_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_evaluation_results_on_sample_id" ON "evaluation_evaluation_results" ("sample_id") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "evaluation_experiments" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "description" text, "dataset_id" integer NOT NULL, "prompt_id" integer, "metadata" text, "runner_class" varchar, "evaluator_classes" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "sample_model" varchar, "evaluation_model" varchar, "status" varchar DEFAULT 'pending' NOT NULL /*application='ApplicationPipeline'*/, "pending_samples_count" integer DEFAULT 0 NOT NULL /*application='ApplicationPipeline'*/, "pending_evaluations_count" integer DEFAULT 0 NOT NULL /*application='ApplicationPipeline'*/, CONSTRAINT "fk_rails_84b997d884"
+FOREIGN KEY ("prompt_id")
+  REFERENCES "evaluation_prompts" ("id")
+, CONSTRAINT "fk_rails_8dce28380f"
+FOREIGN KEY ("dataset_id")
+  REFERENCES "evaluation_datasets" ("id")
+);
+CREATE INDEX "index_evaluation_experiments_on_prompt_id" ON "evaluation_experiments" ("prompt_id") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_evaluation_experiments_on_dataset_id" ON "evaluation_experiments" ("dataset_id") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260522000001'),
 ('20260521000005'),
 ('20260521000004'),
 ('20260521000003'),

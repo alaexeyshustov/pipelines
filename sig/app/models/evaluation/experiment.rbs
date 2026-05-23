@@ -36,9 +36,11 @@ module Evaluation
     def evaluation_results: () -> ActiveRecord::Associations::CollectionProxy
 
     def pending?: () -> bool
-    def running?: () -> bool
+    def sampling?: () -> bool
+    def evaluating?: () -> bool
     def completed?: () -> bool
     def failed?: () -> bool
+    def in_progress?: () -> bool
 
     def update!: (**untyped attrs) -> Experiment
 
