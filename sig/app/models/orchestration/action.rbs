@@ -14,8 +14,7 @@ module Orchestration
     def agent_class=: (String?) -> String?
     def description: () -> String?
     def description=: (String?) -> String?
-    def params: () -> Hash[String, untyped]?
-    def params=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def input_schema: () -> Hash[String, untyped]?
 
     def step_actions: () -> ActiveRecord::Associations::CollectionProxy
     def agent: () -> Orchestration::Agent?

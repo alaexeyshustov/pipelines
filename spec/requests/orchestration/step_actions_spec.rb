@@ -116,6 +116,5 @@ RSpec.describe "Orchestration::StepActions" do
         expect(step_action.reload.input_mapping).to eq(original_mapping)
       end
     end
-
   end
 end

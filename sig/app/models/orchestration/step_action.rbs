@@ -8,9 +8,6 @@ module Orchestration
     def input_mapping=: (Hash[String, untyped]?) -> Hash[String, untyped]?
     def position: () -> Integer?
     def position=: (Integer?) -> Integer?
-    def params: () -> Hash[String, untyped]?
-    def params=: (Hash[String, untyped]?) -> Hash[String, untyped]?
-
     def step: () -> Orchestration::Step
     def step=: (Orchestration::Step) -> Orchestration::Step
     def action: () -> Orchestration::Action

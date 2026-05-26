@@ -29,7 +29,7 @@ RSpec.describe Orchestration::Executable do
       end
 
       it 'lists only keyreq params as required' do
-        expect(schema["required"]).to eq(["date"])
+        expect(schema["required"]).to eq([ "date" ])
       end
 
       it 'preserves nested type definitions' do

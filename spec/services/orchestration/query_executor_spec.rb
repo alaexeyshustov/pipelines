@@ -2,9 +2,11 @@ require 'rails_helper'
 
 RSpec.describe Orchestration::QueryExecutor do
   describe '.call' do
-    let!(:acme)    { create(:application_mail, company: 'Acme',   provider: 'gmail') }
-    let!(:globex)  { create(:application_mail, company: 'Globex', provider: 'yahoo') }
-    let!(:initech) { create(:application_mail, company: 'Initech', provider: 'gmail') }
+    before do
+      create(:application_mail, company: 'Acme',    provider: 'gmail')
+      create(:application_mail, company: 'Globex',  provider: 'yahoo')
+      create(:application_mail, company: 'Initech', provider: 'gmail')
+    end
 
     context 'when filtering by a single value' do
       it 'returns only matching records under the table key' do

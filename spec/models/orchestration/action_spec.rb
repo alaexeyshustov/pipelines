@@ -81,7 +81,7 @@ RSpec.describe Orchestration::Action do
   end
 
   describe '#input_schema' do
-    context 'for an agent-kind action' do
+    context 'when action is agent-kind' do
       it 'delegates to the associated agent' do
         schema = { "type" => "object", "properties" => { "emails" => { "type" => "array" } } }
         agent  = create(:orchestration_agent, input_schema: schema)
@@ -98,7 +98,7 @@ RSpec.describe Orchestration::Action do
       end
     end
 
-    context 'for a service-kind action' do
+    context 'when action is service-kind' do
       it 'delegates to the service class input_schema' do
         stub_const("MyExecutable", Class.new do
           include Orchestration::Executable

@@ -70,7 +70,7 @@ module Orchestration
         schema = step_action.action.input_schema
         return unless schema
 
-        required_keys = Array(schema["required"])
+        required_keys = Array(schema["required"]) # : Array[String]
         covered_keys  = (step_action.input_mapping || {}).keys
 
         required_keys.each do |key|

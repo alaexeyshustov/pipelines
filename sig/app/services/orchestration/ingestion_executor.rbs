@@ -3,8 +3,9 @@ module Orchestration
     SUPPORTED_OPERATIONS: Array[String]
 
     include Executable
+    extend Executable::ClassMethods
 
-    def self.call: (json_object input, ?Hash[String, untyped] params) -> Hash[String, untyped]
+    def self.call: (?operations: Array[Hash[String, untyped]]) -> Hash[String, untyped]
 
     def self.execute_operation: (json_object output, Hash[String, untyped] op) -> untyped
     def self.apply_filter_by_ids: (json_object output, Hash[String, untyped] op) -> Hash[String, untyped]
