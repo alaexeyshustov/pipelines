@@ -1,26 +1,37 @@
 <div data-controller="schema-builder tabs">
   <%# Tab navigation %>
   <div class="border-b border-gray-200 mb-6">
-    <nav class="-mb-px flex gap-6" aria-label="Tabs">
+    <nav class="-mb-px flex gap-6" aria-label="Tabs" role="tablist">
       <button type="button"
+              id="pipeline-tab-general"
+              role="tab"
+              aria-selected="true"
+              aria-controls="pipeline-panel-general"
+              tabindex="0"
               data-tabs-target="tab"
-              data-action="click->tabs#show"
-              class="py-2 px-1 border-b-2 text-sm font-medium whitespace-nowrap"
-              aria-selected="true">
+              data-action="click->tabs#show keydown->tabs#keydown"
+              class="py-2 px-1 border-b-2 text-sm font-medium whitespace-nowrap border-indigo-600 text-indigo-600">
         General
       </button>
       <button type="button"
+              id="pipeline-tab-schema"
+              role="tab"
+              aria-selected="false"
+              aria-controls="pipeline-panel-schema"
+              tabindex="-1"
               data-tabs-target="tab"
-              data-action="click->tabs#show"
-              class="py-2 px-1 border-b-2 text-sm font-medium whitespace-nowrap"
-              aria-selected="false">
+              data-action="click->tabs#show keydown->tabs#keydown"
+              class="py-2 px-1 border-b-2 text-sm font-medium whitespace-nowrap border-transparent text-gray-500">
         Schema Builder
       </button>
     </nav>
   </div>
 
   <%# Tab 1: General Info %>
-  <div data-tabs-target="panel">
+  <div id="pipeline-panel-general"
+       role="tabpanel"
+       aria-labelledby="pipeline-tab-general"
+       data-tabs-target="panel">
     <%= form_with model: pipeline,
           url: pipeline.new_record? ? orchestration_pipelines_path : orchestration_pipeline_path(pipeline),
           id: "pipeline-form",
@@ -63,8 +74,12 @@
     <% end %>
   </div>
 
-  <%# Tab 2: Schema Builder %>
-  <div data-tabs-target="panel">
+  <%# Tab 2: Schema Builder (hidden server-side — no flash on load) %>
+  <div id="pipeline-panel-schema"
+       role="tabpanel"
+       aria-labelledby="pipeline-tab-schema"
+       data-tabs-target="panel"
+       hidden>
     <div class="flex items-center justify-between mb-2">
       <label class="block text-sm font-medium text-gray-700">Initial input schema</label>
       <button type="button"
