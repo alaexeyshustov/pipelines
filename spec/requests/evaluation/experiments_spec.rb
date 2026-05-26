@@ -464,6 +464,79 @@ RSpec.describe "Evaluation::Experiments" do
     end
   end
 
+  describe "DELETE /evaluation/experiments/:id" do
+    context "when the experiment is completed" do
+      let!(:experiment) { create(:evaluation_experiment, status: :completed) }
+
+      it "destroys the experiment" do
+        expect {
+          delete evaluation_experiment_path(experiment)
+        }.to change(Evaluation::Experiment, :count).by(-1)
+      end
+
+      it "redirects to the experiments index with a notice" do
+        delete evaluation_experiment_path(experiment)
+        expect(response).to redirect_to(evaluation_experiments_path)
+        expect(flash[:notice]).to be_present
+      end
+    end
+
+    context "when the experiment is completed and has associated samples and results" do
+      let!(:experiment) { create(:evaluation_experiment, status: :completed) }
+      let!(:sample) do
+        ds = create(:evaluation_dataset_sample, dataset: experiment.dataset)
+        create(:evaluation_sample, experiment: experiment, dataset_sample: ds)
+      end
+
+      before do
+        Evaluation::EvaluationResult.create!(
+          experiment: experiment, dataset_sample: sample.dataset_sample,
+          sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
+        )
+      end
+
+      it "destroys the experiment along with its samples and results" do
+        expect {
+          delete evaluation_experiment_path(experiment)
+        }.to change(Evaluation::Experiment, :count).by(-1)
+          .and change(Evaluation::Sample, :count).by(-1)
+          .and change(Evaluation::EvaluationResult, :count).by(-1)
+      end
+    end
+
+    context "when the experiment is pending" do
+      let!(:experiment) { create(:evaluation_experiment, status: :pending) }
+
+      it "does not destroy the experiment" do
+        expect {
+          delete evaluation_experiment_path(experiment)
+        }.not_to change(Evaluation::Experiment, :count)
+      end
+
+      it "redirects to the index with an alert" do
+        delete evaluation_experiment_path(experiment)
+        expect(response).to redirect_to(evaluation_experiments_path)
+        expect(flash[:alert]).to be_present
+      end
+    end
+
+    context "when the experiment is in progress" do
+      let!(:experiment) { create(:evaluation_experiment, status: :sampling) }
+
+      it "does not destroy the experiment" do
+        expect {
+          delete evaluation_experiment_path(experiment)
+        }.not_to change(Evaluation::Experiment, :count)
+      end
+
+      it "redirects to the index with an alert" do
+        delete evaluation_experiment_path(experiment)
+        expect(response).to redirect_to(evaluation_experiments_path)
+        expect(flash[:alert]).to be_present
+      end
+    end
+  end
+
   describe "POST /evaluation/experiments/snapshot_agent_prompt" do
     let(:agent) { create(:orchestration_agent, name: "Emails::ClassifyAgent", prompt: "You are a classifier.") }
 

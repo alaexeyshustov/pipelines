@@ -46,7 +46,7 @@ Rails.application.routes.draw do
         post :resync
       end
     end
-    resources :experiments, only: [ :index, :show, :new, :create ] do
+    resources :experiments, only: [ :index, :show, :new, :create, :destroy ] do
       member do
         post :improve
         post :activate

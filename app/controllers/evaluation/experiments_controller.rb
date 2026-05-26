@@ -2,7 +2,7 @@
 
 module Evaluation
   class ExperimentsController < ApplicationController
-    before_action :set_experiment, only: [ :show, :improve, :compare, :activate, :status_frame, :metric_results ]
+    before_action :set_experiment, only: [ :show, :improve, :compare, :activate, :status_frame, :metric_results, :destroy ]
 
     def index
       @experiments = Experiment.order(created_at: :desc).includes(:prompt)
@@ -30,6 +30,15 @@ module Evaluation
           render_wizard_error
         end
       end
+    end
+
+    def destroy
+      if @experiment.pending? || @experiment.in_progress?
+        return redirect_to evaluation_experiments_path, alert: "Cannot delete an experiment that is still running."
+      end
+
+      @experiment.destroy!
+      redirect_to evaluation_experiments_path, notice: "Experiment '#{@experiment.name}' deleted."
     end
 
     def snapshot_agent_prompt
