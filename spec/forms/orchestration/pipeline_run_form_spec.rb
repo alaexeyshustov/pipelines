@@ -90,6 +90,71 @@ RSpec.describe Orchestration::PipelineRunForm do
       end
     end
 
+    context "when pipeline has a hardcoded array field with items enum" do
+      let(:schema) do
+        { "type" => "object", "required" => [ "cols" ],
+          "properties" => {
+            "cols" => { "type" => "array", "format" => "hardcoded",
+                        "items" => { "type" => "string", "enum" => [ "company", "job_title" ] } }
+          } }
+      end
+      let(:pipeline) { create(:orchestration_pipeline, initial_input_schema: schema) }
+      let(:form) { described_class.new(pipeline: pipeline) }
+
+      before { allow(PipelineRunJob).to receive(:perform_later) }
+
+      it "injects all items enum values as the hardcoded array" do
+        form.save
+        expect(Orchestration::PipelineRun.last.initial_input).to include("cols" => [ "company", "job_title" ])
+      end
+
+      it "saves successfully" do
+        expect(form.save).to be true
+      end
+    end
+
+    context "when pipeline has a hardcoded array field without items enum" do
+      let(:schema) do
+        { "type" => "object", "required" => [ "tags" ],
+          "properties" => {
+            "tags" => { "type" => "array", "format" => "hardcoded", "items" => {} }
+          } }
+      end
+      let(:pipeline) { create(:orchestration_pipeline, initial_input_schema: schema) }
+      let(:form) { described_class.new(pipeline: pipeline) }
+
+      before { allow(PipelineRunJob).to receive(:perform_later) }
+
+      it "injects an empty array and saves successfully" do
+        expect(form.save).to be true
+        expect(Orchestration::PipelineRun.last.initial_input).to include("tags" => [])
+      end
+    end
+
+    context "when pipeline has a hardcoded field that is required" do
+      let(:schema) do
+        { "type" => "object", "required" => [ "date", "topic" ],
+          "properties" => {
+            "date"  => { "type" => "string" },
+            "topic" => { "type" => "string", "enum" => [ "job applications" ], "format" => "hardcoded" }
+          } }
+      end
+      let(:pipeline) { create(:orchestration_pipeline, initial_input_schema: schema) }
+      let(:raw_params) { ActionController::Parameters.new("date" => "2026-05-20") }
+      let(:form) { described_class.new(pipeline: pipeline, initial_input_params: raw_params) }
+
+      before { allow(PipelineRunJob).to receive(:perform_later) }
+
+      it "saves successfully without the user supplying the hardcoded field" do
+        expect(form.save).to be true
+      end
+
+      it "injects the hardcoded enum value into initial_input" do
+        form.save
+        expect(Orchestration::PipelineRun.last.initial_input).to include("topic" => "job applications")
+      end
+    end
+
     context "without initial_input_schema" do
       let(:form) do
         raw = ActionController::Parameters.new("anything" => "value")

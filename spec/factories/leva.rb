@@ -1,6 +1,7 @@
 FactoryBot.define do
   factory :evaluation_dataset, class: "Evaluation::Dataset" do
     sequence(:name) { |n| "dataset_#{n}" }
+    agent_name { nil }
   end
 
   factory :orchestration_prompt, class: "Evaluation::Prompt" do

@@ -1,4 +1,4 @@
-<%= form_with url: form_url, method: :patch, class: "space-y-2" do %>
+<%= form_with url: form_url, method: :patch, class: "space-y-2", data: { turbo_frame: "_top" } do %>
   <p class="text-xs font-medium text-gray-600">Mapping for <span class="font-mono"><%= @step_action.output_key %></span></p>
 
   <%= render Orchestration::MappingEntryComponent.with_collection(mapping_rows, from_options: from_options) %>

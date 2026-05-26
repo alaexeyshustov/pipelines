@@ -16,6 +16,18 @@ module Evaluation
       def sample_model     = @form.sample_model
       def evaluation_model = @form.evaluation_model
 
+      def snapshot_url
+        helpers.snapshot_agent_prompt_evaluation_experiments_path
+      end
+
+      def fork_prompt_url
+        helpers.fork_prompt_evaluation_experiments_path
+      end
+
+      def prompt_content_url
+        helpers.prompt_content_evaluation_experiments_path
+      end
+
       def prompt_options
         prompts.map { |p| [ "#{p.name} v#{p.version}", p.id ] }
       end

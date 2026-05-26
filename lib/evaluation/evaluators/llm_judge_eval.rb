@@ -70,6 +70,10 @@ module Evaluation
         sample.prompt&.system_prompt
       end
 
+      def fetch_output_schema(sample)
+        sample.prompt&.output_schema
+      end
+
       def call_judge(user_input:, model: self.class.judge_model)
         response = Evaluation::Judge::Agent.create.with_model(model).ask(user_input)
         parse_judge_response(response.content)
@@ -88,6 +92,8 @@ module Evaluation
         }
         expected = dataset_sample.expected_tool_calls
         message[:expected_tool_calls] = expected unless expected.nil?
+        schema = fetch_output_schema(sample)
+        message[:output_schema] = schema if schema.present?
         message.to_json
       end
 

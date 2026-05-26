@@ -36,12 +36,12 @@ module Evaluation
       tool_calls = capture_tool_calls(agent)
       output     = result.content.is_a?(String) ? result.content : result.content.to_json
 
-      Sample.create!(
-        experiment:     @experiment,
-        dataset_sample: @dataset_sample,
-        prompt:         @prompt,
-        tool_calls:     tool_calls,
-        output:         output
+      Evaluation::Sample.create!(
+        experiment_id:     @experiment.id,
+        dataset_sample_id: @dataset_sample.id,
+        prompt_id:         @prompt&.id,
+        tool_calls:        tool_calls,
+        output:            output
       )
     end
 

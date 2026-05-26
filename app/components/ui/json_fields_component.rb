@@ -24,6 +24,16 @@ module UI
       end
     end
 
+    def hardcoded_display(field_schema)
+      value = if field_schema["type"] == "array"
+        field_schema["const"] || field_schema.dig("items", "enum") || []
+      else
+        field_schema["const"] || field_schema["enum"]&.first
+      end
+
+      value.is_a?(Array) ? value.join(", ") : value.to_s
+    end
+
     def input_name(field_name, array: false)
       base = @name_prefix ? "#{@name_prefix}[#{field_name}]" : field_name
       array ? "#{base}[]" : base
@@ -40,7 +50,9 @@ module UI
     end
 
     def field_kind(schema)
-      if schema["type"] == "array" && schema.dig("items", "enum").present?
+      if schema["format"] == "hardcoded"
+        :hardcoded
+      elsif schema["type"] == "array" && schema.dig("items", "enum").present?
         :checkboxes
       elsif schema["format"] == "date"
         :date

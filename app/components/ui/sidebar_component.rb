@@ -18,7 +18,8 @@ module UI
             NavItem.new(label: "Chats",      path: ma.chats_path),
             NavItem.new(label: "Models",     path: ma.models_path),
             NavItem.new(label: "Monitoring", path: "/monitoring"),
-            NavItem.new(label: "Evaluation", path: "/evaluation")
+            NavItem.new(label: "Evaluation", path: "/evaluation"),
+            NavItem.new(label: "Prompts",    path: "/evaluation/prompts")
           ]
         ),
         NavGroup.new(
@@ -40,7 +41,8 @@ module UI
         NavGroup.new(
           label: "Settings",
           items: [
-            NavItem.new(label: "Email Connectors", path: ma.settings_email_connectors_path)
+            NavItem.new(label: "Email Connectors", path: ma.settings_email_connectors_path),
+            NavItem.new(label: "Jobs",             path: "/jobs")
           ]
         )
       ]
@@ -51,11 +53,17 @@ module UI
     end
 
     def group_open?(group)
-      group.items.any? { |item| @current_path.start_with?(item.path) }
+      group.items.any? { |item| current_path_matches?(item.path) }
     end
 
     def active?(path)
-      @current_path == path
+      current_path_matches?(path)
+    end
+
+    private
+
+    def current_path_matches?(path)
+      @current_path == path || @current_path.start_with?("#{path}/")
     end
   end
 end

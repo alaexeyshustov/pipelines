@@ -6,10 +6,12 @@ module Evaluation
 
       # steep:ignore:start
       schema do
-        array :evaluations, required: true do
-          string  :metric_name,   required: true, description: "The metric name being scored"
-          integer :score,         required: true, description: "Score from 1 to 5 (inclusive)"
-          string  :justification, required: true, description: "Explanation of the score"
+        array :evaluations do
+          object do
+            string  :metric_name,   description: "The metric name being scored"
+            integer :score,         description: "Score from 1 to 5 (inclusive)"
+            string  :justification, description: "Explanation of the score"
+          end
         end
       end
       # steep:ignore:end
@@ -25,8 +27,12 @@ module Evaluation
           "expected_tool_calls": [ ... ],
           "actual_tool_calls": [ ... ],
           "output": "the agent's final output",
+          "output_schema": { ... },
           "metrics": [{ "name": "metric_name", "description": "rubric description" }, ...]
         }
+
+        "output_schema" is the JSON Schema the agent was instructed to conform to.
+        When present, use it to judge whether the output matches the expected structure.
 
         ## Task
         For each metric in "metrics", assign an integer score from 1 to 5 and write a concise justification.

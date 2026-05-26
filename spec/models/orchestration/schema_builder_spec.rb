@@ -23,6 +23,11 @@ RSpec.describe Orchestration::SchemaBuilder do
       expect(builder.description).to eq("A name")
     end
 
+    it "parses format for string type" do
+      builder = described_class.from_schema("type" => "string", "format" => "date")
+      expect(builder.format).to eq("date")
+    end
+
     it "parses required array" do
       builder = described_class.from_schema("type" => "object", "required" => %w[name age])
       expect(builder.required).to eq(%w[name age])
@@ -72,6 +77,21 @@ RSpec.describe Orchestration::SchemaBuilder do
     it "includes type and description" do
       builder = described_class.new(type: "string", description: "A name")
       expect(builder.to_schema).to eq("type" => "string", "description" => "A name")
+    end
+
+    it "includes format for string type when present" do
+      builder = described_class.new(type: "string", format: "date")
+      expect(builder.to_schema).to eq("type" => "string", "format" => "date")
+    end
+
+    it "does not include format for non-string types" do
+      builder = described_class.new(type: "integer", format: "date")
+      expect(builder.to_schema).not_to have_key("format")
+    end
+
+    it "includes format 'hardcoded' regardless of type" do
+      builder = described_class.new(type: "integer", format: "hardcoded")
+      expect(builder.to_schema).to include("format" => "hardcoded")
     end
 
     it "omits description when blank" do
@@ -144,6 +164,15 @@ RSpec.describe Orchestration::SchemaBuilder do
     it "preserves all fields" do
       expect(described_class.from_schema(schema).to_schema).to eq(schema)
     end
+
+    it "preserves format on string properties" do
+      schema_with_format = schema.merge(
+        "properties" => schema["properties"].merge(
+          "due_date" => { "type" => "string", "format" => "date" }
+        )
+      )
+      expect(described_class.from_schema(schema_with_format).to_schema).to eq(schema_with_format)
+    end
   end
 
   # --- from_params ---
@@ -153,6 +182,11 @@ RSpec.describe Orchestration::SchemaBuilder do
       builder = described_class.from_params("type" => "string", "description" => "Name")
       expect(builder.type).to eq("string")
       expect(builder.description).to eq("Name")
+    end
+
+    it "parses format" do
+      builder = described_class.from_params("type" => "string", "format" => "date")
+      expect(builder.format).to eq("date")
     end
 
     it "coerces additionalProperties string to boolean" do
@@ -302,6 +336,20 @@ RSpec.describe Orchestration::SchemaBuilder do
       root = described_class.new(type: "array", items: items_b)
       result = root.with_mutation([ "items" ]) { |b| b.with_type("integer") }
       expect(result.items.type).to eq("integer")
+    end
+
+    it "defaults nil items to string type so enum changes are not silently dropped" do
+      root = described_class.new(type: "array")
+      result = root.with_mutation([ "items" ]) { |b| b }
+      expect(result.items.type).to eq("string")
+    end
+
+    it "preserves enum values applied to nil items" do
+      root = described_class.new(type: "array")
+      result = root.with_mutation([ "items" ]) do |b|
+        described_class.from_schema(b.to_schema.merge("enum" => %w[pending done]))
+      end
+      expect(result.to_schema.dig("items", "enum")).to eq(%w[pending done])
     end
   end
 end

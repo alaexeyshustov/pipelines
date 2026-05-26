@@ -12,7 +12,9 @@ module Evaluation
     end
 
     def call
-      dataset = Dataset.find_or_create_by!(name: @agent_name)
+      # steep:ignore:start
+      dataset = Dataset.find_or_create_by!(name: @agent_name) { |d| d.agent_name = @agent_name }
+      # steep:ignore:end
       created = 0
       skipped = 0
 

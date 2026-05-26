@@ -28,18 +28,25 @@ RSpec.describe Evaluation::Wizard::Step3Form do
   end
 
   describe "#datasets" do
-    it "returns datasets ordered by name with record_count" do
-      d1 = create(:evaluation_dataset, name: "Zebra Dataset")
-      d2 = create(:evaluation_dataset, name: "Alpha Dataset")
+    it "returns only datasets for the current agent, ordered by name" do
+      agent = "Emails::ClassifyAgent"
+      d1 = create(:evaluation_dataset, name: "Zebra Dataset", agent_name: agent)
+      d2 = create(:evaluation_dataset, name: "Alpha Dataset", agent_name: agent)
+      create(:evaluation_dataset, name: "Other Dataset", agent_name: "OtherAgent")
       names = form.datasets.map(&:name)
       expect(names).to eq([ d2.name, d1.name ])
     end
 
     it "includes a record_count attribute" do
-      dataset = create(:evaluation_dataset, name: "Test Dataset")
+      dataset = create(:evaluation_dataset, name: "Test Dataset", agent_name: "Emails::ClassifyAgent")
       create(:evaluation_dataset_sample, dataset: dataset)
       result = form.datasets.find { |d| d.id == dataset.id }
       expect(result.record_count.to_i).to eq(1)
+    end
+
+    it "excludes datasets belonging to other agents" do
+      create(:evaluation_dataset, name: "Other Dataset", agent_name: "OtherAgent")
+      expect(form.datasets).to be_empty
     end
   end
 

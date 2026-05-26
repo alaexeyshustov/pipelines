@@ -2,6 +2,8 @@
 
 module Orchestration
   class PipelinesController < ApplicationController
+    include JsonParamsParsing
+
     before_action :set_pipeline, only: [ :show, :edit, :update, :destroy, :run, :toggle ]
 
     def index
@@ -72,7 +74,17 @@ module Orchestration
     end
 
     def pipeline_params
-      params.require(:orchestration_pipeline).permit(:name, :description, :enabled, :cron_expression, :model)
+      permitted = params.require(:orchestration_pipeline).permit(
+        :name, :description, :enabled, :cron_expression, :model, :initial_input_schema
+      )
+
+      begin
+        parse_json_field(permitted, :initial_input_schema)
+      rescue JSON::ParserError
+        permitted[:initial_input_schema] = nil
+      end
+
+      permitted
     end
   end
 end

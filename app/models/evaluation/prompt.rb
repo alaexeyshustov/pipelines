@@ -10,7 +10,7 @@ module Evaluation
     validates :name, presence: true
     validates :user_prompt, presence: true
 
-    before_save :increment_version
+    before_validation :assign_next_version, on: :create
 
     def self.last_for_agent(agent_name)
       where(name: agent_name).order(version: :desc, id: :desc).first
@@ -18,8 +18,10 @@ module Evaluation
 
     private
 
-    def increment_version
-      self.version = (version || 0) + 1
+    def assign_next_version
+      return if version.present?
+
+      self.version = self.class.where(name: name).maximum(:version).to_i + 1
     end
   end
 end

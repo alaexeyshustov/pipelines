@@ -14,6 +14,7 @@ module Evaluation
       private
 
       def fetch_instructions: (Sample sample) -> String?
+      def fetch_output_schema: (Sample sample) -> untyped
       def call_judge: (user_input: String, ?model: String) -> Array[metric_result]
       def build_user_message: (sample: Sample, dataset_sample: DatasetSample, metrics: Array[Metric]) -> String
       def parse_judge_response: (untyped content) -> Array[metric_result]
