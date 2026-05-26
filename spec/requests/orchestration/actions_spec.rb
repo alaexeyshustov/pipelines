@@ -46,9 +46,7 @@ RSpec.describe "Orchestration::Actions" do
             name: "New Action",
             kind: "agent",
             agent_id: orchestration_agent.id,
-            description: "A description",
-            prompt: "Classify this email",
-            params: '{"key":"value"}'
+            description: "A description"
           }
         }
       end
