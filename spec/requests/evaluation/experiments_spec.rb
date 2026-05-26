@@ -479,6 +479,43 @@ RSpec.describe "Evaluation::Experiments" do
         expect(response).to redirect_to(evaluation_experiments_path)
         expect(flash[:notice]).to be_present
       end
+
+      context "when the experiment has associated samples and evaluation results" do
+        let!(:sample) do
+          ds = create(:evaluation_dataset_sample, dataset: experiment.dataset)
+          create(:evaluation_sample, experiment: experiment, dataset_sample: ds)
+        end
+        let!(:eval_result) do
+          Evaluation::EvaluationResult.create!(
+            experiment: experiment, dataset_sample: sample.dataset_sample,
+            sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
+          )
+        end
+
+        it "destroys the experiment along with its samples and results" do
+          expect {
+            delete evaluation_experiment_path(experiment)
+          }.to change(Evaluation::Experiment, :count).by(-1)
+            .and change(Evaluation::Sample, :count).by(-1)
+            .and change(Evaluation::EvaluationResult, :count).by(-1)
+        end
+      end
+    end
+
+    context "when the experiment is pending" do
+      let!(:experiment) { create(:evaluation_experiment, status: :pending) }
+
+      it "does not destroy the experiment" do
+        expect {
+          delete evaluation_experiment_path(experiment)
+        }.not_to change(Evaluation::Experiment, :count)
+      end
+
+      it "redirects to the index with an alert" do
+        delete evaluation_experiment_path(experiment)
+        expect(response).to redirect_to(evaluation_experiments_path)
+        expect(flash[:alert]).to be_present
+      end
     end
 
     context "when the experiment is in progress" do

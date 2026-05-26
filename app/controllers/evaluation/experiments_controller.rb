@@ -33,8 +33,8 @@ module Evaluation
     end
 
     def destroy
-      if @experiment.in_progress?
-        return redirect_to evaluation_experiments_path, alert: "Cannot delete an experiment that is in progress."
+      if @experiment.pending? || @experiment.in_progress?
+        return redirect_to evaluation_experiments_path, alert: "Cannot delete an experiment that is still running."
       end
 
       @experiment.destroy!

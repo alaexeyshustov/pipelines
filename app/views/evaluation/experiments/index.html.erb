@@ -11,7 +11,7 @@
   <% table.with_action_column(
     actions: ->(experiment) {
       actions = [{ label: "Show", url: evaluation_experiment_path(experiment), variant: :primary }]
-      unless experiment.in_progress?
+      unless experiment.pending? || experiment.in_progress?
         actions << { label: "Delete", url: evaluation_experiment_path(experiment), variant: :danger, method: :delete, confirm: "Delete experiment '#{experiment.name}'? This cannot be undone." }
       end
       actions
