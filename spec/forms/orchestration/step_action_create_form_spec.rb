@@ -7,8 +7,8 @@ RSpec.describe Orchestration::StepActionCreateForm do
   let(:step)     { create(:orchestration_step, pipeline: pipeline) }
   let(:action)   { create(:orchestration_action, name: "Classify Emails") }
 
-  def build_form(action_id: action.id, params_json: nil)
-    described_class.new(step: step, action_id: action_id, params_json: params_json)
+  def build_form(action_id: action.id)
+    described_class.new(step: step, action_id: action_id)
   end
 
   describe "#save" do

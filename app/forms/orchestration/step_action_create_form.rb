@@ -6,7 +6,7 @@ module Orchestration
 
     validate :action_exists
 
-    def initialize(step:, action_id:, params_json: nil)
+    def initialize(step:, action_id:)
       @step = step
       @action_id = action_id.to_i
     end

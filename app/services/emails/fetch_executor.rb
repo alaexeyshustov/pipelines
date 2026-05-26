@@ -16,7 +16,7 @@ module Emails
       parsed_date = Date.parse(date || DEFAULT_DATE)
       after       = parsed_date - 1
       providers   = DEFAULT_PROVIDERS if providers.nil?
-      max_results = DEFAULT_MAX_RESULTS if max_results.nil?
+      max_results = (max_results || DEFAULT_MAX_RESULTS).to_i
 
       emails = Sync do
         semaphore = Async::Semaphore.new(5)
