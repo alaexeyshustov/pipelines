@@ -6,18 +6,30 @@ RSpec.describe Evaluation::Improvement::GetExperimentPromptTool do
   subject(:tool) { described_class.new }
 
   describe "#execute" do
-    it "returns system_prompt and user_prompt for the experiment" do
+    it "returns system_prompt, user_prompt, and output_schema for the experiment" do # rubocop:disable RSpec/ExampleLength
+      schema = { "type" => "object" }
       prompt = create(:orchestration_prompt,
                       system_prompt: "You are a classifier.",
-                      user_prompt: "Classify this email: {{input}}")
+                      user_prompt: "Classify this email: {{input}}",
+                      output_schema: schema)
       experiment = create(:evaluation_experiment, prompt: prompt)
 
       result = tool.execute(experiment_id: experiment.id)
 
       expect(result).to eq(
         system_prompt: "You are a classifier.",
-        user_prompt: "Classify this email: {{input}}"
+        user_prompt: "Classify this email: {{input}}",
+        output_schema: schema
       )
+    end
+
+    it "coerces nil system_prompt to an empty string" do
+      prompt = create(:orchestration_prompt, system_prompt: nil, user_prompt: "user prompt")
+      experiment = create(:evaluation_experiment, prompt: prompt)
+
+      result = tool.execute(experiment_id: experiment.id)
+
+      expect(result[:system_prompt]).to eq("")
     end
 
     it "returns nil when the experiment does not exist" do

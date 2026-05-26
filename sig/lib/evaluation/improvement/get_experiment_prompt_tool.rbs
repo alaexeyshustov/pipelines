@@ -2,7 +2,7 @@ module Evaluation
   module Improvement
     class GetExperimentPromptTool < ::RubyLLM::Tool
       def name: () -> String
-      def execute: (experiment_id: Integer) -> { system_prompt: String, user_prompt: String }?
+      def execute: (experiment_id: Integer) -> { system_prompt: String, user_prompt: String, output_schema: untyped }?
     end
   end
 end

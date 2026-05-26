@@ -14,8 +14,9 @@ module Evaluation
         return nil unless experiment&.prompt
 
         {
-          system_prompt: experiment.prompt.system_prompt,
-          user_prompt: experiment.prompt.user_prompt
+          system_prompt: experiment.prompt.system_prompt.to_s,
+          user_prompt: experiment.prompt.user_prompt,
+          output_schema: experiment.prompt.output_schema
         }
       end
     end
