@@ -181,14 +181,13 @@ class SeedAgentsFromAppAgentsDir < ActiveRecord::Migration[8.1]
     AGENTS.each do |agent|
       execute(<<~SQL)
         INSERT OR IGNORE INTO orchestration_agents
-          (name, model, tools, prompt, enabled, params, created_at, updated_at)
+          (name, model, tools, prompt, enabled, created_at, updated_at)
         VALUES (
           #{quote(agent[:name])},
           #{quote(agent[:model])},
           #{quote(agent[:tools].to_json)},
           #{quote(agent[:prompt])},
           1,
-          '{}',
           #{quote(now)},
           #{quote(now)}
         )

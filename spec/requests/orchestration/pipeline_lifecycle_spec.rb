@@ -19,8 +19,7 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
             name: "Query Interviews",
             kind: "service",
             agent_class: "Orchestration::QueryExecutor",
-            description: "Fetches interviews from the database",
-            params: '{"table":"interviews","column_name":"status","column_values":["screening"],"columns":["id","company","job_title"]}'
+            description: "Fetches interviews from the database"
           }
         }
       }.to change(Orchestration::Action, :count).by(1)
@@ -28,7 +27,6 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
       query_action = Orchestration::Action.last
       expect(response).to redirect_to(orchestration_actions_path)
       expect(query_action.agent_class).to eq("Orchestration::QueryExecutor")
-      expect(query_action.params).to include("table" => "interviews")
 
       classify_agent_record = create(:orchestration_agent, name: "Emails::ClassifyAgent")
 
@@ -112,8 +110,7 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
     let!(:query_action) do
       create(:orchestration_action, :service_kind,
         name: "Query Interviews",
-        agent_class: "Orchestration::QueryExecutor",
-        params: { "table" => "interviews", "column_name" => "status", "column_values" => [ "screening" ] })
+        agent_class: "Orchestration::QueryExecutor")
     end
     let!(:classify_agent) do
       create(:orchestration_agent,
@@ -129,7 +126,12 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
     let!(:classify_step) { create(:orchestration_step, pipeline: pipeline, name: "Classify Emails", position: 2) }
 
     before do
-      create(:orchestration_step_action, step: fetch_step, action: query_action, position: 1)
+      create(:orchestration_step_action, step: fetch_step, action: query_action, position: 1,
+        input_mapping: {
+          "table"         => { "value" => "interviews" },
+          "column_name"   => { "value" => "status" },
+          "column_values" => { "value" => [ "screening" ] }
+        })
       create(:orchestration_step_action, step: classify_step, action: classify_action, position: 1)
     end
 
@@ -181,16 +183,14 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
   describe "edit: updating an existing pipeline's metadata, steps, and action attachments" do
     let!(:ingest_action) do
       create(:orchestration_action, :service_kind, name: "Transform Data",
-        agent_class: "Orchestration::IngestionExecutor",
-        params: { "operations" => [ { "type" => "pick", "keys" => [ "interviews" ] } ] })
+        agent_class: "Orchestration::IngestionExecutor")
     end
     let!(:pipeline) { create(:orchestration_pipeline, name: "Job Application Pipeline", enabled: true) }
     let!(:fetch_step) { create(:orchestration_step, pipeline: pipeline, name: "Fetch Interviews", position: 1) }
     let!(:classify_step) { create(:orchestration_step, pipeline: pipeline, name: "Classify Emails", position: 2) }
     let!(:fetch_step_action) do
       query_action = create(:orchestration_action, :service_kind, name: "Query Interviews",
-        agent_class: "Orchestration::QueryExecutor",
-        params: { "table" => "interviews", "column_name" => "status", "column_values" => [ "screening" ] })
+        agent_class: "Orchestration::QueryExecutor")
       create(:orchestration_step_action, step: fetch_step, action: query_action, position: 1)
     end
 
@@ -236,17 +236,13 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
       expect(transform_step.position).to eq(3)
 
       post orchestration_pipeline_step_step_actions_path(pipeline, transform_step), params: {
-        orchestration_step_action: {
-          action_id: ingest_action.id,
-          params: '{"operations":[{"type":"pick","keys":["interviews"]}]}'
-        }
+        orchestration_step_action: { action_id: ingest_action.id }
       }
 
       transform_step.reload
       expect(transform_step.step_actions.count).to eq(1)
       step_action = transform_step.step_actions.first
       expect(step_action.action).to eq(ingest_action)
-      expect(step_action.params).to eq("operations" => [ { "type" => "pick", "keys" => [ "interviews" ] } ])
     end
     # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength
 

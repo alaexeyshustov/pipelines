@@ -27,9 +27,9 @@ module Orchestration
 
       def ordered_step_actions: () -> Array[Orchestration::StepAction]
       def validate_input_mapping: (Orchestration::StepAction step_action, Hash[String, untyped] known_schemas, Array[Issue] errors, Array[Issue] warnings) -> void
+      def validate_input_schema_coverage: (Orchestration::StepAction step_action, Array[Issue] errors) -> void
       def validate_path_vs_schema: (String from, String? path, String mapping_key, Hash[String, untyped]? upstream_schema, Array[Issue] errors) -> void
       def path_valid_in_schema?: (String path, Hash[String, untyped] schema) -> bool
-      def merge_params: (Orchestration::StepAction step_action) -> Hash[String, untyped]
     end
   end
 end

@@ -120,27 +120,94 @@ RSpec.describe Orchestration::Pipeline::Validator do
       end
     end
 
-    context 'with a key collision between input_mapping and params' do
-      let(:action) do
-        create(:orchestration_action, params: { "key1" => "default_value" })
+    context 'when the action has an input_schema with required keys all covered by input_mapping' do
+      let(:agent_with_schema) do
+        create(:orchestration_agent,
+               input_schema: {
+                 "type" => "object",
+                 "properties" => { "emails" => { "type" => "array" }, "topic" => { "type" => "string" } },
+                 "required" => [ "emails", "topic" ]
+               })
       end
+      let(:action_with_schema) { create(:orchestration_action, agent: agent_with_schema) }
+
+      before do
+        create(:orchestration_step_action,
+               step: step, position: 1, output_key: "classify",
+               action: action_with_schema,
+               input_mapping: {
+                 "emails" => { "from" => "_initial", "path" => "emails" },
+                 "topic"  => { "from" => "_initial", "path" => "topic" }
+               })
+      end
+
+      it 'produces no missing_required_input errors' do
+        expect(validator.call.first.errors).to be_empty
+      end
+    end
+
+    context 'when the action has an input_schema and a required key is absent from input_mapping' do
+      let(:agent_with_schema) do
+        create(:orchestration_agent,
+               input_schema: {
+                 "type" => "object",
+                 "properties" => { "emails" => { "type" => "array" }, "topic" => { "type" => "string" } },
+                 "required" => [ "emails", "topic" ]
+               })
+      end
+      let(:action_with_schema) { create(:orchestration_action, agent: agent_with_schema) }
+
+      before do
+        create(:orchestration_step_action,
+               step: step, position: 1, output_key: "classify",
+               action: action_with_schema,
+               input_mapping: { "emails" => { "from" => "_initial", "path" => "emails" } })
+      end
+
+      it 'emits a missing_required_input error' do
+        error = validator.call.first.errors.find { |e| e.code == :missing_required_input }
+        expect(error).not_to be_nil
+        expect(error.message).to include("topic")
+        expect(error.mapping_key).to eq("topic")
+      end
+
+      it 'produces no errors for the covered required key' do
+        errors = validator.call.first.errors
+        expect(errors.none? { |e| e.mapping_key == "emails" }).to be true
+      end
+    end
+
+    context 'when the action has an input_schema but no required keys' do
+      let(:agent_with_schema) do
+        create(:orchestration_agent,
+               input_schema: {
+                 "type" => "object",
+                 "properties" => { "limit" => { "type" => "integer" } }
+               })
+      end
+      let(:action_with_schema) { create(:orchestration_action, agent: agent_with_schema) }
 
       before do
         create(:orchestration_step_action,
                step: step, position: 1, output_key: "fetch",
-               action: action,
-               input_mapping: { "key1" => { "from" => "_initial" } })
+               action: action_with_schema,
+               input_mapping: nil)
       end
 
-      it 'produces no errors' do
+      it 'produces no missing_required_input errors' do
         expect(validator.call.first.errors).to be_empty
       end
+    end
 
-      it 'produces a param_collision warning naming the colliding key' do
-        warning = validator.call.first.warnings.first
-        expect(warning.code).to eq(:param_collision)
-        expect(warning.message).to include("key1")
-        expect(warning.mapping_key).to eq("key1")
+    context 'when the action has no input_schema' do
+      before do
+        create(:orchestration_step_action,
+               step: step, position: 1, output_key: "fetch",
+               input_mapping: nil)
+      end
+
+      it 'produces no missing_required_input errors' do
+        expect(validator.call.first.errors).to be_empty
       end
     end
 

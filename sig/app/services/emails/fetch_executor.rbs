@@ -8,6 +8,7 @@ module Emails
     DEFAULT_MAX_RESULTS: Integer
 
     include Orchestration::Executable
-    def self.call: (Hash[String, untyped] input, ?Hash[String, untyped] params) -> fetch_result
+    extend Orchestration::Executable::ClassMethods
+    def self.call: (?date: String?, ?providers: Array[String], ?max_results: Integer) -> fetch_result
   end
 end

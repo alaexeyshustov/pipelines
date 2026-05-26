@@ -72,10 +72,47 @@ RSpec.describe Orchestration::Action do
   end
 
   describe "columns" do
-    it "does not expose the dropped LLM config attributes" do
+    it "does not expose dropped LLM config DB attributes" do
       action = build(:orchestration_action)
-      %i[prompt model tools output_schema input_schema schema_class].each do |attr|
+      %i[prompt model tools output_schema schema_class].each do |attr|
         expect(action).not_to respond_to(attr)
+      end
+    end
+  end
+
+  describe '#input_schema' do
+    context 'when action is agent-kind' do
+      it 'delegates to the associated agent' do
+        schema = { "type" => "object", "properties" => { "emails" => { "type" => "array" } } }
+        agent  = create(:orchestration_agent, input_schema: schema)
+        action = create(:orchestration_action, agent:)
+
+        expect(action.input_schema).to eq(schema)
+      end
+
+      it 'returns nil when the agent has no input_schema' do
+        agent  = create(:orchestration_agent, input_schema: nil)
+        action = create(:orchestration_action, agent:)
+
+        expect(action.input_schema).to be_nil
+      end
+    end
+
+    context 'when action is service-kind' do
+      it 'delegates to the service class input_schema' do
+        stub_const("MyExecutable", Class.new do
+          include Orchestration::Executable
+          input_schema(topic: { "type" => "string" })
+          def self.call(topic:, **); end
+        end)
+        action = create(:orchestration_action, :service_kind, agent_class: "MyExecutable")
+
+        expect(action.input_schema["properties"].keys).to include("topic")
+      end
+
+      it 'returns nil when agent_class is blank' do
+        action = build(:orchestration_action, :service_kind, agent_class: nil)
+        expect(action.input_schema).to be_nil
       end
     end
   end

@@ -2,11 +2,7 @@ require 'rails_helper'
 
 RSpec.describe Orchestration::AgentResolutionPolicy do
   subject(:policy) do
-    described_class.call(
-      action: action,
-      pipeline_model: "mistral-large",
-      step_params: { "limit" => 5 }
-    )
+    described_class.call(action: action, pipeline_model: "mistral-large")
   end
 
   let(:agent_record) do
@@ -14,7 +10,6 @@ RSpec.describe Orchestration::AgentResolutionPolicy do
            model: "mistral-small",
            tools: [ "Records::TempFileTool" ],
            prompt: "Classify this email",
-           params: { "mode" => "fast" },
            output_schema: { "type" => "object" })
   end
   let(:action) { create(:orchestration_action, agent: agent_record) }
@@ -59,32 +54,6 @@ RSpec.describe Orchestration::AgentResolutionPolicy do
     it 'raises ArgumentError when a tool class cannot be found' do
       allow(agent_record).to receive(:tools).and_return([ "Records::NonExistentTool" ])
       expect { policy }.to raise_error(ArgumentError, /NonExistentTool/)
-    end
-  end
-
-  describe '#params' do
-    it 'merges agent params with step_params (step_params win)' do
-      expect(policy.params).to eq({ "mode" => "fast", "limit" => 5 })
-    end
-
-    it 'treats blank legacy JSON strings as empty params' do
-      allow(agent_record).to receive(:params).and_return("")
-      result = described_class.call(action: action, step_params: { "limit" => 3 })
-
-      expect(result.params).to eq({ "limit" => 3 })
-    end
-
-    it 'returns only step_params when agent has no params' do
-      allow(agent_record).to receive(:params).and_return(nil)
-      result = described_class.call(action: action, step_params: { "limit" => 3 })
-      expect(result.params).to eq({ "limit" => 3 })
-    end
-
-    it 'parses legacy JSON strings before merging step_params' do
-      allow(agent_record).to receive(:params).and_return('{"mode":"fast"}')
-      result = described_class.call(action: action, step_params: { "limit" => 3 })
-
-      expect(result.params).to eq({ "mode" => "fast", "limit" => 3 })
     end
   end
 

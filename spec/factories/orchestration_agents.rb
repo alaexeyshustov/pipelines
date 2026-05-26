@@ -3,7 +3,7 @@ FactoryBot.define do
     sequence(:name) { |n| "Agent::Class#{n}" }
     enabled { true }
     prompt { nil }
-    params { {} }
+    input_schema { nil }
     output_schema { nil }
   end
 end

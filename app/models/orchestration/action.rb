@@ -12,6 +12,10 @@ module Orchestration
     validates :name, presence: true
     validate :kind_specific_fields_valid
 
+    def input_schema
+      agent? ? agent&.input_schema : agent_class&.safe_constantize&.input_schema
+    end
+
     private
 
     def kind_specific_fields_valid

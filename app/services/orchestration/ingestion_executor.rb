@@ -4,9 +4,12 @@ module Orchestration
 
     SUPPORTED_OPERATIONS = %w[filter_by_ids rename pick merge_by_index].freeze
 
-    def self.call(input, params = {})
-      operations = params.fetch("operations", [])
-      output = input.dup
+    input_schema(
+      operations: { "type" => "array" }
+    )
+
+    def self.call(operations: [], **data)
+      output = data.transform_keys(&:to_s)
 
       operations.each_with_object(output) do |op, acc|
         type = op.fetch("type")
@@ -22,22 +25,22 @@ module Orchestration
 
       def execute_operation(output, op)
         case op.fetch("type")
-        when "filter_by_ids" then apply_filter_by_ids(output, op)
-        when "rename"        then apply_rename(output, op)
-        when "pick"          then apply_pick(output, op)
+        when "filter_by_ids"  then apply_filter_by_ids(output, op)
+        when "rename"         then apply_rename(output, op)
+        when "pick"           then apply_pick(output, op)
         when "merge_by_index" then apply_merge_by_index(output, op)
         end
       end
 
       def apply_filter_by_ids(output, op)
-        source   = op.fetch("source")
-        ids_from = op.fetch("ids_from")
-        dest     = op.fetch("output")
+        source   = op.fetch("source").to_s
+        ids_from = op.fetch("ids_from").to_s
+        dest     = op.fetch("output").to_s
 
         id_items    = Array(dig_path(output, ids_from))
         allowed_ids = id_items.filter_map { |item| item_id(item) }.to_set
 
-        source_items = Array(dig_path(output, source))
+        source_items = Array(output[source])
         filtered     = source_items.select { |item| (id = item_id(item)) && allowed_ids.include?(id) }
 
         output.merge(dest => filtered)

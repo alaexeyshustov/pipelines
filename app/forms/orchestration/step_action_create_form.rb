@@ -5,19 +5,10 @@ module Orchestration
     attr_reader :step_action
 
     validate :action_exists
-    validate :params_json_valid
 
-    def initialize(step:, action_id:, params_json: nil)
+    def initialize(step:, action_id:)
       @step = step
       @action_id = action_id.to_i
-      raw = params_json.presence
-      if raw
-        begin
-          @parsed_params = JSON.parse(raw)
-        rescue JSON::ParserError
-          @params_parse_error = true
-        end
-      end
     end
 
     def save
@@ -27,7 +18,6 @@ module Orchestration
       key = Orchestration::OutputKeyDeriver.call(action_name: action.name, step: @step)
       @step_action = @step.step_actions.build(
         action_id: action.id,
-        params: @parsed_params,
         position: next_position,
         output_key: key
       )
@@ -46,10 +36,6 @@ module Orchestration
 
     def action_exists
       errors.add(:base, "Invalid action.") unless action
-    end
-
-    def params_json_valid
-      errors.add(:base, "Params must be valid JSON.") if @params_parse_error
     end
 
     def action

@@ -2,11 +2,15 @@ module Interviews
   class GistExportExecutor
     include Orchestration::Executable
 
-    def self.call(input, _params = {})
-      gist_id = input.fetch("gist_id") { ENV.fetch("GIST_ID", nil) }
-      return { "skipped" => true, "reason" => "GIST_ID not configured" } if gist_id.nil?
+    input_schema(
+      gist_id: { "type" => "string" }
+    )
 
-      result = GistExportService.new(ids: nil, gist_id: gist_id).call
+    def self.call(gist_id: nil, **)
+      resolved_id = gist_id || ENV.fetch("GIST_ID", nil)
+      return { "skipped" => true, "reason" => "GIST_ID not configured" } if resolved_id.nil?
+
+      result = GistExportService.new(ids: nil, gist_id: resolved_id).call
       { "ok" => result.ok, "message" => result.message }
     end
   end

@@ -10,6 +10,9 @@ module Orchestration
 
     def resolve
       @input_mapping.transform_values do |spec|
+        next spec unless spec.is_a?(Hash)
+        next spec["value"] if spec.key?("value")
+
         from     = spec["from"]
         path     = spec["path"]
         optional = spec["optional"]

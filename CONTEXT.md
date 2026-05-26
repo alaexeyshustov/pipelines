@@ -70,10 +70,21 @@ _Avoid_: automated experiment, post-improvement eval
 **Output schema**: The fixed structured-output contract enforced at the API level for an agent (e.g. `{"results": [{"id": ..., "tags": [...]}]}`). Prompt instructions cannot override it.
 _Avoid_: response format, output format, JSON shape
 
+**Input schema**: A JSON Schema object that declares what keys and types a step action must supply when invoking an action. For agent-kind actions it is stored on the `Agent` record; for service-kind actions it is derived at load time from the service class's `input_schema` DSL declaration and its `call` keyword arguments. The schema drives both static pipeline validation (missing required inputs) and runtime validation before execution.
+_Avoid_: params, input contract, required fields
+
+**Input mapping**: A per-step-action hash that maps each input key the action expects to a source spec. Each spec is one of: `{from:, path:}` (resolve from a prior step's output), `{from: "_initial", path:}` (resolve from the pipeline's initial input), or `{value:}` (inline literal value). Required keys from the action's input schema must be covered by the mapping.
+_Avoid_: params, step params, action params
+
+**Executable**: A concern included by service classes that participate in the orchestration pipeline. Provides the `input_schema(types)` DSL to declare parameter types; the schema is derived at first access by cross-referencing the declared types against the `call` method's keyword arguments, raising at load time if they diverge.
+_Avoid_: service interface, callable
+
 ## Relationships
 
 - A **Pipeline** has one or more **Steps**; each **Step** is bound to one **Action**
-- An **Action** may reference an **Agent** (agent-kind) or invoke a service directly
+- An **Action** may reference an **Agent** (agent-kind) or invoke a service directly (service-kind)
+- An **Action** exposes an **Input schema** — sourced from the agent record or derived from the service class
+- A **Step action** has an **Input mapping** that satisfies the action's **Input schema** required keys
 - An **Experiment** uses one **Dataset** and one **Prompt version**
 - A **Dataset** contains one or more **Dataset samples**; each holds an input and optional expected tool call trace
 - The **Sampler** produces one **Sample** per **Dataset sample** during the sampling phase

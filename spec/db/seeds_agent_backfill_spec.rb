@@ -84,10 +84,10 @@ RSpec.describe "Seeds: agent config backfill" do # rubocop:disable RSpec/Describ
   end
 
   describe "Ingest Emails step" do
-    subject(:action) { Orchestration::Action.find_by!(name: "Ingest Emails") }
+    subject(:step_action) { Orchestration::Pipeline.find_by!(name: "Applications Workflow").steps.find_by!(name: "Ingest Emails").step_actions.first! }
 
     it "uses ids_from: 'results' (Filter Emails output is unwrapped since it has output_schema)" do
-      filter_op = action.params["operations"].find { |op| op["type"] == "filter_by_ids" }
+      filter_op = step_action.input_mapping["operations"]["value"].find { |op| op["type"] == "filter_by_ids" }
       expect(filter_op["ids_from"]).to eq("results")
     end
   end

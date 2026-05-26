@@ -2,8 +2,6 @@
 
 module Orchestration
   class ActionsController < ApplicationController
-    include JsonParamsParsing
-
     before_action :set_action, only: [ :edit, :update, :destroy ]
     before_action :load_agents, only: [ :new, :create, :edit, :update ]
 
@@ -66,13 +64,9 @@ module Orchestration
     end
 
     def action_params
-      permitted = params.require(:orchestration_action).permit(
-        :name, :description, :kind, :agent_id, :agent_class, :params
+      params.require(:orchestration_action).permit(
+        :name, :description, :kind, :agent_id, :agent_class
       )
-      parse_json_field(permitted, :params)
-      permitted
-    rescue JSON::ParserError
-      permitted
     end
   end
 end

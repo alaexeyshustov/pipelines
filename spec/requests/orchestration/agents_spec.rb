@@ -45,7 +45,6 @@ RSpec.describe "Orchestration::Agents" do
             model: "mistral-small",
             tools: [],
             prompt: "Classify this payload",
-            params: '{"mode":"strict"}',
             output_schema: '{"type":"object","required":["result"],"properties":{"result":{"type":"array"}}}'
           }
         }
@@ -57,7 +56,6 @@ RSpec.describe "Orchestration::Agents" do
         }.to change(Orchestration::Agent, :count).by(1)
         expect(response).to redirect_to(orchestration_agents_path)
         expect(Orchestration::Agent.last.prompt).to eq("Classify this payload")
-        expect(Orchestration::Agent.last.params).to eq({ "mode" => "strict" })
         expect(Orchestration::Agent.last.output_schema).to eq(
           "type" => "object",
           "required" => [ "result" ],
@@ -72,19 +70,17 @@ RSpec.describe "Orchestration::Agents" do
         expect(response).to have_http_status(:unprocessable_content)
       end
 
-      it "preserves valid JSON fields when one JSON field is invalid" do # rubocop:disable RSpec/ExampleLength
+      it "preserves valid fields when output_schema JSON is invalid" do
         post orchestration_agents_path, params: {
           orchestration_agent: {
             name: "Emails::ClassifyAgent",
             tools: [ "Records::TempFileTool" ],
-            params: '{"mode":"strict"}',
             output_schema: "{invalid"
           }
         }
 
         agent = Orchestration::Agent.last
         expect(agent.tools).to eq([ "Records::TempFileTool" ])
-        expect(agent.params).to eq({ "mode" => "strict" })
         expect(agent.output_schema).to be_nil
       end
     end

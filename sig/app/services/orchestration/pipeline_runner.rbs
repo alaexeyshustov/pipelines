@@ -12,6 +12,7 @@ module Orchestration
     def resolve_policy: (ActionRun action_run) -> AgentResolutionPolicy::Result
     def parse_content: (String | untyped content, bool structured_output_expected) -> untyped
     def validate_output!: (untyped output, policy: AgentResolutionPolicy::Result, raw_content: untyped) -> void
+    def validate_input_schema!: (ActionRun action_run) -> void
     def handle_action_failure: (ActionRun action_run, StandardError error, raw_content: untyped) -> void
     def log_action_failure: (ActionRun action_run, NormalizeActionRunFailure::Result failure) -> void
     def prompt_for: (String? agent_name) -> String?

@@ -311,19 +311,6 @@ RSpec.describe "Orchestration::Pipelines" do
       expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
       expect(Orchestration::StepAction.last.position).to eq(1)
     end
-
-    it "attaches with optional params override JSON" do
-      pipeline = create(:orchestration_pipeline)
-      step = create(:orchestration_step, pipeline: pipeline, position: 1)
-      action = create(:orchestration_action)
-
-      post orchestration_pipeline_step_step_actions_path(pipeline, step), params: {
-        orchestration_step_action: { action_id: action.id, params: '{"override":"true"}' }
-      }
-
-      expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
-      expect(Orchestration::StepAction.last.params).to eq({ "override" => "true" })
-    end
   end
 
   describe "POST /orchestration/pipelines/:id/run" do

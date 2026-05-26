@@ -1,6 +1,7 @@
 module Orchestration
   module Executable
-    # Marker module. Includers must define:
-    #   .call(Hash[String, untyped], ?Hash[String, untyped]) -> Hash[String, untyped]
+    module ClassMethods
+      def input_schema: (?Hash[Symbol, Hash[String, untyped]] declared_types) -> Hash[String, untyped]?
+    end
   end
 end

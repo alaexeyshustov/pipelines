@@ -12,9 +12,9 @@ RSpec.describe "Orchestration::StepActions" do
       orchestration_pipeline_step_step_actions_path(pipeline, step)
     end
 
-    def post_create(action_id: action.id, params_json: nil)
+    def post_create(action_id: action.id)
       post create_path, params: {
-        orchestration_step_action: { action_id: action_id, params: params_json }.compact
+        orchestration_step_action: { action_id: action_id }
       }
     end
 
@@ -31,11 +31,6 @@ RSpec.describe "Orchestration::StepActions" do
         post_create
         expect(step.step_actions.last.output_key).to eq("classify_emails")
       end
-
-      it "parses valid JSON params and stores them" do
-        post_create(params_json: '{"threshold": 0.8}')
-        expect(step.step_actions.last.params).to eq("threshold" => 0.8)
-      end
     end
 
     context "with an invalid action_id" do
@@ -47,18 +42,6 @@ RSpec.describe "Orchestration::StepActions" do
         expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
         follow_redirect!
         expect(response.body).to include("Invalid action")
-      end
-    end
-
-    context "with invalid JSON in params" do
-      it "redirects with an alert and does not create a step_action" do
-        expect {
-          post_create(params_json: "{not json}")
-        }.not_to change(Orchestration::StepAction, :count)
-
-        expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
-        follow_redirect!
-        expect(response.body).to include("valid JSON")
       end
     end
 
@@ -131,22 +114,6 @@ RSpec.describe "Orchestration::StepActions" do
         follow_redirect!
         expect(response.body).to include("unknown output key")
         expect(step_action.reload.input_mapping).to eq(original_mapping)
-      end
-    end
-
-    context "when Pipeline::Validator returns warnings (param collision)" do
-      before do
-        action.update!(params: { "email" => "default@example.com" })
-        step_action.update!(params: { "email" => "override@example.com" })
-      end
-
-      it "saves the mapping and shows advisory warning in notice" do
-        patch_update(input_mapping: { "email" => { "from" => "_initial", "path" => "" } })
-
-        expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
-        follow_redirect!
-        expect(response.body).to include("param_collision").or include("Warning")
-        expect(step_action.reload.input_mapping).to have_key("email")
       end
     end
   end
