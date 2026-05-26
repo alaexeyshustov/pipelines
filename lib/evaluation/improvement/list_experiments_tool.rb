@@ -50,7 +50,8 @@ module Evaluation
           .average(results_table[:score])
           .each_with_object({} #: Hash[Integer, Hash[String, untyped]]
                             ) do |((exp_id, metric_name), avg), memo|
-            memo[exp_id.to_i] ||= ({} #: Hash[String, untyped])
+            empty = {} #: Hash[String, untyped]
+            memo[exp_id.to_i] ||= empty
             memo[exp_id.to_i][metric_name.to_s] = avg
           end
       end
