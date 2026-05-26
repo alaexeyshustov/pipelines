@@ -23,7 +23,7 @@ module Evaluation
         name: current_prompt.name,
         system_prompt: improved[:system_prompt],
         user_prompt: improved[:user_prompt].presence || current_prompt.user_prompt,
-        output_schema: improved[:output_schema]
+        output_schema: current_prompt.output_schema
       )
     end
 

@@ -34,6 +34,14 @@ RSpec.describe Evaluation::PromptImprover do
       expect(Evaluation::Prompt.last.name).to eq(prompt.name)
     end
 
+    it "preserves the output_schema from the current prompt" do
+      schema = { "type" => "object", "properties" => { "label" => { "type" => "string" } } }
+      prompt.update!(output_schema: schema)
+      stub_improvement_agent
+      described_class.call(experiment: experiment)
+      expect(Evaluation::Prompt.last.output_schema).to eq(schema)
+    end
+
     it "falls back to the original user_prompt when the LLM returns an empty user_prompt" do
       stub_improvement_agent(user_prompt: "")
       described_class.call(experiment: experiment)
