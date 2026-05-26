@@ -58,8 +58,11 @@ _Avoid_: evaluator LLM, scoring model
 **Justification**: The judge's written reasoning for the score it assigned on one metric for one sample.
 _Avoid_: explanation, rationale
 
-**Improvement**: An LLM-generated revision of a prompt version, produced by `PromptImprover` from the scores and justifications of a completed experiment.
+**Improvement**: An LLM-generated revision of a prompt version, produced by `PromptImprover` from the scores and justifications of a completed experiment. The improver agent can call tools to inspect the full experiment history for the same agent — enabling it to understand direction before generating its revision.
 _Avoid_: refinement, update, optimization
+
+**Experiment history**: The set of all completed experiments for a given agent, excluding the experiment currently being improved. Exposed to `PromptImprover`'s agent via three tools: `list_experiments` (score trajectory), `get_experiment_justifications` (full per-sample reasoning), and `get_experiment_prompt` (exact prompt text used). Failed experiments are excluded — failures are infrastructure issues, not prompt signal.
+_Avoid_: past runs, previous evals
 
 **Auto-eval**: An experiment automatically triggered when a new prompt version is created, using the same dataset as the previous experiment. Provides immediate feedback on whether the improvement helped.
 _Avoid_: automated experiment, post-improvement eval
@@ -78,6 +81,7 @@ _Avoid_: response format, output format, JSON shape
 - **Metrics** must exist for an agent before an experiment can be created
 - A **Prompt version** has a fixed **Output schema** that the **Judge** must not contradict when evaluating format compliance
 - Each **Improvement** creates a new **Prompt version** and triggers an **Auto-eval**
+- `PromptImprover` passes the current experiment's scores and justifications in the initial message; **experiment history** is accessible on-demand via tools scoped to the same agent
 
 ## Example dialogue
 
