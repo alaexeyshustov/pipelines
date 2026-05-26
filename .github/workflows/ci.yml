@@ -40,6 +40,9 @@ jobs:
       - name: Validate RBS signatures
         run: bundle exec rbs  -r optparse validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**/**/*.rbs
 
+      - name: Check RBS signatures are up to date
+        run: bundle exec sentinel check
+
       - name: Run Steep
         run: bundle exec steep check
 

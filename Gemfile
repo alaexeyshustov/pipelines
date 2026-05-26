@@ -55,6 +55,7 @@ group :development, :test do
 end
 
 group :development do
+  gem "brakeman", require: false
   gem "mutant", require: false
   gem "mutant-rspec", require: false
   # parser 3.x does not yet support Ruby 4.0 — emits a parser/current warning on every mutant run.
@@ -62,13 +63,13 @@ group :development do
   # https://github.com/whitequark/parser#compatibility-with-ruby-mri
   gem "parser", "~> 3.3", require: false
   gem "rubycritic", require: false
-  gem "brakeman", require: false
   gem "rubocop", require: false
   gem "rubocop-rails-omakase", require: false
   gem "rubocop-rspec", require: false
   gem "rubocop-rspec_rails", require: false
   gem "rubocop-on-rbs", require: false
   gem "steep", require: false
+  gem "rbs-sentinel", require: false
   gem "rbs_rails", "~> 0.13.0"
   gem "ruby-lsp"
 end

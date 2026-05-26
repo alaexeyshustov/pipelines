@@ -1,0 +1,6 @@
+folders = [
+    "app",
+    "lib",
+]
+output = "sig/generated"
+shared_paths = ["sig/shared"]

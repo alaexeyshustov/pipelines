@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "rubydex": {
+      "type": "stdio",
+      "command": "${HOME}/.cargo/bin/rubydex_mcp",
+      "args": [],
+      "env": {}
+    }
+  }
+}
