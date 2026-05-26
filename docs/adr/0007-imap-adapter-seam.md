@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 ---
 
 # Name the IMAP seam between BaseAdapter and provider-specific connectors

@@ -75,6 +75,7 @@ module Orchestration
         schema = node.to_schema
 
         apply_description(schema, builder_params)
+        apply_format(schema, builder_params)
         apply_enum(schema, node, builder_params)
         apply_minimum(schema, node, builder_params)
         apply_maximum(schema, node, builder_params)
@@ -90,6 +91,13 @@ module Orchestration
 
       desc = builder_params[:description].to_s.strip
       desc.present? ? schema["description"] = desc : schema.delete("description")
+    end
+
+    def apply_format(schema, builder_params)
+      return unless builder_params.key?(:format)
+
+      fmt = builder_params[:format].to_s.strip
+      fmt.present? ? schema["format"] = fmt : schema.delete("format")
     end
 
     def apply_enum(schema, node, builder_params)

@@ -49,6 +49,40 @@ RSpec.describe Evaluation::Wizard::AgentPromptStepComponent, type: :component do
     expect(rendered.css("button[type='submit']").text).to include("Next")
   end
 
+  describe "edit panel" do
+    it "renders an edit toggle button wired to toggleEdit" do
+      expect(rendered.css("button[data-action*='toggleEdit']")).to be_present
+    end
+
+    it "renders the edit panel with the editPanel target" do
+      expect(rendered.css("[data-agent-select-target='editPanel']")).to be_present
+    end
+
+    it "renders a system_prompt textarea in the edit panel" do
+      expect(rendered.css("textarea[data-agent-select-target='systemPromptField']")).to be_present
+    end
+
+    it "renders a user_prompt textarea in the edit panel" do
+      expect(rendered.css("textarea[data-agent-select-target='userPromptField']")).to be_present
+    end
+
+    it "renders an output_schema textarea in the edit panel" do
+      expect(rendered.css("textarea[data-agent-select-target='outputSchemaField']")).to be_present
+    end
+
+    it "exposes fork_prompt_url as a Stimulus value on the form" do
+      expect(rendered.css("form[data-agent-select-fork-prompt-url-value]")).to be_present
+    end
+
+    it "exposes prompt_content_url as a Stimulus value on the form" do
+      expect(rendered.css("form[data-agent-select-prompt-content-url-value]")).to be_present
+    end
+
+    it "wires the submit button to the submitButton target" do
+      expect(rendered.css("button[type='submit'][data-agent-select-target='submitButton']")).to be_present
+    end
+  end
+
   context "with available_models" do
     subject(:rendered) { render_inline(described_class.new(form: build_form(available_models: available_models))) }
 

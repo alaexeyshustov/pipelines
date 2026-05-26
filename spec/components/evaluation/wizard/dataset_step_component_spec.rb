@@ -6,7 +6,7 @@ RSpec.describe Evaluation::Wizard::DatasetStepComponent, type: :component do
   subject(:rendered) { render_inline(described_class.new(form: build_form)) }
 
   let(:agent_name)  { "Emails::ClassifyAgent" }
-  let(:datasets)    { build_list(:evaluation_dataset, 2) }
+  let(:datasets)    { create_list(:evaluation_dataset, 2) }
   let(:draft_token) { "abc123" }
 
   def build_form(overrides = {})
@@ -28,6 +28,17 @@ RSpec.describe Evaluation::Wizard::DatasetStepComponent, type: :component do
     rendered = render_inline(described_class.new(form: build_form(datasets: [ selected ], selected_dataset_id: selected.id)))
     radio = rendered.css("input[type='radio'][value='#{selected.id}']").first
     expect(radio["checked"]).to be_present
+  end
+
+  it "renders a Resync button for each dataset" do
+    resync_buttons = rendered.css("button[data-action='dialog#open']")
+    expect(resync_buttons.size).to eq(datasets.size)
+  end
+
+  it "renders a resync dialog for each dataset" do
+    datasets.each do |d|
+      expect(rendered.css("dialog").text).to include(d.name)
+    end
   end
 
   it "renders a synthetic dataset generation section" do

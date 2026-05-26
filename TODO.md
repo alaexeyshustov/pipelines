@@ -10,9 +10,14 @@
 [ ] pipeline: option to run a single step
 [ ] pipeline: add output schema
 [ ] navigation: clicking bug
-[ ] evaluation create a new prompt version from an agent
+[x] evaluation: add option to create a new prompt version from an agent
+[ ] evaluation: add button to resync dataset from chats
 [ ] evaluation: move to a separate nav item
-[ ] evaluation: list prompt versions
-[ ] evaluation: use model searchable select
-[ ] navigation: add jobs nav item
+[ ] evaluation: list prompt versions add some hints
+[x] evaluation: use model searchable select
+[x] evaluation: issue running
+[x] evaluation: show dataset in experiment view
+[ ] evaluation: prompt improvement service
+[x] navigation: add jobs nav item
+[ ] orchestration: remove params from step_actions, move to the mapping
 [ ] jobs: update state if failed

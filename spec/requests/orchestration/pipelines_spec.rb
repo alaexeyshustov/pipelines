@@ -118,6 +118,30 @@ RSpec.describe "Orchestration::Pipelines" do
         expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
         expect(pipeline.reload.name).to eq("New Name")
       end
+
+      it "updates initial_input_schema and redirects" do
+        pipeline = create(:orchestration_pipeline)
+        schema = { "type" => "object", "properties" => { "email" => { "type" => "string" } } }
+
+        patch orchestration_pipeline_path(pipeline), params: {
+          orchestration_pipeline: { name: pipeline.name, initial_input_schema: schema.to_json }
+        }
+
+        expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
+        expect(pipeline.reload.initial_input_schema).to eq(schema)
+      end
+
+      it "clears initial_input_schema when empty JSON object submitted" do
+        schema = { "type" => "object", "properties" => {} }
+        pipeline = create(:orchestration_pipeline, initial_input_schema: schema)
+
+        patch orchestration_pipeline_path(pipeline), params: {
+          orchestration_pipeline: { name: pipeline.name, initial_input_schema: "{}" }
+        }
+
+        expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
+        expect(pipeline.reload.initial_input_schema).to eq({})
+      end
     end
 
     context "with invalid params" do

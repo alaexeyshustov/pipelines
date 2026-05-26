@@ -1,1 +1,22 @@
 @import "tailwindcss";
+
+/* Tailwind v4 puts all utilities inside @layer, which the CSS cascade spec
+   makes losers against any unlayered rule — including Bulma's `svg { height: auto; width: auto; }`.
+   Re-declare SVG sizing utilities outside any layer so specificity (0,1,1 > 0,0,1) wins. */
+svg.w-3 { width: calc(var(--spacing) * 3); }
+svg.h-3 { height: calc(var(--spacing) * 3); }
+
+/* Bulma redefines .px-* helpers with !important using a different scale (px-6 = 3rem,
+   Tailwind expects 1.5rem). Counter with higher-specificity !important scoped to the sidebar. */
+nav[data-testid="sidebar"] .px-6 { padding-left: calc(var(--spacing) * 6) !important; padding-right: calc(var(--spacing) * 6) !important; }
+
+/* Bulma's .block:not(:last-child) { margin-bottom: 1.5rem !important } conflicts with
+   Tailwind's `block` utility (display:block). Sidebar links use `block` so each gets 24px
+   bottom margin from Bulma. */
+nav[data-testid="sidebar"] .block { margin-bottom: 0 !important; }
+
+/* Bulma's unlayered `a { color: var(--bulma-link-text); }` also beats Tailwind's layered
+   text color utilities on <a> elements. Re-declare sidebar link colors outside any layer. */
+[data-testid="sidebar-item"] { color: var(--color-gray-600); }
+[data-testid="sidebar-item"].text-gray-900 { color: var(--color-gray-900); }
+[data-testid="sidebar-item"]:hover { color: var(--color-gray-900); }

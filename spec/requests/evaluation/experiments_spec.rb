@@ -375,6 +375,78 @@ RSpec.describe "Evaluation::Experiments" do
     end
   end
 
+  describe "GET /evaluation/experiments/prompt_content" do
+    let!(:prompt) do
+      create(:orchestration_prompt, system_prompt: "You are helpful.", user_prompt: "{{input}}")
+    end
+
+    it "returns 200 with the prompt fields as JSON" do
+      get prompt_content_evaluation_experiments_path, params: { prompt_id: prompt.id }
+      expect(response).to have_http_status(:ok)
+      data = JSON.parse(response.body)
+      expect(data["system_prompt"]).to eq("You are helpful.")
+      expect(data["user_prompt"]).to eq("{{input}}")
+    end
+
+    it "returns 404 when prompt_id is not found" do
+      get prompt_content_evaluation_experiments_path, params: { prompt_id: 9_999_999 }
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  describe "POST /evaluation/experiments/fork_prompt" do
+    let!(:based_on) do
+      create(:orchestration_prompt, name: "Emails::ClassifyAgent",
+             system_prompt: "Classify this.", user_prompt: "{{input}}")
+    end
+
+    it "creates a new prompt version" do
+      expect {
+        post fork_prompt_evaluation_experiments_path,
+             params: { based_on_prompt_id: based_on.id,
+                       system_prompt: "Updated.", user_prompt: "{{input}}" },
+             as: :json
+      }.to change(Evaluation::Prompt, :count).by(1)
+    end
+
+    it "returns the new prompt id and version" do
+      post fork_prompt_evaluation_experiments_path,
+           params: { based_on_prompt_id: based_on.id,
+                     system_prompt: "Updated.", user_prompt: "{{input}}" },
+           as: :json
+      data = JSON.parse(response.body)
+      expect(response).to have_http_status(:ok)
+      expect(data["id"]).to be_present
+      expect(data["version"]).to be > based_on.version
+    end
+
+    it "uses the edited system_prompt" do
+      post fork_prompt_evaluation_experiments_path,
+           params: { based_on_prompt_id: based_on.id,
+                     system_prompt: "Edited system.", user_prompt: "{{input}}" },
+           as: :json
+      expect(Evaluation::Prompt.last.system_prompt).to eq("Edited system.")
+    end
+
+    it "preserves the agent name from the base prompt" do
+      post fork_prompt_evaluation_experiments_path,
+           params: { based_on_prompt_id: based_on.id, user_prompt: "{{input}}" },
+           as: :json
+      expect(Evaluation::Prompt.last.name).to eq("Emails::ClassifyAgent")
+    end
+
+    context "when based_on_prompt_id is not found" do
+      it "returns 422 and does not create a prompt" do
+        expect {
+          post fork_prompt_evaluation_experiments_path,
+               params: { based_on_prompt_id: 9_999_999 },
+               as: :json
+        }.not_to change(Evaluation::Prompt, :count)
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+    end
+  end
+
   describe "GET /evaluation/experiments/prompt_versions" do
     let!(:prompt) { create(:orchestration_prompt, name: "classify_agent") }
 
@@ -389,6 +461,77 @@ RSpec.describe "Evaluation::Experiments" do
     it "returns empty array for unknown agent" do
       get prompt_versions_evaluation_experiments_path, params: { agent_name: "unknown_agent" }
       expect(JSON.parse(response.body)).to eq([])
+    end
+  end
+
+  describe "POST /evaluation/experiments/snapshot_agent_prompt" do
+    let(:agent) { create(:orchestration_agent, name: "Emails::ClassifyAgent", prompt: "You are a classifier.") }
+
+    before { agent }
+
+    it "creates a new evaluation prompt" do
+      expect {
+        post snapshot_agent_prompt_evaluation_experiments_path,
+             params: { agent_name: "Emails::ClassifyAgent" },
+             as: :json
+      }.to change(Evaluation::Prompt, :count).by(1)
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "returns the prompt id and version" do
+      post snapshot_agent_prompt_evaluation_experiments_path,
+           params: { agent_name: "Emails::ClassifyAgent" },
+           as: :json
+
+      data = JSON.parse(response.body)
+      expect(response).to have_http_status(:ok)
+      expect(data["id"]).to eq(Evaluation::Prompt.last.id)
+      expect(data["version"]).to be_present
+    end
+
+    it "stores the agent prompt as system_prompt" do
+      post snapshot_agent_prompt_evaluation_experiments_path,
+           params: { agent_name: "Emails::ClassifyAgent" },
+           as: :json
+
+      prompt = Evaluation::Prompt.last
+      expect(prompt.name).to eq("Emails::ClassifyAgent")
+      expect(prompt.system_prompt).to eq("You are a classifier.")
+    end
+
+    it "sets the default user_prompt template" do
+      post snapshot_agent_prompt_evaluation_experiments_path,
+           params: { agent_name: "Emails::ClassifyAgent" },
+           as: :json
+
+      expect(Evaluation::Prompt.last.user_prompt).to eq("{{input}}")
+    end
+
+    context "when agent has no prompt" do
+      let(:empty_agent) { create(:orchestration_agent, name: "EmptyAgent", prompt: nil) }
+
+      before { empty_agent }
+
+      it "returns 422 and does not create a prompt" do
+        expect {
+          post snapshot_agent_prompt_evaluation_experiments_path,
+               params: { agent_name: "EmptyAgent" },
+               as: :json
+        }.not_to change(Evaluation::Prompt, :count)
+
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+    end
+
+    context "when agent does not exist" do
+      it "returns 422" do
+        post snapshot_agent_prompt_evaluation_experiments_path,
+             params: { agent_name: "NonExistent" },
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_content)
+      end
     end
   end
 end

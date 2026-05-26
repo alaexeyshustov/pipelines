@@ -32,10 +32,18 @@ Rails.application.routes.draw do
         post :generate
       end
     end
+    resources :prompts, only: [ :index ] do
+      collection do
+        get :compare
+      end
+    end
     get "prompts/:id/diff", to: "prompt_diffs#show", as: :prompt_diff
     resources :datasets, only: [] do
       collection do
         post :generate
+      end
+      member do
+        post :resync
       end
     end
     resources :experiments, only: [ :index, :show, :new, :create ] do
@@ -48,6 +56,9 @@ Rails.application.routes.draw do
       end
       collection do
         get :prompt_versions
+        get :prompt_content
+        post :snapshot_agent_prompt
+        post :fork_prompt
       end
     end
   end

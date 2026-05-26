@@ -4,5 +4,7 @@ module Evaluation
     has_many :dataset_samples, class_name: "Evaluation::DatasetSample", dependent: :destroy
     has_many :experiments, class_name: "Evaluation::Experiment", dependent: :destroy
     validates :name, presence: true
+
+    scope :for_agent, ->(name) { where(agent_name: name) }
   end
 end

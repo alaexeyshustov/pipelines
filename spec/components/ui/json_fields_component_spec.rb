@@ -100,6 +100,66 @@ RSpec.describe UI::JsonFieldsComponent, type: :component do
     end
   end
 
+  describe "hardcoded string field" do
+    subject(:rendered) do
+      render_inline(described_class.new(form: form, schema: hardcoded_schema, name_prefix: "initial_input"))
+    end
+
+    let(:hardcoded_schema) do
+      {
+        "properties" => {
+          "name"  => { "type" => "string" },
+          "topic" => { "type" => "string", "enum" => [ "job applications" ], "format" => "hardcoded" }
+        }
+      }
+    end
+
+    it "does not render an input for the hardcoded field" do
+      expect(rendered.css("[name='initial_input[topic]']")).to be_empty
+    end
+
+    it "renders a label for the hardcoded field" do
+      label_texts = rendered.css("div.mb-4 > label").map { |l| l.text.strip }
+      expect(label_texts.join).to include("Topic")
+    end
+
+    it "renders the hardcoded value as plain text" do
+      expect(rendered.text).to include("job applications")
+    end
+
+    it "still renders other fields normally" do
+      expect(rendered.css("input[type='text'][name='initial_input[name]']")).to be_present
+    end
+  end
+
+  describe "hardcoded array field" do
+    subject(:rendered) do
+      render_inline(described_class.new(form: form, schema: array_schema, name_prefix: "initial_input"))
+    end
+
+    let(:array_schema) do
+      {
+        "properties" => {
+          "cols" => { "type" => "array", "format" => "hardcoded",
+                      "items" => { "type" => "string", "enum" => [ "company", "job_title" ] } }
+        }
+      }
+    end
+
+    it "does not render an input for the hardcoded array field" do
+      expect(rendered.css("[name^='initial_input[cols]']")).to be_empty
+    end
+
+    it "renders a label for the hardcoded array field" do
+      label_texts = rendered.css("div.mb-4 > label").map { |l| l.text.strip }
+      expect(label_texts.join).to include("Cols")
+    end
+
+    it "renders the items as a comma-separated string" do
+      expect(rendered.text).to include("company, job_title")
+    end
+  end
+
   describe "empty schema" do
     subject(:rendered) do
       render_inline(described_class.new(form: form, schema: {}))

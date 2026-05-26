@@ -26,13 +26,13 @@ RSpec.describe Evaluation::Experiment do
     end
 
     it "transitions sampling → evaluating" do
-      experiment.update!(status: "sampling")
+      experiment.update!(status: "sampling", pending_samples_count: 0, pending_evaluations_count: 1)
       experiment.start_evaluating!
       expect(experiment.reload).to be_evaluating
     end
 
     it "transitions evaluating → completed" do
-      experiment.update!(status: "evaluating")
+      experiment.update!(status: "evaluating", pending_evaluations_count: 0)
       experiment.complete!
       expect(experiment.reload).to be_completed
     end
@@ -60,6 +60,16 @@ RSpec.describe Evaluation::Experiment do
 
     it "raises on an invalid transition from pending to evaluating" do
       expect { experiment.start_evaluating! }.to raise_error(AASM::InvalidTransition)
+    end
+
+    it "raises on an invalid transition from sampling to evaluating while sampling is still in flight" do
+      experiment.update!(status: "sampling", pending_samples_count: 1, pending_evaluations_count: 1)
+      expect { experiment.start_evaluating! }.to raise_error(AASM::InvalidTransition)
+    end
+
+    it "raises on an invalid transition from evaluating to completed while evaluations are still pending" do
+      experiment.update!(status: "evaluating", pending_evaluations_count: 1)
+      expect { experiment.complete! }.to raise_error(AASM::InvalidTransition)
     end
   end
 end

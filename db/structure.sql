@@ -5,10 +5,6 @@ CREATE UNIQUE INDEX "index_application_mails_on_email_id" ON "application_mails"
 CREATE INDEX "index_application_mails_on_date" ON "application_mails" ("date") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "interviews" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "company" varchar NOT NULL, "job_title" varchar NOT NULL, "status" varchar DEFAULT 'pending_reply', "applied_at" date, "rejected_at" date, "first_interview_at" date, "second_interview_at" date, "third_interview_at" date, "fourth_interview_at" date, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_interviews_on_company_and_job_title" ON "interviews" ("company", "job_title") /*application='ApplicationPipeline'*/;
-CREATE VIRTUAL TABLE email_vectors USING vec0(
-  email_id TEXT PRIMARY KEY,
-  embedding FLOAT[1536]
-);
 CREATE TABLE IF NOT EXISTS "email_vectors_info" (key text primary key, value any);
 CREATE TABLE IF NOT EXISTS "email_vectors_chunks"(chunk_id INTEGER PRIMARY KEY AUTOINCREMENT,size INTEGER NOT NULL,validity BLOB NOT NULL,rowids BLOB NOT NULL);
 CREATE TABLE IF NOT EXISTS "email_vectors_rowids"(rowid INTEGER PRIMARY KEY AUTOINCREMENT,id TEXT UNIQUE NOT NULL,chunk_id INTEGER,chunk_offset INTEGER);
@@ -59,7 +55,7 @@ FOREIGN KEY ("pipeline_run_id")
 FOREIGN KEY ("chat_id")
   REFERENCES "chats" ("id")
 );
-CREATE TABLE IF NOT EXISTS "evaluation_datasets" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "description" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE TABLE IF NOT EXISTS "evaluation_datasets" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "description" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "agent_name" varchar /*application='ApplicationPipeline'*/);
 CREATE TABLE IF NOT EXISTS "evaluation_prompts" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "version" integer, "system_prompt" text, "user_prompt" text, "metadata" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "output_schema" json /*application='ApplicationPipeline'*/);
 CREATE TABLE IF NOT EXISTS "evaluation_metrics" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "agent_name" varchar NOT NULL, "name" varchar NOT NULL, "description" text NOT NULL, "weight" decimal DEFAULT 1.0 NOT NULL, "active" boolean DEFAULT TRUE NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_evaluation_metrics_on_agent_name_and_name" ON "evaluation_metrics" ("agent_name", "name") /*application='ApplicationPipeline'*/;
@@ -149,6 +145,8 @@ FOREIGN KEY ("prompt_id")
 CREATE INDEX "index_evaluation_experiments_on_prompt_id" ON "evaluation_experiments" ("prompt_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_experiments_on_dataset_id" ON "evaluation_experiments" ("dataset_id") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260525134853'),
+('20260525133519'),
 ('20260523080923'),
 ('20260522000001'),
 ('20260521000005'),

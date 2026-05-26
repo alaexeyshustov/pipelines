@@ -1,21 +1,46 @@
 <div class="space-y-6">
   <h3 class="text-sm font-semibold text-gray-700">Select a dataset</h3>
 
-  <%= form_with url: evaluation_experiments_path, method: :post do |f| %>
+  <div class="space-y-2">
+    <% datasets.each do |dataset| %>
+      <div data-controller="dialog resync">
+        <div class="flex items-center gap-3 p-3 border rounded-lg <%= dataset_selected?(dataset) ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 bg-white' %>">
+          <label class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer">
+            <%= radio_button_tag "wizard[dataset_id]", dataset.id, dataset_selected?(dataset),
+                class: "text-indigo-600", form: "wizard-step3" %>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-gray-900"><%= dataset.name %></p>
+              <p id="dataset-count-<%= dataset.id %>" class="text-xs text-gray-500"><%= record_count(dataset) %> records</p>
+            </div>
+          </label>
+          <button type="button" data-action="dialog#open" class="flex-shrink-0 text-xs font-medium text-indigo-600 hover:text-indigo-800 px-2 py-1 rounded border border-indigo-200 hover:bg-indigo-50 transition-colors">
+            Resync
+          </button>
+        </div>
+
+        <dialog data-dialog-target="dialog" data-resync-target="dialog" class="rounded-xl shadow-lg border border-gray-200 p-6 w-full max-w-sm fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 backdrop:bg-black/30">
+          <p class="text-sm font-semibold text-gray-800 mb-4">Resync "<%= dataset.name %>"</p>
+          <%= form_with url: resync_evaluation_dataset_path(dataset), method: :post, data: { action: "submit->resync#submit" } do |rf| %>
+            <%= rf.hidden_field :agent_name, value: agent_name %>
+            <%= rf.hidden_field :draft_token, value: draft_token %>
+            <div class="mb-4">
+              <label class="block text-xs font-medium text-gray-600 mb-1">Items count (1–50)</label>
+              <%= rf.number_field :count, value: 10, min: 1, max: 50, class: "w-full rounded border border-gray-300 px-2 py-1.5 text-sm" %>
+            </div>
+            <div class="flex justify-end gap-3">
+              <button type="button" data-action="dialog#close" class="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Cancel</button>
+              <button type="submit" class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Resync</button>
+            </div>
+          <% end %>
+        </dialog>
+
+        <div id="dataset-resync-status-<%= dataset.id %>" data-resync-target="status" class="text-xs mt-1"></div>
+      </div>
+    <% end %>
+  </div>
+
+  <%= form_with url: evaluation_experiments_path, method: :post, html: { id: "wizard-step3" } do |f| %>
     <%= f.hidden_field :current_step, value: 3 %>
-
-    <div class="space-y-2">
-      <% datasets.each do |dataset| %>
-        <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 <%= dataset_selected?(dataset) ? 'border-indigo-400 bg-indigo-50' : 'border-gray-200 bg-white' %>">
-          <%= radio_button_tag "wizard[dataset_id]", dataset.id, dataset_selected?(dataset), class: "text-indigo-600" %>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-gray-900"><%= dataset.name %></p>
-            <p class="text-xs text-gray-500"><%= record_count(dataset) %> records</p>
-          </div>
-        </label>
-      <% end %>
-    </div>
-
     <div class="flex justify-end pt-2 border-t border-gray-100">
       <button type="submit" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
         Next →

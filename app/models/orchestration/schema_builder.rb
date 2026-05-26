@@ -6,12 +6,13 @@ module Orchestration
     ENUM_TYPES = %w[string integer number].freeze
     NUMERIC_TYPES = %w[integer number].freeze
 
-    attr_reader :type, :description, :required, :additional_properties,
+    attr_reader :type, :description, :format, :required, :additional_properties,
                 :properties, :items, :enum, :minimum, :maximum
 
     def initialize(
       type: nil,
       description: nil,
+      format: nil,
       required: [],
       additional_properties: nil,
       properties: {},
@@ -22,6 +23,7 @@ module Orchestration
     )
       @type = type
       @description = description
+      @format = format
       @required = Array(required).compact
       @additional_properties = additional_properties
       @properties = properties
@@ -42,6 +44,7 @@ module Orchestration
       new(
         type: schema["type"],
         description: schema["description"],
+        format: schema["format"],
         required: Array(schema["required"]),
         additional_properties: schema.key?("additionalProperties") ? schema["additionalProperties"] : nil,
         properties: properties,
@@ -70,6 +73,7 @@ module Orchestration
       new(
         type: params["type"].presence,
         description: params["description"].presence,
+        format: params["format"].presence,
         required: Array(params["required"]).reject(&:blank?),
         additional_properties: additional_properties,
         properties: properties,
@@ -84,6 +88,7 @@ module Orchestration
       schema = {}
       schema["type"] = type if type.present?
       schema["description"] = description if description.present?
+      schema["format"] = format if format.present? && (type == "string" || format == "hardcoded")
 
       if type == "object"
         schema["required"] = required if required.present?
@@ -136,7 +141,7 @@ module Orchestration
           new_prop = current_prop.with_mutation(rest_path, &block)
           dup_with(properties: properties.merge(prop_name => new_prop))
         when "items"
-          new_items = (items || SchemaBuilder.new).with_mutation(rest, &block)
+          new_items = (items || SchemaBuilder.new(type: "string")).with_mutation(rest, &block)
           dup_with(items: new_items)
         else
           self
@@ -150,6 +155,7 @@ module Orchestration
       SchemaBuilder.new(
         type: type,
         description: description,
+        format: format,
         required: required.dup,
         additional_properties: additional_properties,
         properties: properties.dup,

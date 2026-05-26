@@ -34,7 +34,9 @@ RSpec.describe Evaluation::ExperimentJob do
     it "does not re-enqueue sampling jobs when sampling is already in flight" do
       create_list(:evaluation_dataset_sample, 3, dataset: experiment.dataset)
       experiment.update!(status: "sampling", pending_samples_count: 2)
-      described_class.perform_now(experiment)
+      job = described_class.new
+      allow(job).to receive(:sampling_jobs_still_in_flight?).and_return(true)
+      job.perform(experiment)
       expect(Evaluation::SamplingJob).not_to have_received(:perform_later)
     end
 
@@ -42,6 +44,19 @@ RSpec.describe Evaluation::ExperimentJob do
       create_list(:evaluation_dataset_sample, 2, dataset: experiment.dataset)
       experiment.update!(status: "sampling", pending_samples_count: 2)
       described_class.perform_now(experiment)
+      expect(Evaluation::SamplingJob).to have_received(:perform_later).exactly(2).times
+    end
+
+    it "re-enqueues only missing sampling jobs when sampling was partially enqueued before a crash" do
+      dataset_samples = create_list(:evaluation_dataset_sample, 3, dataset: experiment.dataset)
+      create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_samples.first)
+      experiment.update!(status: "sampling", pending_samples_count: 2)
+      job = described_class.new.tap { |instance| allow(instance).to receive(:sampling_jobs_still_in_flight?).and_return(false) }
+      job.perform(experiment)
+      expect(Evaluation::SamplingJob).to have_received(:perform_later)
+        .with(experiment.id, dataset_samples.second.id)
+      expect(Evaluation::SamplingJob).to have_received(:perform_later)
+        .with(experiment.id, dataset_samples.third.id)
       expect(Evaluation::SamplingJob).to have_received(:perform_later).exactly(2).times
     end
 

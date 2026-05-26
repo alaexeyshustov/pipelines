@@ -166,6 +166,32 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
       end
     end
 
+    context "when dataset_id is provided (resync)" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      let!(:existing_dataset) { create(:evaluation_dataset, name: "Existing", agent_name: agent_name) }
+      let!(:old_sample) { create(:evaluation_dataset_sample, dataset: existing_dataset) }
+      let(:resync_params) { { draft_token: draft_token, agent_name: agent_name, dataset_id: existing_dataset.id, count: 3 } }
+
+      before { allow(Evaluation::Dataset).to receive(:where).and_call_original }
+
+      it "does not create a new dataset" do
+        expect { described_class.perform_now(**resync_params) }.not_to change(Evaluation::Dataset, :count)
+      end
+
+      it "destroys existing samples and replaces with generated ones" do
+        expect { described_class.perform_now(**resync_params) }
+          .to change(Evaluation::DatasetSample, :count).by(generated_inputs.size - 1)
+
+        expect(existing_dataset.dataset_samples.reload).not_to include(old_sample)
+        expect(existing_dataset.dataset_samples.count).to eq(generated_inputs.size)
+      end
+
+      it "does not update the wizard draft" do
+        described_class.perform_now(**resync_params)
+
+        expect(wizard_draft.reload.payload).to be_nil
+      end
+    end
+
     context "when LLM returns a non-array JSON value" do
       let(:llm_response_body) do
         {

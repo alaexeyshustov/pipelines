@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 ---
 
 # Replace string-based executor dispatch with an explicit registry

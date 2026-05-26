@@ -45,7 +45,24 @@ module Orchestration
       @extracted_input = if @pipeline.initial_input_schema.blank?
         nil
       else
-        @initial_input_params&.to_unsafe_h&.deep_stringify_keys
+        user_input = @initial_input_params&.to_unsafe_h&.deep_stringify_keys || {}
+        user_input.merge(hardcoded_values(@pipeline.initial_input_schema))
+      end
+    end
+
+    def hardcoded_values(schema)
+      (schema["properties"] || {}).each_with_object({}) do |(key, prop), memo|
+        next unless prop["format"] == "hardcoded"
+
+        memo[key] = hardcoded_value_for(prop)
+      end
+    end
+
+    def hardcoded_value_for(prop)
+      if prop["type"] == "array"
+        prop["const"] || prop.dig("items", "enum") || []
+      else
+        prop["const"] || prop["enum"]&.first
       end
     end
   end

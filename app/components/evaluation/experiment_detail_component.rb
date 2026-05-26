@@ -44,8 +44,16 @@ module Evaluation
       per_metric_avg.values.sum / per_metric_avg.size
     end
 
+    def dataset_samples
+      @dataset_samples ||= @experiment.dataset.dataset_samples
+    end
+
     def judge_model
       @judge_model ||= Evaluators::LLMJudgeEval.judge_model
+    end
+
+    def output_schema_json
+      JSON.pretty_generate(@experiment.prompt.output_schema)
     end
   end
 end

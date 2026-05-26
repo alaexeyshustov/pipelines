@@ -1,0 +1,30 @@
+<%= render UI::PageHeaderComponent.new(title: "Prompts") %>
+
+<div data-controller="prompt-compare"
+     data-prompt-compare-compare-url-value="<%= compare_evaluation_prompts_path %>">
+  <div class="mb-4 flex justify-end">
+    <a href="#"
+       data-prompt-compare-target="compareLink"
+       class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-blue-600 text-white opacity-50 pointer-events-none"
+       aria-disabled="true">
+      Compare Experiments
+    </a>
+  </div>
+
+  <%= render UI::TableComponent.new(collection: @prompts, empty_message: "No prompts found.") do |table| %>
+    <% table.with_columns([
+      { label: nil,
+        cell: ->(prompt) { tag.input(type: :checkbox, value: prompt.id,
+                                     data: { prompt_compare_target: "checkbox", action: "change->prompt-compare#toggle" },
+                                     class: "rounded border-gray-300 text-blue-600") } },
+      { key: "name",       label: "Agent",   variant: :strong },
+      { key: "version",    label: "Version", cell: ->(prompt) { "v#{prompt.version}" }, variant: :muted },
+      { key: "created_at", label: "Created", cell: ->(prompt) { prompt.created_at.strftime("%b %d, %Y") }, variant: :muted }
+    ]) %>
+    <% table.with_action_column(
+      actions: ->(prompt) {
+        [{ label: "Diff", url: evaluation_prompt_diff_path(prompt), variant: :primary }]
+      }
+    ) %>
+  <% end %>
+</div>

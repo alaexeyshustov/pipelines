@@ -1,4 +1,11 @@
-<%= form_with url: evaluation_experiments_path, method: :post, class: "space-y-6" do |f| %>
+<%= form_with url: evaluation_experiments_path, method: :post, class: "space-y-6",
+      data: {
+        controller: "agent-select",
+        "agent-select-versions-url-value": prompt_versions_evaluation_experiments_path,
+        "agent-select-snapshot-url-value": snapshot_url,
+        "agent-select-fork-prompt-url-value": fork_prompt_url,
+        "agent-select-prompt-content-url-value": prompt_content_url
+      } do |f| %>
   <%= f.hidden_field :current_step, value: 1 %>
 
   <div>
@@ -8,11 +15,7 @@
           id: "wizard_agent_name",
           prompt: "— select agent —",
           class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500",
-          data: {
-            controller: "agent-select",
-            action: "change->agent-select#loadVersions",
-            "agent-select-versions-url-value": prompt_versions_evaluation_experiments_path
-          } %>
+          data: { action: "change->agent-select#loadVersions" } %>
   </div>
 
   <div>
@@ -21,7 +24,53 @@
           options_for_select(prompt_options, prompt_id&.to_i),
           id: "wizard_prompt_id",
           include_blank: "— latest —",
-          class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500" %>
+          class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500",
+          data: {
+            "agent-select-target": "promptSelect",
+            action: "change->agent-select#promptVersionChanged"
+          } %>
+    <div class="mt-2 flex gap-3 flex-wrap">
+      <button type="button"
+              class="text-sm text-indigo-600 hover:text-indigo-800 disabled:text-gray-400 disabled:cursor-not-allowed"
+              disabled
+              data-agent-select-target="snapshotButton"
+              data-action="click->agent-select#snapshot">
+        + Create new version from current agent settings
+      </button>
+      <button type="button"
+              class="text-sm text-indigo-600 hover:text-indigo-800 disabled:text-gray-400 disabled:cursor-not-allowed"
+              disabled
+              data-agent-select-target="editToggle"
+              data-action="click->agent-select#toggleEdit">
+        ✏ Edit prompt
+      </button>
+    </div>
+  </div>
+
+  <div class="hidden rounded-lg border border-indigo-200 bg-indigo-50 p-4 space-y-4"
+       data-agent-select-target="editPanel">
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">System prompt</label>
+      <textarea rows="8"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-indigo-500"
+                placeholder="System instructions…"
+                data-agent-select-target="systemPromptField"></textarea>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">User prompt</label>
+      <textarea rows="4"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-indigo-500"
+                placeholder="User prompt template — use {{input}} as the input placeholder"
+                data-agent-select-target="userPromptField"></textarea>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Output schema <span class="font-normal text-gray-400">(JSON, optional)</span></label>
+      <textarea rows="4"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-indigo-500"
+                placeholder='{"type": "object", …}'
+                data-agent-select-target="outputSchemaField"></textarea>
+    </div>
+    <p class="text-xs text-gray-500">A new prompt version will be created with these changes when you click Next.</p>
   </div>
 
   <div>
@@ -38,7 +87,8 @@
           options_for_select(model_options, sample_model),
           id: "wizard_sample_model",
           include_blank: "Use default (env var)",
-          class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500" %>
+          class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500",
+          data: { controller: "select-search" } %>
   </div>
 
   <div>
@@ -47,11 +97,14 @@
           options_for_select(model_options, evaluation_model),
           id: "wizard_evaluation_model",
           include_blank: "Use default (env var)",
-          class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500" %>
+          class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500",
+          data: { controller: "select-search" } %>
   </div>
 
   <div class="flex justify-end">
-    <button type="submit" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
+    <button type="submit"
+            class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+            data-agent-select-target="submitButton">
       Next →
     </button>
   </div>

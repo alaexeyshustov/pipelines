@@ -21,5 +21,27 @@ module Evaluation
         html: "<p class=\"text-xs text-red-600\">Error: #{ERB::Util.html_escape(e.message)}</p>".html_safe
       ), status: :unprocessable_entity
     end
+
+    def resync
+      dataset = Evaluation::Dataset.find(params[:id])
+      Evaluation::DatasetSeeder.call(agent_name: dataset.agent_name, sample_size: params[:count]&.to_i || 20)
+
+      new_count = dataset.dataset_samples.count
+      render turbo_stream: [
+        turbo_stream.update(
+          "dataset-resync-status-#{dataset.id}",
+          html: '<p class="text-xs text-indigo-600">✓ Resynced.</p>'.html_safe
+        ),
+        turbo_stream.update(
+          "dataset-count-#{dataset.id}",
+          html: "#{new_count} records"
+        )
+      ]
+    rescue StandardError => e
+      render turbo_stream: turbo_stream.update(
+        "dataset-resync-status-#{params[:id]}",
+        html: "<p class=\"text-xs text-red-600\">Error: #{ERB::Util.html_escape(e.message)}</p>".html_safe
+      ), status: :unprocessable_entity
+    end
   end
 end

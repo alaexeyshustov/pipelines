@@ -25,11 +25,11 @@ module Evaluation
       end
 
       event :start_evaluating do
-        transitions from: :sampling, to: :evaluating
+        transitions from: :sampling, to: :evaluating, guard: :ready_to_evaluate?
       end
 
       event :complete do
-        transitions from: :evaluating, to: :completed
+        transitions from: :evaluating, to: :completed, guard: :evaluations_finished?
       end
 
       event :fail do
@@ -65,6 +65,16 @@ module Evaluation
 
     def per_metric_averages
       EvaluationResult.per_metric_averages(self)
+    end
+
+    private
+
+    def ready_to_evaluate?
+      pending_samples_count.zero? && pending_evaluations_count.positive?
+    end
+
+    def evaluations_finished?
+      pending_evaluations_count.zero?
     end
   end
 end

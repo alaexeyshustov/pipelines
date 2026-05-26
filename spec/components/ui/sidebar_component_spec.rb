@@ -26,7 +26,7 @@ RSpec.describe UI::SidebarComponent, type: :component do
   it "renders LLM group links" do
     details = rendered.css("details").first
     links = details.css("a").map { |a| a.text.strip }
-    expect(links).to include("Chats", "Models", "Monitoring", "Evaluation")
+    expect(links).to include("Chats", "Models", "Monitoring", "Evaluation", "Prompts")
   end
 
   it "renders Mails group links" do
@@ -85,6 +85,20 @@ RSpec.describe UI::SidebarComponent, type: :component do
       inactive.each do |link|
         expect(link["class"]).not_to include("font-medium")
       end
+    end
+  end
+
+  context "when current_path is nested under a nav item" do
+    let(:component) { described_class.new(current_path: "/jobs/failed") }
+
+    it "opens the Settings group" do
+      settings_details = rendered.css("details")[3]
+      expect(settings_details["open"]).not_to be_nil
+    end
+
+    it "highlights the parent Jobs item" do
+      jobs_link = rendered.css("[data-testid='sidebar-item']").find { |a| a.text.strip == "Jobs" }
+      expect(jobs_link["class"]).to include("font-medium")
     end
   end
 end

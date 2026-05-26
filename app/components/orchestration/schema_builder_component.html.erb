@@ -41,6 +41,27 @@
     </div>
   </div>
 
+  <%# format %>
+  <% if builder.type.present? %>
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">Format</label>
+      <form action="<%= helpers.build_orchestration_schema_builders_path %>" method="post" data-turbo-frame="schema_builder">
+        <%= hidden_field_tag :authenticity_token, helpers.form_authenticity_token %>
+        <input type="hidden" name="json" value="<%= html_escape(json) %>">
+        <input type="hidden" name="path" value="<%= html_escape(path_json) %>">
+        <select name="builder[format]"
+                class="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                onchange="this.form.requestSubmit()">
+          <option value="" <%= "selected" if builder.format.blank? %>>none</option>
+          <% if builder.type == "string" %>
+            <option value="date" <%= "selected" if builder.format == "date" %>>date</option>
+          <% end %>
+          <option value="hardcoded" <%= "selected" if builder.format == "hardcoded" %>>hardcoded</option>
+        </select>
+      </form>
+    </div>
+  <% end %>
+
   <%# enum (string / integer / number) %>
   <% if Orchestration::SchemaBuilder::ENUM_TYPES.include?(builder.type) %>
     <div>

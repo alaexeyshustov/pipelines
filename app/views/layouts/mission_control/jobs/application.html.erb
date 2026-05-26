@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= page_title %> | Application Pipeline</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Application Pipeline">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="turbo-cache-control" content="no-cache">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <%= stylesheet_link_tag :app %>
+    <%= stylesheet_link_tag "tailwind" %>
+    <%= stylesheet_link_tag "mission_control/jobs/bulma.min" %>
+    <%= stylesheet_link_tag "mission_control/jobs/application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags "application", importmap: MissionControl::Jobs.importmap %>
+  </head>
+
+  <body class="bg-gray-50 text-gray-900 antialiased flex h-screen overflow-hidden">
+    <%= render UI::SidebarComponent.new(current_path: request.path) %>
+    <main class="flex-1 overflow-y-auto">
+      <section class="section">
+        <div class="container">
+          <%= render "layouts/mission_control/jobs/application_selection" %>
+          <%= render "layouts/mission_control/jobs/flash" %>
+          <%= render "layouts/mission_control/jobs/navigation" %>
+          <%= yield %>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -40,6 +40,39 @@ RSpec.describe "Orchestration::SchemaBuilders" do
       expect(response.body).not_to include('"minimum"')
     end
 
+    it "sets format on a string property" do
+      schema = { "type" => "string" }.to_json
+      post build_orchestration_schema_builders_path, params: {
+        json: schema,
+        path: "[]",
+        builder: { format: "date" }
+      }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('"format"').or include("format")
+    end
+
+    it "preserves enum values on items of an array with empty items schema" do
+      schema = { "type" => "array", "items" => {} }.to_json
+      post build_orchestration_schema_builders_path, params: {
+        json: schema,
+        path: '["items"]',
+        builder: { enum_text: "pending\ndone" }
+      }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("pending").and include("done")
+    end
+
+    it "clears format when blank value is submitted" do
+      schema = { "type" => "string", "format" => "date" }.to_json
+      post build_orchestration_schema_builders_path, params: {
+        json: schema,
+        path: "[]",
+        builder: { format: "" }
+      }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include('"format"')
+    end
+
     it "coerces integer enum values to integers" do
       schema = { "type" => "integer" }.to_json
       post build_orchestration_schema_builders_path, params: {

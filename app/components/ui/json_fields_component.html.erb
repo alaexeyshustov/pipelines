@@ -6,7 +6,9 @@
       <% if field[:required] %><abbr title="required" class="text-red-500 ml-0.5 no-underline">*</abbr><% end %>
     </label>
 
-    <% if field[:kind] == :checkboxes %>
+    <% if field[:kind] == :hardcoded %>
+      <p class="text-sm text-gray-700"><%= hardcoded_display(field[:schema]) %></p>
+    <% elsif field[:kind] == :checkboxes %>
       <div id="<%= field_id %>" class="flex flex-wrap gap-3">
         <% field[:schema]["items"]["enum"].each do |option| %>
           <label class="flex items-center gap-2 text-sm text-gray-700">

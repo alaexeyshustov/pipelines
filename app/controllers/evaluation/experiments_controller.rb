@@ -32,6 +32,51 @@ module Evaluation
       end
     end
 
+    def snapshot_agent_prompt
+      agent = Orchestration::Agent.find_by(name: params[:agent_name])
+
+      if agent.nil? || agent.prompt.blank?
+        render json: { error: "Agent not found or has no prompt" }, status: :unprocessable_content
+        return
+      end
+
+      prompt = Evaluation::Prompt.create!(
+        name: agent.name,
+        system_prompt: agent.prompt,
+        user_prompt: "{{input}}",
+        output_schema: agent.output_schema
+      )
+
+      render json: { id: prompt.id, version: prompt.version }
+    end
+
+    def prompt_content
+      prompt = Prompt.find_by(id: params[:prompt_id])
+      unless prompt
+        render json: { error: "Prompt not found" }, status: :not_found
+        return
+      end
+      render json: { system_prompt: prompt.system_prompt, user_prompt: prompt.user_prompt, output_schema: prompt.output_schema }
+    end
+
+    def fork_prompt
+      based_on = Prompt.find_by(id: params[:based_on_prompt_id])
+      unless based_on
+        render json: { error: "Base prompt not found" }, status: :unprocessable_content
+        return
+      end
+
+      prompt = Evaluation::Prompt.create!(
+        name: based_on.name,
+        system_prompt: fork_prompt_params[:system_prompt] || based_on.system_prompt,
+        user_prompt:   fork_prompt_params[:user_prompt]   || based_on.user_prompt,
+        output_schema: fork_prompt_params[:output_schema] || based_on.output_schema
+      )
+      render json: { id: prompt.id, version: prompt.version }
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { error: e.message }, status: :unprocessable_content
+    end
+
     def prompt_versions
       prompts = Prompt
         .where(name: params[:agent_name])
@@ -113,6 +158,10 @@ module Evaluation
     def build_wizard_form(step_param: nil)
       token = session[:wizard_token] ||= SecureRandom.hex(16)
       WizardForm.new(wizard_token: token, step_param: step_param)
+    end
+
+    def fork_prompt_params
+      params.permit(:based_on_prompt_id, :system_prompt, :user_prompt, :output_schema)
     end
 
     def wizard_params

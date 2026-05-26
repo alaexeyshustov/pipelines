@@ -108,6 +108,25 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
       end
     end
 
+    context "when the prompt has an output_schema" do
+      let(:output_schema) { { "type" => "object", "properties" => { "label" => { "type" => "string" } } } }
+      let(:prompt) { create(:orchestration_prompt, name: agent_name, system_prompt: "You are a classifier.", output_schema: output_schema) }
+
+      it "passes output_schema to the judge message" do
+        judge_stub = stub_judge_agent
+        eval_instance.evaluate(sample, dataset_sample, agent_name: agent_name)
+        expect(judge_stub).to have_received(:ask).with(including("output_schema"))
+      end
+    end
+
+    context "when the prompt has no output_schema" do
+      it "omits output_schema from the judge message" do
+        judge_stub = stub_judge_agent
+        eval_instance.evaluate(sample, dataset_sample, agent_name: agent_name)
+        expect(judge_stub).not_to have_received(:ask).with(including("output_schema"))
+      end
+    end
+
     context "when expected_tool_calls is nil on the dataset_sample" do
       let(:dataset_sample_without_expected) do
         create(:evaluation_dataset_sample,
