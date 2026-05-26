@@ -11,42 +11,20 @@
     </a>
   </div>
 
-  <div class="rounded-lg border border-gray-200 bg-white overflow-hidden">
-    <table class="w-full text-sm">
-      <thead class="bg-gray-50 border-b border-gray-200">
-        <tr>
-          <th class="px-4 py-3 w-8"></th>
-          <th class="px-4 py-3 text-left font-medium text-gray-600">Agent</th>
-          <th class="px-4 py-3 text-left font-medium text-gray-600">Version</th>
-          <th class="px-4 py-3 text-left font-medium text-gray-600">Created</th>
-          <th class="px-4 py-3"></th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-200">
-        <% @prompts.each do |prompt| %>
-          <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-4 py-3">
-              <input type="checkbox"
-                     value="<%= prompt.id %>"
-                     data-prompt-compare-target="checkbox"
-                     data-action="change->prompt-compare#toggle"
-                     class="rounded border-gray-300 text-blue-600">
-            </td>
-            <td class="px-4 py-3 font-medium text-gray-900"><%= prompt.name %></td>
-            <td class="px-4 py-3 text-gray-500">v<%= prompt.version %></td>
-            <td class="px-4 py-3 text-gray-500"><%= prompt.created_at.strftime("%b %d, %Y") %></td>
-            <td class="px-4 py-3 text-right">
-              <%= link_to "Diff", evaluation_prompt_diff_path(prompt),
-                    class: "text-sm text-blue-600 hover:underline" %>
-            </td>
-          </tr>
-        <% end %>
-        <% if @prompts.empty? %>
-          <tr>
-            <td colspan="5" class="px-4 py-8 text-center text-gray-500">No prompts found.</td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
+  <%= render UI::TableComponent.new(collection: @prompts, empty_message: "No prompts found.") do |table| %>
+    <% table.with_columns([
+      { label: nil,
+        cell: ->(prompt) { tag.input(type: :checkbox, value: prompt.id,
+                                     data: { prompt_compare_target: "checkbox", action: "change->prompt-compare#toggle" },
+                                     class: "rounded border-gray-300 text-blue-600") } },
+      { key: "name",       label: "Agent",   variant: :strong },
+      { key: "version",    label: "Version", cell: ->(prompt) { "v#{prompt.version}" }, variant: :muted },
+      { key: "created_at", label: "Created", cell: ->(prompt) { prompt.created_at.strftime("%b %d, %Y") }, variant: :muted }
+    ]) %>
+    <% table.with_action_column(
+      actions: ->(prompt) {
+        [{ label: "Diff", url: evaluation_prompt_diff_path(prompt), variant: :primary }]
+      }
+    ) %>
+  <% end %>
 </div>

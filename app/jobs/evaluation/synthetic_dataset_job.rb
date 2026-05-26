@@ -102,7 +102,7 @@ module Evaluation
     def resync_dataset(dataset_id, inputs)
       ActiveRecord::Base.transaction do
         dataset = Evaluation::Dataset.find(dataset_id)
-        dataset.dataset_samples.destroy_all
+        dataset.dataset_samples.delete_all
         inputs.each { |input| Evaluation::DatasetSample.create!(dataset: dataset, input: input) }
         dataset
       end

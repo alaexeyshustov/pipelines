@@ -2,7 +2,6 @@
 
 module Evaluation
   class DatasetsController < ApplicationController
-    # TODO: swtich to DatasetSeeder
     def generate
       SyntheticDatasetJob.perform_later(
         draft_token:  params[:draft_token],
@@ -25,13 +24,7 @@ module Evaluation
 
     def resync
       dataset = Evaluation::Dataset.find(params[:id])
-
-      SyntheticDatasetJob.perform_now(
-        draft_token: params[:draft_token],
-        agent_name:  params[:agent_name],
-        dataset_id:  dataset.id,
-        count:       params[:count]
-      )
+      Evaluation::DatasetSeeder.call(agent_name: dataset.agent_name, sample_size: params[:count]&.to_i || 20)
 
       new_count = dataset.dataset_samples.count
       render turbo_stream: [
