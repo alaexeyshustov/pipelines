@@ -3,7 +3,7 @@ module Evaluation
     class Agent < ::RubyLLM::Agent
       chat_model Chat
       model LlmModels.evaluation
-      tools LoadSamplesTool
+      tools LoadSamplesTool, ListExperimentsTool, GetExperimentJustificationsTool, GetExperimentPromptTool
 
       schema do
         string :system_prompt, required: true, description: "The improved system prompt text. Must be non-empty."
@@ -24,6 +24,18 @@ module Evaluation
 
       Your task: improve the system prompt to address weak areas (low scores) while preserving
       behaviors that already score well.
+
+      Before writing the improved prompt, use the available tools to understand the direction of
+      past improvement attempts for this agent:
+      - Call `list_experiments` with the prompt_name and current experiment_id to see the score
+        trajectory across all previous experiments (per-metric averages and overall average).
+      - Call `get_experiment_justifications` on any past experiment to read the judge's full
+        reasoning for that run — useful for understanding what went wrong or right.
+      - Call `get_experiment_prompt` on any past experiment to see the exact prompt text that
+        produced those scores — useful for understanding what changes have already been tried.
+
+      Use this history to avoid repeating directions that have already been tried without success,
+      and to build on directions that showed improvement.
 
       IMPORTANT constraints:
       - Do NOT add output format descriptions, JSON schema examples, or structured output

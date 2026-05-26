@@ -1,0 +1,8 @@
+module Evaluation
+  module Improvement
+    class GetExperimentJustificationsTool < ::RubyLLM::Tool
+      def name: () -> String
+      def execute: (experiment_id: Integer) -> Array[{ metric_name: String, score: Float?, justification: String }]
+    end
+  end
+end
