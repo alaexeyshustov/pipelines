@@ -87,7 +87,7 @@ RSpec.describe Orchestration::PipelineRunner do
     context 'with a serialized orchestration agent configuration' do # rubocop:disable RSpec/MultipleMemoizedHelpers
       let(:serialized_chat) { create(:chat) }
       let(:serialized_agent) do
-        instance_double(RubyLLM::Agent, chat: serialized_chat, params: {})
+        instance_double(RubyLLM::Agent, chat: serialized_chat)
       end
 
       before do
@@ -96,7 +96,6 @@ RSpec.describe Orchestration::PipelineRunner do
           model: "mistral-small",
           tools: [ "Records::TempFileTool" ],
           prompt: "Classify incoming emails",
-          params: { "mode" => "default", "limit" => 1 },
           output_schema: {
             "type" => "object",
             "required" => [ "result" ],
@@ -114,10 +113,15 @@ RSpec.describe Orchestration::PipelineRunner do
             }
           }
         )
-        create(:orchestration_step_action, step: step1, action: action, position: 1, params: { "limit" => 2 })
+        create(:orchestration_step_action, step: step1, action: action, position: 1)
         allow(RubyLLM::Agent).to receive(:new).and_return(serialized_agent)
         allow(serialized_chat).to receive(:with_instructions)
-        allow(serialized_agent).to receive_messages(with_model: serialized_agent, with_tools: serialized_agent, with_schema: serialized_agent, ask: instance_double(RubyLLM::Message, content: { "result" => [ { "id" => "mail-1" } ] }))
+        allow(serialized_agent).to receive_messages(
+          with_model: serialized_agent,
+          with_tools: serialized_agent,
+          with_schema: serialized_agent,
+          ask: instance_double(RubyLLM::Message, content: { "result" => [ { "id" => "mail-1" } ] })
+        )
       end
 
       it 'executes without relying on a Ruby agent subclass' do
@@ -129,11 +133,11 @@ RSpec.describe Orchestration::PipelineRunner do
         expect(action_run.output).to eq({ "result" => [ { "id" => "mail-1" } ] })
       end
 
-      it 'passes merged agent-default and step params into the ask call' do
+      it 'calls the agent with the resolved input as JSON' do
         described_class.new(pipeline_run).call
 
         expect(serialized_agent).to have_received(:ask)
-          .with(satisfy { |json| JSON.parse(json) == { "mode" => "default", "limit" => 2 } })
+          .with(satisfy { |json| JSON.parse(json) == {} })
       end
 
       it 'uses the database output schema for structured output requests' do # rubocop:disable RSpec/ExampleLength
@@ -165,35 +169,42 @@ RSpec.describe Orchestration::PipelineRunner do
             name: "Reusable email classifier",
             model: "mistral-small",
             tools: [ "Records::TempFileTool" ],
-            prompt: "Classify incoming emails",
-            params: { "mode" => "default" }
+            prompt: "Classify incoming emails"
           )
         end
       end
-      let(:snapshot_agent) { instance_double(RubyLLM::Agent, chat: create(:chat), params: {}) }
+      let(:snapshot_chat) { create(:chat) }
+      let(:snapshot_agent) { instance_double(RubyLLM::Agent, chat: snapshot_chat) }
 
       before do
         agent_record
-        create(:orchestration_step_action, step: step1, action: action, position: 1, params: { "limit" => 2 })
+        create(:orchestration_step_action, step: step1, action: action, position: 1)
         allow(RubyLLM::Agent).to receive(:new).and_return(snapshot_agent)
         allow(snapshot_agent).to receive_messages(
           with_model: snapshot_agent, with_tools: snapshot_agent,
           with_schema: snapshot_agent,
           ask: instance_double(RubyLLM::Message, content: "result")
         )
-        allow(snapshot_agent.chat).to receive(:with_instructions)
+        allow(snapshot_chat).to receive(:with_instructions)
       end
 
-      it 'persists a resolved agent_snapshot on the action_run' do
+      it 'persists a resolved agent_snapshot on the action_run without params' do
         described_class.new(pipeline_run).call
         action_run = Orchestration::ActionRun.last
 
         expect(action_run.agent_snapshot).to include(
           "model" => "mistral-small",
           "prompt" => "Classify incoming emails",
-          "tools" => [ "Records::TempFileTool" ],
-          "params" => { "mode" => "default", "limit" => 2 }
+          "tools" => [ "Records::TempFileTool" ]
         )
+        expect(action_run.agent_snapshot).not_to have_key("params")
+      end
+
+      it 'persists model, prompt, tools, and output_schema in the snapshot' do
+        described_class.new(pipeline_run).call
+        action_run = Orchestration::ActionRun.last
+
+        expect(action_run.agent_snapshot.keys).to contain_exactly("model", "prompt", "tools", "output_schema")
       end
 
       it 'does not mutate historical snapshots when the agent is later edited' do
@@ -279,12 +290,13 @@ RSpec.describe Orchestration::PipelineRunner do
 
     context 'with an executable action' do
       before do
+        Emails::FetchExecutor.input_schema # warm cache before stub is set up
         executable_action = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
         create(:orchestration_step_action, step: step1, action: executable_action, position: 1)
+        allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [] })
       end
 
       it 'calls the executable and stores its Hash output' do
-        allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [] })
         described_class.new(pipeline_run).call
         action_run = Orchestration::ActionRun.last
         expect(action_run.status).to eq("completed")
@@ -292,27 +304,9 @@ RSpec.describe Orchestration::PipelineRunner do
       end
 
       it 'does not persist an agent_snapshot for service-backed runs' do
-        allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [] })
         described_class.new(pipeline_run).call
         action_run = Orchestration::ActionRun.last
         expect(action_run.agent_snapshot).to be_nil
-      end
-    end
-
-    context 'with an executable action that has params' do
-      before do
-        ops = { "operations" => [ { "type" => "pick", "keys" => [ "emails" ] } ] }
-        ingest_action = create(:orchestration_action, :service_kind,
-                                agent_class: "Orchestration::IngestionExecutor",
-                                params: ops)
-        create(:orchestration_step_action, step: step1, action: ingest_action, position: 1)
-        allow(Orchestration::IngestionExecutor).to receive(:call).and_return({ "emails" => [] })
-      end
-
-      it 'forwards merged params to the executable' do
-        described_class.new(pipeline_run).call
-        expect(Orchestration::IngestionExecutor).to have_received(:call)
-          .with(anything, { "operations" => [ { "type" => "pick", "keys" => [ "emails" ] } ] })
       end
     end
 
@@ -336,6 +330,30 @@ RSpec.describe Orchestration::PipelineRunner do
         expect(action_run.status).to eq("failed")
         expect(action_run.error).to eq("agent exploded")
         expect(action_run.error_details).to be_nil
+      end
+    end
+
+    context 'when the action has an input_schema and resolved input is missing a required field' do
+      before do
+        input_schema = {
+          "type" => "object",
+          "properties" => { "emails" => { "type" => "array" } },
+          "required" => [ "emails" ]
+        }
+        action.agent.update!(input_schema: input_schema)
+        create(:orchestration_step_action, step: step1, action: action, position: 1)
+      end
+
+      it 'marks the action_run as failed with a schema validation error' do
+        described_class.new(pipeline_run).call
+        action_run = Orchestration::ActionRun.last
+        expect(action_run.status).to eq("failed")
+        expect(action_run.error).to match(/emails/)
+      end
+
+      it 'marks the pipeline_run as failed' do
+        described_class.new(pipeline_run).call
+        expect(pipeline_run.reload.status).to eq("failed")
       end
     end
 
@@ -487,7 +505,7 @@ RSpec.describe Orchestration::PipelineRunner do
                              output_schema: { "type" => "object", "required" => [ "result" ],
                                               "properties" => { "result" => { "type" => "array" } } })
         create(:orchestration_step_action, step: step1, action: action, position: 1)
-        generic_agent = instance_double(RubyLLM::Agent, chat: create(:chat), params: {})
+        generic_agent = instance_double(RubyLLM::Agent, chat: create(:chat))
         allow(RubyLLM::Agent).to receive(:new).and_return(generic_agent)
         allow(generic_agent).to receive_messages(with_schema: generic_agent, ask: instance_double(RubyLLM::Message, content: { "result" => "not an array" }))
       end
@@ -562,6 +580,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
     context 'when pipeline_run has initial_input' do
       before do
+        Emails::FetchExecutor.input_schema # warm cache before stub is set up
         pipeline_run.update!(initial_input: { "date" => "2026-04-03", "providers" => [ "gmail" ] })
         executable_action = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
         create(:orchestration_step_action, step: step1, action: executable_action, position: 1)
@@ -577,6 +596,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
     context 'when pipeline_run has an empty initial_input and a step maps from _initial' do
       before do
+        Emails::FetchExecutor.input_schema # warm cache before stub is set up
         pipeline_run.update!(initial_input: {})
         executable_action = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
         create(:orchestration_step_action,
@@ -587,13 +607,16 @@ RSpec.describe Orchestration::PipelineRunner do
 
       it 'seeds _initial even for an empty hash so explicit mappings resolve without UnknownOutputKey' do
         described_class.new(pipeline_run).call
-        expect(Emails::FetchExecutor).to have_received(:call).with({ "data" => {} }, anything)
+        expect(Emails::FetchExecutor).to have_received(:call).with(data: {})
         expect(pipeline_run.reload.status).to eq("completed")
       end
     end
 
     context 'with three steps where step 3 needs step 1 output (accumulation)' do
       before do
+        Emails::FetchExecutor.input_schema         # warm cache before stub is set up
+        Orchestration::IngestionExecutor.input_schema # warm cache before stub is set up
+
         step2 = create(:orchestration_step, pipeline: pipeline, name: "filter",  position: 2)
         step3 = create(:orchestration_step, pipeline: pipeline, name: "ingest",  position: 3)
 
@@ -602,20 +625,14 @@ RSpec.describe Orchestration::PipelineRunner do
         fetch_action  = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
         filter_action = create(:orchestration_action, agent: filter_agent_record)
         ingest_action = create(:orchestration_action, :service_kind,
-                                agent_class: "Orchestration::IngestionExecutor",
-                                params: {
-                                  "operations" => [
-                                    { "type" => "filter_by_ids", "source" => "emails",
-                                      "ids_from" => "result.results", "output" => "emails" },
-                                    { "type" => "pick", "keys" => [ "emails" ] }
-                                  ]
-                                })
+                                agent_class: "Orchestration::IngestionExecutor")
 
         create(:orchestration_step_action, step: step1, action: fetch_action,  position: 1)
         create(:orchestration_step_action, step: step2, action: filter_action, position: 1)
         create(:orchestration_step_action, step: step3, action: ingest_action, position: 1)
 
         allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [ { "id" => "e1" } ] })
+        allow(Orchestration::IngestionExecutor).to receive(:call).and_return({ "emails" => [] })
         allow(stub_agent).to receive(:ask)
           .and_return(instance_double(RubyLLM::Message, content: { "results" => [ { "id" => "e1" } ] }))
       end
@@ -908,66 +925,10 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
 
-    context 'when an agent action has step params alongside a resolved input' do # rubocop:disable RSpec/MultipleMemoizedHelpers
-      let(:classify_agent) { instance_double(RubyLLM::Agent, chat: create(:chat), params: {}) }
-
-      before do
-        fetch_action = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
-        classify_action = create(:orchestration_action, agent: create(:orchestration_agent, name: "Emails::ClassifyAgent"))
-        step2 = create(:orchestration_step, pipeline: pipeline, name: "classify", position: 2)
-
-        create(:orchestration_step_action, step: step1, action: fetch_action, position: 1, output_key: "fetch")
-        create(:orchestration_step_action,
-               step: step2, action: classify_action, position: 1,
-               input_mapping: { "emails" => { "from" => "fetch", "path" => "emails" } },
-               params: { "mode" => "strict", "limit" => 10 })
-
-        allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [ { "id" => "e1" } ] })
-        allow(RubyLLM::Agent).to receive(:new).and_return(classify_agent)
-        allow(classify_agent).to receive_messages(
-          with_model: classify_agent,
-          ask: instance_double(RubyLLM::Message, content: "done")
-        )
-      end
-
-      it 'passes step params merged with the resolved input to the agent ask call' do
-        described_class.new(pipeline_run).call
-        expect(classify_agent).to have_received(:ask)
-          .with(satisfy { |json| JSON.parse(json) == { "mode" => "strict", "limit" => 10, "emails" => [ { "id" => "e1" } ] } })
-      end
-    end
-
-    context 'when step params and input_mapping share a key' do # rubocop:disable RSpec/MultipleMemoizedHelpers
-      let(:classify_agent) { instance_double(RubyLLM::Agent, chat: create(:chat), params: {}) }
-
-      before do
-        fetch_action = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
-        classify_action = create(:orchestration_action, agent: create(:orchestration_agent, name: "Emails::ClassifyAgent"))
-        step2 = create(:orchestration_step, pipeline: pipeline, name: "classify", position: 2)
-
-        create(:orchestration_step_action, step: step1, action: fetch_action, position: 1, output_key: "fetch")
-        create(:orchestration_step_action,
-               step: step2, action: classify_action, position: 1,
-               input_mapping: { "emails" => { "from" => "fetch", "path" => "emails" } },
-               params: { "emails" => "PARAM_OVERRIDE", "limit" => 5 })
-
-        allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [ { "id" => "e1" } ] })
-        allow(RubyLLM::Agent).to receive(:new).and_return(classify_agent)
-        allow(classify_agent).to receive_messages(
-          with_model: classify_agent,
-          ask: instance_double(RubyLLM::Message, content: "done")
-        )
-      end
-
-      it 'input_mapping value wins over the param value on collision' do
-        described_class.new(pipeline_run).call
-        expect(classify_agent).to have_received(:ask)
-          .with(satisfy { |json| JSON.parse(json).fetch("emails") == [ { "id" => "e1" } ] })
-      end
-    end
-
     context 'when a step has two parallel actions with distinct output keys' do # rubocop:disable RSpec/MultipleMemoizedHelpers
       before do
+        Emails::FetchExecutor.input_schema # warm cache before stub is set up
+
         step2 = create(:orchestration_step, pipeline: pipeline, name: "consume", position: 2)
         fetch_a = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
         fetch_b = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
@@ -996,6 +957,8 @@ RSpec.describe Orchestration::PipelineRunner do
 
     context 'when an input_mapping references a sibling action in the same step' do # rubocop:disable RSpec/MultipleMemoizedHelpers
       before do
+        Emails::FetchExecutor.input_schema # warm cache before stub is set up
+
         step2 = create(:orchestration_step, pipeline: pipeline, name: "process", position: 2)
         sibling_a = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
         sibling_b = create(:orchestration_action, agent: action.agent)
@@ -1049,6 +1012,8 @@ RSpec.describe Orchestration::PipelineRunner do
 
     context 'when input_mapping references a missing path' do # rubocop:disable RSpec/MultipleMemoizedHelpers
       before do
+        Emails::FetchExecutor.input_schema # warm cache before stub is set up
+
         fetch_action = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
         classify_action = create(:orchestration_action, agent: action.agent)
         step2 = create(:orchestration_step, pipeline: pipeline, name: "classify", position: 2)
@@ -1073,6 +1038,9 @@ RSpec.describe Orchestration::PipelineRunner do
 
     context 'when filter agent returns a bare array (regression: Run #58 TypeError)' do
       before do
+        Emails::FetchExecutor.input_schema         # warm cache before stub is set up
+        Orchestration::IngestionExecutor.input_schema # warm cache before stub is set up
+
         step2 = create(:orchestration_step, pipeline: pipeline, name: "filter",  position: 2)
         step3 = create(:orchestration_step, pipeline: pipeline, name: "ingest",  position: 3)
 
@@ -1081,18 +1049,18 @@ RSpec.describe Orchestration::PipelineRunner do
         fetch_action  = create(:orchestration_action, :service_kind, agent_class: "Emails::FetchExecutor")
         filter_action = create(:orchestration_action, agent: filter_agent_record)
         ingest_action = create(:orchestration_action, :service_kind,
-                                agent_class: "Orchestration::IngestionExecutor",
-                                params: {
-                                  "operations" => [
-                                    { "type" => "filter_by_ids", "source" => "emails",
-                                      "ids_from" => "result.results", "output" => "emails" },
-                                    { "type" => "pick", "keys" => [ "emails" ] }
-                                  ]
-                                })
+                                agent_class: "Orchestration::IngestionExecutor")
+
+        pipeline_run.update!(initial_input: { "operations" => [
+          { "type" => "filter_by_ids", "source" => "emails",
+            "ids_from" => "result.results", "output" => "emails" },
+          { "type" => "pick", "keys" => [ "emails" ] }
+        ] })
 
         create(:orchestration_step_action, step: step1, action: fetch_action,  position: 1)
         create(:orchestration_step_action, step: step2, action: filter_action, position: 1)
-        create(:orchestration_step_action, step: step3, action: ingest_action, position: 1)
+        create(:orchestration_step_action, step: step3, action: ingest_action, position: 1,
+               input_mapping: { "operations" => { "from" => "_initial", "path" => "operations" } })
 
         allow(Emails::FetchExecutor).to receive(:call).and_return({ "emails" => [ { "id" => "e1" } ] })
         allow(stub_agent).to receive(:ask)

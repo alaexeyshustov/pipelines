@@ -10,7 +10,6 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
       model: "mistral-large-latest",
       prompt: "Classify this email",
       tools: [ Records::TempFileTool ],
-      params: { "mode" => "fast" },
       output_schema: { "type" => "object" }
     )
   end
@@ -53,7 +52,7 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
     context 'when all policy fields are blank' do
       let(:policy) do
         Orchestration::AgentResolutionPolicy::Result.new(
-          model: nil, prompt: nil, tools: [], params: {}, output_schema: nil
+          model: nil, prompt: nil, tools: [], output_schema: nil
         )
       end
 

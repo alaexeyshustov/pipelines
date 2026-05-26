@@ -70,41 +70,6 @@ RSpec.describe Orchestration::InputMappingUpdater do
       end
     end
 
-    context "when the mapping triggers a validator warning (param collision)" do
-      before do
-        action.update!(params: { "email" => "default@example.com" })
-        step_action.update!(params: { "email" => "override@example.com" })
-      end
-
-      it "returns a saved result" do
-        result = described_class.call(
-          step_action: step_action,
-          input_mapping: { "email" => { "from" => "_initial" } }
-        )
-
-        expect(result.saved).to be true
-      end
-
-      it "populates warnings on the result" do
-        result = described_class.call(
-          step_action: step_action,
-          input_mapping: { "email" => { "from" => "_initial" } }
-        )
-
-        expect(result.warnings).not_to be_empty
-        expect(result.warnings.first.code).to eq(:param_collision)
-      end
-
-      it "persists the mapping to the database" do
-        described_class.call(
-          step_action: step_action,
-          input_mapping: { "email" => { "from" => "_initial" } }
-        )
-
-        expect(step_action.reload.input_mapping).to have_key("email")
-      end
-    end
-
     context "when the input_mapping is empty" do
       it "saves and returns empty errors and warnings" do
         result = described_class.call(step_action: step_action, input_mapping: {})

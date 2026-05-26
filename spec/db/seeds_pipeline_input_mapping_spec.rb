@@ -38,8 +38,8 @@ RSpec.describe "Seeds: pipeline 2 step input_mapping" do # rubocop:disable RSpec
   describe "Filter Emails (step 3)" do
     subject(:sa) { step_action_for("Filter Emails") }
 
-    it "has topic param set to job applications" do
-      expect(sa.params).to include("topic" => "job applications")
+    it "has topic set as static value in input_mapping" do
+      expect(sa.input_mapping).to include("topic" => { "value" => "job applications" })
     end
 
     it "maps emails from classify_emails results" do

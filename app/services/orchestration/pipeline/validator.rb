@@ -19,6 +19,7 @@ module Orchestration
           warnings = [] # : Array[Issue]
 
           validate_input_mapping(sa, known_schemas, errors, warnings)
+          validate_input_schema_coverage(sa, errors)
 
           results << StepResult.new(
             step_action_id: sa.id,
@@ -46,6 +47,7 @@ module Orchestration
 
         mapping.each do |mapping_key, spec|
           next unless spec.is_a?(Hash)
+          next if spec.key?("value")
 
           from = spec["from"]
           path = spec["path"]
@@ -61,16 +63,26 @@ module Orchestration
               path: nil
             )
           end
+        end
+      end
 
-          if merge_params(step_action).key?(mapping_key)
-            warnings << Issue.new(
-              code: :param_collision,
-              message: "key #{mapping_key.inspect} appears in both input_mapping and params; input_mapping wins at runtime",
-              mapping_key: mapping_key,
-              from: from,
-              path: nil
-            )
-          end
+      def validate_input_schema_coverage(step_action, errors)
+        schema = step_action.action.input_schema
+        return unless schema
+
+        required_keys = Array(schema["required"])
+        covered_keys  = (step_action.input_mapping || {}).keys
+
+        required_keys.each do |key|
+          next if covered_keys.include?(key)
+
+          errors << Issue.new(
+            code: :missing_required_input,
+            message: "input_schema requires #{key.inspect} but input_mapping has no entry for it",
+            mapping_key: key,
+            from: nil,
+            path: nil
+          )
         end
       end
 
@@ -110,10 +122,6 @@ module Orchestration
         end
 
         true
-      end
-
-      def merge_params(step_action)
-        (step_action.action.params || {}).merge(step_action.params || {})
       end
     end
   end

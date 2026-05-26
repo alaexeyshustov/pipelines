@@ -16,9 +16,6 @@
             <% @step.step_actions.zip(detach_buttons).each do |sa, btn| %>
               <div class="flex items-center gap-1 bg-gray-100 rounded-lg px-2 py-1 text-xs">
                 <span class="font-medium text-gray-700"><%= sa.action.name %></span>
-                <% if sa.params.present? %>
-                  <span class="text-gray-500 font-mono"><%= sa.params.to_json %></span>
-                <% end %>
                 <%= btn %>
               </div>
             <% end %>
@@ -65,9 +62,6 @@
             { include_blank: "— attach action —" },
             name: "orchestration_step_action[action_id]",
             class: "flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
-      <%= f.text_field :params_override, placeholder: '{"key":"val"} optional',
-            name: "orchestration_step_action[params]",
-            class: "w-40 border border-gray-300 rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
       <%= f.submit "Attach", class: "px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors cursor-pointer" %>
     <% end %>
   </div>

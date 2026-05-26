@@ -3,16 +3,14 @@ module Orchestration
     include Orchestration::Executable
     extend Records::ModelResolver
 
-    def self.call(input, params = {})
-      table         = params.fetch("table")
-      column_name   = params.fetch("column_name")
-      column_values = if (path = params["column_values_from"])
-        Array(dig_path(input, path))
-      else
-        Array(params.fetch("column_values"))
-      end
-      columns = params["columns"]
+    input_schema(
+      table:         { "type" => "string" },
+      column_name:   { "type" => "string" },
+      column_values: { "type" => "array" },
+      columns:       { "type" => "array" }
+    )
 
+    def self.call(table:, column_name:, column_values:, columns: nil, **)
       model   = resolve_model(table)
       records = model.where(column_name => column_values)
       rows    = records.map do |record|
@@ -25,17 +23,6 @@ module Orchestration
       # steep:ignore:end
     rescue Records::ModelNotFound => error
       raise ArgumentError, error.message
-    end
-
-    class << self
-      private
-
-      def dig_path(hash, path)
-        path.split(".").reduce(hash) do |node, key|
-          break unless node.is_a?(Hash)
-          node[key]
-        end
-      end
     end
   end
 end

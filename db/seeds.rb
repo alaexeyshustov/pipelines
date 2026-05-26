@@ -72,30 +72,18 @@ CLASSIFY_EMAILS_INPUT_MAPPING = {
   "emails" => { "from" => "fetch_emails", "path" => "emails" }
 }.freeze
 
-FILTER_EMAILS_STEP_PARAMS = {
-  "topic" => "job applications"
-}.freeze
-
 FILTER_EMAILS_INPUT_MAPPING = {
+  "topic"  => { "value" => "job applications" },
   "emails" => { "from" => "classify_emails", "path" => "results" }
 }.freeze
 
 INGEST_EMAILS_INPUT_MAPPING = {
-  "emails"  => { "from" => "fetch_emails",  "path" => "emails" },
-  "results" => { "from" => "filter_emails", "path" => "results" }
-}.freeze
-
-INGEST_EMAILS_PARAMS = {
-  "operations" => [
+  "emails"     => { "from" => "fetch_emails",  "path" => "emails" },
+  "results"    => { "from" => "filter_emails", "path" => "results" },
+  "operations" => { "value" => [
     { "type" => "filter_by_ids", "source" => "emails", "ids_from" => "results", "output" => "emails" },
     { "type" => "pick", "keys" => [ "emails" ] }
-  ]
-}.freeze
-
-QUERY_EMAIL_RECORDS_PARAMS = {
-  "table"              => "application_mails",
-  "column_name"        => "id",
-  "column_values_from" => "stored_ids"
+  ] }
 }.freeze
 
 MAP_EMAILS_INPUT_MAPPING = {
@@ -103,36 +91,29 @@ MAP_EMAILS_INPUT_MAPPING = {
 }.freeze
 
 STORE_EMAILS_INPUT_MAPPING = {
+  "label"  => { "value" => "applications" },
+  "table"  => { "value" => "application_mails" },
   "emails" => { "from" => "map_emails", "path" => "result.emails" }
 }.freeze
 
-STORE_EMAILS_STEP_PARAMS = {
-  "label" => "applications",
-  "table" => "application_mails"
-}.freeze
-
 QUERY_EMAIL_RECORDS_INPUT_MAPPING = {
-  "stored_ids" => { "from" => "store_emails", "path" => "result.ids" }
-}.freeze
-
-NORMALIZE_EMAILS_STEP_PARAMS = {
-  "destination_table"    => "application_mails",
-  "columns_to_normalize" => [ "company", "job_title" ]
+  "table"         => { "value" => "application_mails" },
+  "column_name"   => { "value" => "id" },
+  "column_values" => { "from" => "store_emails", "path" => "result.ids" }
 }.freeze
 
 NORMALIZE_EMAILS_INPUT_MAPPING = {
+  "destination_table"    => { "value" => "application_mails" },
+  "columns_to_normalize" => { "value" => [ "company", "job_title" ] },
   "records_to_normalize" => { "from" => "query_email_records", "path" => "application_mails" }
 }.freeze
 
-RECONCILE_EMAILS_STEP_PARAMS = {
-  "destination_table"  => "interviews",
-  "matching_columns"   => [ "company", "job_title" ],
-  "statuses"           => [ "pending_reply", "having_interviews", "rejected", "offer_received" ],
-  "initial_status"     => "pending_reply"
-}.freeze
-
 RECONCILE_EMAILS_INPUT_MAPPING = {
-  "emails_to_reconcile" => { "from" => "query_email_records", "path" => "application_mails" }
+  "destination_table"    => { "value" => "interviews" },
+  "matching_columns"     => { "value" => [ "company", "job_title" ] },
+  "statuses"             => { "value" => [ "pending_reply", "having_interviews", "rejected", "offer_received" ] },
+  "initial_status"       => { "value" => "pending_reply" },
+  "emails_to_reconcile"  => { "from" => "query_email_records", "path" => "application_mails" }
 }.freeze
 
 # Agent runtime configs — model, tools, and prompt.
@@ -317,16 +298,16 @@ AGENT_DEFINITIONS = {
 }.freeze
 
 steps = [
-  { name: "Fetch Emails",                   kind: :service, agent_class: "Emails::FetchExecutor",                                          sa_input_mapping: FETCH_EMAILS_INPUT_MAPPING     },
-  { name: "Classify Emails",                kind: :agent,   agent_name: "Emails::ClassifyAgent",                                           sa_input_mapping: CLASSIFY_EMAILS_INPUT_MAPPING  },
-  { name: "Filter Emails",                  kind: :agent,   agent_name: "Emails::FilterAgent",  sa_params: FILTER_EMAILS_STEP_PARAMS,      sa_input_mapping: FILTER_EMAILS_INPUT_MAPPING    },
-  { name: "Ingest Emails",                  kind: :service, agent_class: "Orchestration::IngestionExecutor",  params: INGEST_EMAILS_PARAMS, sa_input_mapping: INGEST_EMAILS_INPUT_MAPPING   },
-  { name: "Map Emails",                     kind: :agent,   agent_name: "Emails::MappingAgent",                                            sa_input_mapping: MAP_EMAILS_INPUT_MAPPING       },
-  { name: "Store Emails",                   kind: :agent,   agent_name: "Records::StoreAgent",   sa_params: STORE_EMAILS_STEP_PARAMS,      sa_input_mapping: STORE_EMAILS_INPUT_MAPPING     },
-  { name: "Query Email Records",            kind: :service, agent_class: "Orchestration::QueryExecutor",  params: QUERY_EMAIL_RECORDS_PARAMS, sa_input_mapping: QUERY_EMAIL_RECORDS_INPUT_MAPPING },
-  { name: "Normalize Emails",               kind: :agent,   agent_name: "Records::NormalizeAgent",  sa_params: NORMALIZE_EMAILS_STEP_PARAMS, sa_input_mapping: NORMALIZE_EMAILS_INPUT_MAPPING },
-  { name: "Reconcile Emails to Interviews", kind: :agent,   agent_name: "Records::ReconcileAgent",  sa_params: RECONCILE_EMAILS_STEP_PARAMS, sa_input_mapping: RECONCILE_EMAILS_INPUT_MAPPING },
-  { name: "Export to Gist",                 kind: :service, agent_class: "Interviews::GistExportExecutor",                                 sa_input_mapping: {}                             }
+  { name: "Fetch Emails",                   kind: :service, agent_class: "Emails::FetchExecutor",              sa_input_mapping: FETCH_EMAILS_INPUT_MAPPING    },
+  { name: "Classify Emails",                kind: :agent,   agent_name: "Emails::ClassifyAgent",               sa_input_mapping: CLASSIFY_EMAILS_INPUT_MAPPING },
+  { name: "Filter Emails",                  kind: :agent,   agent_name: "Emails::FilterAgent",                 sa_input_mapping: FILTER_EMAILS_INPUT_MAPPING   },
+  { name: "Ingest Emails",                  kind: :service, agent_class: "Orchestration::IngestionExecutor",   sa_input_mapping: INGEST_EMAILS_INPUT_MAPPING   },
+  { name: "Map Emails",                     kind: :agent,   agent_name: "Emails::MappingAgent",                sa_input_mapping: MAP_EMAILS_INPUT_MAPPING      },
+  { name: "Store Emails",                   kind: :agent,   agent_name: "Records::StoreAgent",                 sa_input_mapping: STORE_EMAILS_INPUT_MAPPING    },
+  { name: "Query Email Records",            kind: :service, agent_class: "Orchestration::QueryExecutor",       sa_input_mapping: QUERY_EMAIL_RECORDS_INPUT_MAPPING },
+  { name: "Normalize Emails",               kind: :agent,   agent_name: "Records::NormalizeAgent",             sa_input_mapping: NORMALIZE_EMAILS_INPUT_MAPPING },
+  { name: "Reconcile Emails to Interviews", kind: :agent,   agent_name: "Records::ReconcileAgent",             sa_input_mapping: RECONCILE_EMAILS_INPUT_MAPPING },
+  { name: "Export to Gist",                 kind: :service, agent_class: "Interviews::GistExportExecutor",     sa_input_mapping: {}                             }
 ]
 
 Orchestration::Action.where(name: "Merge Email Records").destroy_all
@@ -347,7 +328,6 @@ action_records = steps.map do |attrs|
     a.kind        = attrs[:kind]
     a.agent       = agent_record
     a.agent_class = attrs[:agent_class]
-    a.params      = attrs[:params]
     a.save!
   end
 end
@@ -391,7 +371,6 @@ steps.each_with_index do |step_attrs, index|
     action:        action,
     position:      1,
     output_key:    action.name.parameterize(separator: "_"),
-    params:        step_attrs[:sa_params],
     input_mapping: step_attrs[:sa_input_mapping]
   )
 end

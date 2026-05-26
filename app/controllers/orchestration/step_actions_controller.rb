@@ -6,11 +6,9 @@ module Orchestration
     before_action :set_step
 
     def create
-      raw = params.dig(:orchestration_step_action, :params)
       form = Orchestration::StepActionCreateForm.new(
         step: @step,
-        action_id: params.dig(:orchestration_step_action, :action_id),
-        params_json: raw
+        action_id: params.dig(:orchestration_step_action, :action_id)
       )
 
       if form.save

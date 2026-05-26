@@ -71,6 +71,9 @@ module Orchestration
       action_run.update!(status: "running", started_at: Time.current)
       action = action_run.step_action.action
       policy = action.agent? ? resolve_policy(action_run) : nil
+
+      validate_input_schema!(action_run)
+
       execution = run_agent(action_run, policy: policy)
       if action.agent?
         raise ArgumentError, "policy missing for agent action" unless policy
@@ -79,6 +82,13 @@ module Orchestration
       action_run.update!(status: "completed", output: execution[:output], error: nil, error_details: nil, finished_at: Time.current)
     rescue StandardError => error
       handle_action_failure(action_run, error, raw_content: execution&.dig(:raw_content))
+    end
+
+    def validate_input_schema!(action_run)
+      schema = action_run.step_action.action.input_schema
+      return unless schema
+
+      SchemaValidator.new(schema).validate!(action_run.input || {})
     end
 
     def run_agent(action_run, policy: nil)
@@ -94,11 +104,10 @@ module Orchestration
           model: policy.model,
           prompt: policy.prompt,
           tools: policy.tools&.map(&:to_s) || [],
-          params: policy.params,
           output_schema: policy.output_schema
         }
         action_run.update_columns(chat_id: chat_id, agent_snapshot: snapshot)
-        result = agent.ask(policy.params.merge(input).to_json)
+        result = agent.ask(input.to_json)
         output = parse_content(result.content, policy.output_schema.present?)
         normalized_output = policy.output_schema.present? ? output : { "result" => output }
         { output: normalized_output, raw_content: result.content }
@@ -106,8 +115,7 @@ module Orchestration
         klass = action.agent_class&.constantize
         raise ArgumentError, "Service class not found: #{action.agent_class}" unless klass
 
-        params = (action.params || {}).merge(action_run.step_action.params || {})
-        { output: klass.call(input, params), raw_content: nil }
+        { output: klass.call(**input.transform_keys(&:to_sym)), raw_content: nil }
       end
     end
 
@@ -116,8 +124,7 @@ module Orchestration
       AgentResolutionPolicy.call(
         action: action,
         pipeline_model: @pipeline_run.pipeline.model,
-        prompt_override: prompt_for(action.agent&.name),
-        step_params: action_run.step_action.params
+        prompt_override: prompt_for(action.agent&.name)
       )
     end
 

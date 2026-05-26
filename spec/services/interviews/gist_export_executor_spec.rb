@@ -11,11 +11,11 @@ RSpec.describe Interviews::GistExportExecutor do
       allow(Interviews::GistExportService).to receive(:new).with(ids: nil, gist_id: gist_id).and_return(service)
       allow(service).to receive(:call).and_return(result)
 
-      output = described_class.call({ "gist_id" => gist_id })
+      output = described_class.call(gist_id: gist_id)
       expect(output).to eq({ "ok" => true, "message" => "Success" })
     end
 
-    it 'calls GistExportService with gist_id from ENV if not in input' do
+    it 'falls back to ENV when gist_id is not provided' do
       allow(ENV).to receive(:fetch).with("GIST_ID", nil).and_return(gist_id)
       service = instance_double(Interviews::GistExportService)
       result = Interviews::GistExportService::Result.new(ok: true, message: 'Success')
@@ -23,15 +23,23 @@ RSpec.describe Interviews::GistExportExecutor do
       allow(Interviews::GistExportService).to receive(:new).with(ids: nil, gist_id: gist_id).and_return(service)
       allow(service).to receive(:call).and_return(result)
 
-      output = described_class.call({})
+      output = described_class.call
       expect(output).to eq({ "ok" => true, "message" => "Success" })
     end
 
-    it 'returns skipped if gist_id is missing' do
+    it 'returns skipped when gist_id is absent and ENV unset' do
       allow(ENV).to receive(:fetch).with("GIST_ID", nil).and_return(nil)
 
-      output = described_class.call({})
+      output = described_class.call
       expect(output).to eq({ "skipped" => true, "reason" => "GIST_ID not configured" })
+    end
+
+    describe '.input_schema' do
+      it 'declares gist_id as an optional string' do
+        schema = described_class.input_schema
+        expect(schema["properties"]["gist_id"]["type"]).to eq("string")
+        expect(schema["required"]).to be_nil
+      end
     end
   end
 end

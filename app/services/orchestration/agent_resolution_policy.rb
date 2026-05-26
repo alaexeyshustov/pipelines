@@ -1,16 +1,15 @@
 module Orchestration
   class AgentResolutionPolicy
-    Result = Data.define(:model, :prompt, :tools, :params, :output_schema)
+    Result = Data.define(:model, :prompt, :tools, :output_schema)
 
-    def self.call(action:, pipeline_model: nil, prompt_override: nil, step_params: nil, tool_classes: nil)
-      new(action:, pipeline_model:, prompt_override:, step_params:, tool_classes:).call
+    def self.call(action:, pipeline_model: nil, prompt_override: nil, tool_classes: nil)
+      new(action:, pipeline_model:, prompt_override:, tool_classes:).call
     end
 
-    def initialize(action:, pipeline_model: nil, prompt_override: nil, step_params: nil, tool_classes: nil)
+    def initialize(action:, pipeline_model: nil, prompt_override: nil, tool_classes: nil)
       @action = action
       @pipeline_model = pipeline_model
       @prompt_override = prompt_override
-      @step_params = step_params || {}
       @tool_classes = tool_classes
     end
 
@@ -19,7 +18,6 @@ module Orchestration
         model: resolved_model,
         prompt: resolved_prompt,
         tools: resolved_tools,
-        params: resolved_params,
         output_schema: resolved_output_schema
       )
     end
@@ -56,35 +54,8 @@ module Orchestration
       end
     end
 
-    def resolved_params
-      normalized_hash(agent_record.params, field_name: "agent params")
-        .merge(normalized_hash(@step_params, field_name: "step params"))
-    end
-
     def resolved_output_schema
       agent_record.output_schema.presence
-    end
-
-    def normalized_hash(value, field_name:)
-      return {} if value.nil?
-
-      parsed =
-        case value
-        when Hash
-          value
-        when String
-          return {} if value.blank?
-
-          JSON.parse(value)
-        else
-          raise ArgumentError, "#{field_name} must be a Hash or JSON object string, got #{value.class}"
-        end
-
-      return parsed.transform_keys(&:to_s) if parsed.is_a?(Hash)
-
-      raise ArgumentError, "#{field_name} must be a JSON object, got #{parsed.class}"
-    rescue JSON::ParserError => e
-      raise ArgumentError, "#{field_name} must be valid JSON: #{e.message}"
     end
   end
 end

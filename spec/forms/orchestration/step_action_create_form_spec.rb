@@ -45,13 +45,6 @@ RSpec.describe Orchestration::StepActionCreateForm do
       end
     end
 
-    context "with valid JSON params" do
-      it "parses and stores them" do
-        build_form(params_json: '{"threshold": 0.8}').save
-        expect(step.step_actions.last.params).to eq("threshold" => 0.8)
-      end
-    end
-
     context "with an invalid action_id" do
       it "returns false" do
         expect(build_form(action_id: 0).save).to be false
@@ -65,22 +58,6 @@ RSpec.describe Orchestration::StepActionCreateForm do
         form = build_form(action_id: 0)
         form.save
         expect(form.errors.full_messages).to include("Invalid action.")
-      end
-    end
-
-    context "with invalid JSON in params" do
-      it "returns false" do
-        expect(build_form(params_json: "{not json}").save).to be false
-      end
-
-      it "does not create a step_action" do
-        expect { build_form(params_json: "{not json}").save }.not_to change(Orchestration::StepAction, :count)
-      end
-
-      it "adds an error message about valid JSON" do
-        form = build_form(params_json: "{not json}")
-        form.save
-        expect(form.errors.full_messages.first).to include("valid JSON")
       end
     end
 
