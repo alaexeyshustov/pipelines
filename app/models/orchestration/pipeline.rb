@@ -8,8 +8,8 @@ module Orchestration
     validates :name, presence: true
     validate :cron_expression_parseable, if: -> { cron_expression.present? }
 
-    def validate_steps
-      Pipeline::Validator.call(self)
+    def validate_steps(index: nil)
+      Pipeline::Validator.call(self, index:)
     end
 
     def next_run_at(from: Time.current)

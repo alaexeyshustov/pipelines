@@ -1,5 +1,5 @@
 module Orchestration
   class StepsListComponent < ViewComponent::Base
-    def initialize: (pipeline: Pipeline, steps: untyped, actions: untyped) -> void
+    def initialize: (pipeline: Pipeline, steps: untyped, actions: untyped, index: Orchestration::UpstreamSchemaIndex) -> void
   end
 end

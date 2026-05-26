@@ -1,10 +1,11 @@
 require 'rails_helper'
 
 RSpec.describe Orchestration::Pipeline::Validator do
-  subject(:validator) { described_class.new(pipeline) }
+  subject(:validator) { described_class.new(pipeline, index) }
 
   let(:pipeline) { create(:orchestration_pipeline) }
   let(:step)     { create(:orchestration_step, pipeline: pipeline, position: 1) }
+  let(:index)    { Orchestration::UpstreamSchemaIndex.build(pipeline) }
 
   describe '.call' do
     it 'delegates to an instance and returns results' do
