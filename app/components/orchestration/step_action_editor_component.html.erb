@@ -13,4 +13,11 @@
       <% end %>
     </ul>
   <% end %>
+  <% if validation_warnings.any? %>
+    <ul class="mt-1 ml-4 space-y-0.5">
+      <% validation_warnings.each do |warn| %>
+        <li class="text-xs text-amber-600">○ <%= warn.message %></li>
+      <% end %>
+    </ul>
+  <% end %>
 </div>

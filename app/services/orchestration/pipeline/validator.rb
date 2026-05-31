@@ -19,7 +19,7 @@ module Orchestration
           warnings = [] # : Array[Issue]
 
           validate_input_mapping(sa, known_schemas, errors, warnings)
-          validate_input_schema_coverage(sa, errors)
+          validate_input_schema_coverage(sa, warnings)
 
           results << StepResult.new(
             step_action_id: sa.id,
@@ -66,7 +66,7 @@ module Orchestration
         end
       end
 
-      def validate_input_schema_coverage(step_action, errors)
+      def validate_input_schema_coverage(step_action, warnings)
         schema = step_action.action.input_schema
         return unless schema
 
@@ -76,7 +76,7 @@ module Orchestration
         required_keys.each do |key|
           next if covered_keys.include?(key)
 
-          errors << Issue.new(
+          warnings << Issue.new(
             code: :missing_required_input,
             message: "input_schema requires #{key.inspect} but input_mapping has no entry for it",
             mapping_key: key,
@@ -87,7 +87,7 @@ module Orchestration
       end
 
       def validate_path_vs_schema(from, path, mapping_key, upstream_schema, errors)
-        return if path.nil? || upstream_schema.nil?
+        return if path.blank? || upstream_schema.nil?
 
         return if path_valid_in_schema?(path, upstream_schema)
 

@@ -34,7 +34,12 @@ module Orchestration
     end
 
     def build_mapping
-      mapping = @base_mapping.dup
+      mapping = @base_mapping
+        .reject { |_k, spec| spec.is_a?(Hash) && spec["_destroy"] == "1" }
+        .transform_values do |spec|
+          next spec unless spec.is_a?(Hash)
+          spec.except("_destroy").reject { |k, v| k == "path" && v.blank? }
+        end
       if @new_key && @new_from
         mapping[@new_key] = { "from" => @new_from, "path" => @new_path }.compact
       end

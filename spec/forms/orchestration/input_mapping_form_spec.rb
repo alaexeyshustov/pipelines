@@ -20,7 +20,7 @@ RSpec.describe Orchestration::InputMappingForm do
 
   describe "#save" do
     context "with a valid input_mapping" do
-      let(:mapping) { { "email" => { "from" => "_initial", "path" => "" } } }
+      let(:mapping) { { "email" => { "from" => "_initial", "path" => "inbox" } } }
 
       it "returns true" do
         expect(build_form(input_mapping: mapping).save).to be true
@@ -28,13 +28,26 @@ RSpec.describe Orchestration::InputMappingForm do
 
       it "saves the input_mapping to the step_action" do
         build_form(input_mapping: mapping).save
-        expect(step_action.reload.input_mapping).to eq("email" => { "from" => "_initial", "path" => "" })
+        expect(step_action.reload.input_mapping).to eq("email" => { "from" => "_initial", "path" => "inbox" })
       end
 
       it "exposes the InputMappingUpdater result" do
         form = build_form(input_mapping: mapping)
         form.save
         expect(form.result).to respond_to(:saved)
+      end
+    end
+
+    context "when editing an existing entry and the path select submits an empty string" do
+      let(:mapping) { { "email" => { "from" => "_initial", "path" => "" } } }
+
+      it "returns true (not blocked by the blank path)" do
+        expect(build_form(input_mapping: mapping).save).to be true
+      end
+
+      it "strips the empty path so the stored mapping has no path key" do
+        build_form(input_mapping: mapping).save
+        expect(step_action.reload.input_mapping).to eq("email" => { "from" => "_initial" })
       end
     end
 
@@ -70,6 +83,34 @@ RSpec.describe Orchestration::InputMappingForm do
         original = step_action.input_mapping
         build_form(new_key: "Bad Key!", new_from: "_initial").save
         expect(step_action.reload.input_mapping).to eq(original)
+      end
+    end
+
+    context "when an entry has _destroy=1" do
+      let(:mapping) do
+        {
+          "email" => { "from" => "_initial" },
+          "topic" => { "from" => "_initial", "_destroy" => "1" }
+        }
+      end
+
+      it "returns true" do
+        expect(build_form(input_mapping: mapping).save).to be true
+      end
+
+      it "removes the destroyed entry from the saved mapping" do
+        build_form(input_mapping: mapping).save
+        expect(step_action.reload.input_mapping).not_to have_key("topic")
+      end
+
+      it "preserves the remaining entries" do
+        build_form(input_mapping: mapping).save
+        expect(step_action.reload.input_mapping).to have_key("email")
+      end
+
+      it "does not persist the _destroy key on survivors" do
+        build_form(input_mapping: mapping).save
+        expect(step_action.reload.input_mapping["email"]).not_to have_key("_destroy")
       end
     end
 
