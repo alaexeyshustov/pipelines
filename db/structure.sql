@@ -137,12 +137,12 @@ FOREIGN KEY ("agent_id")
 );
 CREATE INDEX "index_orchestration_actions_on_agent_id" ON "orchestration_actions" ("agent_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_orchestration_actions_on_agent_class" ON "orchestration_actions" ("agent_class") /*application='ApplicationPipeline'*/;
-CREATE TABLE IF NOT EXISTS "orchestration_step_actions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "step_id" integer NOT NULL, "action_id" integer NOT NULL, "position" integer NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "input_mapping" json, "output_key" varchar NOT NULL, CONSTRAINT "fk_rails_5ad029fcf8"
-FOREIGN KEY ("action_id")
-  REFERENCES "orchestration_actions" ("id")
-, CONSTRAINT "fk_rails_f260603cab"
+CREATE TABLE IF NOT EXISTS "orchestration_step_actions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "step_id" integer NOT NULL, "action_id" integer NOT NULL, "position" integer NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "input_mapping" json, "output_key" varchar NOT NULL, CONSTRAINT "fk_rails_f260603cab"
 FOREIGN KEY ("step_id")
   REFERENCES "orchestration_steps" ("id")
+, CONSTRAINT "fk_rails_5ad029fcf8"
+FOREIGN KEY ("action_id")
+  REFERENCES "orchestration_actions" ("id")
 );
 CREATE UNIQUE INDEX "index_orchestration_step_actions_on_step_id_and_output_key" ON "orchestration_step_actions" ("step_id", "output_key") /*application='ApplicationPipeline'*/;
 CREATE UNIQUE INDEX "index_orchestration_step_actions_on_step_id_and_position" ON "orchestration_step_actions" ("step_id", "position") /*application='ApplicationPipeline'*/;
