@@ -1,0 +1,7 @@
+module Orchestration
+  class AgentToolsComponent < ViewComponent::Base
+    def initialize: (available_tools: Array[String], selected: Array[String] | nil, ?errors: Array[String]) -> void
+    def grouped_tools: () -> Hash[String, Array[String]]
+    def selected?: (String tool) -> bool
+  end
+end

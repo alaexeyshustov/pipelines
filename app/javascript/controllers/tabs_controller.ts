@@ -26,7 +26,7 @@ export default class TabsController extends Controller {
     else return
     event.preventDefault()
     this.indexValue = i
-    ;(tabs[i] as HTMLElement).focus()
+    tabs[i].focus()
   }
 
   indexValueChanged() {
