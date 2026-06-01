@@ -92,7 +92,7 @@ RSpec.describe "Orchestration::StepActions" do
         expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
         follow_redirect!
         expect(response.body).to include("Mapping saved")
-        expect(step_action.reload.input_mapping).to eq("email" => { "from" => "_initial", "path" => "" })
+        expect(step_action.reload.input_mapping).to eq("email" => { "from" => "_initial" })
       end
 
       it "appends a new mapping entry when new_key and new_from are provided" do

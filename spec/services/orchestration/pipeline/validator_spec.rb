@@ -168,8 +168,7 @@ RSpec.describe Orchestration::Pipeline::Validator do
         result = validator.call.first
         warning = result.warnings.find { |w| w.code == :missing_required_input }
         expect(warning).not_to be_nil
-        expect(warning.message).to include("topic")
-        expect(warning.mapping_key).to eq("topic")
+        expect(warning).to have_attributes(message: include("topic"), mapping_key: "topic")
         expect(result.errors.none? { |e| e.code == :missing_required_input }).to be true
       end
 

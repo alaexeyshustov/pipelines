@@ -8,5 +8,9 @@ module Orchestration
       @row          = row
       @from_options = from_options
     end
+
+    def path_text_field?
+      @row.path_opts.nil?
+    end
   end
 end
