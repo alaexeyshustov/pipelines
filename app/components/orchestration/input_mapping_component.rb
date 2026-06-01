@@ -23,14 +23,32 @@ module Orchestration
       schema = @upstream_schemas[from_key]
       return nil if schema.nil?
 
-      properties = schema["properties"]
-      return nil if properties.blank?
+      paths = schema_paths(schema)
+      return nil if paths.empty?
 
-      properties.keys.map { |k| [ k, k ] }
+      paths.map { |p| [ p, p ] }
     end
 
     def mapping
       @step_action.input_mapping || {}
+    end
+
+    private
+
+    def schema_paths(schema, prefix = "")
+      if schema["properties"].present? || schema["type"] == "object"
+        (schema["properties"] || {}).flat_map do |key, child|
+          full = prefix.empty? ? key : "#{prefix}.#{key}"
+          [ full ] + schema_paths(child, full)
+        end
+      elsif schema["type"] == "array"
+        items = schema["items"]
+        return [] if items.nil?
+        full = prefix.empty? ? "0" : "#{prefix}.0"
+        [ full ] + schema_paths(items, full)
+      else
+        []
+      end
     end
 
     def mapping_rows

@@ -164,16 +164,17 @@ RSpec.describe Orchestration::Pipeline::Validator do
                input_mapping: { "emails" => { "from" => "_initial", "path" => "emails" } })
       end
 
-      it 'emits a missing_required_input error' do
-        error = validator.call.first.errors.find { |e| e.code == :missing_required_input }
-        expect(error).not_to be_nil
-        expect(error.message).to include("topic")
-        expect(error.mapping_key).to eq("topic")
+      it 'emits a missing_required_input warning (not an error)' do
+        result = validator.call.first
+        warning = result.warnings.find { |w| w.code == :missing_required_input }
+        expect(warning).not_to be_nil
+        expect(warning).to have_attributes(message: include("topic"), mapping_key: "topic")
+        expect(result.errors.none? { |e| e.code == :missing_required_input }).to be true
       end
 
-      it 'produces no errors for the covered required key' do
-        errors = validator.call.first.errors
-        expect(errors.none? { |e| e.mapping_key == "emails" }).to be true
+      it 'produces no warnings for the covered required key' do
+        warnings = validator.call.first.warnings
+        expect(warnings.none? { |w| w.mapping_key == "emails" }).to be true
       end
     end
 

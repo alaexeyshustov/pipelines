@@ -17,5 +17,10 @@ module Orchestration
       result = @validator_results.find { |r| r.step_action_id == @step_action.id }
       result&.errors || []
     end
+
+    def validation_warnings
+      result = @validator_results.find { |r| r.step_action_id == @step_action.id }
+      result&.warnings || []
+    end
   end
 end
