@@ -1,0 +1,16 @@
+module UI
+  class TabsComponent < ViewComponent::Base
+    def initialize: (?extra_controllers: Array[String] | String) -> void
+    def controller_value: () -> String
+  end
+
+  class TabsComponent::TabComponent < ViewComponent::Base
+    def initialize: (id: String, label: String, controls: String, ?active: bool) -> void
+    def call: () -> String
+  end
+
+  class TabsComponent::PanelComponent < ViewComponent::Base
+    def initialize: (id: String, tab_id: String, ?active: bool) -> void
+    def call: () -> String
+  end
+end
