@@ -1,5 +1,7 @@
 inherit_gem:
   rubocop-rails-omakase: rubocop.yml
+require:
+  - ./lib/rubocop/cop/rbs/lint/no_untyped
 plugins:
   - rubocop-rspec
   - rubocop-rspec_rails
