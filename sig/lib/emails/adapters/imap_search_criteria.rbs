@@ -3,6 +3,11 @@ module Emails
     class ImapSearchCriteria
       IMAP_DATE_FORMAT: String
 
+      @query: String?
+      @flagged: bool?
+      @after_date: Date?
+      @before_date: Date?
+
       def initialize: (?query: String?, ?flagged: bool?, ?after_date: Date?, ?before_date: Date?) -> void
       def build: () -> Array[String]
 

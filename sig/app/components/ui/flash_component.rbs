@@ -1,0 +1,12 @@
+module UI
+  class FlashComponent < ViewComponent::Base
+    @flash: ActionDispatch::Flash::FlashHash
+
+    def initialize: (flash: ActionDispatch::Flash::FlashHash) -> void
+    def render?: () -> bool
+
+    private
+
+    def classes_for: (String type) -> String
+  end
+end

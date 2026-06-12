@@ -2,15 +2,16 @@ module Evaluation
   module Improvement
     class ListExperimentsTool < ::RubyLLM::Tool
       def name: () -> String
-      def execute: (prompt_name: String, current_experiment_id: Integer) -> Array[{ experiment_id: Integer, date: String, prompt_version: Integer, per_metric_averages: Hash[String, untyped], overall_average: Float }]
+      def execute: (prompt_name: String, current_experiment_id: Integer) -> Array[{ experiment_id: Integer, date: String, prompt_version: Integer, per_metric_averages: Hash[String, Numeric?], overall_average: Float }]
 
       private
 
-      def load_experiments: (String prompt_name, Integer current_experiment_id) -> ActiveRecord::Relation
+      def load_experiments: (String prompt_name, Integer current_experiment_id) -> Experiment::relation
       def load_metrics: (String prompt_name) -> Array[::Evaluation::Metric]
-      def bulk_per_metric_averages: (Array[::Evaluation::Experiment] experiments) -> Hash[Integer, Hash[String, untyped]]
-      def format_experiment: (::Evaluation::Experiment experiment, Array[::Evaluation::Metric] metrics, Hash[String, untyped] averages) -> { experiment_id: Integer, date: String, prompt_version: Integer, per_metric_averages: Hash[String, untyped], overall_average: Float }
-      def weighted_average: (Hash[String, untyped] averages, Array[::Evaluation::Metric] metrics) -> Float
+      def bulk_per_metric_averages: (Array[::Evaluation::Experiment] experiments) -> Hash[Integer, Hash[String, Numeric?]]
+      def averages_for: (Array[::Evaluation::Experiment] experiments) -> Hash[[Integer, String], Numeric?]
+      def format_experiment: (::Evaluation::Experiment experiment, Array[::Evaluation::Metric] metrics, Hash[String, Numeric?] averages) -> { experiment_id: Integer, date: String, prompt_version: Integer, per_metric_averages: Hash[String, Numeric?], overall_average: Float }
+      def weighted_average: (Hash[String, Numeric?] averages, Array[::Evaluation::Metric] metrics) -> Float
     end
   end
 end

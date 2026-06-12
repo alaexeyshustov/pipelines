@@ -2,6 +2,6 @@ module Emails
   class ClassifyTool < RubyLLM::Tool
     def self.readonly?: () -> bool
     def name: () -> String
-    def execute: (emails: Array[Hash[untyped, untyped]]) -> untyped
+    def execute: (emails: Array[json_object]) -> json_object_value
   end
 end

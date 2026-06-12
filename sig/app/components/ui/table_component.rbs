@@ -1,22 +1,35 @@
 module UI
   class TableComponent < ViewComponent::Base
     interface _Collection
-      def each: () { (untyped) -> void } -> void
+      def each: () { (top) -> void } -> void
       def empty?: () -> bool
     end
 
-    def initialize: (collection: _Collection, ?empty_message: String, ?selectable: bool, ?pagy: untyped?, ?filters: ApplicationController::Filters?) -> void
+    type cell = { ?style: Symbol, ?variant: Symbol?, ?classes: String? }
+    type sort_param = { ?sort_url: String, ?sort_active: bool, ?sort_direction: String }
+    type batch_action = { ?type: Symbol, ?label: String?, ?url: String?, ?action: String?, ?variant: Symbol?, ?confirm: String?, ?dialog_title: String?, ?require_selection: bool }
+    type column = { key: String, ?label: String?, ?cell: (^(ApplicationRecord) -> String)?, ?badge_component: singleton(ViewComponent::Base)?, ?component: singleton(ViewComponent::Base)?, ?props: (^(ApplicationRecord) -> Hash[Symbol, top])? } & cell & sort_param
+    type action_columns = { ?style: Symbol, ?actions: (^(ApplicationRecord) -> Array[action_column])? }
+    type action_column = { label: String, url: String, ?variant: Symbol, ?method: Symbol, ?confirm: String }
+
+    @collection: _Collection
+    @empty_message: String
+    @selectable: bool
+    @pagy: Pagy?
+    @filters: ApplicationController::Filters?
+
+    def initialize: (collection: _Collection, ?empty_message: String, ?selectable: bool, ?pagy: Pagy?, ?filters: ApplicationController::Filters?) -> void
     def before_render: () -> void
-    def with_batch_actions: (Array[Hash[Symbol, untyped]] action_defs) -> void
-    def with_columns: (Array[Hash[Symbol, untyped]] column_defs) -> void
+    def with_batch_actions: (Array[batch_action] action_defs) -> void
+    def with_columns: (Array[column] column_defs) -> void
     def empty?: () -> bool
     def selectable?: () -> bool
     def total_columns: () -> Integer
 
-    def with_column: (?String? key, ?label: String?, ?style: Symbol, ?classes: String?, ?variant: Symbol?, ?cell: (^(untyped) -> untyped)?, ?badge_component: Class?, ?component: Class?, ?props: (^(untyped) -> Hash[Symbol, untyped])?, ?sort_url: String?, ?sort_active: bool, ?sort_direction: String?) { () -> void } -> UI::TableComponent::ColumnComponent
+    def with_column: (column) ?{ () -> void } -> ColumnComponent
     def columns: () -> Array[ColumnComponent]
 
-    def with_action_column: (?style: Symbol, ?actions: (^(untyped) -> Array[Hash[Symbol, untyped]])?) -> ActionColumnComponent
+    def with_action_column: (action_columns) -> ActionColumnComponent
     def action_column: () -> ActionColumnComponent?
     def action_column?: () -> bool
 
@@ -24,29 +37,29 @@ module UI
     def per_page_link_class: (Integer n) -> String
     def per_page_url_for: (Integer n) -> String
 
-    def with_pagination: (pagy: untyped) -> PaginationComponent
+    def with_pagination: (pagy: Pagy) -> PaginationComponent
     def pagination: () -> String?
     def pagination?: () -> bool
 
-    def with_batch_action: (?type: Symbol, ?label: String?, ?url: String?, ?action: String?, ?variant: Symbol?, ?confirm: String?, ?dialog_title: String?, ?require_selection: bool) { () -> void } -> UI::BatchActionComponent
+    def with_batch_action: (batch_action) ?{ () -> void } -> BatchActionComponent
     def batch_actions: () -> Array[BatchActionSlot]
     def batch_actions?: () -> bool
 
     private
 
-    def sort_params_for: (String? key) -> Hash[Symbol, untyped]
+    def sort_params_for: (String? key) -> sort_param
 
     class ColumnComponent < ViewComponent::Base
       HEADER_CLASSES: Hash[Symbol, String]
       PADDING_CLASSES: Hash[Symbol, String]
 
-      def initialize: (?String? key, ?label: String?, ?style: Symbol, ?classes: String?, ?variant: Symbol?, ?cell: (^(untyped) -> untyped)?, ?badge_component: Class?, ?component: Class?, ?props: (^(untyped) -> Hash[Symbol, untyped])?, ?sort_url: String?, ?sort_active: bool, ?sort_direction: String?) -> void
+      def initialize: (column) -> void
       def call: () -> String
-      def render_cell: (untyped record) -> String
+      def render_cell: (ApplicationRecord record) -> String
 
       private
 
-      def cell_value: (untyped record) -> untyped
+      def cell_value: (ApplicationRecord record) -> String
       def cell_css_classes: () -> String
       def resolved_classes: () -> String
       def derive_label: (String? key) -> String?
@@ -58,7 +71,7 @@ module UI
       PADDING_CLASSES: Hash[Symbol, String]
       VARIANT_CLASSES: Hash[Symbol, String]
 
-      def initialize: (?style: Symbol, ?variant: Symbol?, ?classes: String?) -> void
+      def initialize: (cell) -> void
       def call: () -> String
 
       private
@@ -76,13 +89,13 @@ module UI
       def initialize: (?style: Symbol) -> void
       def resolved_classes: () -> String
 
-      def with_action: (label: String, url: String, ?variant: Symbol, ?method: Symbol, ?confirm: String?) -> ActionCellComponent::ActionSlot
+      def with_action: (action_column) -> ActionCellComponent::ActionSlot
       def actions: () -> Array[ActionCellComponent::ActionSlot]
 
       class ActionSlot < ViewComponent::Base
         VARIANT_CLASSES: Hash[Symbol, String]
 
-        def initialize: (label: String, url: String, ?variant: Symbol, ?method: Symbol | String, ?confirm: String?) -> void
+        def initialize: (action_column) -> void
         def call: () -> String
 
         private
@@ -100,9 +113,9 @@ module UI
     class ActionColumnComponent < ViewComponent::Base
       PADDING_CLASSES: Hash[Symbol, String]
 
-      def initialize: (?style: Symbol, ?actions: (^(untyped) -> Array[Hash[Symbol, untyped]])?) -> void
+      def initialize: (action_columns) -> void
       def call: () -> String
-      def render_cell: (untyped record) -> String
+      def render_cell: (ApplicationRecord record) -> String
     end
   end
 end

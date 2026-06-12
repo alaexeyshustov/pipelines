@@ -1,0 +1,16 @@
+# rubocop:disable RBS/Lint/TopLevelInterface
+interface _HasColumnNames
+  def tool_column_names: () -> Array[String]
+  def all: () -> ActiveRecord::Relation
+  def as_rows: (?ActiveRecord::Relation) -> Array[Hash[String, String?]]
+  def create!: (*top) -> ApplicationRecord
+  def find: (Integer | String) -> ApplicationRecord
+  def find_by: (*top) -> ApplicationRecord?
+  def validators: () -> Array[ActiveModel::Validator]
+  def where: (*top) -> ActiveRecord::Relation
+  def sanitize_sql: (*top) -> String
+  def connection: () -> _DBConnection
+  def table_name: () -> String
+  def to_s: () -> String
+end
+# rubocop:enable RBS/Lint/TopLevelInterface

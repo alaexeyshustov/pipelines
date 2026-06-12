@@ -1,5 +1,5 @@
 module Records
   class NormalizeJob < ApplicationJob
-    def perform: (Array[untyped] ids) -> untyped
+    def perform: (Array[Integer] ids) -> void
   end
 end

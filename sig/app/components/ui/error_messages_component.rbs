@@ -1,5 +1,7 @@
 module UI
   class ErrorMessagesComponent < ViewComponent::Base
+    @errors: ActiveModel::Errors
+
     def initialize: (errors: ActiveModel::Errors) -> void
     def render?: () -> bool
   end

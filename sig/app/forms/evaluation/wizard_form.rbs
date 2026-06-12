@@ -1,15 +1,26 @@
 module Evaluation
   class WizardForm
     include ActiveModel::Validations
+    include SteepHacks
 
     WIZARD_STEPS: Integer
+
+    @wizard_token: String
+    @step_param: Integer?
+    @draft: WizardDraft
 
     def initialize: (wizard_token: String, ?step_param: Integer?) -> void
 
     def step: () -> Integer
     def complete?: () -> bool
-    def advance!: (Integer step, Hash[String, untyped] payload) -> bool
+    def advance!: (Integer step, wizard_payload payload) -> bool
     def complete!: () -> Experiment
     def step_form: (Integer step) -> (Wizard::Step1Form | Wizard::Step2Form | Wizard::Step3Form | Wizard::Step4Form)?
+
+    private
+
+    def active_metrics_present: () -> void
+    def dataset_selected: () -> void
+    def draft: () -> WizardDraft
   end
 end

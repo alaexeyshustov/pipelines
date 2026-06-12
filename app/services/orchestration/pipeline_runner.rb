@@ -1,5 +1,7 @@
 module Orchestration
   class PipelineRunner
+    include SteepHacks
+
     def initialize(pipeline_run)
       @pipeline_run = pipeline_run
     end
@@ -7,10 +9,12 @@ module Orchestration
     def call
       @pipeline_run.update!(status: "running", started_at: Time.current)
 
-      previous_outputs = {} # : Hash[String, Hash[String, untyped]]
-      previous_outputs["_initial"] = @pipeline_run.initial_input unless @pipeline_run.initial_input.nil?
+      initial_input = @pipeline_run.initial_input
+      previous_outputs = initial_input.nil? ? Hash.new : { "_initial" => initial_input }
 
-      @pipeline_run.pipeline.steps.where(enabled: true).order(:position).each do |step|
+      steps_rel = @pipeline_run.pipeline.steps.where(enabled: true) # : ActiveRecord::Relation
+      steps = steps_rel.order(:position).to_a # : Array[Step]
+      steps.each do |step|
         action_runs = run_step(step, previous_outputs)
 
         failed_run = action_runs.find { |ar| ar.status == "failed" }
@@ -20,7 +24,7 @@ module Orchestration
         end
 
         action_runs.each do |ar|
-          previous_outputs[ar.step_action.output_key] = ar.output || {}
+          previous_outputs[ar.step_action.output_key] = ar.output || empty_object
         end
       end
 
@@ -30,13 +34,14 @@ module Orchestration
     private
 
     def run_step(step, previous_outputs)
-      action_runs = step.step_actions.map do |step_action|
-        empty_input = {} # : Hash[String, untyped]
-        action_run = @pipeline_run.action_runs.create!(step_action: step_action, status: "pending", input: empty_input)
+      step_actions = step.step_actions.to_a # : Array[StepAction]
+      action_runs = step_actions.map do |step_action|
+        empty_input = empty_object # : json_object
+        action_run = @pipeline_run.action_runs.create!(step_action: step_action, status: "pending", input: empty_input) # : ActionRun
 
         begin
           resolved = InputMappingResolver.new(
-            input_mapping: step_action.input_mapping || {},
+            input_mapping: step_action.input_mapping || empty_object,
             previous_outputs: previous_outputs
           ).resolve
           action_run.update!(input: resolved)
@@ -88,12 +93,12 @@ module Orchestration
       schema = action_run.step_action.action.input_schema
       return unless schema
 
-      SchemaValidator.new(schema).validate!(action_run.input || {})
+      SchemaValidator.new(schema).validate!(action_run.input || empty_object)
     end
 
     def run_agent(action_run, policy: nil)
       action = action_run.step_action.action
-      input  = action_run.input || {} # : Hash[String, untyped]
+      input  = action_run.input || empty_object # : json_object
 
       if action.agent?
         raise ArgumentError, "policy missing for agent action" unless policy
@@ -109,10 +114,14 @@ module Orchestration
         action_run.update_columns(chat_id: chat_id, agent_snapshot: snapshot)
         result = agent.ask(input.to_json)
         output = parse_content(result.content, policy.output_schema.present?)
-        normalized_output = policy.output_schema.present? ? output : { "result" => output }
+        normalized_output = if policy.output_schema.present?
+          output
+        else
+          { "result" => output.nil? && result.content.is_a?(String) ? result.content : output }
+        end
         { output: normalized_output, raw_content: result.content }
       else
-        klass = action.agent_class&.constantize
+        klass = ServiceRegistry.lookup(action.agent_class)
         raise ArgumentError, "Service class not found: #{action.agent_class}" unless klass
 
         { output: klass.call(**input.transform_keys(&:to_sym)), raw_content: nil }
@@ -129,13 +138,26 @@ module Orchestration
     end
 
     def parse_content(content, structured_output_expected)
-      return content unless content.is_a?(String)
+      if content.is_a?(Hash)
+        return content.transform_keys(&:to_s)
+      end
 
-      JSON.parse(content)
+      unless content.is_a?(String)
+        raise InvalidModelOutputError.new("Invalid model output: expected JSON object", raw_content: content) if structured_output_expected
+
+        return nil
+      end
+
+      parsed = JSON.parse(content)
+      return parsed.transform_keys(&:to_s) if parsed.is_a?(Hash)
+
+      raise InvalidModelOutputError.new("Invalid model output: expected JSON object", raw_content: parsed) if structured_output_expected
+
+      nil
     rescue JSON::ParserError => error
       raise InvalidModelOutputError.new("Invalid model output: #{error.message}", raw_content: content) if structured_output_expected
 
-      content
+      nil
     end
 
     def validate_output!(output, policy:, raw_content:)
@@ -143,7 +165,7 @@ module Orchestration
     rescue SchemaValidator::Error => error
       raise error unless policy.output_schema.present?
 
-      raise InvalidModelOutputError.new("Invalid model output: #{error.message}", raw_content: raw_content)
+      raise InvalidModelOutputError.new(error.message, raw_content: raw_content)
     end
 
     def handle_action_failure(action_run, error, raw_content:)
@@ -158,7 +180,7 @@ module Orchestration
     end
 
     def log_action_failure(action_run, failure)
-      details = failure.details || {}
+      details = failure.details || empty_object
 
       Rails.logger.error(
         {
@@ -176,7 +198,7 @@ module Orchestration
     end
 
     def prompt_for(agent_class)
-      @prompt_cache ||= {} # : Hash[String?, String?]
+      @prompt_cache ||= Hash.new
       return @prompt_cache[agent_class] if @prompt_cache.key?(agent_class)
 
       @prompt_cache[agent_class] = Evaluation::Prompt

@@ -18,8 +18,8 @@ module Emails
         next unless email.is_a?(Hash)
 
         {
-          id: email["id"] || email[:id],
-          subject: email["subject"] || email[:subject]
+          "id" => email["id"],
+          "subject" => email["subject"]
         }
       rescue JSON::ParserError
         nil

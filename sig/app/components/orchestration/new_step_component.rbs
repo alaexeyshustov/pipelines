@@ -1,6 +1,7 @@
 module Orchestration
   class NewStepComponent < ViewComponent::Base
+    @pipeline: Pipeline
+
     def initialize: (pipeline: Pipeline) -> void
   end
 end
-

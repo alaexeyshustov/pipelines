@@ -5,6 +5,8 @@ module Chats
     DEFAULT_CONTAINER_CLASSES: String
     DEFAULT_BADGE_CLASSES: String
 
+    @message: Message
+
     def initialize: (message: Message) -> void
     def role_container_classes: () -> String
     def role_badge_classes: () -> String

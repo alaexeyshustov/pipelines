@@ -1,15 +1,17 @@
 module Emails
   module Adapters
     class ImapBodyParser
-      def self.decode_header: (untyped? value) -> String?
+      def self.decode_header: (String? value) -> String?
 
-      def initialize: (untyped mail) -> void
+      @mail: Mail::Message
+
+      def initialize: (Mail::Message mail) -> void
       def body: () -> String
 
       private
 
-      def extract_body: (untyped mail) -> String
-      def decode_part: (untyped? part) -> String
+      def extract_body: (Mail::Message | Mail::Part mail) -> String
+      def decode_part: ((Mail::Message | Mail::Part)? part) -> String
       def strip_html: (String html) -> String
     end
   end

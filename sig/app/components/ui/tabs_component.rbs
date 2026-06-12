@@ -1,5 +1,7 @@
 module UI
   class TabsComponent < ViewComponent::Base
+    @extra_controllers: Array[String] | String
+
     def initialize: (?extra_controllers: Array[String] | String) -> void
     def controller_value: () -> String
   end

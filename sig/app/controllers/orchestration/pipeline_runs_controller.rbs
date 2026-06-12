@@ -1,5 +1,11 @@
 module Orchestration
   class PipelineRunsController < ApplicationController
+    @pipeline: Pipeline
+    @run: PipelineRun
+    @runs: PipelineRun::relation
+    @pagy: Pagy
+    @action_runs_by_step: Hash[Integer, Array[ActionRun]]
+
     def index: () -> void
     def show: () -> void
 

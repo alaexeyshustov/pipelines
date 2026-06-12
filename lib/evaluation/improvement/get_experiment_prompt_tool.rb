@@ -10,13 +10,16 @@ module Evaluation
       def name = "get_experiment_prompt"
 
       def execute(experiment_id:)
-        experiment = Experiment.includes(:prompt).find_by(id: experiment_id)
-        return nil unless experiment&.prompt
+        experiment = Experiment.find_by(id: experiment_id)
+        return nil unless experiment
+
+        prompt = experiment.prompt
+        return nil unless prompt
 
         {
-          system_prompt: experiment.prompt.system_prompt.to_s,
-          user_prompt: experiment.prompt.user_prompt,
-          output_schema: experiment.prompt.output_schema
+          system_prompt: prompt.system_prompt.to_s,
+          user_prompt: prompt.user_prompt.to_s,
+          output_schema: prompt.output_schema
         }
       end
     end

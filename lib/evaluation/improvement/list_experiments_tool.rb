@@ -11,7 +11,7 @@ module Evaluation
       def name = "list_experiments"
 
       def execute(prompt_name:, current_experiment_id:)
-        experiments = load_experiments(prompt_name, current_experiment_id).to_a
+        experiments = load_experiments(prompt_name, current_experiment_id).to_a # : Array[Evaluation::Experiment]
         return [] if experiments.empty?
 
         metrics = load_metrics(prompt_name)
@@ -27,33 +27,39 @@ module Evaluation
           .joins(:prompt)
           .where(status: :completed, evaluation_prompts: { name: prompt_name })
           .where.not(id: current_experiment_id)
-          .includes(:prompt)
-          .order(:created_at)
+          .includes(:prompt).order(:created_at) # : Evaluation::Experiment::relation
       end
 
       def load_metrics(prompt_name)
-        Metric.where(agent_name: prompt_name, active: true).to_a
+        Metric.where(agent_name: prompt_name, active: true).to_a # : Array[Evaluation::Metric]
       end
 
       def bulk_per_metric_averages(experiments)
+        averages_for(experiments).each_with_object(Hash.new) do |(key, avg), memo|
+          exp_id, metric_name = key
+          metric_averages = memo[exp_id]
+          unless metric_averages
+            metric_averages = Hash.new
+            memo[exp_id] = metric_averages
+          end
+          metric_averages[metric_name] = avg
+        end
+      end
+
+      def averages_for(experiments)
         results_table        = EvaluationResult.arel_table
         justifications_table = Justification.arel_table
 
+        join_source = results_table
+                        .join(justifications_table)
+                        .on(justifications_table[:evaluation_result_id].eq(results_table[:id]))
+                        .join_sources
+
         EvaluationResult
-          .joins(
-            results_table.join(justifications_table)
-              .on(justifications_table[:evaluation_result_id].eq(results_table[:id]))
-              .join_sources
-          )
-          .where(experiment: experiments)
-          .group(results_table[:experiment_id], justifications_table[:metric_name])
-          .average(results_table[:score])
-          .each_with_object({} #: Hash[Integer, Hash[String, untyped]]
-                            ) do |((exp_id, metric_name), avg), memo|
-            empty = {} #: Hash[String, untyped]
-            memo[exp_id.to_i] ||= empty
-            memo[exp_id.to_i][metric_name.to_s] = avg
-          end
+                .joins(join_source)
+                .where(experiment: experiments)
+                .group(results_table[:experiment_id], justifications_table[:metric_name])
+                .average(results_table[:score]) # : Hash[[Integer, String], Numeric?]
       end
 
       def format_experiment(experiment, metrics, averages)
@@ -76,7 +82,7 @@ module Evaluation
           score = averages[metric.name.to_s]
           next if score.nil?
 
-          weighted_sum += score.to_f * metric.weight.to_f
+          weighted_sum += Float(score.to_s) * metric.weight.to_f
           total_weight += metric.weight.to_f
         end
 

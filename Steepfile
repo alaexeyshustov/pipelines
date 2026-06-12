@@ -14,4 +14,6 @@ target :app do
   library "monitor"
   library "singleton"
   library "net-http"
+  library "socket"
+  library "fileutils"
 end

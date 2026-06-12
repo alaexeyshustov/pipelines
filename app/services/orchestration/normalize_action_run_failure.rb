@@ -32,7 +32,7 @@ module Orchestration
     private
 
     def provider_http_error?
-      ruby_llm_error?(@error) && @error.respond_to?(:response) && @error.response.present?
+      response_candidate ? true : false
     end
 
     def transport_error?
@@ -114,7 +114,10 @@ module Orchestration
     end
 
     def response
-      @error.response
+      candidate = response_candidate
+      raise ArgumentError, "RubyLLM error response unavailable" unless candidate
+
+      candidate
     end
 
     def response_status
@@ -132,7 +135,7 @@ module Orchestration
           parsed_error["message"] || parsed_error.dig("error", "message")
         when String
           parsed_error
-        end
+        end # : String?
 
       candidate = @error.message if candidate.blank? || candidate == "An unknown error occurred"
       candidate = response_body if candidate.blank? || candidate == "An unknown error occurred"
@@ -154,13 +157,20 @@ module Orchestration
     end
 
     def parse_json(value)
+      return nil unless value.is_a?(String)
+
       JSON.parse(value)
-    rescue JSON::ParserError, TypeError
+    rescue JSON::ParserError
       nil
     end
 
     def invalid_model_raw_content
-      @error.raw_content
+      error = @error
+      if error.is_a?(InvalidModelOutputError)
+        error.raw_content
+      else
+        @raw_content
+      end
     end
 
     def model_name
@@ -171,8 +181,7 @@ module Orchestration
       @provider_name ||= begin
         return nil if model_name.blank?
 
-        provider_class = Object.const_get(:RubyLLM).const_get(:Provider)
-        provider_class.for(model_name)&.slug
+        RubyLLM::Provider.for(model_name)&.slug
       rescue StandardError
         nil
       end
@@ -189,7 +198,9 @@ module Orchestration
     end
 
     def stringify(value)
-      value.is_a?(String) ? value : JSON.generate(value)
+      return value.to_s if value.is_a?(String)
+
+      JSON.generate(value).to_s
     rescue JSON::GeneratorError, TypeError
       value.to_s
     end
@@ -197,7 +208,7 @@ module Orchestration
     def sanitize_value(value)
       case value
       when Hash
-        result = {} # : Hash[String, untyped]
+        result = {} # : json_object
         value.each do |key, nested_value|
           result[key.to_s] =
             if sensitive_key?(key)
@@ -210,10 +221,21 @@ module Orchestration
       when Array
         value.map { |item| sanitize_value(item) }
       when String
-        sanitize_string(value)
+        sanitize_string(value.to_s)
       else
         value
       end
+    end
+
+    def response_candidate
+      return nil unless ruby_llm_error?(@error)
+      return nil unless @error.respond_to?(:response)
+
+      ruby_llm_err = @error #: RubyLLM::Error
+      candidate = ruby_llm_err.response #: _Response?
+      return nil unless candidate
+
+      candidate
     end
 
     def ruby_llm_error?(error)

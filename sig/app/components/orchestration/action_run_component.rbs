@@ -1,11 +1,14 @@
 module Orchestration
   class ActionRunComponent < ViewComponent::Base
-    def initialize: (action_run: ActionRun, ?available_outputs: Hash[String, untyped]?) -> void
+    @action_run: ActionRun
+    @available_outputs: Hash[String, json_object]?
+
+    def initialize: (action_run: ActionRun, ?available_outputs: Hash[String, json_object]?) -> void
     def before_render: () -> void
     def action_name: () -> String
     def formatted_started_at: () -> String?
     def formatted_finished_at: () -> String?
-    def diagnostics_data: () -> Hash[String, untyped]?
+    def diagnostics_data: () -> json_object?
     def raw_response_excerpt: () -> String?
     def status_badge: () -> RunStatusBadgeComponent?
     def diagnostics_disclosure: () -> UI::JsonDisclosureComponent?

@@ -1,5 +1,8 @@
 module Evaluation
   class PromptDiffsController < ApplicationController
+    @prompt: Evaluation::Prompt?
+    @other_version: Evaluation::Prompt?
+
     def show: () -> void
   end
 end

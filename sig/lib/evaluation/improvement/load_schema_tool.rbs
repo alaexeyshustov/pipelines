@@ -2,7 +2,7 @@ module Evaluation
   module Improvement
     class LoadSchemaTool < ::RubyLLM::Tool
       def name: () -> String
-      def execute: (String prompt_name) -> untyped
+      def execute: (String prompt_name) -> json_object?
 
       private
 

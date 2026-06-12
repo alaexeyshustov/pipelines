@@ -1,13 +1,15 @@
 module Emails
   module Adapters
     class GmailBodyExtractor
-      def initialize: (untyped payload) -> void
+      @payload: Google::Apis::GmailV1::MessagePart
+
+      def initialize: (Google::Apis::GmailV1::MessagePart payload) -> void
       def body: () -> String
 
       private
 
-      def extract_body: (untyped payload) -> String
-      def collect_parts: (untyped payload, String mime_type) -> Array[String]
+      def extract_body: (Google::Apis::GmailV1::MessagePart payload) -> String
+      def collect_parts: (Google::Apis::GmailV1::MessagePart payload, String mime_type) -> Array[String]
       def decode_body: (String? data) -> String
     end
   end

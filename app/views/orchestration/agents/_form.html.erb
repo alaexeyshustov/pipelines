@@ -72,7 +72,7 @@
     <div data-schema-builder-target="builderView">
       <%= turbo_frame_tag "schema_builder" do %>
         <%= render Orchestration::SchemaBuilderComponent.new(
-              builder: Orchestration::SchemaBuilder.from_schema(agent.output_schema || {}),
+              builder: Orchestration::SchemaBuilder.from_schema(agent.output_schema || empty_object),
               json: agent.output_schema.present? ? agent.output_schema.to_json : "{}"
             ) %>
       <% end %>

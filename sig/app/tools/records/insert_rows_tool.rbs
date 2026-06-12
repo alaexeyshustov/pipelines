@@ -1,17 +1,24 @@
 module Records
   class InsertRowsTool < RubyLLM::Tool
     include ModelResolver
+    type single_result = { ?id: Integer, ?invalid: String, ?duplicate: { existing_id: Integer } }
+    type result = { status: String, ?error: String, ?ids: Array[Integer], ?duplicate: Array[{ existing_id: Integer }], ?invalids: Array[json_object], ?rows_added: Integer }
 
     def self.readonly?: () -> bool
     def name: () -> String
-    def execute: (table: String, data: String) -> Hash[Symbol, untyped]
+    def execute: (table: String, data: String) -> result
 
     private
 
-    def collect_results: (Array[untyped] records, singleton(ApplicationRecord) model) -> Hash[Symbol, Array[untyped]]
-    def insert_record: (singleton(ApplicationRecord) model, Hash[String, untyped] attrs) -> Hash[Symbol, untyped]
-    def find_duplicate_id: (singleton(ApplicationRecord) model, Hash[String, untyped] attrs) -> Integer?
-    def find_by_validator: (ActiveRecord::Validations::UniquenessValidator validator, Hash[String, untyped] attrs, singleton(ApplicationRecord) model) -> untyped
-    def safe_parse_data: (String data) -> Hash[Symbol, untyped]
+    def build_key_attrs: (Array[String] key_cols, json_object attrs) -> Hash[String, json_object_value]?
+
+    def extract_key_columns: (ActiveRecord::Validations::UniquenessValidator validator) -> Array[String]
+
+    def extract_scope_columns: (String | Symbol | Array[String | Symbol] | nil scope_opt) -> Array[String]
+
+    def insert_record: (_HasColumnNames model, json_object attrs) -> single_result
+    def find_duplicate_id: (_HasColumnNames model, json_object attrs) -> Integer?
+    def find_by_validator: (ActiveRecord::Validations::UniquenessValidator validator, json_object attrs, _HasColumnNames model) -> ApplicationRecord?
+    def parse_records: (String data) -> Array[json_object]
   end
 end

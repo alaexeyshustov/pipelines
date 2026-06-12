@@ -1,11 +1,14 @@
 module Orchestration
   class RuntimeAgentBuilder
-    def initialize: (policy: AgentResolutionPolicy::Result, ?chat: untyped) -> void
-    def build: () -> untyped
+    @policy: AgentResolutionPolicy::Result
+    @chat: Chat?
+
+    def initialize: (policy: AgentResolutionPolicy::Result, ?chat: Chat?) -> void
+    def build: () -> RubyLLM::Agent
 
     private
 
-    def base_agent: () -> untyped
-    def runtime_chat: () -> untyped
+    def base_agent: () -> RubyLLM::Agent
+    def runtime_chat: () -> Chat
   end
 end

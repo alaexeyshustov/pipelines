@@ -1,13 +1,20 @@
 module Orchestration
   class Step < ApplicationRecord
+    type relation = _Relation[Step, Integer]
+
+    class ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
+      include ::Enumerable[Step]
+      include ::ActiveRecord::Relation::Methods[Step, ::Integer]
+    end
+
     def self.table_name: () -> String
 
     def name: () -> String?
     def name=: (String?) -> String?
     def position: () -> Integer?
     def position=: (Integer?) -> Integer?
-    def input_mapping: () -> Hash[String, untyped]?
-    def input_mapping=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def input_mapping: () -> json_object?
+    def input_mapping=: (json_object?) -> json_object?
     def enabled: () -> bool
     def enabled=: (bool) -> bool
     def enabled?: () -> bool
@@ -18,7 +25,7 @@ module Orchestration
 
     def pipeline: () -> Pipeline
     def pipeline=: (Pipeline) -> Pipeline
-    def step_actions: () -> ActiveRecord::Associations::CollectionProxy
-    def actions: () -> ActiveRecord::Associations::CollectionProxy
+    def step_actions: () -> StepAction::ActiveRecord_Associations_CollectionProxy
+    def actions: () -> Action::relation
   end
 end

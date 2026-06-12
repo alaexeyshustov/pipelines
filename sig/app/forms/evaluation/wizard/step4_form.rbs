@@ -1,7 +1,9 @@
 module Evaluation
   module Wizard
     class Step4Form
-      def initialize: (draft_payload: Hash[String, untyped]) -> void
+      @payload: wizard_payload
+
+      def initialize: (draft_payload: wizard_payload) -> void
 
       def agent_name: () -> String?
       def experiment_name: () -> String?

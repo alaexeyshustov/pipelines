@@ -8,7 +8,7 @@ module Emails
       APPLICATION_NAME = "Application Pipeline"
       SCOPE = [ "https://www.googleapis.com/auth/gmail.modify" ].freeze
 
-      def self.setup(**kwargs)
+      def self.setup(opts = {})
         puts <<~INSTRUCTIONS
           Gmail setup:
           1. Create a project in Google Cloud Console.
@@ -18,12 +18,12 @@ module Emails
 
           Clearing any existing token and launching OAuth authorization flow...
         INSTRUCTIONS
-        from_env(**kwargs).authorize
+        from_env(opts).authorize
         puts "✓ Gmail OAuth token saved."
       end
 
-      def self.test_connection(**kwargs)
-        adapter = from_env(**kwargs)
+      def self.test_connection(opts = {})
+        adapter = from_env(opts)
         adapter.on_init
         adapter.instance_variable_get(:@service).get_user_profile("me")
         puts "✓ Gmail connection successful"
@@ -41,10 +41,10 @@ module Emails
         end
       end
 
-      def self.from_env(credentials_path: nil, token_path: nil)
+      def self.from_env(opts = {})
         root             = Rails.root
-        credentials_path = credentials_path || ENV.fetch("GMAIL_CREDENTIALS_PATH", root.join("credentials.json").to_s)
-        token_path       = token_path       || ENV.fetch("GMAIL_TOKEN_PATH", root.join("token.yaml").to_s)
+        credentials_path = opts[:credentials_path] || ENV.fetch("GMAIL_CREDENTIALS_PATH", root.join("credentials.json").to_s)
+        token_path       = opts[:token_path]       || ENV.fetch("GMAIL_TOKEN_PATH", root.join("token.yaml").to_s)
         unless File.exist?(credentials_path)
           raise   "Missing Gmail credentials file. Please create #{credentials_path} with your Google API credentials."
         end
@@ -93,22 +93,37 @@ module Emails
 
       def get_message(message_id, **_kwargs)
         message = @service.get_user_message("me", message_id.to_s, format: "full")
-        return { id: message_id, error: "Message not found" } unless message
+        raise "Message not found: #{message_id}" unless message
 
-        GmailMessageParser.new(message).to_h.merge(body: GmailBodyExtractor.new(message.payload).body)
-      rescue Google::Apis::ClientError => error
-        msg = error.message
-        puts "ERROR: Failed to get message #{message_id} - #{msg}"
-        { id: message_id, error: msg }
+        parsed = GmailMessageParser.new(message).to_h
+        {
+          id: parsed[:id],
+          provider: parsed[:provider],
+          subject: parsed[:subject],
+          from: parsed[:from],
+          to: parsed[:to],
+          date: parsed[:date],
+          snippet: parsed[:snippet],
+          body: GmailBodyExtractor.new(message.payload).body,
+          thread_id: parsed[:thread_id],
+          labels: parsed[:labels]
+        }
       end
 
       def get_unread_count
-        @service.get_user_label("me", "UNREAD").messages_total.to_i || 0
+        label = @service.get_user_label("me", "UNREAD")
+        label&.messages_total.to_i
       end
 
       def get_labels
-        @labels ||= @service.list_user_labels("me").labels.map do |label|
-          { id: label.id, name: label.name, type: label.type }
+        response = @service.list_user_labels("me")
+        @labels ||= Array(response&.labels).filter_map do |label|
+          id = label.id
+          name = label.name
+          type = label.type
+          next unless id && name && type
+
+          { id: id, name: name, type: type }
         end
       end
 
@@ -119,23 +134,25 @@ module Emails
           remove_label_ids: remove
         )
         message = @service.modify_message("me", message_id, request)
-        return { id: message_id, error: "Message not found" } unless message
+        raise "Message not found: #{message_id}" unless message
 
-        { id: message.id, labels: message.label_ids || [] }
+        { id: message.id || message_id, labels: Array(message.label_ids) }
       rescue Google::Apis::ClientError => error
         raise error unless error.message.include?("Label name exists or conflicts")
 
-        # steep:ignore:start
         { id: message_id, labels: [] }
-        # steep:ignore:end
       end
 
       def create_label(name:)
         label  = Google::Apis::GmailV1::Label.new(name: name)
         result = @service.create_user_label("me", label)
-        return { name: name, error: "Label create error" } unless result
+        raise "Label create error: #{name}" unless result
+        id = result.id
+        result_name = result.name
+        type = result.type
+        raise "Label create error: #{name}" unless id && result_name && type
 
-        { id: result.id, name: result.name, type: result.type }
+        { id: id, name: result_name, type: type }
       rescue Google::Apis::ClientError => error
         raise error unless error.message.include?("Label name exists or conflicts")
         find_existing_label(name)
@@ -150,7 +167,7 @@ module Emails
       def find_existing_label(name)
         found = get_labels.find { |lbl| lbl[:name] == name } ||
                 raise("Failed to create or find existing label '#{name}'")
-        found.slice(:id, :name, :type)
+        { id: found[:id], name: found[:name], type: found[:type] }
       end
 
       def build_label_ids(label_ids)

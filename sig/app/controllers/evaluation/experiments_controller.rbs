@@ -1,7 +1,24 @@
 module Evaluation
   class ExperimentsController < ApplicationController
+    @experiments: Experiment::relation
+    @experiment: Experiment
+    @candidate: Experiment?
+    @result: Comparison::ComparisonResult?
+    @metric_name: String?
+    @justifications: Justification::relation
+    @wizard_form: WizardForm
+
     def index: () -> void
     def show: () -> void
+    def new: () -> void
+    def create: () -> void
+    def destroy: () -> void
+    def snapshot_agent_prompt: () -> void
+    def prompt_content: () -> void
+    def fork_prompt: () -> void
+    def prompt_versions: () -> void
+    def status_frame: () -> void
+    def metric_results: () -> void
     def improve: () -> void
     def compare: () -> void
     def activate: () -> void
@@ -9,5 +26,9 @@ module Evaluation
     private
 
     def set_experiment: () -> void
+    def build_wizard_form: (?step_param: Integer?) -> Evaluation::WizardForm
+    def fork_prompt_params: () -> ActionController::Parameters
+    def wizard_params: () -> ActionController::Parameters
+    def render_wizard_error: () -> void
   end
 end

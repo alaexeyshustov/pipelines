@@ -1,9 +1,9 @@
 module Emails
   module Adapters
     class BaseAdapter
-      def self.from_env: (**untyped kwargs) -> instance
-      def self.setup: (**untyped kwargs) -> void
-      def self.test_connection: (**untyped kwargs) -> void
+      def self.from_env: (?options) -> instance
+      def self.setup: (?options) -> void
+      def self.test_connection: (?options) -> void
       def self.reset: () -> void
 
       def on_exit: () -> void

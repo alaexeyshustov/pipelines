@@ -2,19 +2,27 @@ module Evaluation
   class Sampler
     WRITE_BLOCKED_SENTINEL: String
 
-    def self.call: (experiment: Evaluation::Experiment, dataset_sample: Evaluation::DatasetSample, prompt: Evaluation::Prompt?) -> Evaluation::Sample
+    type tool_call = { "tool_name" => String, "arguments" => json_object, "result" => String }
 
-    def initialize: (experiment: Evaluation::Experiment, dataset_sample: Evaluation::DatasetSample, prompt: Evaluation::Prompt?) -> void
+    @experiment: Experiment
+    @dataset_sample: DatasetSample
+    @prompt: Prompt?
 
-    def call: () -> Evaluation::Sample
+    def self.call: (experiment: Experiment, dataset_sample: DatasetSample, prompt: Prompt?) -> Sample
+
+    def initialize: (experiment: Experiment, dataset_sample: DatasetSample, prompt: Prompt?) -> void
+
+    def call: () -> Sample
 
     private
 
     def find_agent_record: () -> Orchestration::Agent?
     def find_action_for: (Orchestration::Agent agent_record) -> Orchestration::Action?
-    def resolve_tools: (Orchestration::Agent agent_record) -> Array[Class]
-    def wrap_write_tools: (Array[Class] tool_classes) -> Array[Class]
-    def block_write_tool: (Class tool_class) -> Class
-    def capture_tool_calls: (untyped agent) -> Array[Hash[String, untyped]]
+    def find_action_for!: (Orchestration::Agent agent_record) -> Orchestration::Action
+    def resolve_tools: (Orchestration::Agent agent_record) -> Array[singleton(RubyLLM::Tool)]
+    def wrap_write_tools: (Array[singleton(RubyLLM::Tool)] tool_classes) -> Array[singleton(RubyLLM::Tool)]
+    def block_write_tool: (singleton(RubyLLM::Tool) tool_class) -> singleton(RubyLLM::Tool)
+    def capture_tool_calls: (RubyLLM::Agent agent) -> Array[tool_call]
+    def agent_messages: (RubyLLM::Agent agent) -> Array[::Message]
   end
 end

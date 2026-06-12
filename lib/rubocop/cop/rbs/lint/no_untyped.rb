@@ -43,7 +43,7 @@ module RuboCop
           private
 
           def check_type(type)
-            on_type([::RBS::Types::Bases::Any], type) do |untyped|
+            on_type([ ::RBS::Types::Bases::Any ], type) do |untyped|
               add_offense(location_to_range(untyped.location), message: MSG)
             end
           end

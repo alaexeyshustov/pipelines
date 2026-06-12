@@ -11,5 +11,13 @@
 # end
 
 ActiveSupport::Inflector.inflections(:en) do |inflect|
+  inflect.acronym "RBS"
   inflect.acronym "UI"
+end
+
+Rails.autoloaders.each do |autoloader|
+  autoloader.inflector.inflect(
+    "rubocop" => "RuboCop",
+    "rbs" => "RBS"
+  )
 end

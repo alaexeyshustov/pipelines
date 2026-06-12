@@ -6,7 +6,7 @@ module Pipeline
       @targets: Array[IO]
 
       def initialize: (*IO targets) -> void
-      def write: (*untyped args) -> void
+      def write: (::_ToS message) -> void
       def flush: () -> void
       def close: () -> void
     end
@@ -14,9 +14,13 @@ module Pipeline
     @logger: ::Logger
 
     def initialize: (?level: Symbol | String, ?output: IO, ?log_file: String?) -> void
-    def debug: (*untyped args) ?{ () -> untyped } -> void
-    def info: (*untyped args) ?{ () -> untyped } -> void
-    def warn: (*untyped args) ?{ () -> untyped } -> void
-    def error: (*untyped args) ?{ () -> untyped } -> void
+    def debug: (?::_ToS) ?{ () -> ::_ToS } -> void
+    def debug?: () -> bool
+    def info: (?::_ToS) ?{ () -> ::_ToS } -> void
+    def info?: () -> bool
+    def warn: (?::_ToS) ?{ () -> ::_ToS } -> void
+    def warn?: () -> bool
+    def error: (?::_ToS) ?{ () -> ::_ToS } -> void
+    def error?: () -> bool
   end
 end

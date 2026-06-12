@@ -2,12 +2,12 @@ module Evaluation
   module Improvement
     class LoadSamplesTool < ::RubyLLM::Tool
       def name: () -> String
-      def execute: (experiment_id: Integer, ?number_of_samples: Integer) -> untyped
+      def execute: (experiment_id: Integer, ?number_of_samples: Integer) -> Array[{ input: json_object_value, output: String }]
 
       private
 
-      def load_samples: (Integer experiment_id, Integer number_of_samples) -> ActiveRecord::Relation
-      def filter_samples: (ActiveRecord::Relation samples) -> Array[{ input: untyped, output: String }]
+      def load_samples: (Integer experiment_id, Integer number_of_samples) -> Array[Evaluation::Sample]
+      def filter_samples: (Array[Evaluation::Sample] samples) -> Array[{ input: json_object_value, output: String }]
     end
   end
 end

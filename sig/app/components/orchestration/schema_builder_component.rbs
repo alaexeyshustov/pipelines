@@ -1,0 +1,17 @@
+module Orchestration
+  class SchemaBuilderComponent < ViewComponent::Base
+    attr_reader builder: Orchestration::SchemaBuilder
+    attr_reader path: Array[String]
+    attr_reader json: String
+
+    def initialize: (builder: Orchestration::SchemaBuilder, ?path: Array[String], ?json: String?) -> void
+    def root?: () -> bool
+    def type_options: () -> Array[[String, String]]
+    def path_json: () -> String
+    def required?: (String prop_name) -> bool
+    def add_property_url: () -> String
+    def remove_property_url: () -> String
+    def change_type_url: () -> String
+    def parse_url: () -> String
+  end
+end

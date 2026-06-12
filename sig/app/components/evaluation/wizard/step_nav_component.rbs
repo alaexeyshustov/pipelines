@@ -3,11 +3,13 @@ module Evaluation
     class StepNavComponent < ViewComponent::Base
       STEPS: Array[String]
 
+      @current_step: Integer
+
       def initialize: (current_step: Integer) -> void
 
       def step_state: (Integer index) -> (:complete | :active | :upcoming)
       def step_label: (Integer index) -> String?
-      def steps: () -> Array[Hash[Symbol, untyped]]
+      def steps: () -> Array[{ label: String?, state: :complete | :active | :upcoming }]
     end
   end
 end

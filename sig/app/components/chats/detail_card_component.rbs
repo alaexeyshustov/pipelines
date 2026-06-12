@@ -1,5 +1,7 @@
 module Chats
   class DetailCardComponent < ViewComponent::Base
+    @chat: Chat
+
     def initialize: (chat: Chat) -> void
     def model_name_value: () -> String
     def message_count: () -> Integer
