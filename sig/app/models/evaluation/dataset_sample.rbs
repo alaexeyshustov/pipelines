@@ -1,18 +1,20 @@
 module Evaluation
   class DatasetSample < ApplicationRecord
+    type relation = _Relation[DatasetSample, Integer]
+
     def self.table_name: () -> String
-    def self.create!: (**untyped attrs) -> DatasetSample
+    def self.create!: (**top attrs) -> DatasetSample
     def self.find: (Integer id) -> DatasetSample
-    def self.find_or_initialize_by: (**untyped attrs) -> DatasetSample
+    def self.find_or_initialize_by: (**top attrs) -> DatasetSample
 
     def dataset: () -> Evaluation::Dataset
     def dataset=: (Evaluation::Dataset) -> Evaluation::Dataset
-    def input: () -> untyped
-    def input=: (untyped) -> untyped
-    def expected_tool_calls: () -> Array[untyped]?
-    def expected_tool_calls=: (Array[untyped]?) -> Array[untyped]?
+    def input: () -> json_object_value
+    def input=: (json_object_value) -> json_object_value
+    def expected_tool_calls: () -> Array[json_object]?
+    def expected_tool_calls=: (Array[json_object]?) -> Array[json_object]?
     def source_run_id: () -> Integer?
 
-    def samples: () -> ActiveRecord::Associations::CollectionProxy
+    def samples: () -> Sample::relation
   end
 end

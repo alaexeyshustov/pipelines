@@ -10,11 +10,15 @@ module Interviews
       def ok?: () -> bool
     end
 
+    @ids: Array[String] | Array[Integer] | nil
+    @gist_id: String
+
     def initialize: (ids: Array[String] | Array[Integer] | nil, gist_id: String) -> void
     def call: () -> Result
 
     private
 
+    def parse_error_body: (String body) -> json_object?
     def patch_gist: (String token, String csv_content) -> Net::HTTPResponse
   end
 end

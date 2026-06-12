@@ -1,4 +1,3 @@
-import Dialog from "@stimulus-components/dialog"
+import Dialog from '@stimulus-components/dialog';
 
-export default Dialog
-
+export default Dialog;

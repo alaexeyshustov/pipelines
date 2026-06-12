@@ -16,7 +16,7 @@ module Records
 
     def execute(table:, column:, value:)
       model = resolve_model(table)
-      return { error: "Unknown column #{column}" } unless model::COLUMN_NAMES.include?(column)
+      return { error: "Unknown column #{column}" } unless model.tool_column_names.include?(column)
 
       substring_matches = fetch_substring_matches(model, column, value)
       fuzzy_matches     = fetch_fuzzy_matches(model, column, value)
@@ -48,16 +48,20 @@ module Records
 
       conn.select_all(
         model.sanitize_sql([ sql, { value: value, like: "%#{value}%" } ])
-      ).map do |row|
-        { value: row[column], ids: row["ids"].to_s.split(",").map(&:to_i) }
+      ).filter_map do |row|
+        match_value = row[column]
+        next unless match_value
+
+        { value: match_value, ids: row["ids"].to_s.split(",").map(&:to_i) }
       end
     end
 
     # Ruby-side: word-level Levenshtein — catches typos like "Softwear" → "Software".
     def fetch_fuzzy_matches(model, column, value)
       matcher = FuzzyMatcher.new(value)
+      quoted_column = model.connection.quote_column_name(column)
 
-      model.where.not(column => [ nil, "" ]).pluck(:id, column)
+      model.where("#{quoted_column} IS NOT NULL AND #{quoted_column} != ''").pluck(:id, column) #: Array[[Integer, String]]
         .group_by { |_id, stored| stored }
         .filter_map do |stored, pairs|
           next unless matcher.matches?(stored)

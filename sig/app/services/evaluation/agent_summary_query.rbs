@@ -2,7 +2,7 @@ module Evaluation
   class AgentSummaryQuery
     class AgentSummary
       attr_reader agent_name: String
-      attr_reader latest_experiment: Evaluation::Experiment?
+      attr_reader latest_experiment: Experiment?
       attr_reader latest_score: Float?
       attr_reader active_prompt_version: Integer?
       attr_reader sample_count: Integer
@@ -10,7 +10,7 @@ module Evaluation
 
       def initialize: (
         agent_name: String,
-        latest_experiment: Evaluation::Experiment?,
+        latest_experiment: Experiment?,
         latest_score: Float?,
         active_prompt_version: Integer?,
         sample_count: Integer,
@@ -24,8 +24,15 @@ module Evaluation
 
     private
 
-    def batch_stats: (Array[Integer] experiment_ids) -> Hash[Integer, { avg: Float?, count: Integer }]
-    def build_score_history: (Array[Evaluation::Experiment] experiments, untyped avgs_by_id) -> Array[{ created_at: String, avg_score: Float? }]
+    def fetch_all_experiments: () -> Array[Experiment]
+    def fetch_evaluation_stats: (Array[Integer] experiment_ids) -> Array[[Integer, Float?, Integer]]
+    def build_history_averages: (Array[[Integer, Float?, Integer]] stats_rows) -> Hash[Integer, Float?]
+    def build_latest_stats: (Array[[Integer, Float?, Integer]] stats_rows, Array[Integer] latest_ids) -> Hash[Integer, { avg: Float?, count: Integer }]
+    def build_agent_summaries: (Array[String] prompt_names, Hash[String, Array[Experiment]] grouped, Hash[String, Experiment] latest, Hash[Integer, { avg: Float?, count: Integer }] latest_stats, Hash[Integer, Float?] history_avgs, Hash[String, Integer?] active_vers) -> Array[AgentSummary]
+    def group_by_agent: (Array[Experiment] experiments) -> Hash[String, Array[Experiment]]
+    def latest_per_agent: (Hash[String, Array[Experiment]] grouped) -> Hash[String, Experiment]
+    def build_score_history: (Array[Experiment] experiments, Hash[Integer, Float?] avgs_by_id) -> Array[{ created_at: String, avg_score: Float? }]
     def active_versions_for: (Array[String] agent_names) -> Hash[String, Integer?]
+    def fetch_active_prompts: (Array[String] agent_names) -> Array[Prompt]
   end
 end

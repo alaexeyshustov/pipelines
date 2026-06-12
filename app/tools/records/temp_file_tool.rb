@@ -13,17 +13,18 @@ module Records
     def name = "temp_file"
 
     def execute(action:, filename:, content: nil)
-      path = Rails.root.join("tmp", filename)
+      root = Rails.root # : Pathname
+      path = root.join("tmp", filename)
 
       case action
       when "read"
-        File.exist?(path) ? File.read(path) : "File not found: #{filename}"
+        File.exist?(path) ? File.read(path.to_s) : "File not found: #{filename}"
       when "write"
         if content.nil? || content.strip.empty?
           "Content is required for write action"
         else
-          FileUtils.mkdir_p(Rails.root.join("tmp"))
-          File.write(path, content)
+          FileUtils.mkdir_p(root.join("tmp"))
+          File.write(path.to_s, content)
           "File written successfully: #{filename}"
         end
       when "delete"

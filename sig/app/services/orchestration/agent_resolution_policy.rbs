@@ -3,29 +3,34 @@ module Orchestration
     class Result
       attr_reader model: String?
       attr_reader prompt: String?
-      attr_reader tools: Array[untyped]?
-      attr_reader output_schema: Hash[String, untyped]?
+      attr_reader tools: Array[singleton(RubyLLM::Tool)]?
+      attr_reader output_schema: json_object?
 
       def initialize: (
         model: String?,
         prompt: String?,
-        tools: Array[untyped]?,
-        output_schema: Hash[String, untyped]?
+        tools: Array[singleton(RubyLLM::Tool)]?,
+        output_schema: json_object?
       ) -> void
     end
+
+    @action: Action
+    @pipeline_model: String?
+    @prompt_override: String?
+    @tool_classes: Array[singleton(RubyLLM::Tool)]?
 
     def self.call: (
       action: Action,
       ?pipeline_model: String?,
       ?prompt_override: String?,
-      ?tool_classes: Array[untyped]?
+      ?tool_classes: Array[singleton(RubyLLM::Tool)]?
     ) -> Result
 
     def initialize: (
       action: Action,
       ?pipeline_model: String?,
       ?prompt_override: String?,
-      ?tool_classes: Array[untyped]?
+      ?tool_classes: Array[singleton(RubyLLM::Tool)]?
     ) -> void
 
     def call: () -> Result
@@ -35,9 +40,9 @@ module Orchestration
     def agent_record: () -> Agent
     def resolved_model: () -> String?
     def resolved_prompt: () -> String?
-    def resolved_tools: () -> Array[untyped]?
-    def resolved_output_schema: () -> Hash[String, untyped]?
-    def resolved_generation_schema: () -> Hash[String, untyped]?
-    def normalized_hash: (Hash[untyped, untyped] | String | nil value, field_name: String) -> Hash[String, untyped]
+    def resolved_tools: () -> Array[singleton(RubyLLM::Tool)]?
+    def resolved_output_schema: () -> json_object?
+    def resolved_generation_schema: () -> json_object?
+    def normalized_hash: (json_object | String | nil value, field_name: String) -> json_object
   end
 end

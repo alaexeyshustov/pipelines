@@ -1,5 +1,9 @@
 module Orchestration
   class StepActionsController < ApplicationController
+    @pipeline: Orchestration::Pipeline
+    @step: Orchestration::Step
+    @step_action: Orchestration::StepAction
+
     def create: () -> void
     def update: () -> void
     def destroy: () -> void
@@ -9,6 +13,6 @@ module Orchestration
     def set_pipeline: () -> void
     def set_step: () -> void
     def step_action_params: () -> ActionController::Parameters?
-    def parse_input_mapping: () -> ([Hash[String, untyped], nil] | [Hash[untyped, untyped], String])
+    def parse_input_mapping: () -> ([json_object, nil] | [json_object, String])
   end
 end

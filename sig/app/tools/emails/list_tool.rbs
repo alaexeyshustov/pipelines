@@ -9,6 +9,6 @@ module Emails
       ?before_date: String?,
       ?offset: Integer,
       ?label: String?
-    ) -> untyped
+    ) -> Array[Emails::message]
   end
 end

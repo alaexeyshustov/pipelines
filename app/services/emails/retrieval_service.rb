@@ -4,26 +4,30 @@ module Emails
 
     def initialize(provider:, after_date:, before_date: nil)
       @provider    = provider
-      @after_date  = after_date.is_a?(String) ? Date.parse(after_date) : after_date
-      @before_date = before_date ? (before_date.is_a?(String) ? Date.parse(before_date) : before_date) : nil
+      @after_date  = to_date(after_date)
+      @before_date = before_date.nil? ? nil : to_date(before_date)
     end
 
     def call
-      emails = [] # : Array[Hash[String, String]]
-      offset = 0
+      page = Emails.list_messages(
+        @provider,
+        max_results: PAGE_SIZE,
+        after_date: @after_date,
+        before_date: @before_date,
+        offset: 0
+      )
+      emails = page.map { |email| normalize(email) }
+      offset = PAGE_SIZE
 
-      loop do
+      while page.size == PAGE_SIZE
         page = Emails.list_messages(
           @provider,
-          max_results:  PAGE_SIZE,
-          after_date:   @after_date,
-          before_date:  @before_date,
-          offset:       offset
+          max_results: PAGE_SIZE,
+          after_date: @after_date,
+          before_date: @before_date,
+          offset: offset
         )
-
-        emails.concat(page.map { |e| normalize(e) })
-        break if page.size < PAGE_SIZE
-
+        emails.concat(page.map { |email| normalize(email) })
         offset += PAGE_SIZE
       end
 
@@ -31,6 +35,10 @@ module Emails
     end
 
     private
+
+    def to_date(date)
+      Date.parse(date.to_s)
+    end
 
     def normalize(email)
       {

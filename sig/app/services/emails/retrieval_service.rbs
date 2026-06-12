@@ -4,11 +4,17 @@ module Emails
 
     type email_hash = Hash[String, String]
 
+    @provider: String
+    @after_date: Date
+    @before_date: Date?
+
     def initialize: (provider: String, after_date: String | Date, ?before_date: String | Date | nil) -> void
     def call: () -> Array[email_hash]
 
     private
 
-    def normalize: (Hash[Symbol, untyped] email) -> email_hash
+    def normalize: (Hash[Symbol, json_object_value] email) -> email_hash
+
+    def to_date: (String | Date date) -> Date
   end
 end

@@ -1,5 +1,6 @@
 module Emails
   module Adapters
+    type gmail_options = { ?credentials_path: String?, ?token_path: String? }
     class GmailAdapter < BaseAdapter
       APPLICATION_NAME: String
       SCOPE: Array[String]
@@ -9,18 +10,20 @@ module Emails
       @token_path: String
       @service: Google::Apis::GmailV1::GmailService
 
-      def self.from_env: (?credentials_path: String?, ?token_path: String?) -> GmailAdapter
+      def self.from_env: (?gmail_options) -> GmailAdapter
+      def self.setup: (?gmail_options) -> void
+      def self.test_connection: (?gmail_options) -> void
 
       def initialize: (credentials_path: String, token_path: String) -> void
-      def authorize: () -> untyped
-      def modify_labels: (String message_id, ?add: Array[String], ?remove: Array[String], ?source_mailbox: String?) -> untyped
-      def get_message: (String | Integer message_id, **untyped) -> untyped
-      def create_label: (name: String) -> untyped
+      def authorize: () -> Signet::OAuth2::Client
+      def modify_labels: (String message_id, ?add: Array[String], ?remove: Array[String], ?source_mailbox: String?) -> modify_result
+      def get_message: (String | Integer message_id, ?label: String?) -> message
+      def create_label: (name: String) -> label
 
       private
 
       def fetch_messages: (Integer max_results, Integer offset) { (Integer page_size, String? page_token) -> Google::Apis::GmailV1::ListMessagesResponse? } -> Array[message]
-      def find_existing_label: (String name) -> untyped
+      def find_existing_label: (String name) -> label
 
       def build_label_ids: (Array[String] | String) -> Array[String]
 

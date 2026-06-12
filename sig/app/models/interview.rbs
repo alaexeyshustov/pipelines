@@ -1,10 +1,13 @@
 class Interview < ApplicationRecord
-  include Searchable
-
-  STATUSES: Array[String]
   COLUMN_NAMES: Array[String]
 
-  def self.search: (String? q) -> untyped
+  include Searchable
+
+  type relation = _Relation[Interview, Integer]
+
+  STATUSES: Array[String]
+  def self.tool_column_names: () -> Array[String]
+  def self.search: (String? q) -> relation
 
   def company: () -> String?
   def company=: (String?) -> String?
@@ -25,5 +28,5 @@ class Interview < ApplicationRecord
   def fourth_interview_at: () -> String?
   def fourth_interview_at=: (String?) -> String?
 
-  def self.as_rows: (?untyped scope) -> Array[Hash[String, String?]]
+  def self.as_rows: (?ActiveRecord::Relation scope) -> Array[Hash[String, String?]]
 end

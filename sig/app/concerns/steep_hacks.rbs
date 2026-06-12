@@ -1,0 +1,3 @@
+module SteepHacks
+  def empty_object: () -> json_object
+end

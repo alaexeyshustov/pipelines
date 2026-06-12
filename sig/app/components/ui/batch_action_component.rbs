@@ -5,6 +5,15 @@ module UI
 
     TYPES: Array[Symbol]
 
+    @type: batch_action_type
+    @label: String?
+    @url: String?
+    @action: String?
+    @variant: batch_action_variant?
+    @confirm: String?
+    @dialog_title: String?
+    @require_selection: bool
+
     def initialize: (
       ?type: batch_action_type,
       ?label: String?,

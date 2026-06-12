@@ -18,15 +18,14 @@ module Evaluation
       agent_record = find_agent_record
       raise ArgumentError, "No agent found for experiment" unless agent_record
 
-      action = find_action_for(agent_record)
-      raise ArgumentError, "No action found for agent #{agent_record.name}" unless action
+      resolved_action = find_action_for!(agent_record)
 
       tool_classes  = resolve_tools(agent_record)
       wrapped_tools = wrap_write_tools(tool_classes)
 
       policy = Orchestration::AgentResolutionPolicy.call(
-        action:           action,
-        tool_classes:     wrapped_tools,
+        action:           resolved_action,
+        tool_classes:     wrapped_tools, # steep:ignore
         pipeline_model:   @experiment.sample_model,
         prompt_override:  @prompt&.system_prompt
       )
@@ -58,6 +57,15 @@ module Evaluation
       Orchestration::Action.where(kind: :agent, agent_id: agent_record.id).first
     end
 
+    def find_action_for!(agent_record)
+      action = find_action_for(agent_record)
+      if action.nil?
+        raise ArgumentError, "No action found for agent #{agent_record.name}"
+      else
+        action
+      end
+    end
+
     def resolve_tools(agent_record)
       configured = agent_record.tools.presence
       if configured
@@ -73,8 +81,8 @@ module Evaluation
         end
       end
 
-      agent_class = agent_record.name.safe_constantize
-      return agent_class.tools if agent_class.respond_to?(:tools)
+      agent_class = agent_record.name.safe_constantize # : singleton(RubyLLM::Agent)
+      return agent_class.tools if agent_class.respond_to?(:tools) # steep:ignore
 
       raise ArgumentError, "agent #{agent_record.name.inspect} has no configured tools"
     end
@@ -95,23 +103,25 @@ module Evaluation
           Rails.logger.info("Sampler: blocked write tool #{name} (#{kwargs.keys.inspect})")
           sentinel
         end
-      end
+      end # : singleton(RubyLLM::Tool)
       # steep:ignore:end
     end
 
     def capture_tool_calls(agent)
-      # steep:ignore:start
-      agent.messages
-           .where(role: "tool")
-           .order(:id)
-           .includes(:parent_tool_call)
-           .filter_map do |msg|
-             tc = msg.parent_tool_call
-             next unless tc
+      agent_messages(agent).filter_map do |msg|
+        tc = msg.parent_tool_call # : ToolCall?
+        next unless tc
 
-             { tool_name: tc.name, arguments: tc.arguments, result: msg.content }
-           end
-      # steep:ignore:end
+        {
+          "tool_name" => tc.name,
+          "arguments" => tc.arguments,
+          "result" => msg.content.to_s
+        }
+      end
+    end
+
+    def agent_messages(agent)
+      agent.messages.where(role: "tool").order(:id).includes(:parent_tool_call).to_a
     end
   end
 end

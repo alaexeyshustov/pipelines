@@ -8,10 +8,11 @@ module Evaluation
     private
 
     def fetch_system_prompt: (String) -> String
-    def fetch_few_shot_samples: (String) -> Array[untyped]
-    def build_user_message: (system_prompt_text: String, count: Integer, hints: String, few_shot: Array[untyped]) -> String
-    def call_llm: (String, String) -> Array[untyped]
-    def create_dataset_with_records: (String, String, Array[untyped]) -> Evaluation::Dataset
+    def fetch_few_shot_samples: (String) -> Array[json_object_value]
+    def build_user_message: (system_prompt_text: String, count: Integer, hints: String, few_shot: Array[json_object_value]) -> String
+    def call_llm: (String, String) -> Array[json_object]
+    def create_dataset_with_records: (String, String, Array[json_object]) -> Evaluation::Dataset
     def update_draft: (String, status: String, ?dataset_id: Integer?, ?error_message: String?) -> void
+    def resync_dataset: (Integer dataset_id, Array[json_object] inputs) -> void
   end
 end

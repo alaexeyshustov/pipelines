@@ -1,5 +1,8 @@
 module Orchestration
   class AllPipelineRunsController < ApplicationController
+    @pagy: Pagy
+    @runs: PipelineRun::relation
+
     def index: () -> void
   end
 end

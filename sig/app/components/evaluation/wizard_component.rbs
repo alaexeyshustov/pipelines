@@ -1,5 +1,9 @@
 module Evaluation
   class WizardComponent < ViewComponent::Base
+    @current_step: Integer
+    @form: WizardForm
+
     def initialize: (current_step: Integer, form: WizardForm) -> void
+    def before_render: () -> void
   end
 end

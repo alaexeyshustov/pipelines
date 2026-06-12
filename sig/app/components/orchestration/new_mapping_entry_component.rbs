@@ -1,5 +1,7 @@
 module Orchestration
   class NewMappingEntryComponent < ViewComponent::Base
+    @from_options: Array[[String, String]]
+
     def initialize: (from_options: Array[[String, String]]) -> void
   end
 end

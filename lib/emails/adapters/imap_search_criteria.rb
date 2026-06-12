@@ -11,19 +11,19 @@ module Emails
       end
 
       def build
-        criteria = [] # : Array[String]
-        criteria += [ "SINCE",  @after_date.strftime(IMAP_DATE_FORMAT)  ] if @after_date
-        criteria += [ "BEFORE", @before_date.strftime(IMAP_DATE_FORMAT) ] if @before_date
+        criteria = Array.new
+        criteria += [ "SINCE",  @after_date.strftime(IMAP_DATE_FORMAT)  ] if @after_date # steep:ignore
+        criteria += [ "BEFORE", @before_date.strftime(IMAP_DATE_FORMAT) ] if @before_date # steep:ignore
         criteria << (@flagged ? "FLAGGED" : "UNFLAGGED") unless @flagged.nil?
-        criteria += parse_query_criteria(@query) if @query
+        criteria += parse_query_criteria(@query) if @query # steep:ignore
         criteria.empty? ? [ "ALL" ] : criteria
       end
 
       private
 
       def parse_query_criteria(query)
-        criteria   = [] # : Array[String]
-        bare_words = [] # : Array[String]
+        criteria   = Array.new
+        bare_words = Array.new
 
         query.split(/\s+/).each do |token|
           case token

@@ -6,7 +6,7 @@ module Interviews
       gist_id: { "type" => "string" }
     )
 
-    def self.call(gist_id: nil, **)
+    def self.call(gist_id: nil, **_kwargs)
       resolved_id = gist_id || ENV.fetch("GIST_ID", nil)
       return { "skipped" => true, "reason" => "GIST_ID not configured" } if resolved_id.nil?
 

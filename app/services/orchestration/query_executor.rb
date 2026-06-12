@@ -10,17 +10,15 @@ module Orchestration
       columns:       { "type" => "array" }
     )
 
-    def self.call(table:, column_name:, column_values:, columns: nil, **)
+    def self.call(table:, column_name:, column_values:, columns: nil, **_kwargs)
       model   = resolve_model(table)
-      records = model.where(column_name => column_values)
+      records = model.where(column_name => column_values).to_a # : Array[ApplicationRecord]
       rows    = records.map do |record|
-        attrs = record.attributes
+        attrs = record.attributes # : Hash[String, untyped]
         columns ? attrs.slice(*columns) : attrs
       end
 
-      # steep:ignore:start
       { table => rows }
-      # steep:ignore:end
     rescue Records::ModelNotFound => error
       raise ArgumentError, error.message
     end

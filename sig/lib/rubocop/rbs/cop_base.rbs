@@ -1,0 +1,28 @@
+module RuboCop
+  module Cop
+    class Base
+      def add_offense: (top range, ?message: String) -> void
+      def range_between: (Integer start_pos, Integer end_pos) -> top
+    end
+
+    module RangeHelp
+    end
+  end
+
+  module RBS
+    interface _Located
+      def location: () -> top
+    end
+
+    module OnTypeHelper
+      def on_type: (Array[Class] types, ::RBS::Types::t type) { (_Located) -> void } -> void
+    end
+
+    class CopBase < ::RuboCop::Cop::Base
+      include ::RuboCop::Cop::RangeHelp
+      include ::RuboCop::RBS::OnTypeHelper
+
+      def location_to_range: (top location) -> top
+    end
+  end
+end

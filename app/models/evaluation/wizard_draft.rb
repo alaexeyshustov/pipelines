@@ -2,6 +2,8 @@
 
 module Evaluation
   class WizardDraft < ApplicationRecord
+    include SteepHacks
+
     self.table_name = "evaluation_wizard_drafts"
 
     validates :session_token, presence: true, uniqueness: true
@@ -16,19 +18,19 @@ module Evaluation
     end
 
     # Merges updates into payload and advances the step.
-    def advance!(new_step, payload_updates = {})
-      merged = (payload || {}).merge(payload_updates.stringify_keys)
+    def advance!(new_step, payload_updates = empty_object)
+      merged = (payload || empty_object).merge(payload_updates.stringify_keys)
       update!(step: new_step, payload: merged)
     end
 
     # Merges updates into payload without changing the current step.
     def merge_payload!(updates)
-      merged = (payload || {}).merge(updates.stringify_keys)
+      merged = (payload || empty_object).merge(updates.stringify_keys)
       update!(payload: merged)
     end
 
     def payload_for_step(key)
-      (payload || {})[key.to_s]
+      (payload || empty_object)[key.to_s]
     end
   end
 end

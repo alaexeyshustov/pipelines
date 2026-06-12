@@ -46,10 +46,10 @@ module Emails
         client.close
         tcp_server.close
 
-        match = request_line&.match(/[?&]code=([^&\s]+)/)
-        raise "Authorization failed: no code received in callback" unless match
+        raw_code = request_line&.match(/[?&]code=([^&\s]+)/)&.[](1)
+        raise "Authorization failed: no code received in callback" if raw_code.blank?
 
-        code  = CGI.unescape(match[1])
+        code  = CGI.unescape(raw_code.to_s)
         creds = authorizer.get_and_store_credentials_from_code(
           user_id: USER_ID, code: code, base_url: callback_uri
         )

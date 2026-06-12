@@ -23,6 +23,9 @@ module Evaluation
       candidate_experiment: Evaluation::Experiment
     ) -> ComparisonResult
 
+    @baseline_experiment: Evaluation::Experiment
+    @candidate_experiment: Evaluation::Experiment
+
     def initialize: (
       baseline_experiment: Evaluation::Experiment,
       candidate_experiment: Evaluation::Experiment

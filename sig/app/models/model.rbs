@@ -1,6 +1,4 @@
 class Model < ApplicationRecord
-  COLUMN_NAMES: Array[String]
-
   def model_id: () -> String?
   def model_id=: (String?) -> String?
   def name: () -> String?

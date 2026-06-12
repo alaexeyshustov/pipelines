@@ -1,0 +1,11 @@
+module Evaluation
+  class ExperimentMetricRowComponent < ViewComponent::Base
+    @metric: Evaluation::Metric
+    @avg: Float?
+    @experiment: Evaluation::Experiment
+
+    def initialize: (metric: Evaluation::Metric, avg: Float?, experiment: Evaluation::Experiment) -> void
+    def avg_label: () -> String?
+    def metric_results_path: () -> String
+  end
+end

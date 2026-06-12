@@ -1,5 +1,10 @@
 module Evaluation
   class ExperimentJob < ApplicationJob
     def perform: (Evaluation::Experiment experiment) -> void
+
+    private
+
+    def recoverable_dataset_sample_ids: (Evaluation::Experiment experiment) -> Array[Integer]
+    def sampling_jobs_still_in_flight?: (Integer experiment_id) -> bool
   end
 end

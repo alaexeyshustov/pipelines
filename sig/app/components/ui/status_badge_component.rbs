@@ -2,6 +2,9 @@ module UI
   class StatusBadgeComponent < ViewComponent::Base
     VARIANT_CLASSES: Hash[Symbol, String]
 
+    @label: String
+    @variant: Symbol?
+
     def initialize: (label: String, ?variant: Symbol) -> void
     def classes: () -> String
   end

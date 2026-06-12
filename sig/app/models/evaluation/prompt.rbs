@@ -1,15 +1,17 @@
 module Evaluation
   class Prompt < ApplicationRecord
+    type relation = _Relation[Prompt, Integer]
+
     def self.last_for_agent: (String agent_name) -> Prompt?
 
     def self.table_name: () -> String
     def self.find: (Integer id) -> Prompt
-    def self.find_by: (**untyped attrs) -> Prompt?
-    def self.create!: (**untyped attrs) -> Prompt
-    def self.where: (**untyped attrs) -> ActiveRecord::Relation
-    def self.order: (*untyped) -> ActiveRecord::Relation
+    def self.find_by: (**top attrs) -> Prompt?
+    def self.create!: (**top attrs) -> Prompt
+    def self.where: (**top attrs) -> relation
+    def self.order: (*top) -> relation
     def self.transaction: () { () -> void } -> void
-    def self.distinct: () -> ActiveRecord::Relation
+    def self.distinct: () -> relation
 
     def id: () -> Integer
     def name: () -> String?
@@ -22,16 +24,17 @@ module Evaluation
     def version=: (Integer?) -> Integer?
     def metadata: () -> String?
     def metadata=: (String?) -> String?
-    def output_schema: () -> untyped?
-    def output_schema=: (untyped?) -> untyped?
+    def output_schema: () -> json_object?
+    def output_schema=: (json_object?) -> json_object?
 
-    def experiments: () -> ActiveRecord::Associations::CollectionProxy
-    def samples: () -> ActiveRecord::Associations::CollectionProxy
+    def experiments: () -> Experiment::relation
+    def samples: () -> Sample::relation
 
-    def update!: (**untyped attrs) -> Prompt
+    def update!: (**top attrs) -> Prompt
 
     private
 
     def increment_version: () -> Integer
+    def assign_next_version: () -> Integer
   end
 end

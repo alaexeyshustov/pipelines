@@ -18,12 +18,15 @@ class GistUploader
 
   def upload(content)
     body = { files: { @filename => { content: content } } }
+    response =
+      if @gist_id
+        request(:patch, "/gists/#{@gist_id}", body)
+      else
+        request(:post, "/gists", body.merge(description: "Job interviews tracker", public: false))
+      end
 
-    if @gist_id
-      request(:patch, "/gists/#{@gist_id}", body)["html_url"]
-    else
-      request(:post, "/gists", body.merge(description: "Job interviews tracker", public: false))["html_url"]
-    end
+    html_url = response["html_url"]
+    html_url.nil? ? nil : html_url.to_s
   end
 
   private
@@ -42,6 +45,7 @@ class GistUploader
 
     res  = http.request(req)
     data = JSON.parse(res.body)
+    raise ApiError, "Unexpected GitHub response payload" unless data.is_a?(Hash)
 
     raise ApiError, "#{res.code} #{data['message']}" unless res.is_a?(Net::HTTPSuccess)
 

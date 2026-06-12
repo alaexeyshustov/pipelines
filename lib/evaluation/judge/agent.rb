@@ -4,7 +4,6 @@ module Evaluation
       chat_model Chat
       model LlmModels.judge
 
-      # steep:ignore:start
       schema do
         array :evaluations do
           object do
@@ -14,7 +13,6 @@ module Evaluation
           end
         end
       end
-      # steep:ignore:end
 
       instructions <<~INSTRUCTIONS
         You are an impartial LLM judge evaluating an AI agent's response.

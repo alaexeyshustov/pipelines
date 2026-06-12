@@ -1,14 +1,15 @@
 module Evaluation
   module Wizard
     class ReviewStepComponent < ViewComponent::Base
-      def initialize: (
-        agent_name: String?,
-        prompt: Evaluation::Prompt?,
-        experiment_name: String?,
-        metrics_count: Integer,
-        dataset: Evaluation::Dataset?
-      ) -> void
+      @form: Wizard::Step4Form
 
+      def initialize: (form: Wizard::Step4Form) -> void
+
+      def agent_name: () -> String?
+      def prompt: () -> Evaluation::Prompt?
+      def experiment_name: () -> String?
+      def metrics_count: () -> Integer
+      def dataset: () -> Evaluation::Dataset?
       def no_metrics?: () -> bool
       def prompt_label: () -> String
       def dataset_label: () -> String

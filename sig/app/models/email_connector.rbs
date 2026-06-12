@@ -1,10 +1,12 @@
 class EmailConnector < ApplicationRecord
-  def self.all: () -> ActiveRecord::Relation
+  type relation = _Relation[EmailConnector, Integer]
+
+  def self.all: () -> relation
   def self.find: (Integer id) -> EmailConnector
 
   attr_accessor name: String
   attr_accessor provider: String
-  attr_accessor configuration: Hash[Symbol | String, untyped]
+  attr_accessor configuration: Hash[String, json_object_value]
   attr_accessor enabled: bool
   attr_accessor last_connected_at: Time?
   attr_accessor status: String?

@@ -7,6 +7,29 @@ on:
     branches: [main]
 
 jobs:
+  js:
+    name: JS Lint & Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install JS dependencies
+        run: corepack enable pnpm && pnpm install
+
+      - name: Run ESLint
+        run: pnpm lint
+
+      - name: Check Prettier formatting
+        run: pnpm format:check
+
+      - name: Run pnpm audit
+        run: pnpm audit
+
   rubocop:
     name: RuboCop
     runs-on: ubuntu-latest
@@ -45,6 +68,9 @@ jobs:
 
       - name: Run Steep
         run: bundle exec steep check
+
+      - name: Check type coverage (≥99%)
+        run: bin/steep-coverage 99
 
   brakeman:
     name: Brakeman

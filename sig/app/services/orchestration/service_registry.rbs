@@ -1,0 +1,7 @@
+module Orchestration
+  module ServiceRegistry
+    REGISTRY: Hash[String, _AgentCallable]
+
+    def self.lookup: (String? name) -> _AgentCallable?
+  end
+end

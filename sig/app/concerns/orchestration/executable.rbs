@@ -1,7 +1,16 @@
 module Orchestration
   module Executable
+    def self.included: (top base) -> void
+
     module ClassMethods
-      def input_schema: (?Hash[Symbol, Hash[String, untyped]] declared_types) -> Hash[String, untyped]?
+      @_input_schema: json_object?
+      @_input_schema_types: Hash[String, json_object]?
+
+      def input_schema: (?Hash[Symbol, json_object] declared_types) -> json_object?
+
+      private
+
+      def build_input_schema!: () -> json_object
     end
   end
 end

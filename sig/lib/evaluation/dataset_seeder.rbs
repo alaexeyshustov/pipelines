@@ -1,6 +1,10 @@
 module Evaluation
   class DatasetSeeder
-    class Result
+    @agent_name: String
+    @sample_size: Integer
+    @dataset: Dataset
+
+    class Result < Data
       attr_reader agent_name: String
       attr_reader created: Integer
       attr_reader skipped: Integer
@@ -15,6 +19,10 @@ module Evaluation
 
     private
 
-    def candidate_runs: () -> ActiveRecord::Relation
+    def candidate_runs: () -> Array[Orchestration::ActionRun]
+
+    def dataset: () -> Dataset
+
+    def sample_for: (Orchestration::ActionRun) -> DatasetSample
   end
 end

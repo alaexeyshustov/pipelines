@@ -4,6 +4,6 @@ module Emails
 
     def self.readonly?: () -> bool
     def name: () -> String
-    def execute: (provider: String, message_id: String, ?label: String?) -> untyped
+    def execute: (provider: String, message_id: String, ?label: String?) -> Emails::message
   end
 end

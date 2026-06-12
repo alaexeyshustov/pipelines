@@ -21,6 +21,7 @@ module Evaluation
           .includes(:dataset_sample)
           .order(Arel.sql("RANDOM()"))
           .limit(number_of_samples)
+          .to_a # : Array[Evaluation::Sample]
       end
 
       def filter_samples(samples)

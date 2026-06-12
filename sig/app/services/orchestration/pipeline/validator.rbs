@@ -18,18 +18,22 @@ module Orchestration
         attr_reader warnings: Array[Issue]
       end
 
-      def self.call: (Orchestration::Pipeline pipeline) -> Array[StepResult]
+      include SteepHacks
 
-      def initialize: (Orchestration::Pipeline pipeline) -> void
+      @pipeline: Pipeline
+
+      def self.call: (Pipeline pipeline) -> Array[StepResult]
+
+      def initialize: (Pipeline pipeline) -> void
       def call: () -> Array[StepResult]
 
       private
 
-      def ordered_step_actions: () -> Array[Orchestration::StepAction]
-      def validate_input_mapping: (Orchestration::StepAction step_action, Hash[String, untyped] known_schemas, Array[Issue] errors, Array[Issue] warnings) -> void
-      def validate_input_schema_coverage: (Orchestration::StepAction step_action, Array[Issue] errors) -> void
-      def validate_path_vs_schema: (String from, String? path, String mapping_key, Hash[String, untyped]? upstream_schema, Array[Issue] errors) -> void
-      def path_valid_in_schema?: (String path, Hash[String, untyped] schema) -> bool
+      def ordered_step_actions: () -> Array[StepAction]
+      def validate_input_mapping: (StepAction step_action, json_object known_schemas, Array[Issue] errors, Array[Issue] warnings) -> void
+      def validate_input_schema_coverage: (StepAction step_action, Array[Issue] errors) -> void
+      def validate_path_vs_schema: (String from, String? path, String mapping_key, json_object? upstream_schema, Array[Issue] errors) -> void
+      def path_valid_in_schema?: (String path, json_object schema) -> bool
     end
   end
 end

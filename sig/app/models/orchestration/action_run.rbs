@@ -1,19 +1,26 @@
 module Orchestration
   class ActionRun < ApplicationRecord
+    type relation = _Relation[ActionRun, Integer]
+
+    class ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
+      include ::Enumerable[ActionRun]
+      include ::ActiveRecord::Relation::Methods[ActionRun, ::Integer]
+    end
+
     STATUSES: Array[String]
 
     def self.table_name: () -> String
 
     def status: () -> String?
     def status=: (String?) -> String?
-    def input: () -> Hash[String, untyped]?
-    def input=: (Hash[String, untyped]?) -> Hash[String, untyped]?
-    def output: () -> Hash[String, untyped]?
-    def output=: (Hash[String, untyped]?) -> Hash[String, untyped]?
-    def agent_snapshot: () -> Hash[String, untyped]?
-    def agent_snapshot=: (Hash[String, untyped]?) -> Hash[String, untyped]?
-    def error_details: () -> Hash[String, untyped]?
-    def error_details=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def input: () -> json_object?
+    def input=: (json_object?) -> json_object?
+    def output: () -> json_object?
+    def output=: (json_object?) -> json_object?
+    def agent_snapshot: () -> json_object?
+    def agent_snapshot=: (json_object?) -> json_object?
+    def error_details: () -> json_object?
+    def error_details=: (json_object?) -> json_object?
     def error: () -> String?
     def error=: (String?) -> String?
     def started_at: () -> Time?
@@ -21,18 +28,18 @@ module Orchestration
     def finished_at: () -> Time?
     def finished_at=: (Time?) -> Time?
 
-    def pipeline_run: () -> Orchestration::PipelineRun
-    def pipeline_run=: (Orchestration::PipelineRun) -> Orchestration::PipelineRun
-    def step_action: () -> Orchestration::StepAction
-    def step_action=: (Orchestration::StepAction) -> Orchestration::StepAction
+    def pipeline_run: () -> PipelineRun
+    def pipeline_run=: (PipelineRun) -> PipelineRun
+    def step_action: () -> StepAction
+    def step_action=: (StepAction) -> StepAction
     def chat: () -> Chat?
     def chat=: (Chat?) -> Chat?
     def chat_id: () -> Integer?
     def chat_id=: (Integer?) -> Integer?
 
-    def ground_truth: () -> Hash[String, untyped]?
-    def index_attributes: () -> Hash[Symbol, untyped]
-    def show_attributes: () -> Hash[Symbol, untyped]
-    def to_llm_context: () -> Hash[Symbol, untyped]
+    def ground_truth: () -> json_object?
+    def index_attributes: () -> { status: String?, action: String, started_at: Time?, finished_at: Time? }
+    def show_attributes: () -> { status: String?, action: String, input: json_object?, output: json_object?, error: String?, error_details: json_object?, agent_snapshot: json_object?, started_at: Time?, finished_at: Time? }
+    def to_llm_context: () -> { action: String, input: json_object?, status: String?, agent_snapshot: json_object? }
   end
 end

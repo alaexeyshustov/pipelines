@@ -16,7 +16,7 @@ module Emails
       cache_file = CACHE_DIR.join("#{provider}_#{message_id}_#{label}.json")
 
       if cache_file.exist?
-        JSON.parse(cache_file.read, symbolize_names: true)
+        JSON.parse(cache_file.read, symbolize_names: true) # : Emails::message
       else
         result = Emails.get_message(provider, message_id, label:)
         FileUtils.mkdir_p(CACHE_DIR)

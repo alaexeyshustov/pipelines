@@ -1,0 +1,22 @@
+module RuboCop
+  module Cop
+    module RBS
+      module Lint
+        class NoUntyped < ::RuboCop::RBS::CopBase
+          MSG: String
+
+          def on_rbs_def: (::RBS::AST::Members::MethodDefinition decl) -> void
+          def on_rbs_constant: (::RBS::AST::Declarations::Constant decl) -> void
+          def on_rbs_global: (::RBS::AST::Declarations::Global decl) -> void
+          def on_rbs_type_alias: (::RBS::AST::Declarations::TypeAlias decl) -> void
+          def on_rbs_attribute: ((::RBS::AST::Members::AttrReader | ::RBS::AST::Members::AttrAccessor | ::RBS::AST::Members::AttrWriter) decl) -> void
+          def on_rbs_var: ((::RBS::AST::Members::InstanceVariable | ::RBS::AST::Members::ClassInstanceVariable | ::RBS::AST::Members::ClassVariable) decl) -> void
+
+          private
+
+          def check_type: (::RBS::Types::t type) -> void
+        end
+      end
+    end
+  end
+end

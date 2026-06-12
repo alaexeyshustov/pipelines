@@ -1,13 +1,25 @@
 module Evaluation
+  type wizard_payload = {
+    ?"agent_name" => String,
+    ?"prompt_id" => String,
+    ?"experiment_name" => String,
+    ?"sample_model" => String,
+    ?"evaluation_model" => String,
+    ?"dataset_id" => String,
+    ?"dataset_generation" => { "status" => String, ?"dataset_id" => Integer, ?"error_message" => String }
+  }
+
   class WizardDraft < ApplicationRecord
+    include SteepHacks
+
     attr_accessor session_token: String
     attr_accessor step: Integer
-    attr_accessor payload: Hash[String, untyped]?
+    attr_accessor payload: wizard_payload?
 
     def self.find_or_create_for_token: (String) -> WizardDraft
     def self.cleanup_expired: () -> Integer
-    def advance!: (Integer, ?Hash[Symbol | String, untyped]) -> bool
-    def merge_payload!: (Hash[Symbol | String, untyped]) -> bool
-    def payload_for_step: (Symbol | String) -> untyped
+    def advance!: (Integer, ?wizard_payload) -> bool
+    def merge_payload!: (wizard_payload) -> bool
+    def payload_for_step: (Symbol | String) -> json_object_value
   end
 end

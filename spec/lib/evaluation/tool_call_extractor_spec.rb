@@ -22,8 +22,8 @@ RSpec.describe Evaluation::ToolCallExtractor do
 
       result = described_class.call(chat)
       expect(result.size).to eq(1)
-      expect(result.first[:tool_name]).to eq("classify")
-      expect(result.first[:result]).to eq("done")
+      expect(result.first["tool_name"]).to eq("classify")
+      expect(result.first["result"]).to eq("done")
     end
 
     it "skips tool messages without a parent tool call" do
@@ -42,7 +42,7 @@ RSpec.describe Evaluation::ToolCallExtractor do
       create(:message, chat: chat, role: "tool", content: "b", parent_tool_call: tc2)
 
       result = described_class.call(chat)
-      expect(result.map { |r| r[:tool_name] }).to eq(%w[tool_a tool_b])
+      expect(result.map { |r| r["tool_name"] }).to eq(%w[tool_a tool_b])
     end
   end
 end

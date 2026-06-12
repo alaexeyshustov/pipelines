@@ -1,11 +1,16 @@
 module Evaluation
   class ExperimentDetailComponent < ViewComponent::Base
+    @experiment: Experiment
+
     def initialize: (experiment: Experiment) -> void
 
-    def metrics: () -> ActiveRecord::Relation
+    def before_render: () -> void
+    def metrics: () -> Metric::relation
     def sample_count: () -> Integer
     def per_metric_avg: () -> Hash[String, Float]
     def overall_avg: () -> Float?
+    def dataset_samples: () -> DatasetSample::relation
     def judge_model: () -> String
+    def output_schema_json: () -> String
   end
 end

@@ -1,7 +1,7 @@
 module Emails
   module Adapters
     class YahooAdapter < BaseAdapter
-      def self.setup(**_kwargs)
+      def self.setup(_opts = {})
         puts "Yahoo setup:"
         puts "1. Sign in to your Yahoo account and go to Account Security settings."
         puts "2. Generate an app password for 'Mail' and 'Other device'."
@@ -9,20 +9,19 @@ module Emails
         puts "4. Run `bin/cli test` to test the connection."
       end
 
-      def self.test_connection(**kwargs)
-        connection = from_env(**kwargs)
+      def self.test_connection(opts = {})
+        connection = from_env(opts)
         connection.list_messages(max_results: 1)
         puts "✓ Yahoo Mail connection successful"
       rescue StandardError => error
         puts "ERROR: Yahoo Mail connection failed - #{error.message}"
       end
 
-      def self.from_env(
-        username: ENV["YAHOO_USERNAME"],
-        password: ENV["YAHOO_APP_PASSWORD"],
-        host:     ENV.fetch("YAHOO_IMAP_HOST", "imap.mail.yahoo.com"),
-        port:     ENV.fetch("YAHOO_IMAP_PORT", "993").to_i
-      )
+      def self.from_env(opts = {})
+        username = opts[:username] || ENV["YAHOO_USERNAME"]
+        password = opts[:password] || ENV["YAHOO_APP_PASSWORD"]
+        host     = opts[:host]     || ENV.fetch("YAHOO_IMAP_HOST", "imap.mail.yahoo.com")
+        port     = opts[:port]     || ENV.fetch("YAHOO_IMAP_PORT", "993").to_i
         raise "Missing Yahoo credentials. Please set YAHOO_USERNAME and YAHOO_APP_PASSWORD environment variables." unless username && password
 
         new(host:, port:, username:, password:)
@@ -79,7 +78,8 @@ module Emails
           mail = parse_mail(uid, FULL_FIELDS)
           raise "Message not found: #{message_id}" unless mail
 
-          YahooMessageParser.new(uid, mail, mailbox).to_h.merge(body: ImapBodyParser.new(mail).body)
+          parsed = YahooMessageParser.new(uid, mail, mailbox).to_h
+          to_message(parsed, mail)
         end
       end
 
@@ -180,6 +180,20 @@ module Emails
       rescue StandardError => error
         $stderr.puts "Warning: failed to parse message UID #{uid}: #{error.message}"
         nil
+      end
+
+      def to_message(parsed, mail)
+        {
+          id: parsed[:id],
+          provider: parsed[:provider],
+          subject: parsed[:subject],
+          from: parsed[:from],
+          to: parsed[:to],
+          date: parsed[:date],
+          snippet: parsed[:snippet],
+          body: ImapBodyParser.new(mail).body,
+          labels: parsed[:labels]
+        }
       end
 
       def list_message(uid, mailbox)

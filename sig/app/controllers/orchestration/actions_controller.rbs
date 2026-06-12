@@ -1,5 +1,9 @@
 module Orchestration
   class ActionsController < ApplicationController
+    @action: Orchestration::Action
+    @actions: Orchestration::Action::relation
+    @agents: Orchestration::Agent::relation
+
     def index: () -> void
     def new: () -> void
     def create: () -> void
@@ -10,6 +14,7 @@ module Orchestration
     private
 
     def set_action: () -> void
+    def load_agents: () -> void
     def action_params: () -> ActionController::Parameters
   end
 end

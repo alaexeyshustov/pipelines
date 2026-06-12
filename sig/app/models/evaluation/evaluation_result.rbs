@@ -1,27 +1,28 @@
 module Evaluation
   class EvaluationResult < ApplicationRecord
+    type relation = _Relation[EvaluationResult, Integer]
+
     def self.table_name: () -> String
-    def self.create!: (**untyped attrs) -> EvaluationResult
-    def self.where: (**untyped attrs) -> ActiveRecord::Relation
-    def self.joins: (*untyped) -> ActiveRecord::Relation
-    def self.group: (*untyped) -> ActiveRecord::Relation
+    def self.create!: (**top attrs) -> EvaluationResult
+    def self.where: (**top attrs) -> relation
+    def self.joins: (*top) -> relation
+    def self.group: (*top) -> relation
     def self.average: (Symbol column) -> Float?
-    def self.pluck: (*untyped) -> Array[untyped]
-    def self.connection: () -> untyped
-    def self.per_metric_averages: (Evaluation::Experiment experiment) -> Hash[String, Float]
+    def self.pluck: (*(String | Symbol)) -> Array[json_object_value]
+    def self.per_metric_averages: (Experiment experiment) -> Hash[String, Float]
 
     def score: () -> Float?
     def score=: (Float | Integer | nil) -> (Float | Integer | nil)
     def evaluator_class: () -> String?
     def evaluator_class=: (String?) -> String?
 
-    def experiment: () -> Evaluation::Experiment?
-    def experiment=: (Evaluation::Experiment?) -> Evaluation::Experiment?
-    def dataset_sample: () -> Evaluation::DatasetSample?
-    def dataset_sample=: (Evaluation::DatasetSample?) -> Evaluation::DatasetSample?
-    def sample: () -> Evaluation::Sample?
-    def sample=: (Evaluation::Sample?) -> Evaluation::Sample?
+    def experiment: () -> Experiment?
+    def experiment=: (Experiment?) -> Experiment?
+    def dataset_sample: () -> DatasetSample?
+    def dataset_sample=: (DatasetSample?) -> DatasetSample?
+    def sample: () -> Sample?
+    def sample=: (Sample?) -> Sample?
 
-    def justifications: () -> ActiveRecord::Associations::CollectionProxy
+    def justifications: () -> Justification::relation
   end
 end
