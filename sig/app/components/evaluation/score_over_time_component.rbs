@@ -1,6 +1,9 @@
 module Evaluation
   class ScoreOverTimeComponent < ViewComponent::Base
-    def initialize: (agent_name: String, data: Array[Hash[Symbol, untyped]]) -> void
+    @agent_name: String
+    @data: Array[{ created_at: String, avg_score: Float? }]
+
+    def initialize: (agent_name: String, data: Array[{ created_at: String, avg_score: Float? }]) -> void
     def chart_data_json: () -> String
     def has_data?: () -> bool
   end

@@ -1,5 +1,12 @@
 module Orchestration
   class PipelineRun < ApplicationRecord
+    type relation = _Relation[PipelineRun, Integer]
+
+    class ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
+      include ::Enumerable[PipelineRun]
+      include ::ActiveRecord::Relation::Methods[PipelineRun, ::Integer]
+    end
+
     STATUSES: Array[String]
     TRIGGERED_BY: Array[String]
 
@@ -15,11 +22,11 @@ module Orchestration
     def finished_at=: (Time?) -> Time?
     def error: () -> String?
     def error=: (String?) -> String?
-    def initial_input: () -> Hash[String, untyped]?
-    def initial_input=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def initial_input: () -> json_object?
+    def initial_input=: (json_object?) -> json_object?
 
-    def pipeline: () -> Orchestration::Pipeline
-    def pipeline=: (Orchestration::Pipeline) -> Orchestration::Pipeline
-    def action_runs: () -> ActiveRecord::Associations::CollectionProxy
+    def pipeline: () -> Pipeline
+    def pipeline=: (Pipeline) -> Pipeline
+    def action_runs: () -> ActionRun::ActiveRecord_Associations_CollectionProxy
   end
 end

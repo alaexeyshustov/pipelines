@@ -1,5 +1,10 @@
 module UI
   class PageHeaderComponent < ViewComponent::Base
+    @title: String
+    @parent: { label: String, url: String }?
+    @notice: String?
+    @alert: String?
+
     def initialize: (title: String, ?parent: { label: String, url: String }?, ?notice: String?, ?alert: String?) -> void
 
     def badge: () -> UI::StatusBadgeComponent?

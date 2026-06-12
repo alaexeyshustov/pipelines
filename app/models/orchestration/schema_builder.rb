@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
 module Orchestration
+  # TODO: this class is too big and complex
   class SchemaBuilder
+    include SteepHacks
+    extend SteepHacks
+
     TYPES = %w[string integer number boolean object array].freeze
     ENUM_TYPES = %w[string integer number].freeze
     NUMERIC_TYPES = %w[integer number].freeze
@@ -38,7 +42,7 @@ module Orchestration
 
       schema = schema.deep_stringify_keys
 
-      properties = (schema["properties"] || {}).transform_values { |v| from_schema(v) }
+      properties = (schema["properties"] || empty_object).transform_values { |v| from_schema(v) }
       items = schema["items"].present? ? from_schema(schema["items"]) : nil
 
       new(
@@ -60,7 +64,7 @@ module Orchestration
 
       params = params.to_h.deep_stringify_keys
 
-      properties = (params["properties"] || {}).transform_values { |v| from_params(v) }
+      properties = (params["properties"] || empty_object).transform_values { |v| from_params(v) }
       items = params["items"].present? ? from_params(params["items"]) : nil
 
       additional_properties =
@@ -85,7 +89,7 @@ module Orchestration
     end
 
     def to_schema
-      schema = {}
+      schema = empty_object
       schema["type"] = type if type.present?
       schema["description"] = description if description.present?
       schema["format"] = format if format.present? && (type == "string" || format == "hardcoded")

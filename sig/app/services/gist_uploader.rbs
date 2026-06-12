@@ -4,6 +4,10 @@ class GistUploader
   class ApiError < StandardError
   end
 
+  @token: String
+  @gist_id: String?
+  @filename: String
+
   def self.from_env: (filename: String) -> GistUploader
 
   def initialize: (token: String, ?gist_id: String?, filename: String) -> void
@@ -11,6 +15,5 @@ class GistUploader
 
   private
 
-  def request: (Symbol method, String path, untyped body) -> untyped
+  def request: (Symbol method, String path, _ToJson body) -> json_object
 end
-

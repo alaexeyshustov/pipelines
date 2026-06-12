@@ -2,6 +2,8 @@
 
 module Evaluation
   class CreateExperimentFromDraft
+    include SteepHacks
+
     def self.call(draft:)
       new(draft: draft).call
     end
@@ -25,7 +27,7 @@ module Evaluation
     attr_reader :draft
 
     def payload
-      @payload ||= draft.payload || {}
+      @payload ||= draft.payload || empty_object
     end
 
     def resolve_prompt
@@ -39,7 +41,7 @@ module Evaluation
     end
 
     def no_active_metrics?
-      @agent_name.present? && Metric.for_agent(@agent_name).active.none?
+      @agent_name.present? && Metric.for_agent(@agent_name).where(active: true).none?
     end
 
     def create_experiment!

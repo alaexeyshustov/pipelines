@@ -1,6 +1,6 @@
 module Evaluation
   class ToolCallExtractor
-    type tool_call_entry = { tool_name: String, arguments: Hash[String, untyped], result: String? }
+    type tool_call_entry = json_object
 
     def self.call: (Chat? chat) -> Array[tool_call_entry]
   end

@@ -4,8 +4,8 @@ module Orchestration
     extend Executable::ClassMethods
     extend Records::ModelResolver
 
-    def self.call: (table: String, column_name: String, column_values: Array[untyped], ?columns: Array[String]?) -> Hash[String, Array[Hash[String, untyped]]]
+    def self.call: (table: String, column_name: String, column_values: Array[json_object_value], ?columns: Array[String]?) -> Hash[String, Array[json_object]]
 
-    def self.dig_path: (Hash[String, untyped] hash, String path) -> untyped
+    def self.dig_path: (json_object hash, String path) -> json_object_value
   end
 end

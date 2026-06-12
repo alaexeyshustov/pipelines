@@ -3,6 +3,6 @@ module Records
   end
 
   module ModelResolver
-    def resolve_model: (String table) -> untyped
+    def resolve_model: (String table) -> _HasColumnNames
   end
 end

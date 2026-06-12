@@ -1,12 +1,15 @@
 module Evaluation
   module Wizard
     class Step3Form
-      def initialize: (draft_payload: Hash[String, untyped], draft_token: String?) -> void
+      @payload: wizard_payload
+      @draft_token: String?
+
+      def initialize: (draft_payload: wizard_payload, draft_token: String?) -> void
 
       def agent_name: () -> String?
       def selected_dataset_id: () -> String?
       def draft_token: () -> String?
-      def datasets: () -> ActiveRecord::Relation
+      def datasets: () -> Dataset::relation
     end
   end
 end

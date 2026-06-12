@@ -21,21 +21,31 @@ module Orchestration
       when "object"
         raise Error, "#{path} must be an object" unless value.is_a?(Hash)
 
-        (schema["required"] || []).each do |key|
+        required = schema["required"]
+        Array(required).each do |key|
+          next unless key.is_a?(String)
+
           raise Error, "#{path} missing required key: #{key}" unless value.key?(key)
         end
 
         # JSON Schema: properties not present in data are valid (only required enforces presence)
-        (schema["properties"] || {}).each do |key, sub_schema|
-          validate_node!(value[key], sub_schema, "#{path}.#{key}") if value.key?(key)
+        properties = schema["properties"]
+        if properties.is_a?(Hash)
+          properties.each do |key, sub_schema|
+            next unless key.is_a?(String)
+            next unless sub_schema.is_a?(Hash)
+
+            validate_node!(value[key], sub_schema, "#{path}.#{key}") if value.key?(key)
+          end
         end
 
       when "array"
         raise Error, "#{path} must be an array" unless value.is_a?(Array)
 
-        if schema["items"]
+        items = schema["items"]
+        if items.is_a?(Hash)
           value.each_with_index do |item, i|
-            validate_node!(item, schema["items"], "#{path}[#{i}]")
+            validate_node!(item, items, "#{path}[#{i}]")
           end
         end
 

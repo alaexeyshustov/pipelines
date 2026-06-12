@@ -1,5 +1,5 @@
 module JsonParamsParsing
   private
 
-  def parse_json_field: (untyped permitted, Symbol key) -> void
+  def parse_json_field: (ActionController::Parameters permitted, Symbol key) -> void
 end

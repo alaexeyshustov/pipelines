@@ -1,4 +1,9 @@
 class ApplicationMailsController < ApplicationController
+  @query: String?
+  @pagy: Pagy
+  @mails: ApplicationMail::relation
+  @mail: ApplicationMail
+
   def index: () -> void
   def show: () -> void
   def new: () -> void
@@ -11,5 +16,5 @@ class ApplicationMailsController < ApplicationController
   private
 
   def set_mail: () -> void
-  def mail_params: () -> untyped
+  def mail_params: () -> ActionController::Parameters
 end

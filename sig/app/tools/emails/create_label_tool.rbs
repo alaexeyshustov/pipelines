@@ -2,6 +2,6 @@ module Emails
   class CreateLabelTool < RubyLLM::Tool
     def self.readonly?: () -> bool
     def name: () -> String
-    def execute: (provider: String, name: String) -> untyped
+    def execute: (provider: String, name: String) -> Emails::label
   end
 end

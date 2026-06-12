@@ -1,7 +1,40 @@
 
+# rubocop:disable RBS/Lint/TopLevelInterface, RBS/Lint/NoUntyped
+interface _AgentCallable
+  def call: (**json_object_value) -> json_object
+end
+
+interface _Callable
+  def call: (*untyped args, **untyped kwargs) -> untyped
+end
+
+interface _Relation[Model, PrimaryKey]
+  include _ActiveRecord_Relation[Model, PrimaryKey]
+
+  def not: () -> ::ActiveRecord::QueryMethods::WhereChain[self]
+         | (*untyped) -> self
+  def group: (*(Symbol | String | Arel::Attributes::Attribute)) -> self
+           | ...
+  def average: (Symbol | String | Arel::Attributes::Attribute) -> (Numeric? | Hash[Symbol | String, Numeric?])
+
+  def to_a: () -> Array[Model]
+  def map: [T] () { (Model) -> T } -> Array[T]
+  def each: () { (Model) -> void } -> self
+          | () -> ::Enumerator[Model, self]
+          | ...
+  def none?: () -> bool
+           | () { (Model) -> boolish } -> bool
+  def pick: (*(String | Symbol)) -> primitive?
+end
+# rubocop:enable RBS/Lint/TopLevelInterface, RBS/Lint/NoUntyped
+
 # rubocop:disable RBS/Lint/TopLevelTypeAlias
+type primitive = String | Symbol | Integer | Float | bool | nil
+type serializable_primitive = primitive | GlobalID::Identification
+type serializable_object = Array[serializable_primitive] | Hash[Symbol | String, serializable_primitive] | ActiveSupport::HashWithIndifferentAccess[Symbol | String, serializable_primitive]
+type serializable_object_value = serializable_primitive | serializable_object
 type json_value = String | Integer | Float | bool | nil
-type json_array = Array[json_value]
-type json_object = Hash[String, json_value | json_array | json_object]
 type json_object_value = json_value | json_array | json_object
+type json_array = Array[json_object_value]
+type json_object = Hash[String, json_object_value]
 # rubocop:enable RBS/Lint/TopLevelTypeAlias

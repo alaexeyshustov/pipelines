@@ -18,7 +18,7 @@ module Records
       scope = scope.offset(offset) if offset > 0
       scope = scope.limit(limit) if limit > 0
       rows  = model.as_rows(scope)
-      { headers: model::COLUMN_NAMES, rows: rows, row_count: rows.size }
+      { headers: model.tool_column_names, rows: rows, row_count: rows.size }
     rescue ModelNotFound => e
       { error: e.message }
     end

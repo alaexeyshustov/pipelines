@@ -14,12 +14,12 @@ module Evaluation
       private
 
       def fetch_instructions: (Sample sample) -> String?
-      def fetch_output_schema: (Sample sample) -> untyped
+      def fetch_output_schema: (Sample sample) -> json_object?
       def call_judge: (user_input: String, ?model: String) -> Array[metric_result]
       def build_user_message: (sample: Sample, dataset_sample: DatasetSample, metrics: Array[Metric]) -> String
-      def parse_judge_response: (untyped content) -> Array[metric_result]
-      def normalize_entry: (untyped entry, Integer index) -> metric_result?
-      def parse_output: (untyped output) -> untyped
+      def parse_judge_response: (json_object_value content) -> Array[metric_result]
+      def normalize_entry: (json_object_value entry, Integer index) -> metric_result?
+      def parse_output: (String? output) -> json_object_value
     end
   end
 end

@@ -2,6 +2,8 @@
 
 module Orchestration
   class PipelineRunForm < ::BaseForm
+    include SteepHacks
+
     attr_reader :pipeline_run
 
     validate :no_active_run
@@ -45,13 +47,14 @@ module Orchestration
       @extracted_input = if @pipeline.initial_input_schema.blank?
         nil
       else
-        user_input = @initial_input_params&.to_unsafe_h&.deep_stringify_keys || {}
+        user_input = @initial_input_params&.to_unsafe_h&.deep_stringify_keys || empty_object
         user_input.merge(hardcoded_values(@pipeline.initial_input_schema))
       end
     end
 
     def hardcoded_values(schema)
-      (schema["properties"] || {}).each_with_object({}) do |(key, prop), memo|
+      collector = {} # : Hash[String, json_object_value]
+      (schema["properties"] || empty_object).each_with_object(collector) do |(key, prop), memo|
         next unless prop["format"] == "hardcoded"
 
         memo[key] = hardcoded_value_for(prop)

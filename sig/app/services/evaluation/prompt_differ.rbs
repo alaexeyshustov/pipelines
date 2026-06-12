@@ -6,7 +6,10 @@ module Evaluation
       attr_reader type: :added | :removed | :unchanged
     end
 
-    def initialize: (untyped prompt_a, untyped prompt_b) -> void
+    @prompt_a: Evaluation::Prompt
+    @prompt_b: Evaluation::Prompt
+
+    def initialize: (Evaluation::Prompt prompt_a, Evaluation::Prompt prompt_b) -> void
     def system_prompt_diff: () -> Array[Line]
     def user_prompt_diff: () -> Array[Line]
 

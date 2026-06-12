@@ -1,5 +1,9 @@
 module Orchestration
   class MappingEntryComponent < ViewComponent::Base
+    @row: InputMappingComponent::MappingRow
+    @from_options: Array[[String, String]]
+
     def initialize: (row: InputMappingComponent::MappingRow, from_options: Array[[String, String]]) -> void
+    def path_text_field?: () -> bool
   end
 end

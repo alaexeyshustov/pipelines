@@ -1,5 +1,7 @@
 module Orchestration
   class Pipeline < ApplicationRecord
+    type relation = _Relation[Pipeline, Integer]
+
     def self.table_name: () -> String
 
     def name: () -> String?
@@ -12,15 +14,15 @@ module Orchestration
     def cron_expression=: (String?) -> String?
     def enabled: () -> bool
     def enabled=: (bool) -> bool
-    def initial_input_schema: () -> Hash[String, untyped]?
-    def initial_input_schema=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def initial_input_schema: () -> json_object?
+    def initial_input_schema=: (json_object?) -> json_object?
 
     def validate_steps: () -> Array[Pipeline::Validator::StepResult]
 
     def next_run_at: (?from: Time) -> Time?
 
-    def steps: () -> ActiveRecord::Associations::CollectionProxy
-    def pipeline_runs: () -> ActiveRecord::Associations::CollectionProxy
+    def steps: () -> Step::ActiveRecord_Associations_CollectionProxy
+    def pipeline_runs: () -> PipelineRun::ActiveRecord_Associations_CollectionProxy
 
     private
 

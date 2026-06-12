@@ -1,27 +1,45 @@
 module RubyLLM
+  interface _Provider
+    def slug: () -> String
+  end
+
+  module Provider
+    def self.for: (String? model) -> _Provider?
+  end
+
+  class Error < StandardError
+    def response: () -> (String | _ToS)
+  end
+
   class Message
-    def content: () -> String
+    def content: () -> json_object_value
   end
 
   class Chat
     def with_instructions: (String instructions) -> self
-    def with_schema: (untyped schema) -> self
+    def with_schema: (singleton(Schema) | Schema schema) -> self
     def with_temperature: (Numeric temperature) -> self
     def ask: (String prompt) -> Message
+    def id: () -> String?
   end
 
   class Agent
     def self.create: () -> instance
-    def self.chat_model: (untyped model) -> void
-    def self.model: (String model) -> void
-    def self.tools: (*untyped tools) -> void
-    def self.schema: () { () -> void } -> void
-    def self.instructions: (String instructions) -> void
+    def self.new: (?chat: Chat | ::Chat) -> instance
+    def self.chat_model: (singleton(::Chat) chat_class) -> void
+    def self.model: (String model_id) -> void
+    def self.tools: (*singleton(Tool) tools) -> void
+    def self.schema: () { () [self: SchemaBuilder] -> void } -> void
+    def self.instructions: (String text) -> void
     def self.string: (Symbol name, ?required: bool, ?description: String) -> void
 
     def with_model: (String model) -> self
-    def with_schema: (untyped schema) -> self
-    def ask: (String prompt) -> untyped
+    def with_schema: (singleton(Schema) | json_object schema) -> self
+    def with_tools: (*singleton(Tool) tools, ?replace: bool) -> self
+    def chat: () -> Chat
+    def id: () -> String?
+    def ask: (String prompt) -> Message
+    def messages: () -> ::Message::relation
   end
 
   class Tool
@@ -33,8 +51,27 @@ module RubyLLM
     def self.string: (Symbol name, ?required: bool, ?description: String) -> void
     def self.integer: (Symbol name, ?required: bool, ?description: String) -> void
     def self.boolean: (Symbol name, ?required: bool, ?description: String) -> void
-    def self.array: (Symbol name, ?required: bool, ?description: String) -> void
+    def self.array: (Symbol name, of: Symbol, ?required: bool, ?description: String) -> void
+                  | (Symbol name, ?required: bool, ?description: String) { () [self: SchemaBuilder] -> void } -> void
   end
 
-  def self.chat: (?model: String) -> Chat
+  class SchemaBuilder
+    def string: (Symbol name, ?required: bool, ?description: String) -> void
+    def integer: (Symbol name, ?required: bool, ?description: String) -> void
+    def boolean: (Symbol name, ?required: bool, ?description: String) -> void
+    def array: (Symbol name, of: Symbol, ?required: bool, ?description: String) -> void
+             | (Symbol name) { () [self: SchemaBuilder] -> void } -> void
+    def object: () { () [self: SchemaBuilder] -> void } -> void
+  end
+
+  class Models
+    type model = { id: String, temperature: Numeric, display_name: String?, provider: String? }
+
+    @models: Array[model]
+
+    def all: () -> Array[model]
+  end
+
+  def self.models: () -> Models
+  def self.chat: (?model: String?) -> Chat
 end

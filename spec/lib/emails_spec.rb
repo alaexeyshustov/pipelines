@@ -30,8 +30,8 @@ RSpec.describe Emails do
 
       described_class.configure(gmail: {}, yahoo: {})
 
-      expect(Emails::Adapters::GmailAdapter).to have_received(:from_env).with(no_args).at_least(:once)
-      expect(Emails::Adapters::YahooAdapter).to have_received(:from_env).with(no_args).once
+      expect(Emails::Adapters::GmailAdapter).to have_received(:from_env).with({}).at_least(:once)
+      expect(Emails::Adapters::YahooAdapter).to have_received(:from_env).with({}).once
     end
   end
 

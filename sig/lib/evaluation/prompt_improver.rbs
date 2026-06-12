@@ -3,6 +3,9 @@ module Evaluation
     class Error < StandardError
     end
 
+    @experiment: Experiment
+    @model: String
+
     def self.call: (experiment: Experiment, ?model: String) -> Prompt
 
     def initialize: (experiment: Experiment, model: String) -> void
@@ -11,9 +14,9 @@ module Evaluation
     private
 
     def evaluation_data: () -> Array[Justification]
-    def metrics: () -> Array[Metric]
+    def metrics: (Prompt current_prompt) -> Array[Metric]
     def build_improvement_message: (current_prompt: Prompt, evaluation_data: Array[Justification], metrics: Array[Metric]) -> String
     def run_agent: (String input) -> Hash[Symbol, String]
-    def parse_response: (String | Hash[untyped, untyped] content) -> Hash[Symbol, String]
+    def parse_response: (json_object_value content) -> Hash[Symbol, String]
   end
 end

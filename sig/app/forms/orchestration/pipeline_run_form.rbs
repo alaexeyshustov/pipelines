@@ -1,0 +1,22 @@
+module Orchestration
+  class PipelineRunForm < BaseForm
+    include SteepHacks
+
+    attr_reader pipeline_run: PipelineRun?
+
+    @pipeline: Pipeline
+    @initial_input_params: ActionController::Parameters?
+    @extracted_input: json_object?
+
+    def initialize: (pipeline: Pipeline, ?initial_input_params: ActionController::Parameters?) -> void
+    def save: () -> bool
+
+    private
+
+    def no_active_run: () -> void
+    def initial_input_valid: () -> void
+    def extract_initial_input: () -> json_object?
+    def hardcoded_values: (json_object schema) -> json_object
+    def hardcoded_value_for: (json_object prop) -> json_object_value
+  end
+end

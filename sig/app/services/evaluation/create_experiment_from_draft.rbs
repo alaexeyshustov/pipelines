@@ -3,19 +3,24 @@ module Evaluation
   end
 
   class CreateExperimentFromDraft
-    def self.call: (draft: Evaluation::WizardDraft) -> Evaluation::Experiment
+    include SteepHacks
 
-    def initialize: (draft: Evaluation::WizardDraft) -> void
+    def self.call: (draft: WizardDraft) -> Experiment
 
-    def call: () -> Evaluation::Experiment
+    @agent_name: String?
+    @prompt_id: Integer?
+
+    def initialize: (draft: WizardDraft) -> void
+
+    def call: () -> Experiment
 
     private
 
-    attr_reader draft: Evaluation::WizardDraft
+    attr_reader draft: WizardDraft
 
-    def payload: () -> Hash[String, untyped]
+    def payload: () -> json_object
     def resolve_prompt: () -> void
     def no_active_metrics?: () -> bool
-    def create_experiment!: () -> Evaluation::Experiment
+    def create_experiment!: () -> Experiment
   end
 end

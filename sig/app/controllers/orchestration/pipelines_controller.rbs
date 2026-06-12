@@ -1,5 +1,11 @@
 module Orchestration
   class PipelinesController < ApplicationController
+    @pipeline: Pipeline
+    @pipelines: Pipeline::relation
+    @steps: Step::relation
+    @actions: Action::relation
+    @latest_run: PipelineRun?
+
     def index: () -> void
     def new: () -> void
     def create: () -> void
@@ -14,6 +20,6 @@ module Orchestration
 
     def set_pipeline: () -> void
     def pipeline_params: () -> ActionController::Parameters
-    def extract_initial_input: () -> Hash[String, untyped]?
+    def extract_initial_input: () -> json_object?
   end
 end

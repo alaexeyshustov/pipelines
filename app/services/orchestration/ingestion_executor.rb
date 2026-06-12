@@ -9,14 +9,14 @@ module Orchestration
     )
 
     def self.call(operations: [], **data)
-      output = data.transform_keys(&:to_s)
+      output = data.transform_keys(&:to_s) # : Hash[String, json_object_value]
 
       operations.each_with_object(output) do |op, acc|
-        type = op.fetch("type")
+        type = op.fetch("type").to_s
         raise ArgumentError, "unknown operation type: #{type}" unless SUPPORTED_OPERATIONS.include?(type)
 
         result = execute_operation(acc, op)
-        acc.replace(result)
+        acc.replace(result) if result.is_a?(Hash)
       end
     end
 
@@ -29,6 +29,7 @@ module Orchestration
         when "rename"         then apply_rename(output, op)
         when "pick"           then apply_pick(output, op)
         when "merge_by_index" then apply_merge_by_index(output, op)
+        else output
         end
       end
 
@@ -43,14 +44,20 @@ module Orchestration
         source_items = Array(output[source])
         filtered     = source_items.select { |item| (id = item_id(item)) && allowed_ids.include?(id) }
 
-        output.merge(dest => filtered)
+        updated = output.dup
+        updated[dest] = filtered
+        updated
       end
 
       def dig_path(hash, path)
-        path.split(".").reduce(hash) do |node, key|
-          break unless node.is_a?(Hash)
-          node[key]
+        node = hash # : json_object_value
+        path.split(".").each do |key|
+          return nil unless node.is_a?(Hash)
+
+          node = node[key]
         end
+
+        node
       end
 
       def item_id(item)
@@ -65,7 +72,7 @@ module Orchestration
       end
 
       def apply_pick(output, op)
-        keys = Array(op.fetch("keys"))
+        keys = Array(op.fetch("keys")).filter_map { |key| key if key.is_a?(String) }
         output.slice(*keys)
       end
 
@@ -75,13 +82,19 @@ module Orchestration
         inject  = op.fetch("inject").to_s
         dest    = op.fetch("output").to_s
 
-        source_arr = Array(output.fetch(source, [])) # : Array[json_object]
+        source_arr = Array(output.fetch(source, [])).filter_map { |item| item if item.is_a?(Hash) }
         ids_arr    = Array(output.fetch(ids_key, []))
         count      = [ source_arr.size, ids_arr.size ].min
 
-        merged = source_arr.first(count).map.with_index { |item, i| { inject => ids_arr[i] }.merge(item) }
+        merged = source_arr.first(count).map.with_index do |item, i|
+          row = item.dup
+          row[inject] = ids_arr[i]
+          row
+        end
 
-        output.merge(dest => merged)
+        updated = output.dup
+        updated[dest] = merged
+        updated
       end
     end
   end

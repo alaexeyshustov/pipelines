@@ -1,4 +1,5 @@
 module Emails
+  type options = Adapters::gmail_options | Adapters::imap_options
   type message = {
       id: String | nil,
       provider: String,
@@ -12,13 +13,13 @@ module Emails
       labels: Array[String]
     }
   type label = { id: String, name: String, type: String }
-  type modify_result = { message_id: Integer | String, added: Array[String], removed: Array[String] }
+  type modify_result = { message_id: Integer | String, added: Array[String], removed: Array[String] } | { id: Integer | String, labels: Array[String] }
 
   PROVIDERS: Hash[String, singleton(Adapters::BaseAdapter)]
 
-  @provider_registry: ProviderRegistry?
+  self.@provider_registry: ProviderRegistry?
 
-  def self.configure: (**untyped providers_config) -> void
+  def self.configure: (**options) -> void
   def self.search_messages: (String provider_name, String query, ?max_results: Integer, ?offset: Integer, ?label: String?) -> Array[message]
   def self.list_messages: (String provider_name, ?max_results: Integer, ?after_date: Date?, ?before_date: Date?, ?offset: Integer, ?label: String?) -> Array[message]
   def self.get_message: (String provider_name, String | Integer message_id, ?label: String?) -> message

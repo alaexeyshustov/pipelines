@@ -1,8 +1,46 @@
-class ApplicationRecord < ActiveRecord::Base
-  COLUMN_NAMES: Array[String]
+# rubocop:disable RBS/Lint/TopLevelInterface
+interface _DBConnection
+  def quote_column_name: (String column_name) -> String
+  def select_all: (String sql) -> Array[Hash[String, String?]]
+end
+# rubocop:enable RBS/Lint/TopLevelInterface
 
-  def self.where: (*untyped) -> untyped
-  def self.create!: (*untyped) -> instance
+class ApplicationRecord < ActiveRecord::Base
+  def self.where: (*top) -> ActiveRecord::Relation
+                | () -> ActiveRecord::QueryMethods::WhereChain[ActiveRecord::Relation]
+  def self.joins: (*top) -> ActiveRecord::Relation
+  def self.distinct: () -> ActiveRecord::Relation
+  def self.includes: (*top) -> ActiveRecord::Relation
+  def self.eager_load: (*top) -> ActiveRecord::Relation
+  def self.preload: (*top) -> ActiveRecord::Relation
+  def self.order: (*top) -> ActiveRecord::Relation
+  def self.group: (*top) -> ActiveRecord::Relation
+  def self.limit: (Integer) -> ActiveRecord::Relation
+  def self.offset: (Integer) -> ActiveRecord::Relation
+  def self.count: (?top) -> Integer
+  def self.first: () -> instance?
+  def self.last: () -> instance?
+  def self.all: () -> ActiveRecord::Relation
+  def self.none: () -> ActiveRecord::Relation
+  def self.find: (Integer | String) -> instance
+  def self.find_by: (*top) -> instance?
+  def self.find_by!: (*top) -> instance
+  def self.find_or_create_by!: (*top) ?{ (instance) -> void } -> instance
+  def self.create!: (*top) -> instance
+  def self.as_rows: (?ActiveRecord::Relation scope) -> Array[Hash[String, String?]]
+  def self.arel_table: () -> Arel::Table
+  def self.table_name: () -> String
+  def self.connection: () -> _DBConnection
+  def self.sanitize_sql: (*top) -> String
+  def self.validators: () -> Array[ActiveModel::Validator]
 
   def id: () -> Integer
+  def reload: () -> self
+  def update: (*top) -> bool
+  def update!: (**top) -> self
+  def update_columns: (**top) -> bool
+  def save!: () -> bool
+  def new_record?: () -> bool
+  def created_at: () -> Time
+  def updated_at: () -> Time
 end

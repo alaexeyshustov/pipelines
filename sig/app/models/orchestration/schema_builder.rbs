@@ -1,8 +1,13 @@
 module Orchestration
   class SchemaBuilder
+    include SteepHacks
+    extend SteepHacks
+
     TYPES: Array[String]
     ENUM_TYPES: Array[String]
     NUMERIC_TYPES: Array[String]
+
+    @format: String?
 
     attr_reader type: String?
     attr_reader description: String?
@@ -10,7 +15,7 @@ module Orchestration
     attr_reader additional_properties: bool?
     attr_reader properties: Hash[String, SchemaBuilder]
     attr_reader items: SchemaBuilder?
-    attr_reader enum: Array[untyped]
+    attr_reader enum: Array[json_value]
     attr_reader minimum: Numeric?
     attr_reader maximum: Numeric?
 
@@ -21,15 +26,15 @@ module Orchestration
       ?additional_properties: bool?,
       ?properties: Hash[String, SchemaBuilder],
       ?items: SchemaBuilder?,
-      ?enum: Array[untyped],
+      ?enum: Array[json_value],
       ?minimum: Numeric?,
       ?maximum: Numeric?
     ) -> void
 
-    def self.from_schema: (untyped schema) -> SchemaBuilder
-    def self.from_params: (untyped params) -> SchemaBuilder
+    def self.from_schema: (json_object schema) -> SchemaBuilder
+    def self.from_params: (ActionController::Parameters | json_object params) -> SchemaBuilder
 
-    def to_schema: () -> Hash[String, untyped]
+    def to_schema: () -> json_object
 
     def add_property: (String name) -> SchemaBuilder
     def remove_property: (String name) -> SchemaBuilder
@@ -38,7 +43,17 @@ module Orchestration
 
     private
 
-    def dup_with: (**untyped) -> SchemaBuilder
-    def self.coerce_number: (untyped value, untyped type) -> Numeric?
+    def dup_with: (
+      ?type: String?,
+      ?description: String?,
+      ?required: Array[String],
+      ?additional_properties: bool?,
+      ?properties: Hash[String, SchemaBuilder],
+      ?items: SchemaBuilder?,
+      ?enum: Array[json_value],
+      ?minimum: Numeric?,
+      ?maximum: Numeric?
+    ) -> SchemaBuilder
+    def self.coerce_number: (json_object_value value, String? type) -> Numeric?
   end
 end

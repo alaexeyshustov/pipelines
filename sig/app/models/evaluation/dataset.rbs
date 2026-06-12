@@ -1,18 +1,22 @@
 module Evaluation
   class Dataset < ApplicationRecord
+    type relation = _Relation[Dataset, Integer]
+
     def self.table_name: () -> String
-    def self.find_or_create_by!: (**untyped attrs) -> Dataset
-    def self.find_by: (**untyped attrs) -> Dataset?
-    def self.where: (**untyped attrs) -> ActiveRecord::Relation
-    def self.left_joins: (*untyped) -> ActiveRecord::Relation
-    def self.create!: (**untyped attrs) -> Dataset
+    def self.find_or_create_by!: (**top attrs) ?{ (Dataset) -> void } -> Dataset
+    def self.find_by: (**top attrs) -> Dataset?
+    def self.where: (**top attrs) -> relation
+    def self.left_joins: (*top) -> relation
+    def self.create!: (**top attrs) -> Dataset
 
     def name: () -> String?
     def name=: (String?) -> String?
+    def agent_name: () -> String?
+    def agent_name=: (String?) -> String?
     def description: () -> String?
     def description=: (String?) -> String?
 
-    def dataset_samples: () -> ActiveRecord::Associations::CollectionProxy
-    def experiments: () -> ActiveRecord::Associations::CollectionProxy
+    def dataset_samples: () -> DatasetSample::relation
+    def experiments: () -> Experiment::relation
   end
 end

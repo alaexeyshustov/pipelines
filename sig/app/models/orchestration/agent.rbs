@@ -1,11 +1,13 @@
 module Orchestration
   class Agent < ApplicationRecord
+    type relation = _Relation[Agent, Integer]
+
     ALLOWED_TOOL_NAMESPACES: Array[String]
 
     def self.available_tools: () -> Array[String]
     def self.available_models: () -> Array[[String, Array[String]]]
 
-    def actions: () -> ActiveRecord::Associations::CollectionProxy
+    def actions: () -> Action::relation
 
     def name: () -> String
     def name=: (String) -> String
@@ -17,10 +19,10 @@ module Orchestration
     def tools=: (Array[String]) -> Array[String]
     def prompt: () -> String?
     def prompt=: (String?) -> String?
-    def input_schema: () -> Hash[String, untyped]?
-    def input_schema=: (Hash[String, untyped]?) -> Hash[String, untyped]?
-    def output_schema: () -> Hash[String, untyped]?
-    def output_schema=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def input_schema: () -> json_object?
+    def input_schema=: (json_object?) -> json_object?
+    def output_schema: () -> json_object?
+    def output_schema=: (json_object?) -> json_object?
     def enabled: () -> bool
     def enabled=: (bool) -> bool
     def enabled?: () -> bool

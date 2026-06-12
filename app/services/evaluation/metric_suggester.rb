@@ -28,12 +28,10 @@ module Evaluation
       prompt_to_analyze = agent_system_prompt
       raise Error, "No prompt found for agent '#{@agent_name}'" if prompt_to_analyze.blank?
 
-      # steep:ignore:start
       response = RubyLLM.chat(model: @model)
                         .with_temperature(0)
                         .with_instructions(SYSTEM_PROMPT)
                         .ask(prompt_to_analyze)
-      # steep:ignore:end
 
       parse_response(response.content)
     rescue Error
@@ -49,13 +47,15 @@ module Evaluation
     end
 
     def parse_response(content)
-      parsed = JSON.parse(content)
+      parsed = content.is_a?(String) ? JSON.parse(content) : content
       raise Error, "Expected JSON array" unless parsed.is_a?(Array)
 
       parsed.filter_map do |entry|
+        next unless entry.is_a?(Hash)
+
         name        = entry["name"].to_s.strip
         description = entry["description"].to_s.strip
-        weight      = Float(entry["weight"])
+        weight      = Float(entry["weight"]).to_f
 
         next if name.blank? || description.blank?
         unless weight.between?(0.0, 1.0)

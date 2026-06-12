@@ -43,7 +43,7 @@ module Evaluation
     end
 
     def overall_average(experiment)
-      EvaluationResult.where(experiment: experiment).average(:score)
+      EvaluationResult.where(experiment: experiment).average(:score) # : Float?
     end
   end
 end

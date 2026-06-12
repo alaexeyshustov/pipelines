@@ -6,18 +6,20 @@ module UI
       attr_reader type: Symbol
       attr_reader variant_map: Hash[String, Symbol]
 
-      def self.from: (Hash[Symbol, untyped] hash) -> Attribute
+      def self.from: (Hash[Symbol, primitive] hash) -> Attribute
     end
 
-    def initialize: (entity: untyped, attributes: Array[Hash[Symbol, untyped]]) -> void
-    def value_for: (Attribute attr) -> untyped
-    def variant_for: (Attribute attr, untyped value) -> Symbol
+    @entity: ApplicationRecord
+    @attributes: Array[Hash[Symbol, primitive]]
+
+    def initialize: (entity: ApplicationRecord, attributes: Array[Hash[Symbol, primitive]]) -> void
+    def value_for: (Attribute attr) -> primitive
+    def variant_for: (Attribute attr, primitive value) -> Symbol
     def text_classes_for: (Attribute attr) -> String
-    def json_display: (untyped val) -> String
+    def json_display: (json_object_value val) -> String
 
     def with_status_badge: (label: String, ?variant: Symbol) -> StatusBadgeComponent
     def status_badge: () -> String?
     def status_badge?: () -> bool
   end
 end
-

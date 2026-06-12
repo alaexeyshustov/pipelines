@@ -19,41 +19,53 @@ module Evaluation
     end
 
     def call
-      prompt = Prompt.last_for_agent(@agent_name)
-      raise ArgumentError, "No prompt found for agent: #{@agent_name}" if prompt.nil?
+      current_prompt = load_prompt!
 
       response = RubyLLM.chat(model: DEFAULT_MODEL)
                         .with_instructions(SYSTEM_PROMPT)
-                        .ask("Agent instructions:\n\n#{prompt.system_prompt}")
+                        .ask("Agent instructions:\n\n#{current_prompt.system_prompt}")
 
       parse_metrics(response.content)
     end
 
     private
 
-    def parse_metrics(content)
-      parsed = JSON.parse(content)
-      validate_metrics!(parsed)
-      parsed
-    rescue JSON::ParserError => e
-      raise ArgumentError,
-            "Metric extraction returned invalid JSON for agent #{@agent_name}: #{truncate(content)} (#{e.message})"
+    def load_prompt!
+      prompt = Prompt.last_for_agent(@agent_name)
+      if prompt.nil?
+        raise ArgumentError, "No prompt found for agent: #{@agent_name}"
+      else
+        prompt
+      end
     end
 
-    def validate_metrics!(metrics)
-      unless metrics.is_a?(Array)
-        raise ArgumentError,
-              "Metric extraction returned non-array for agent #{@agent_name}"
-      end
-
-      metrics.each_with_index do |metric, i|
-        unless metric.is_a?(Hash) &&
-               metric["name"].is_a?(String) && metric["name"].present? &&
-               metric["description"].is_a?(String) && metric["description"].present?
-          raise ArgumentError,
-                "Invalid metric at index #{i} for agent #{@agent_name}: expected Hash with string name and description"
+    def parse_metrics(content)
+      parsed = content.is_a?(String) ? JSON.parse(content) : content
+      case parsed
+      when Array
+        parsed.each_with_index do |metric, i|
+          unless metric.is_a?(Hash) &&
+                 metric["name"].is_a?(String) && metric["name"].present? &&
+                 metric["description"].is_a?(String) && metric["description"].present?
+            raise ArgumentError,
+                  "Invalid metric at index #{i} for agent #{@agent_name}: expected Hash with string name and description"
+          end
         end
+
+        parsed.filter_map do |metric|
+          next unless metric.is_a?(Hash)
+
+          {
+            "name" => metric["name"].to_s,
+            "description" => metric["description"].to_s
+          }
+        end
+      else
+        raise ArgumentError, "Metric extraction returned non-array for agent #{@agent_name}"
       end
+    rescue JSON::ParserError => e
+      raise ArgumentError,
+            "Metric extraction returned invalid JSON for agent #{@agent_name}: #{truncate(content.to_s)} (#{e.message})"
     end
 
     def truncate(content, limit = 200)

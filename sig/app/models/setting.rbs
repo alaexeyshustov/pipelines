@@ -3,6 +3,7 @@ class Setting < ApplicationRecord
 
   def self.fetch: (String key) -> String?
   def self.set: (String key, String value) -> void
+  def self.cache_key: (String key) -> String
 
   def key: () -> String?
   def key=: (String?) -> String?

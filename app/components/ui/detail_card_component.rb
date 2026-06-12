@@ -22,7 +22,7 @@ module UI
     end
 
     def value_for(attr)
-      @entity.public_send(attr.attribute)
+      @entity.public_send(attr.attribute) # steep:ignore
     end
 
     def variant_for(attr, value)

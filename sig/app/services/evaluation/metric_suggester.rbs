@@ -8,12 +8,15 @@ module Evaluation
 
     def self.call: (agent_name: String, model: String?) -> Array[{ name: String, description: String, weight: Float }]
 
+    @agent_name: String
+    @model: String?
+
     def initialize: (agent_name: String, model: String?) -> void
     def call: () -> Array[{ name: String, description: String, weight: Float }]
 
     private
 
     def agent_system_prompt: () -> String?
-    def parse_response: (String) -> Array[{ name: String, description: String, weight: Float }]
+    def parse_response: (json_object_value) -> Array[{ name: String, description: String, weight: Float }]
   end
 end

@@ -5,7 +5,7 @@ class ModelsController < ApplicationController
   paginable per_page: [ 20, 50, 100 ]
 
   def index
-    @query = params[:q]
+    @query = params[:q].to_s
     models = RubyLLM.models.all.sort_by { |m| [ m.provider.to_s, m.name ] }
     models = models.select { |m| model_matches?(m, @query) } if @query.present?
     @pagy, @models = pagy(:offset, models, limit: @per_page)

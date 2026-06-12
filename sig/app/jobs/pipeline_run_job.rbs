@@ -5,5 +5,5 @@ class PipelineRunJob < ApplicationJob
 
   def run_actions_in_parallel: (Array[Orchestration::ActionRun] action_runs) -> void
   def execute_action: (Orchestration::ActionRun action_run) -> void
-  def build_agent: (Orchestration::Action action, Hash[String, untyped] params) -> untyped
+  def build_agent: (Orchestration::Action action, json_object params) -> RubyLLM::Agent
 end

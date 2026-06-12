@@ -21,3 +21,7 @@
 [x] navigation: add jobs nav item
 [ ] orchestration: remove params from step_actions, move to the mapping
 [ ] jobs: update state if failed
+[ ] refactoring: stricter rubocop rules: class length, method length, cyclomatic complexity
+[ ] refactoring: long classes - find pure functions and extract to helpers
+[ ] refactoring: save repeated queries to models
+[ ] refactoring: decouple orchestration from evaluation, move orchestration to lib/

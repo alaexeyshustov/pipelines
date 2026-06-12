@@ -1,10 +1,10 @@
 FactoryBot.define do
   factory :application_mail do
-    date     { Date.today }
-    provider { 'gmail' }
+    date      { Date.today }
+    provider  { 'gmail' }
     sequence(:email_id) { |n| "email_#{n}@gmail.com" }
-    company  { 'Acme Corp' }
+    company   { 'Acme Corp' }
     job_title { 'Software Engineer' }
-    action   { 'applied' }
+    action    { 'applied' }
   end
 end

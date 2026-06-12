@@ -8,7 +8,7 @@ module Pipeline
     def initialize(model:, logger:, date: Date.today)
       @model  = model
       @logger = logger
-      @date   = date.is_a?(String) ? Date.parse(date) : date
+      @date   = date.is_a?(Date) ? date : Date.parse(date.to_s)
     end
 
     def run
@@ -28,10 +28,13 @@ module Pipeline
 
     def step1_fetch_emails
       tmp_file = Rails.root.join("tmp", "emails_#{@date - 1}_#{@date}.json")
-      return JSON.parse(File.read(tmp_file)) if File.exist?(tmp_file)
+      if File.exist?(tmp_file)
+        cached = JSON.parse(tmp_file.read)
+        return cached.filter_map { |email| email if email.is_a?(Hash) } if cached.is_a?(Array)
+      end
 
       emails = fetch_from_providers
-      File.write(tmp_file, emails.to_json)
+      tmp_file.write(emails.to_json)
       emails
     end
 
@@ -47,7 +50,7 @@ module Pipeline
       input = {
         topic: "job applications",
         emails: emails.map { |email|
-          email[:tags] = tags_by_id[email["id"]]&.fetch("tags", []) || []
+          email["tags"] = tags_by_id[email["id"]]&.fetch("tags", []) || []
           email
         }
       }.to_json
@@ -57,25 +60,24 @@ module Pipeline
     end
 
     def step4_map_emails(emails:)
-      input = {
-        emails: emails
-      }.to_json
-
-      Emails::MappingAgent.create
+      input = { emails: emails }.to_json
+      content = Emails::MappingAgent.create
         .with_model(@model)
         .with_schema(ApplicationMailsSchema)
         .ask(input)
         .content
+
+      return content.transform_keys(&:to_s) if content.is_a?(Hash)
+
+      {}
     end
 
     def step5_store_mapped_emails(emails:)
-      input = {
-        table: "application_mails",
-        label: "applications",
-        emails: emails
-      }.to_json
+      input = { table: "application_mails", label: "applications", emails: emails }.to_json
+      content = Records::StoreAgent.create.with_model(@model).ask(input).content
+      return content.transform_keys(&:to_s) if content.is_a?(Hash)
 
-      Records::StoreAgent.create.with_model(@model).ask(input).content
+      {}
     end
 
     def step6_normalize_stored_emails(emails: [])
@@ -104,28 +106,42 @@ module Pipeline
 
     def step8_upload_csv_gist(gist_id:)
       @logger.info "Uploading gist #{gist_id}"
-      Interviews::GistExportService.new(ids: nil, gist_id: gist_id).call
+      result = Interviews::GistExportService.new(ids: nil, gist_id: gist_id).call
+      { "ok" => result.ok, "message" => result.message }
     end
 
     private
 
     def filter_emails(all_emails)
       tags         = results_from(step2_classify_email(emails: all_emails))
-      filtered_ids = results_from(step3_filter_emails(emails: all_emails, tags: tags)).map { |res| res["id"] }
-      all_emails.select { |email| filtered_ids.include?(email["id"]) }
+      filtered_ids = results_from(step3_filter_emails(emails: all_emails, tags: tags)).filter_map do |res|
+        id = res["id"]
+        id if id.is_a?(String)
+      end
+      all_emails.select do |email|
+        id = email["id"]
+        next false unless id.is_a?(String)
+
+        filtered_ids.include?(id.to_s)
+      end
     end
 
     def results_from(response)
       @logger.debug "Extracting results from response"
-      response.is_a?(Hash) ? response["results"] || [] : []
+      return [] unless response.is_a?(Hash)
+
+      results = response["results"]
+      results.is_a?(Array) ? results.filter_map { |result| result if result.is_a?(Hash) } : []
     end
 
     def map_and_store(filtered_emails)
-      mapped_emails = step4_map_emails(emails: filtered_emails)["emails"] || []
+      mapped_value = step4_map_emails(emails: filtered_emails)["emails"]
+      mapped_emails = mapped_value.is_a?(Array) ? mapped_value.filter_map { |email| email if email.is_a?(Hash) } : [] # : Array[json_object]
       return nil if mapped_emails.empty?
 
-      email_ids    = step5_store_mapped_emails(emails: mapped_emails)["ids"] || []
-      saved_emails = ApplicationMail.where(id: email_ids).groupped.map(&:attributes)
+      ids_value    = step5_store_mapped_emails(emails: mapped_emails)["ids"]
+      email_ids    = ids_value.is_a?(Array) ? ids_value : [] # : Array[json_object_value]
+      saved_emails = ApplicationMail.groupped.where(id: email_ids).map(&:attributes)
       step6_normalize_stored_emails(emails: saved_emails)
       saved_emails
     end
@@ -142,7 +158,14 @@ module Pipeline
         tasks = [ "gmail", "yahoo" ].map do |provider|
           semaphore.async do
             result = step1(provider: provider, after: @date - 1, before: @date)
-            result.is_a?(Array) ? result : (result["results"] || result[:results] || [])
+            if result.is_a?(Array)
+              result.filter_map { |email| email if email.is_a?(Hash) }
+            elsif result.is_a?(Hash)
+              results = result["results"]
+              results.is_a?(Array) ? results.filter_map { |email| email if email.is_a?(Hash) } : []
+            else
+              []
+            end
           end
         end
         tasks.flat_map(&:wait)

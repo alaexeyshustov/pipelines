@@ -1,0 +1,16 @@
+module Orchestration
+  class StepActionCreateForm < BaseForm
+    attr_reader step_action: Orchestration::StepAction?
+
+    @step: Orchestration::Step
+    @action_id: Integer
+
+    def initialize: (step: Orchestration::Step, action_id: Integer | String) -> void
+    def save: () -> bool
+
+    private
+
+    def action_exists: () -> void
+    def action: () -> Orchestration::Action?
+  end
+end

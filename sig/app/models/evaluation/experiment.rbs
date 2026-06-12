@@ -1,21 +1,26 @@
 module Evaluation
   class Experiment < ApplicationRecord
+    include SteepHacks
+
+    type relation = _Relation[Experiment, Integer]
+
     def self.table_name: () -> String
     def self.find: (Integer id) -> Experiment
-    def self.find_by: (**untyped attrs) -> Experiment?
-    def self.create!: (**untyped attrs) -> Experiment
-    def self.where: (**untyped attrs) -> ActiveRecord::Relation
-    def self.joins: (*untyped) -> ActiveRecord::Relation
-    def self.includes: (*untyped) -> ActiveRecord::Relation
-    def self.order: (*untyped) -> ActiveRecord::Relation
+    def self.find_by: (**top attrs) -> Experiment?
+    def self.create!: (**top attrs) -> Experiment
+    def self.where: (**top attrs) -> relation
+    def self.joins: (*top) -> relation
+    def self.includes: (*top) -> relation
+    def self.order: (*top) -> relation
+    def self.not: (*top) -> relation
 
     def id: () -> Integer
     def created_at: () -> Time
     def name: () -> String?
     def name=: (String?) -> String?
     def description: () -> String?
-    def metadata: () -> Hash[String, untyped]?
-    def metadata=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def metadata: () -> json_object?
+    def metadata=: (json_object?) -> json_object?
     def status: () -> String
     def status=: (String | Symbol) -> (String | Symbol)
     def sample_model: () -> String?
@@ -23,13 +28,13 @@ module Evaluation
     def evaluation_model: () -> String?
     def evaluation_model=: (String?) -> String?
 
-    def dataset: () -> Evaluation::Dataset
-    def dataset=: (Evaluation::Dataset) -> Evaluation::Dataset
-    def prompt: () -> Evaluation::Prompt?
-    def prompt=: (Evaluation::Prompt?) -> Evaluation::Prompt?
+    def dataset: () -> Dataset?
+    def dataset=: (Dataset) -> Dataset
+    def prompt: () -> Prompt?
+    def prompt=: (Prompt?) -> Prompt?
 
-    def samples: () -> ActiveRecord::Associations::CollectionProxy
-    def evaluation_results: () -> ActiveRecord::Associations::CollectionProxy
+    def samples: () -> Sample::relation
+    def evaluation_results: () -> EvaluationResult::relation
 
     def pending?: () -> bool
     def sampling?: () -> bool
@@ -38,11 +43,16 @@ module Evaluation
     def failed?: () -> bool
     def in_progress?: () -> bool
 
-    def update!: (**untyped attrs) -> Experiment
+    def update!: (**top attrs) -> Experiment
 
     def agent_name: () -> String?
     def runner_model: () -> String?
     def newer_experiment: () -> Experiment?
     def per_metric_averages: () -> Hash[String, Float]
+
+    private
+
+    def ready_to_evaluate?: () -> bool
+    def evaluations_finished?: () -> bool
   end
 end

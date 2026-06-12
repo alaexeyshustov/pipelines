@@ -16,13 +16,13 @@ module Records
 
     def execute(table:, id:, data:)
       model  = resolve_model(table)
-      record = model.find(id)
+      record = model.find(id.to_i)
 
-      attrs = JSON.parse(data)
+      attrs = JSON.parse(data) #: json_object_value
       raise ArgumentError, "data must be a JSON object" unless attrs.is_a?(Hash)
       return { status: "invalid_attributes" } if attrs.empty?
 
-      attrs = attrs.transform_keys(&:to_s).slice(*model::COLUMN_NAMES)
+      attrs = attrs.transform_keys(&:to_s).slice(*model.tool_column_names)
       record.update(attrs) unless attrs.empty?
       { status: "row_updated" }
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e

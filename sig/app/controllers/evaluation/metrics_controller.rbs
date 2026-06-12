@@ -1,8 +1,14 @@
 module Evaluation
   class MetricsController < ApplicationController
+    @metric: Evaluation::Metric
+    @metrics_by_agent: Hash[String, Array[Evaluation::Metric]]
+
     def index: () -> void
     def edit: () -> void
     def update: () -> void
+    def create: () -> void
+    def destroy: () -> void
+    def generate: () -> void
 
     private
 
