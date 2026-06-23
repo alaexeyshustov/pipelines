@@ -1,0 +1,29 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://api.mistral.ai/v1/chat/completions
+    body:
+      encoding: UTF-8
+      string: '{"model":"mistral-large-latest","messages":[{"role":"system","content":"You are an email classifier. Your job is to tag a list of emails by their subject lines and return suggested tags.\n\nInput:\n{\n  \"emails\": [\n    {\"id\": \"id of email\", \"subject\": \"Email subject line\"}\n  ]\n}\n\nSteps:\n1. For each email, analyze the subject line and suggest short lowercase classification tags that are relevant to the content of the email.\n  Tags should be concise and descriptive (e.g. \"job\", \"application\", \"interview\", \"offer\").\n"},{"role":"user","content":"{\"emails\":[{\"id\":\"test-1\",\"subject\":\"Job offer from Acme\"}]}"}],"tools":[{"type":"function","function":{"name":"temp_file","description":"Read and write temporary files in the /tmp directory.","parameters":{"type":"object","properties":{"action":{"type":"string"},"filename":{"type":"string"},"content":{"type":"string"}},"required":["action","filename"]}}}],"response_format":{"type":"json_object"}}'
+    headers:
+      Accept:
+      - "*/*"
+      Authorization:
+      - Bearer <MISTRAL_API_KEY>
+      Content-Type:
+      - application/json
+      User-Agent:
+      - Faraday v2.12.2
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Content-Type:
+      - application/json
+    body:
+      encoding: UTF-8
+      string: '{"id":"cmpl-integration-runner-001","object":"chat.completion","model":"mistral-large-latest","choices":[{"index":0,"message":{"role":"assistant","content":"{\"results\":[{\"id\":\"test-1\",\"tags\":[\"job\",\"application\"]}]}","tool_calls":null},"finish_reason":"stop"}],"usage":{"prompt_tokens":150,"completion_tokens":20,"total_tokens":170}}'
+  recorded_at: Wed, 09 Apr 2026 00:00:00 GMT
+recorded_with: VCR 6.3.1

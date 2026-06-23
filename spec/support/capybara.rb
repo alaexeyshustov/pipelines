@@ -1,0 +1,19 @@
+# frozen_string_literal: true
+
+require "capybara/rspec"
+require "capybara/cuprite"
+
+Capybara.register_driver(:cuprite) do |app|
+  Capybara::Cuprite::Driver.new(
+    app,
+    window_size: [ 1400, 900 ],
+    process_timeout: 15,
+    timeout: 10,
+    headless: true
+  )
+end
+
+Capybara.javascript_driver = :cuprite
+Capybara.default_max_wait_time = 5
+Capybara.server = :webrick
+Capybara.disable_animation = true

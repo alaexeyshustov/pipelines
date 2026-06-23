@@ -40,6 +40,11 @@ RSpec.describe Orchestration::PipelineRunner do
         action_run = Orchestration::ActionRun.last
         expect(action_run.chat_id).to eq(chat.id)
       end
+
+      it 'records started_at on the PipelineRun' do
+        expect { described_class.new(pipeline_run).call }
+          .to change { pipeline_run.reload.started_at }.from(nil)
+      end
     end
 
     context 'when the pipeline has a model set' do
@@ -207,6 +212,11 @@ RSpec.describe Orchestration::PipelineRunner do
         expect(action_run.agent_snapshot.keys).to contain_exactly("model", "prompt", "tools", "output_schema")
       end
 
+      it 'stores tool class names as strings in the snapshot' do
+        described_class.new(pipeline_run).call
+        expect(Orchestration::ActionRun.last.agent_snapshot["tools"]).to all(be_a(String))
+      end
+
       it 'does not mutate historical snapshots when the agent is later edited' do
         described_class.new(pipeline_run).call
         action_run = Orchestration::ActionRun.last
@@ -216,6 +226,20 @@ RSpec.describe Orchestration::PipelineRunner do
         action_run.reload
 
         expect(action_run.agent_snapshot).to eq(original_snapshot)
+      end
+    end
+
+    context 'when the built agent has a chat' do
+      let(:stubbed_chat) { create(:chat) }
+
+      before do
+        allow(stub_agent).to receive(:chat).and_return(stubbed_chat)
+        create(:orchestration_step_action, step: step1, action: action, position: 1)
+      end
+
+      it 'uses chat.id as the chat_id' do
+        described_class.new(pipeline_run).call
+        expect(Orchestration::ActionRun.last.chat_id).to eq(stubbed_chat.id)
       end
     end
 
@@ -395,6 +419,18 @@ RSpec.describe Orchestration::PipelineRunner do
         expect(pipeline_run.reload.error).to eq("openai API error (429): Rate limit exceeded")
         expect(Rails.logger).to have_received(:error).with(include('"category":"provider_http_error"'))
       end
+
+      it 'includes the failure summary in the logged JSON' do
+        described_class.new(pipeline_run).call
+        expect(Rails.logger).to have_received(:error).with(
+          include('"summary":"openai API error (429): Rate limit exceeded"')
+        )
+      end
+
+      it 'includes chat_id in the logged JSON' do
+        described_class.new(pipeline_run).call
+        expect(Rails.logger).to have_received(:error).with(include('"chat_id"'))
+      end
     end
 
     context "when the provider call hits a transport timeout" do
@@ -453,6 +489,26 @@ RSpec.describe Orchestration::PipelineRunner do
         described_class.new(pipeline_run).call
         expect(pipeline_run.reload.status).to eq("completed")
         expect(Orchestration::ActionRun.count).to eq(2)
+      end
+    end
+
+    context 'when steps are persisted in reverse position order' do
+      let(:step_b) { create(:orchestration_step, pipeline: pipeline, name: "step_b", position: 2) }
+
+      before do
+        # step_b (position 2) is inserted into DB before step1 (position 1).
+        # Without ORDER BY position the query would return step_b first, causing an
+        # UnknownOutputKey failure because "extract_out" has not been accumulated yet.
+        create(:orchestration_step_action, step: step_b, action: action, position: 1,
+               input_mapping: { "x" => { "from" => "extract_out" } })
+        create(:orchestration_step_action, step: step1, action: action, position: 1,
+               output_key: "extract_out")
+        allow(stub_agent).to receive(:ask).and_return(instance_double(RubyLLM::Message, content: "ok"))
+      end
+
+      it 'executes steps in ascending position order regardless of DB insertion order' do
+        described_class.new(pipeline_run).call
+        expect(pipeline_run.reload.status).to eq("completed")
       end
     end
 
@@ -551,6 +607,21 @@ RSpec.describe Orchestration::PipelineRunner do
         action_run = Orchestration::ActionRun.last
         expect(action_run.status).to eq("completed")
         expect(action_run.output).to eq({ "result" => { "key" => "value" } })
+      end
+    end
+
+    context 'when the agent has an empty hash output_schema' do
+      before do
+        action.agent.update!(output_schema: {})
+        create(:orchestration_step_action, step: step1, action: action, position: 1)
+        allow(stub_agent).to receive_messages(with_schema: stub_agent, ask: instance_double(RubyLLM::Message, content: '{"x":1}'))
+      end
+
+      it 'wraps output in { "result" => ... } because an empty hash is not present?' do
+        described_class.new(pipeline_run).call
+        action_run = Orchestration::ActionRun.last
+        expect(action_run.status).to eq("completed")
+        expect(action_run.output).to eq({ "result" => { "x" => 1 } })
       end
     end
 
@@ -1007,6 +1078,16 @@ RSpec.describe Orchestration::PipelineRunner do
       it 'marks the pipeline_run as failed' do
         described_class.new(pipeline_run).call
         expect(pipeline_run.reload.status).to eq("failed")
+      end
+
+      it 'leaves the action_run input as {} when resolution fails before execution' do
+        described_class.new(pipeline_run).call
+        expect(Orchestration::ActionRun.last.input).to eq({})
+      end
+
+      it 'does not invoke the agent when all action_runs fail at input resolution' do
+        described_class.new(pipeline_run).call
+        expect(stub_agent).not_to have_received(:ask)
       end
     end
 

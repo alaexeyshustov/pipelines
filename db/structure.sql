@@ -149,6 +149,7 @@ CREATE UNIQUE INDEX "index_orchestration_step_actions_on_step_id_and_position" O
 CREATE INDEX "index_orchestration_step_actions_on_action_id" ON "orchestration_step_actions" ("action_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_orchestration_step_actions_on_step_id" ON "orchestration_step_actions" ("step_id") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20260616000000'),
 ('20260526115644'),
 ('20260525134853'),
 ('20260525133519'),

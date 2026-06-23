@@ -12,6 +12,15 @@ VCR.configure do |config|
   config.filter_sensitive_data('<GMAIL_ACCESS_TOKEN>')  { ENV['GMAIL_ACCESS_TOKEN'] }
   config.filter_sensitive_data('<MISTRAL_API_KEY>')     { ENV['MISTRAL_API_KEY'] }
   config.filter_sensitive_data('<GITHUB_TOKEN>')        { ENV['GITHUB_TOKEN'] }
+  config.filter_sensitive_data('<MISTRAL_BEARER>') do |interaction|
+    auth = interaction.request.headers['Authorization']&.first
+    auth&.sub(/^Bearer\s+/, '')
+  end
+  config.filter_sensitive_data('<OPENAI_API_KEY>')     { ENV['OPENAI_API_KEY'] }
+  config.filter_sensitive_data('<GEMINI_API_KEY>')      { ENV['GEMINI_API_KEY'] }
+  config.filter_sensitive_data('<ANTHROPIC_API_KEY>')   { ENV['ANTHROPIC_API_KEY'] }
+
+  config.ignore_localhost = true
 
   config.default_cassette_options = {
     record: :new_episodes,

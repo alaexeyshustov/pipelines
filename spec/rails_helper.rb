@@ -1,14 +1,16 @@
 # This file is copied to spec/ when you run 'rails generate rspec:install'
-require 'simplecov'
-SimpleCov.start 'rails' do
-  minimum_coverage 90
-  add_filter '/spec/'
-  add_filter '/config/'
-  add_filter '/db/'
-  add_filter '/vendor/'
-  add_filter '/lib/pipeline/'
-  add_filter '/app/schemas/'
-  add_filter '/lib/pipeline.rb'
+if ENV['COVERAGE']
+  require 'simplecov'
+  SimpleCov.start 'rails' do
+    minimum_coverage 90
+    add_filter '/spec/'
+    add_filter '/config/'
+    add_filter '/db/'
+    add_filter '/vendor/'
+    add_filter '/lib/pipeline/'
+    add_filter '/app/schemas/'
+    add_filter '/lib/pipeline.rb'
+  end
 end
 
 require 'spec_helper'
@@ -21,7 +23,7 @@ abort("The Rails environment is running in production mode!") if Rails.env.produ
 # return unless Rails.env.test?
 require 'rspec/rails'
 require 'webmock/rspec'
-WebMock.disable_net_connect!
+WebMock.disable_net_connect!(allow_localhost: true)
 # Add additional requires below this line. Rails is not loaded until this point!
 
 Rails.root.glob('spec/support/**/*.rb').sort_by(&:to_s).each { |f| require f }
