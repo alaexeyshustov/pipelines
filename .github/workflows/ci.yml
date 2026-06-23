@@ -78,6 +78,7 @@ jobs:
         id: setup-chrome
         with:
           chrome-version: stable
+          install-dependencies: true
 
       - name: Export Chrome path for Ferrum
         run: echo "CHROME_BIN=${{ steps.setup-chrome.outputs.chrome-path }}" >> $GITHUB_ENV
