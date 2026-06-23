@@ -10,8 +10,7 @@ Capybara.register_driver(:cuprite) do |app|
     process_timeout: ENV["CI"] ? 60 : 15,
     timeout: 10,
     headless: true,
-    browser_options: ENV["CI"] ? { "no-sandbox" => nil, "disable-dev-shm-usage" => nil, "disable-gpu" => nil } : {},
-    browser_path: ENV["CHROME_BIN"]
+    browser_options: ENV["CI"] ? { "no-sandbox" => nil, "disable-dev-shm-usage" => nil, "disable-gpu" => nil } : {}
   )
 end
 

@@ -73,16 +73,6 @@ jobs:
       - name: Install system dependencies
         run: sudo apt-get install -y libsqlite3-dev
 
-      - name: Set up Chrome (for Cuprite)
-        uses: browser-actions/setup-chrome@v1
-        id: setup-chrome
-        with:
-          chrome-version: stable
-          install-dependencies: true
-
-      - name: Export Chrome path for Ferrum
-        run: echo "CHROME_BIN=${{ steps.setup-chrome.outputs.chrome-path }}" >> $GITHUB_ENV
-
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
