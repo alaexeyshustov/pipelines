@@ -6,12 +6,15 @@ module Orchestration
     class MissingPath < StandardError
     end
 
-    def initialize: (input_mapping: Hash[String, untyped], previous_outputs: Hash[String, Hash[String, untyped]]) -> void
-    def resolve: () -> Hash[String, untyped]
+    @input_mapping: json_object
+    @previous_outputs: Hash[String, json_object]
+
+    def initialize: (input_mapping: json_object, previous_outputs: Hash[String, json_object]) -> void
+    def resolve: () -> json_object
 
     private
 
-    def fetch_upstream!: (String from, ?optional: bool) -> Hash[String, untyped]?
-    def dig_path: (Hash[String, untyped] upstream, String path, String from, bool? optional) -> untyped
+    def fetch_upstream!: (String from, ?optional: bool) -> json_object?
+    def dig_path: (json_object_value upstream, String path, String from, bool? optional) -> json_object_value
   end
 end

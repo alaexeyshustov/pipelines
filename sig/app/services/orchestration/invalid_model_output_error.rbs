@@ -1,7 +1,7 @@
 module Orchestration
   class InvalidModelOutputError < StandardError
-    attr_reader raw_content: untyped
+    attr_reader raw_content: json_object_value?
 
-    def initialize: (String message, raw_content: untyped) -> void
+    def initialize: (String message, raw_content: json_object_value?) -> void
   end
 end

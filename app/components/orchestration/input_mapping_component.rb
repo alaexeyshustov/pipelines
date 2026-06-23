@@ -2,6 +2,8 @@
 
 module Orchestration
   class InputMappingComponent < ViewComponent::Base
+    include SteepHacks
+
     MappingRow = Data.define(:mapping_key, :current_from, :current_path, :path_opts)
 
     def initialize(step_action:, pipeline:, step:, upstream_schemas:)
@@ -30,14 +32,14 @@ module Orchestration
     end
 
     def mapping
-      @step_action.input_mapping || {}
+      @step_action.input_mapping || empty_object
     end
 
     private
 
     def schema_paths(schema, prefix = "")
       if schema["properties"].present? || schema["type"] == "object"
-        (schema["properties"] || {}).flat_map do |key, child|
+        (schema["properties"] || empty_object).flat_map do |key, child|
           full = prefix.empty? ? key : "#{prefix}.#{key}"
           [ full ] + schema_paths(child, full)
         end
@@ -53,7 +55,7 @@ module Orchestration
 
     def mapping_rows
       mapping.map do |mapping_key, spec|
-        spec         = spec || {}
+        spec         = spec || empty_object
         current_from = spec["from"]
         current_path = spec["path"]
         MappingRow.new(

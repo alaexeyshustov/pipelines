@@ -1,6 +1,14 @@
 module Orchestration
   class StepComponent < ViewComponent::Base
-    def initialize: (step: Step, step_counter: Integer, step_iteration: untyped, pipeline: Pipeline, actions: untyped, ?upstream_schemas_per_step: Hash[Integer, Hash[String, untyped?]], ?validator_results_per_step: Hash[Integer, Array[Pipeline::Validator::StepResult]]) -> void
+    @step: Step
+    @step_counter: Integer
+    @step_iteration: ActionView::PartialIteration
+    @pipeline: Pipeline
+    @actions: Action::relation
+    @upstream_schemas: Hash[String, json_object?]
+    @validator_results: Array[Pipeline::Validator::StepResult]
+
+    def initialize: (step: Step, step_counter: Integer, step_iteration: ActionView::PartialIteration, pipeline: Pipeline, actions: Action::relation, ?upstream_schemas_per_step: Hash[Integer, Hash[String, json_object?]], ?validator_results_per_step: Hash[Integer, Array[Pipeline::Validator::StepResult]]) -> void
     def before_render: () -> void
     def move_up?: () -> bool
     def move_down?: () -> bool

@@ -2,16 +2,15 @@ require "logger"
 
 module Pipeline
   class Logger
-    LEVELS = %w[debug info warn error].freeze
-
     class MultiIO
       def initialize(*targets)
         @targets = targets
       end
 
-      def write(*args)
+      def write(message)
+        string_message = message.to_s
         @targets.each do |t|
-          t.write(*args)
+          t.write(string_message)
           t.flush if t.respond_to?(:flush)
         end
       end
@@ -38,14 +37,13 @@ module Pipeline
       end
     end
 
-    LEVELS.each do |lvl|
-      define_method(lvl) do |*args, &block|
-        @logger.send(lvl, *args, &block)
-      end
-
-      define_method("#{lvl}?") do
-        @logger.send("#{lvl}?")
-      end
-    end
+    def debug(message = nil, &block) = @logger.debug(message, &block)
+    def debug?                       = @logger.debug?
+    def info(message = nil, &block)  = @logger.info(message, &block)
+    def info?                        = @logger.info?
+    def warn(message = nil, &block)  = @logger.warn(message, &block)
+    def warn?                        = @logger.warn?
+    def error(message = nil, &block) = @logger.error(message, &block)
+    def error?                       = @logger.error?
   end
 end

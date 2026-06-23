@@ -5,23 +5,23 @@ module Pipeline
     @date: Date
 
     def initialize: (model: String, logger: Logger, ?date: String | Date) -> void
-    def run: () -> Hash[Symbol, untyped]
-    def step1_fetch_emails: () -> Array[Hash[String, untyped]]
-    def step2_classify_email: (emails: Array[untyped]) -> untyped
-    def step3_filter_emails: (emails: Array[untyped], tags: Array[untyped]) -> untyped
-    def step4_map_emails: (emails: Array[untyped]) -> untyped
-    def step5_store_mapped_emails: (emails: Array[untyped]) -> untyped
-    def step6_normalize_stored_emails: (?emails: Array[untyped]) -> untyped
-    def step7_reconcile_emails_to_interviews: (?emails: Array[untyped]) -> untyped
-    def step8_upload_csv_gist: (gist_id: String) -> untyped
+    def run: () -> Hash[Symbol, json_object_value]
+    def step1_fetch_emails: () -> Array[json_object]
+    def step2_classify_email: (emails: Array[json_object]) -> json_object_value
+    def step3_filter_emails: (emails: Array[json_object], tags: Array[json_object]) -> json_object_value
+    def step4_map_emails: (emails: Array[json_object]) -> json_object
+    def step5_store_mapped_emails: (emails: Array[json_object]) -> json_object
+    def step6_normalize_stored_emails: (?emails: Array[json_object]) -> json_object_value
+    def step7_reconcile_emails_to_interviews: (?emails: Array[json_object]) -> json_object_value
+    def step8_upload_csv_gist: (gist_id: String) -> json_object
 
     private
 
-    def step1: (provider: String, after: Date, before: Date) -> untyped
-    def filter_emails: (Array[Hash[String, untyped]] all_emails) -> Array[Hash[String, untyped]]
-    def results_from: (untyped response) -> Array[untyped]
-    def map_and_store: (Array[Hash[String, untyped]] filtered_emails) -> Array[Hash[String, untyped]]?
-    def finalize: (Array[Hash[String, untyped]] saved_emails) -> untyped
-    def fetch_from_providers: () -> Array[Hash[String, untyped]]
+    def step1: (provider: String, after: Date, before: Date) -> json_object_value
+    def filter_emails: (Array[json_object] all_emails) -> Array[json_object]
+    def results_from: (json_object_value response) -> Array[json_object]
+    def map_and_store: (Array[json_object] filtered_emails) -> Array[json_object]?
+    def finalize: (Array[json_object] saved_emails) -> json_object_value
+    def fetch_from_providers: () -> Array[json_object]
   end
 end

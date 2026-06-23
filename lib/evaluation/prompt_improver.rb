@@ -15,7 +15,7 @@ module Evaluation
       current_prompt = @experiment.prompt
       raise ArgumentError, "Experiment has no associated prompt" if current_prompt.nil?
 
-      input = build_improvement_message(current_prompt:, evaluation_data:, metrics:)
+      input = build_improvement_message(current_prompt:, evaluation_data:, metrics: metrics(current_prompt))
 
       improved = run_agent(input)
 
@@ -36,15 +36,15 @@ module Evaluation
         .to_a
     end
 
-    def metrics
-      Metric.where(agent_name: @experiment.prompt.name, active: true).to_a
+    def metrics(current_prompt)
+      Metric.where(agent_name: current_prompt.name.to_s, active: true).to_a
     end
 
 
     def build_improvement_message(current_prompt:, evaluation_data:, metrics:)
       data = {
         experiment_id: @experiment.id,
-        prompt_name: current_prompt.name,
+        prompt_name: current_prompt.name.to_s,
         system_prompt: current_prompt.system_prompt,
         metrics: metrics.map { |m| { name: m.name, description: m.description } },
         scores: evaluation_data.map { |r| { metric_name: r.metric_name, score: r.evaluation_result.score, justification: r.justification } }
@@ -52,7 +52,7 @@ module Evaluation
 
       message = data.to_json
 
-      agent_schema = Orchestration::Agent.find_by(name: current_prompt.name)&.output_schema
+      agent_schema = Orchestration::Agent.find_by(name: current_prompt.name.to_s)&.output_schema
       message += "\n\n<output_schema>\n#{agent_schema.to_json}\n</output_schema>" if agent_schema.present?
 
       message
@@ -69,11 +69,13 @@ module Evaluation
     end
 
     def parse_response(content)
-      parsed = content.is_a?(Hash) ? content : JSON.parse(content)
+      str_content = content #: String
+      parsed = content.is_a?(Hash) ? content : JSON.parse(str_content)
       raise Error, "Expected JSON object" unless parsed.is_a?(Hash)
-      raise Error, "Missing system_prompt in LLM response" if parsed["system_prompt"].blank?
+      system_prompt = parsed["system_prompt"]
+      raise Error, "Missing system_prompt in LLM response" unless system_prompt.is_a?(String) && system_prompt.present?
 
-      { system_prompt: parsed["system_prompt"], user_prompt: parsed["user_prompt"].to_s }
+      { system_prompt: system_prompt, user_prompt: parsed["user_prompt"].to_s }
     rescue JSON::ParserError => e
       raise Error, "Prompt improvement returned invalid JSON: #{e.message}"
     end

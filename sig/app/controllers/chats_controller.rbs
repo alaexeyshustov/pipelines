@@ -1,4 +1,8 @@
 class ChatsController < ApplicationController
+  @pagy: Pagy
+  @chats: Chat::relation
+  @chat: Chat
+
   def index: () -> void
   def show: () -> void
   def destroy: () -> void

@@ -1,14 +1,15 @@
 class Chat < ApplicationRecord
-  COLUMN_NAMES: Array[String]
+  type relation = _Relation[Chat, Integer]
 
   def model_id: () -> Integer?
   def model_id=: (Integer?) -> Integer?
   def model: () -> Model?
   def model=: (Model?) -> Model?
 
-  def action_runs: () -> ActiveRecord::Associations::CollectionProxy
-  def index_attributes: () -> Hash[Symbol, untyped]
-  def show_attributes: () -> Hash[Symbol, untyped]
+  def messages: () -> Message::relation
+  def action_runs: () -> Orchestration::ActionRun::relation
+  def index_attributes: () -> Hash[Symbol, primitive]
+  def show_attributes: () -> Hash[Symbol, primitive]
   def to_llm_context: () -> Hash[Symbol, String]
-  def ground_truth: () -> untyped
+  def ground_truth: () -> json_object?
 end

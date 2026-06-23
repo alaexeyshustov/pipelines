@@ -1,5 +1,7 @@
 module Orchestration
   class InputMappingComponent < ViewComponent::Base
+    include SteepHacks
+
     class MappingRow
       attr_reader mapping_key: String
       attr_reader current_from: String?
@@ -9,11 +11,20 @@ module Orchestration
       def self.new: (mapping_key: String, current_from: String?, current_path: String?, path_opts: Array[[String, String]]?) -> instance
     end
 
-    def initialize: (step_action: StepAction, pipeline: Pipeline, step: Step, upstream_schemas: Hash[String, untyped?]) -> void
+    @step_action: StepAction
+    @pipeline: Pipeline
+    @step: Step
+    @upstream_schemas: Hash[String, json_object?]
+
+    def initialize: (step_action: StepAction, pipeline: Pipeline, step: Step, upstream_schemas: Hash[String, json_object?]) -> void
     def form_url: () -> String
     def from_options: () -> Array[[String, String]]
     def path_options_for: (String from_key) -> Array[[String, String]]?
-    def mapping: () -> Hash[String, untyped]
+    def mapping: () -> json_object
+
+    private
+
     def mapping_rows: () -> Array[MappingRow]
+    def schema_paths: (json_object schema, ?String prefix) -> Array[[String, String]]
   end
 end

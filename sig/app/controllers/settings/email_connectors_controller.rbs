@@ -1,6 +1,6 @@
 module Settings
   class EmailConnectorsController < ApplicationController
-    @email_connectors: ActiveRecord::Relation
+    @email_connectors: EmailConnector::relation
     @email_connector: EmailConnector
 
     def index: () -> void

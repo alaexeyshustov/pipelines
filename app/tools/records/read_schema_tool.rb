@@ -14,7 +14,7 @@ module Records
 
     def execute(table:)
       model = resolve_model(table)
-      { headers: model::COLUMN_NAMES }
+      { headers: model.tool_column_names }
     rescue ModelNotFound => e
       { error: e.message }
     end

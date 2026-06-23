@@ -8,9 +8,13 @@ module Orchestration
       def self.new: (saved: bool, errors: Array[Pipeline::Validator::Issue], warnings: Array[Pipeline::Validator::Issue]) -> instance
     end
 
-    def self.call: (step_action: StepAction, input_mapping: Hash[String, untyped]) -> Result
+    def self.call: (step_action: StepAction, input_mapping: json_object) -> Result
 
-    def initialize: (step_action: StepAction, input_mapping: Hash[String, untyped]) -> void
+    @step_action: StepAction
+    @pipeline: Orchestration::Pipeline
+    @input_mapping: json_object
+
+    def initialize: (step_action: StepAction, input_mapping: json_object) -> void
     def call: () -> Result
   end
 end

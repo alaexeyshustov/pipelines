@@ -1,12 +1,12 @@
 module Emails
   module Adapters
     class BaseAdapter
-      def self.from_env(**_opts)
+      def self.from_env(_opts = {})
         raise NotImplementedError, "#{self}.from_env is not implemented. Subclasses must implement this method to initialize from environment variables."
       end
 
-      def self.setup(**_kwargs); end
-      def self.test_connection(**_kwargs); end
+      def self.setup(_opts = {}); end
+      def self.test_connection(_opts = {}); end
       def self.reset; end
 
       def on_init; end

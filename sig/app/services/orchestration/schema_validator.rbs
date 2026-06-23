@@ -2,11 +2,13 @@ module Orchestration
   class SchemaValidator
     Error: singleton(StandardError)
 
-    def initialize: (Hash[String, untyped]? schema) -> void
-    def validate!: (untyped data) -> void
+    @schema: json_object?
+
+    def initialize: (json_object? schema) -> void
+    def validate!: (json_object_value data) -> void
 
     private
 
-    def validate_node!: (untyped value, Hash[String, untyped]? schema, String path) -> void
+    def validate_node!: (json_object_value value, json_object? schema, String path) -> void
   end
 end

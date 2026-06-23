@@ -3,10 +3,15 @@ module Paginable
     def paginable: (?sortable: Array[String], ?per_page: Array[Integer], ?default_sort: String?, ?default_direction: String) -> void
   end
 
+  @sort: String
+  @direction: Symbol
+  @per_page: Integer
+  @filters: ApplicationController::Filters
+
   private
 
   def set_pagination_params: () -> void
-  def paginate: (untyped collection) -> [untyped, untyped]
+  def paginate: [Model, PrimaryKey] (_ActiveRecord_Relation[Model, PrimaryKey] collection) -> [Pagy, _ActiveRecord_Relation[Model, PrimaryKey]]
   def resolve_per_page: (Array[Integer] options) -> Integer
   def resolve_sort: (Array[String] columns, default: String?) -> String
   def resolve_direction: (?default: Symbol) -> Symbol

@@ -1,4 +1,9 @@
 class InterviewsController < ApplicationController
+  @query: String?
+  @pagy: Pagy
+  @interviews: Interview::relation
+  @interview: Interview
+
   def index: () -> void
   def show: () -> void
   def new: () -> void
@@ -13,5 +18,5 @@ class InterviewsController < ApplicationController
 
   def interviews_index_with_filters: () -> String
   def set_interview: () -> void
-  def interview_params: () -> untyped
+  def interview_params: () -> ActionController::Parameters
 end

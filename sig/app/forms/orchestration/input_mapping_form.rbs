@@ -1,0 +1,21 @@
+module Orchestration
+  class InputMappingForm < BaseForm
+    include SteepHacks
+
+    attr_reader result: InputMappingUpdater::Result?
+
+    @step_action: StepAction
+    @base_mapping: json_object
+    @new_key: String?
+    @new_from: String?
+    @new_path: String?
+
+    def initialize: (step_action: StepAction, input_mapping: ActionController::Parameters?, ?new_key: String?, ?new_from: String?, ?new_path: String?) -> void
+    def save: () -> bool
+
+    private
+
+    def new_key_format_valid: () -> void
+    def build_mapping: () -> json_object
+  end
+end

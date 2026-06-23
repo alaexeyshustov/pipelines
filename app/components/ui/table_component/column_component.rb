@@ -13,7 +13,7 @@ module UI
         compact: "px-6 py-4"
       }.freeze
 
-      def initialize(key = nil, label: nil, style: :default, classes: nil, variant: nil, cell: nil, badge_component: nil, component: nil, props: nil, sort_url: nil, sort_active: false, sort_direction: nil)
+      def initialize(key: nil, label: nil, style: :default, classes: nil, variant: nil, cell: nil, badge_component: nil, component: nil, props: nil, sort_url: nil, sort_active: false, sort_direction: nil)
         @key             = key
         @label           = label || derive_label(key)
         @style           = style.to_sym
@@ -48,14 +48,14 @@ module UI
 
       def cell_value(record)
         if @badge_component
-          @badge_component.new(status: record.public_send(@key)).render_in(helpers)
+          @badge_component.new(status: record.public_send(@key)).render_in(helpers) # steep:ignore
         elsif @component
           resolved_props = @props ? @props.call(record) : {}
           @component.new(**resolved_props).render_in(helpers)
         elsif @cell
           @cell.call(record)
         elsif @key
-          record.public_send(@key).to_s
+          record.public_send(@key).to_s # steep:ignore
         else
           ""
         end

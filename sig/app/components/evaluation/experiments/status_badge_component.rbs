@@ -1,0 +1,14 @@
+module Evaluation
+  module Experiments
+    class StatusBadgeComponent < ViewComponent::Base
+      @experiment: Evaluation::Experiment
+      @with_src: bool
+
+      def initialize: (experiment: Evaluation::Experiment, ?with_src: bool) -> void
+      def before_render: () -> void
+      def badge_variant: () -> (:success | :danger | :warning)
+      def polling?: () -> bool
+      def turbo_src: () -> String?
+    end
+  end
+end

@@ -2,13 +2,15 @@
 
 module Orchestration
   class InputMappingForm < ::BaseForm
+    include SteepHacks
+
     attr_reader :result
 
     validate :new_key_format_valid
 
     def initialize(step_action:, input_mapping:, new_key: nil, new_from: nil, new_path: nil)
       @step_action = step_action
-      @base_mapping = (input_mapping&.to_unsafe_h || {}).deep_stringify_keys
+      @base_mapping = (input_mapping&.to_unsafe_h || empty_object).deep_stringify_keys
       @new_key = new_key.presence
       @new_from = new_from.presence
       @new_path = new_path.presence

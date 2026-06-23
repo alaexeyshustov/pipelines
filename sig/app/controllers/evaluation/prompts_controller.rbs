@@ -1,0 +1,8 @@
+module Evaluation
+  class PromptsController < ApplicationController
+    @prompts: Prompt::relation
+
+    def index: () -> void
+    def compare: () -> void
+  end
+end

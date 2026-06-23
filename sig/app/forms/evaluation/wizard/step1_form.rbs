@@ -1,10 +1,12 @@
 module Evaluation
   module Wizard
     class Step1Form
-      def initialize: (draft_payload: Hash[String, untyped]) -> void
+      @payload: wizard_payload
+
+      def initialize: (draft_payload: wizard_payload) -> void
 
       def agent_names: () -> Array[String]
-      def prompts: () -> ActiveRecord::Relation
+      def prompts: () -> Prompt::relation
       def agent_name: () -> String?
       def prompt_id: () -> String?
       def experiment_name: () -> String?

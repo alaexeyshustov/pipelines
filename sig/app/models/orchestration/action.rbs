@@ -1,5 +1,7 @@
 module Orchestration
   class Action < ApplicationRecord
+    type relation = _Relation[Action, Integer]
+
     def self.table_name: () -> String
 
     def name: () -> String?
@@ -14,10 +16,10 @@ module Orchestration
     def agent_class=: (String?) -> String?
     def description: () -> String?
     def description=: (String?) -> String?
-    def input_schema: () -> Hash[String, untyped]?
+    def input_schema: () -> json_object?
 
-    def step_actions: () -> ActiveRecord::Associations::CollectionProxy
-    def agent: () -> Orchestration::Agent?
+    def step_actions: () -> StepAction::relation
+    def agent: () -> Agent?
 
     private
 

@@ -12,7 +12,7 @@ module Emails
       max_results: { "type" => "integer" }
     )
 
-    def self.call(date: nil, providers: DEFAULT_PROVIDERS, max_results: DEFAULT_MAX_RESULTS, **)
+    def self.call(date: nil, providers: DEFAULT_PROVIDERS, max_results: DEFAULT_MAX_RESULTS, **_kwargs)
       parsed_date = Date.parse(date || DEFAULT_DATE)
       after       = parsed_date - 1
       providers   = DEFAULT_PROVIDERS if providers.nil?

@@ -1,9 +1,11 @@
 module Evaluation
   class Justification < ApplicationRecord
-    def self.joins: (*untyped) -> ActiveRecord::Relation
-    def self.includes: (*untyped) -> ActiveRecord::Relation
-    def self.eager_load: (*untyped) -> ActiveRecord::Relation
-    def self.where: (**untyped) -> ActiveRecord::Relation
+    type relation = _Relation[Justification, Integer]
+
+    def self.joins: (*top) -> relation
+    def self.includes: (*top) -> relation
+    def self.eager_load: (*top) -> relation
+    def self.where: (**top) -> relation
 
     def evaluation_result: () -> Evaluation::EvaluationResult
     def metric_name: () -> String

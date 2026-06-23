@@ -1,13 +1,13 @@
-import { Controller } from "@hotwired/stimulus"
+import { Controller } from '@hotwired/stimulus';
 
 export default class ResyncController extends Controller {
-  static targets = ["dialog", "status"]
+  static targets = ['dialog', 'status'];
 
-  declare dialogTarget: HTMLDialogElement
-  declare statusTarget: HTMLElement
+  declare dialogTarget: HTMLDialogElement;
+  declare statusTarget: HTMLElement;
 
   submit(): void {
-    this.dialogTarget.close()
+    this.dialogTarget.close();
     this.statusTarget.innerHTML = `
       <div class="flex items-center gap-1.5 text-gray-500">
         <svg class="animate-spin h-3.5 w-3.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -16,6 +16,6 @@ export default class ResyncController extends Controller {
         </svg>
         Resyncing…
       </div>
-    `
+    `;
   }
 }

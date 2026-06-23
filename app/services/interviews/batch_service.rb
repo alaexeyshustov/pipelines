@@ -39,11 +39,11 @@ module Interviews
     private
 
     def merge_records
-      records     = Interview.where(id: @ids).order(:applied_at)
-      target      = records.first
-      others      = records.where.not(id: target.id)
-      dates       = collect_dates(records)
-      best_status = records.map(&:status).max_by { |status| STATUS_PRIORITY.index(status) || 0 }
+      records = Interview.where(id: @ids).order(:applied_at) # : Interview::relation
+      target  = records.first # : Interview
+      others  = records.where.not(id: target.id) # : Interview::relation
+      dates   = collect_dates(records)
+      best_status = records.map(&:status).max_by { |status| STATUS_PRIORITY.index(status) || 0 } # : String?
 
       target.update!(
         status:               best_status,
@@ -56,7 +56,8 @@ module Interviews
     end
 
     def collect_dates(records)
-      records.flat_map { |rec|
+      interviews = records.to_a # : Array[Interview]
+      interviews.flat_map { |rec|
         [ rec.first_interview_at, rec.second_interview_at,
           rec.third_interview_at, rec.fourth_interview_at ]
       }.compact.uniq.sort

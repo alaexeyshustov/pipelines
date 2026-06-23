@@ -1,13 +1,15 @@
 class Message < ApplicationRecord
-  COLUMN_NAMES: Array[String]
-  type role = :user | :assistant | :system
+  type relation = _Relation[Message, Integer]
 
-  def role: () -> role?
-  def role=: (role?) -> role?
+  def role: () -> String?
+  def role=: (String?) -> String?
   def content: () -> String?
   def content=: (String?) -> String?
   def chat_id: () -> Integer?
   def chat_id=: (Integer?) -> Integer?
   def model_id: () -> Integer?
   def model_id=: (Integer?) -> Integer?
+
+  def parent_tool_call: () -> ToolCall?
+  def parent_tool_call=: (ToolCall?) -> ToolCall?
 end

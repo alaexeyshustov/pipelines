@@ -9,10 +9,12 @@ class Interview < ApplicationRecord
     first_interview_at second_interview_at third_interview_at fourth_interview_at
   ].freeze
 
+  def self.tool_column_names = COLUMN_NAMES
+
   # Returns all records as plain hashes (for tool responses).
   def self.as_rows(scope = all)
     scope.order(:company, :job_title).map do |r|
-      COLUMN_NAMES.index_with { |col| r.public_send(col)&.to_s }
+      COLUMN_NAMES.index_with { |col| r.public_send(col)&.to_s } # steep:ignore
     end
   end
 end

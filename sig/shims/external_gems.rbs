@@ -1,18 +1,74 @@
+module Rails
+  def self.application=: (Application) -> void
+                       | ...
+  def self.cache: () -> ActiveSupport::Cache::Store
+                | ...
+  def self.cache=: (ActiveSupport::Cache::Store) -> void
+                 | ...
+  def self.logger: () -> ActiveSupport::Logger
+                 | ...
+  def self.logger=: (ActiveSupport::Logger) -> void
+                  | ...
+  def self.env: () -> ActiveSupport::StringInquirer
+              | ...
+  def self.root: () -> Pathname
+               | ...
+end
+
+module ActiveSupport
+  class StringInquirer < String
+    def test?: () -> bool
+    def development?: () -> bool
+    def production?: () -> bool
+  end
+end
+
+module ActiveRecord
+  # module QueryMethods
+  #   class WhereChain[Relation]
+  #     def not: (**top) -> Relation
+  #     def group: (*(Symbol | String | Arel::Attributes::Attribute)) -> Relation
+  #   end
+  # end
+
+  class Relation
+    def offset: (Integer) -> self
+    def limit: (Integer | Arel::Nodes::SqlLiteral | nil) -> self
+  end
+
+  module Validations
+    class UniquenessValidator
+      type validator_options = { conditions: _Callable | nil, scope: Symbol | Array[Symbol] | nil, class: Class? }
+      def attributes: () -> Array[Symbol | String]
+      def options: () -> validator_options
+    end
+  end
+
+  # rubocop:disable RBS/Lint/NoUntyped
+  class Result
+    def map: [T] () { (Hash[String, untyped]) -> T } -> Array[T]
+  end
+  # rubocop:enable RBS/Lint/NoUntyped
+end
+
 class TCPServer
-  def initialize: (String host, Integer port) -> void
-                | (Integer port) -> void
-  def addr: () -> Array[untyped]
+  def self.new: (String host, Integer port) -> instance
+              | (Integer port) -> instance
+end
+
+class CGI
+  def self.unescape: (String string, ?Encoding encoding) -> String
 end
 
 module Net
   class IMAP
     class MailboxData
       def name: () -> String
-      def attr: () -> Array[untyped]
+      def attr: () -> Array[Symbol]
     end
 
     class FetchData
-      def attr: () -> Hash[String, untyped]
+      def attr: () -> Hash[String, String]
     end
 
     class NoResponseError < StandardError
@@ -21,19 +77,19 @@ module Net
     class ByeResponseError < StandardError
     end
 
-    def initialize: (String host, ?port: Integer, ?ssl: bool | Hash[Symbol, untyped]) -> void
-    def login: (String user, String password) -> untyped
-    def logout: () -> untyped
+    def initialize: (String host, ?port: Integer, ?ssl: bool | Hash[Symbol, primitive]) -> void
+    def login: (String user, String password) -> void
+    def logout: () -> void
     def disconnect: () -> void
-    def select: (String mailbox) -> untyped
-    def uid_search: (Array[untyped] criteria) -> Array[Integer]
+    def select: (String mailbox) -> void
+    def uid_search: (Array[String] criteria) -> Array[Integer]
     def uid_fetch: (Integer uid, Array[String] | String fields) -> Array[FetchData]?
-    def uid_copy: (Integer uid, String mailbox) -> untyped
-    def uid_store: (Integer uid, String attr, Array[untyped] flags) -> untyped
-    def expunge: () -> untyped
+    def uid_copy: (Integer uid, String mailbox) -> void
+    def uid_store: (Integer uid, String attr, Array[String | Symbol] flags) -> void
+    def expunge: () -> void
     def list: (String refname, String mailbox) -> Array[MailboxData]?
-    def status: (String mailbox, Array[String] attrs) -> untyped
-    def create: (String mailbox_name) -> untyped
+    def status: (String mailbox, Array[String] attrs) -> Hash[String, Integer?]
+    def create: (String mailbox_name) -> void
   end
 end
 
@@ -44,15 +100,27 @@ module Google
 
     module GmailV1
       class GmailService
-        def client_options: () -> untyped
-        def authorization=: (untyped auth) -> void
-        def list_user_messages: (String user_id, *untyped, **untyped) -> ListMessagesResponse?
-        def get_user_message: (String user_id, String message_id, *untyped, **untyped) -> Message?
-        def list_user_labels: (String user_id) -> untyped
-        def get_user_label: (String user_id, String label_id) -> untyped
+        def client_options: () -> ClientOptions
+        def authorization=: (Signet::OAuth2::Client auth) -> void
+        def list_user_messages: (String user_id, ?max_results: Integer, ?q: String?, ?page_token: String?, ?label_ids: Array[String]?) -> ListMessagesResponse?
+        def get_user_message: (String user_id, String message_id, ?format: String, ?metadata_headers: Array[String]?) -> Message?
+        def list_user_labels: (String user_id) -> ListLabelsResponse?
+        def get_user_label: (String user_id, String label_id) -> LabelWithCount?
         def modify_message: (String user_id, String message_id, ModifyMessageRequest request) -> Message?
         def create_user_label: (String user_id, Label label) -> Label?
-        def get_user_profile: (String user_id) -> untyped
+        def get_user_profile: (String user_id) -> void
+      end
+
+      class ClientOptions
+        def application_name=: (String) -> String
+      end
+
+      class ListLabelsResponse
+        def labels: () -> Array[Label]?
+      end
+
+      class LabelWithCount < Label
+        def messages_total: () -> Integer?
       end
 
       class Label
@@ -106,9 +174,9 @@ module Google
 
     class UserAuthorizer
       def initialize: (ClientId client_id, Array[String] scope, Stores::FileTokenStore token_store, ?legacy_callback_uri: String, ?callback_uri: String, ?code_verifier: String) -> void
-      def get_credentials: (String, ?Array[String]) -> untyped
-      def get_and_store_credentials_from_code: (Hash[Symbol, untyped]) -> untyped
-      def get_authorization_url: (Hash[Symbol, untyped]) -> String
+      def get_credentials: (String user_id, ?Array[String] scope) -> Signet::OAuth2::Client?
+      def get_and_store_credentials_from_code: (user_id: String, code: String, base_url: String) -> Signet::OAuth2::Client
+      def get_authorization_url: (?base_url: String) -> String
     end
 
     module Stores
@@ -120,7 +188,8 @@ module Google
 end
 
 module JSON
-  def self?.parse: (string source, ?options opts) -> json_object_value
+  def self?.parse: (string source, ?symbolize_names: bool) -> json_object_value
+                 | ...
 end
 
 module ViewComponent
@@ -133,78 +202,21 @@ end
 class Pagy
 end
 
-module Leva
-  class Dataset
-    def self.find_or_create_by!: (**untyped attrs) -> Dataset
-    def self.find_by: (**untyped attrs) -> Dataset?
-    def self.find_by!: (**untyped attrs) -> Dataset
-    def self.where: (**untyped attrs) -> untyped
+class Array[unchecked out Elem]
+  def index_by: [K] () { (Elem) -> K } -> Hash[K, Elem]
+end
 
-    def name: () -> String
-    def dataset_samples: () -> DatasetSampleRelation
+# rubocop:disable RBS/Lint/NoUntyped
+module Arel
+  class Table
+    def join: (untyped relation, ?untyped klass) -> SelectManager
+            | ...
   end
 
-  class DatasetSampleRelation
-    def where: (**untyped attrs) -> DatasetSampleRelation
-    def not: (**untyped attrs) -> DatasetSampleRelation
-    def pluck: (Symbol column) -> Array[untyped]
-    def create!: (**untyped attrs) -> DatasetSample
-    def find_or_initialize_by: (**untyped attrs) -> DatasetSample
-    def count: () -> Integer
-    def first: () -> DatasetSample?
-    def limit: (Integer n) -> DatasetSampleRelation
-  end
-
-  class DatasetSample
-    def input: () -> untyped
-    def input=: (untyped) -> untyped
-    def expected_tool_calls: () -> Array[untyped]?
-    def source_run_id: () -> Integer?
-    def new_record?: () -> bool
-    def save!: () -> bool
-  end
-
-  class Experiment
-    def id: () -> Integer
-    def name: () -> String
-  end
-
-  class EvaluationResult
-    def self.create!: (**untyped attrs) -> EvaluationResult
-    def self.joins: (String sql) -> untyped
-    def self.where: (**untyped attrs) -> untyped
-    def self.average: (Symbol column) -> Float?
-    def self.connection: () -> untyped
-    def self.table_name: () -> String
-    def score: () -> Float?
-    def evaluator_class: () -> String
-  end
-
-  class Prompt
-    def self.find_by: (**untyped attrs) -> Prompt?
-    def self.find_by!: (**untyped attrs) -> Prompt
-    def self.find_or_initialize_by: (**untyped attrs) -> Prompt
-    def self.create!: (**untyped attrs) -> Prompt
-    def self.where: (**untyped attrs) -> PromptRelation
-    def self.order: (**untyped attrs) -> PromptRelation
-
-    def id: () -> Integer
-    def name: () -> String?
-    def name=: (String value) -> String
-    def system_prompt: () -> String?
-    def system_prompt=: (String value) -> String
-    def user_prompt: () -> String?
-    def user_prompt=: (String value) -> String
-    def save!: () -> Prompt
-    def update!: (**untyped attrs) -> Prompt
-    def reload: () -> Prompt
-  end
-
-  class PromptRelation
-    def order: (**untyped attrs) -> PromptRelation
-    def first: () -> Prompt?
-    def pluck: (*untyped columns) -> Array[untyped]
-    def count: () -> Integer
-    def index_by: () { (Prompt) -> String } -> Hash[String, Prompt]
+  class SelectManager
+    def on: (*untyped exprs) -> self
+          | ...
   end
 end
+# rubocop:enable RBS/Lint/NoUntyped
+

@@ -1,16 +1,29 @@
 module Orchestration
   class StepAction < ApplicationRecord
+    type relation = _Relation[StepAction, Integer]
+
+    class ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
+      include ::Enumerable[StepAction]
+      include ::ActiveRecord::Relation::Methods[StepAction, ::Integer]
+    end
+
+    OUTPUT_KEY_FORMAT: Regexp
+
     def self.table_name: () -> String
 
     def output_key: () -> String
     def output_key=: (String) -> String
-    def input_mapping: () -> Hash[String, untyped]?
-    def input_mapping=: (Hash[String, untyped]?) -> Hash[String, untyped]?
+    def input_mapping: () -> json_object?
+    def input_mapping=: (json_object?) -> json_object?
     def position: () -> Integer?
     def position=: (Integer?) -> Integer?
-    def step: () -> Orchestration::Step
-    def step=: (Orchestration::Step) -> Orchestration::Step
-    def action: () -> Orchestration::Action
-    def action=: (Orchestration::Action) -> Orchestration::Action
+    def step: () -> Step
+    def step=: (Step) -> Step
+    def action: () -> Action
+    def action=: (Action) -> Action
+
+    private
+
+    def output_key_immutable_after_first_run: () -> void
   end
 end

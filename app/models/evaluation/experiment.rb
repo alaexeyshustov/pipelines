@@ -1,6 +1,7 @@
 module Evaluation
   class Experiment < ApplicationRecord
     include AASM
+    include SteepHacks
 
     self.table_name = "evaluation_experiments"
 
@@ -46,7 +47,7 @@ module Evaluation
     end
 
     def runner_model
-      meta = metadata || {}
+      meta = metadata || empty_object
       agent = agent_name ? Orchestration::Agent.find_by(name: agent_name) : nil
       meta["pipeline_model"].presence || agent&.model.presence
     end

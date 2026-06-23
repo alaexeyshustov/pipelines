@@ -8,12 +8,14 @@ module Records
 
     private
 
-    def fetch_substring_matches: (untyped model, String column, String value) -> Array[{ value: String, ids: Array[Integer] }]
-    def fetch_fuzzy_matches: (untyped model, String column, String value) -> Array[{ value: String, ids: Array[Integer] }]
+    def fetch_substring_matches: (_HasColumnNames model, String column, String value) -> Array[{ value: String, ids: Array[Integer] }]
+    def fetch_fuzzy_matches: (_HasColumnNames model, String column, String value) -> Array[{ value: String, ids: Array[Integer] }]
   end
 
   class FuzzyMatcher
     MATCH_THRESHOLD: Float
+
+    @query_words: Array[String]
 
     def initialize: (String value) -> void
     def matches?: (String stored) -> bool

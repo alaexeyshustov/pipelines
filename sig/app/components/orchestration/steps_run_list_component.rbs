@@ -1,5 +1,16 @@
 module Orchestration
   class StepsRunListComponent < ViewComponent::Base
+    include SteepHacks
+
+    @pipeline: Pipeline
+    @run: PipelineRun
+    @action_runs_by_step: Hash[Integer, Array[ActionRun]]
+    @steps_with_action_runs: Array[{ step: Step, action_runs: Array[ActionRun], derived_status: String, available_outputs: Hash[String, json_object] }]
+
     def initialize: (pipeline: Pipeline, run: PipelineRun, action_runs_by_step: Hash[Integer, Array[ActionRun]]) -> void
+
+    private
+
+    def compute_steps_with_action_runs: () -> Array[{ step: Step, action_runs: Array[ActionRun], derived_status: String, available_outputs: Hash[String, json_object] }]
   end
 end

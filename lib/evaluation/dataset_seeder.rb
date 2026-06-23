@@ -12,14 +12,12 @@ module Evaluation
     end
 
     def call
-      # steep:ignore:start
-      dataset = Dataset.find_or_create_by!(name: @agent_name) { |d| d.agent_name = @agent_name }
-      # steep:ignore:end
+      dataset
       created = 0
       skipped = 0
 
       candidate_runs.each do |run|
-        sample = dataset.dataset_samples.find_or_initialize_by(source_run_id: run.id)
+        sample = sample_for(run)
         if sample.new_record?
           sample.input = run.input
           sample.expected_tool_calls = ToolCallExtractor.call(run.chat)
@@ -35,17 +33,22 @@ module Evaluation
 
     private
 
+    def dataset
+      @dataset ||= Dataset.find_or_create_by!(name: @agent_name) { |d| d.agent_name = @agent_name }
+    end
+
+    def sample_for(run)
+      dataset.dataset_samples.find_or_initialize_by(source_run_id: run.id)
+    end
+
     def candidate_runs
-      # join table types not modelled in sig/shims
-      # steep:ignore:start
       Orchestration::ActionRun
         .joins(step_action: { action: :agent })
-        .where(status: "completed")
-        .where.not(chat_id: nil)
+        .where(status: "completed") # : Orchestration::ActionRun::relation
+        .where.not(chat_id: nil) # : Orchestration::ActionRun::relation
         .where(orchestration_agents: { name: @agent_name })
         .order(id: :desc)
-        .limit(@sample_size)
-      # steep:ignore:end
+        .limit(@sample_size).to_a
     end
   end
 end

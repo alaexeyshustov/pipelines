@@ -8,8 +8,8 @@ module Evaluation
       end
 
       def evaluate(sample, dataset_sample, agent_name:, model: self.class.judge_model)
-        metrics = Metric.for_agent(agent_name).active
-        return [] if metrics.none?
+        metrics = Metric.for_agent(agent_name).where(active: true).to_a # : Array[Evaluation::Metric]
+        return [] if metrics.empty?
 
         if sample.tool_calls.blank? && sample.output.blank?
           Rails.logger.error("LLMJudgeEval: both tool_calls and output are blank")
@@ -31,7 +31,7 @@ module Evaluation
         return [] unless agent_name
 
         judge_model = experiment.evaluation_model.presence || self.class.judge_model
-        metric_results = evaluate(sample, dataset_sample, agent_name: agent_name, model: judge_model)
+        metric_results = evaluate(sample, dataset_sample, agent_name: agent_name, model: judge_model) # : Array[Hash[Symbol, untyped]]
         return [] if metric_results.empty?
 
         eval_results = metric_results.map do |result|
@@ -39,15 +39,15 @@ module Evaluation
             experiment_id: experiment.id,
             dataset_sample_id: dataset_sample.id,
             sample_id: sample.id,
-            score: result[:score].to_f,
+            score: Float(result[:score]),
             evaluator_class: self.class.name
           }
         end
 
         inserted_ids = [] #: Array[Integer]
         ActiveRecord::Base.transaction do
-          inserted = EvaluationResult.insert_all!(eval_results)
-          inserted_ids = inserted.map { |id| id["id"].to_i }
+          inserted = EvaluationResult.insert_all!(eval_results) # : ActiveRecord::Result
+          inserted_ids = inserted.map { |row| Integer(row["id"]) } # : Array[Integer]
           justifications = inserted_ids.zip(metric_results).filter_map do |id, result|
             next unless result
 
@@ -60,7 +60,8 @@ module Evaluation
           Justification.insert_all!(justifications)
         end
 
-        results_by_id = EvaluationResult.where(id: inserted_ids).index_by(&:id)
+        results = EvaluationResult.where(id: inserted_ids).to_a # : Array[EvaluationResult]
+        results_by_id = results.index_by(&:id) # : Hash[Integer, EvaluationResult]
         inserted_ids.filter_map { |id| results_by_id[id] }
       end
 
@@ -106,7 +107,15 @@ module Evaluation
       end
 
       def parse_judge_response(content)
-        entries = content.is_a?(Hash) ? Array(content["evaluations"]) : JSON.parse(content)
+        entries =
+          if content.is_a?(Hash)
+            Array(content["evaluations"])
+          elsif content.is_a?(Array)
+            content
+          else
+            str_content = content #: String
+            JSON.parse(str_content)
+          end
         raise ArgumentError, "expected Array" unless entries.is_a?(Array)
 
         entries.each_with_index.filter_map { |entry, i| normalize_entry(entry, i) }
@@ -116,7 +125,12 @@ module Evaluation
       end
 
       def normalize_entry(entry, index)
-        score = Float(entry["score"])
+        return nil unless entry.is_a?(Hash)
+
+        raw_score = entry["score"]
+        return nil if raw_score.nil?
+
+        score = Float(raw_score).to_f
         metric_name = entry["metric_name"].to_s.strip
         justification = entry["justification"].to_s.strip
 
@@ -127,7 +141,7 @@ module Evaluation
 
         { metric_name: metric_name, score: score, justification: justification }
       rescue ArgumentError, TypeError
-        Rails.logger.warn("LLMJudgeEval: dropping entry #{index}: unparseable score #{entry['score'].inspect}")
+        Rails.logger.warn("LLMJudgeEval: dropping entry #{index}: unparseable score #{raw_score.inspect}")
         nil
       end
     end

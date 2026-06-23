@@ -33,14 +33,16 @@ module Emails
 
       def collect_parts(payload, mime_type)
         parts = payload.parts
-        return [] unless parts
+        return Array.new unless parts
 
         parts.flat_map do |part|
-          results = [] # : Array[String]
-          if part.respond_to?(:mime_type) && part.mime_type == mime_type && (body_data = part.body&.data)
-            results << decode_body(body_data)
+          nested_results = collect_parts(part, mime_type)
+          body_data = part.body&.data
+          if part.respond_to?(:mime_type) && part.mime_type == mime_type && body_data
+            [ decode_body(body_data) ] + nested_results
+          else
+            nested_results
           end
-          results + collect_parts(part, mime_type)
         end
       end
 

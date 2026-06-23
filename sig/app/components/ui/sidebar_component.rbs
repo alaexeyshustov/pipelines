@@ -14,9 +14,16 @@ module UI
       def initialize: (label: String, items: Array[NavItem]) -> void
     end
 
+    @current_path: String
+
     def initialize: (current_path: String) -> void
     def nav_groups: () -> Array[NavGroup]
     def group_open?: (NavGroup group) -> bool
     def active?: (String path) -> bool
+    def root_path: () -> String
+
+    private
+
+    def current_path_matches?: (String path) -> bool
   end
 end

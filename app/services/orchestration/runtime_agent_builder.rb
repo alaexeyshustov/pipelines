@@ -7,7 +7,8 @@ module Orchestration
 
     def build
       agent = base_agent
-      agent.with_model(@policy.model) if @policy.model.present?
+      model = @policy.model
+      agent.with_model(model) unless model.nil? || model.empty?
 
       tools = @policy.tools
       agent.with_tools(*tools, replace: true) if tools.present?
@@ -16,16 +17,14 @@ module Orchestration
       agent.with_schema(schema) if schema.present?
 
       prompt = @policy.prompt
-      agent.chat.with_instructions(prompt) if prompt.present?
+      agent.chat.with_instructions(prompt) unless prompt.nil? || prompt.empty?
       agent
     end
 
     private
 
     def base_agent
-      # steep:ignore:start
       RubyLLM::Agent.new(chat: runtime_chat)
-      # steep:ignore:end
     end
 
     def runtime_chat

@@ -3,6 +3,8 @@ module UI
     type action_type = :link | :button | :delete | :dialog | :raw
     type action_variant = :primary | :secondary | :neutral | :danger | :success | :ghost
 
+    type body_component_options = { ?schema: json_object?, ?name_prefix: String }
+
     TYPES: Array[Symbol]
     VARIANT_CLASSES: Hash[Symbol, String]
     CONFIRM_VARIANT_CLASSES: Hash[Symbol, String]
@@ -10,6 +12,18 @@ module UI
     LINK_CLASSES: String
     BUTTON_CLASSES: String
     DELETE_CLASSES: String
+
+    @type: action_type
+    @label: String?
+    @url: String?
+    @confirm: String?
+    @confirm_label: String?
+    @method: Symbol?
+    @variant: action_variant?
+    @dialog_title: String?
+    @size: :sm | :md
+    @body_component: singleton(ViewComponent::Base)?
+    @body_options: Hash[Symbol, body_component_options]
 
     def initialize: (
       ?type: action_type,
@@ -21,8 +35,8 @@ module UI
       ?dialog_title: String?,
       ?confirm_label: String?,
       ?size: :sm | :md,
-      ?body_component: Class?,
-      ?body_options: Hash[Symbol, untyped]
+      ?body_component: singleton(ViewComponent::Base)?,
+      ?body_options: Hash[Symbol, body_component_options]
     ) -> void
 
     def call: () -> String
@@ -44,11 +58,11 @@ module UI
       ?method: Symbol,
       ?variant: ActionComponent::action_variant?,
       ?confirm: String?,
-      ?data: Hash[Symbol | String, untyped]
+      ?data: Hash[Symbol | String, primitive]
     ) -> void
 
     def button_classes: () -> String
-    def button_data: () -> Hash[Symbol | String, untyped]
+    def button_data: () -> Hash[Symbol | String, primitive]
   end
 
   class ActionComponent::DeleteComponent < ViewComponent::Base
@@ -65,8 +79,8 @@ module UI
       ?confirm_label: String,
       ?variant: ActionComponent::action_variant?,
       ?size: :sm | :md,
-      ?body_component: Class?,
-      ?body_options: Hash[Symbol, untyped]
+      ?body_component: singleton(ViewComponent::Base)?,
+      ?body_options: Hash[Symbol, ActionComponent::body_component_options]
     ) -> void
 
     def with_body: () { (ActionView::Helpers::FormBuilder) -> void } -> self

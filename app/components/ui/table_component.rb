@@ -23,11 +23,11 @@ module UI
       column_defs.each do |col|
         key = col[:key]&.to_s
         with_column(
-          key,
+          key:,
           label: col[:label],
-          style: col.fetch(:style, :default),
-          variant: col[:variant],
-          classes: col[:classes],
+          style: col.fetch(:style, :default).to_sym,
+          variant: col[:variant]&.to_sym,
+          classes: col[:classes].to_s,
           cell: col[:cell],
           badge_component: col[:badge],
           component: col[:component],

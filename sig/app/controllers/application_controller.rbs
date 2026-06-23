@@ -16,7 +16,7 @@ class ApplicationController < ActionController::Base
 
     def initialize: (path: String?, q: String?, per_page: String?, page: String?, sort: String?, direction: String?, ?per_page_options: Array[Integer]?) -> void
 
-    def to_full_path: (params: Hash[Symbol, untyped]) -> String
+    def to_full_path: (params: Hash[Symbol, String | Integer | nil]) -> String
   end
 
   @filters: Filters

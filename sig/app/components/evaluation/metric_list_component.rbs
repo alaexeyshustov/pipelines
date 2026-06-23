@@ -1,5 +1,7 @@
 module Evaluation
   class MetricListComponent < ViewComponent::Base
-    def initialize: (metrics: untyped) -> void
+    @metrics: Metric::relation
+
+    def initialize: (metrics: Metric::relation) -> void
   end
 end

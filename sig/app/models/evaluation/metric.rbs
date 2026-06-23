@@ -1,9 +1,11 @@
 module Evaluation
   class Metric < ApplicationRecord
+    type relation = _Relation[Metric, Integer]
+
     def self.table_name: () -> String
-    def self.for_agent: (String? agent_name) -> untyped
-    def self.active: () -> ActiveRecord::Relation
-    def self.find_or_initialize_by: (**untyped attrs) -> Metric
+    def self.for_agent: (String? agent_name) -> relation
+    def self.active: () -> relation
+    def self.find_or_initialize_by: (**top attrs) -> Metric
 
     def agent_name: () -> String?
     def agent_name=: (String?) -> String?

@@ -1,10 +1,13 @@
 class ApplicationMail < ApplicationRecord
-  include Searchable
-
   COLUMN_NAMES: Array[String]
 
-  def self.search: (String? q) -> untyped
-  def self.groupped: () -> untyped
+  include Searchable
+
+  type relation = _Relation[ApplicationMail, Integer]
+
+  def self.tool_column_names: () -> Array[String]
+  def self.search: (String? q) -> relation
+  def self.groupped: () -> relation
 
   def date: () -> String?
   def date=: (String?) -> String?
@@ -19,5 +22,5 @@ class ApplicationMail < ApplicationRecord
   def action: () -> String?
   def action=: (String?) -> String?
 
-  def self.as_rows: (?untyped scope) -> Array[Hash[String, String?]]
+  def self.as_rows: (?ActiveRecord::Relation scope) -> Array[Hash[String, String?]]
 end

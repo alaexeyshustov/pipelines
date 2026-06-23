@@ -14,7 +14,8 @@ module Orchestration
 
     def compute_upstream_schemas_per_step
       seen = { "_initial" => @pipeline.initial_input_schema }
-      @steps.each_with_object({}) do |step, result|
+      collector =  Hash.new # : Hash[Integer, json_object]
+      @steps.each_with_object(collector) do |step, result|
         result[step.id] = seen.dup
         step.step_actions.sort_by(&:position).each do |sa|
           seen[sa.output_key] = sa.action.agent&.output_schema
@@ -24,10 +25,12 @@ module Orchestration
 
     def compute_validator_results_per_step
       all_results = @pipeline.validate_steps
-      step_action_id_to_step_id = @steps.each_with_object({}) do |step, map|
+      collector =  Hash.new # : Hash[Integer, Integer]
+      step_action_id_to_step_id = @steps.each_with_object(collector) do |step, map|
         step.step_actions.each { |sa| map[sa.id] = step.id }
       end
-      all_results.each_with_object(Hash.new { |h, k| h[k] = [] }) do |result, map|
+      collector = Hash.new { |h, k| h[k] = [] } # : Hash[Integer, Array[Orchestration::ValidatorResult]]
+      all_results.each_with_object(collector) do |result, map|
         step_id = step_action_id_to_step_id[result.step_action_id]
         map[step_id] << result if step_id
       end

@@ -1,6 +1,9 @@
 module Interviews
   class CsvExportService
-    def initialize: (ids: Array[String] | Array[Integer]) -> void
+    @ids: Array[String] | Array[Integer] | nil
+    @columns: Array[String]
+
+    def initialize: (ids: Array[String] | Array[Integer] | nil) -> void
     def call: () -> String
   end
 end
