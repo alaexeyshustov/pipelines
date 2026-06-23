@@ -7,7 +7,7 @@ Capybara.register_driver(:cuprite) do |app|
   Capybara::Cuprite::Driver.new(
     app,
     window_size: [ 1400, 900 ],
-    process_timeout: 15,
+    process_timeout: ENV["CI"] ? 60 : 15,
     timeout: 10,
     headless: true
   )

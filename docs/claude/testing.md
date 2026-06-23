@@ -27,4 +27,4 @@ RECORD_VCR=1 MISTRAL_API_KEY=$YOUR_KEY \
 
 ### Cuprite in CI
 
-The RSpec job in `.github/workflows/ci.yml` installs Chrome via `browser-actions/setup-chrome@v1`. System specs require Chrome to be present. `WebMock.disable_net_connect!(allow_localhost: true)` keeps outbound HTTP blocked while allowing Cuprite to reach the Puma test server on `127.0.0.1`.
+The RSpec job in `.github/workflows/ci.yml` installs Chrome via `browser-actions/setup-chrome@v1`. System specs require Chrome to be present. `WebMock.disable_net_connect!(allow_localhost: true)` keeps outbound HTTP blocked while allowing Cuprite to reach the WEBrick test server on `127.0.0.1`.

@@ -80,5 +80,5 @@ group :test do
   gem "vcr"
   gem "webmock"
   gem "capybara", "~> 3.40"
-  gem "cuprite", "~> 0.15"
+  gem "cuprite", "~> 0.17"
 end

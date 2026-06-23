@@ -21,7 +21,7 @@ RSpec.describe Orchestration::PipelineRunner, type: :integration do
            vcr: {
              cassette_name: "orchestration/pipeline_runner/classify_only",
              match_requests_on: %i[method uri],
-             record: ENV.fetch("RECORD_VCR", nil) ? :all : :none
+             record: ENV["RECORD_VCR"] == "1" ? :all : :none
            } do
     let(:pipeline) do
       create(:orchestration_pipeline,
