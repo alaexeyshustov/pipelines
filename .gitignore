@@ -43,6 +43,7 @@ token.yaml
 /spec/examples.txt
 coverage/
 .pryrc
+.mutant/
 
 /app/assets/builds/*
 !/app/assets/builds/.keep

@@ -99,7 +99,7 @@ module Orchestration
         raise ArgumentError, "policy missing for agent action" unless policy
         builder = RuntimeAgentBuilder.new(policy: policy)
         agent = builder.build
-        chat_id = agent.respond_to?(:chat) ? agent.chat&.id : agent.id
+        chat_id = agent.chat&.id
         snapshot = {
           model: policy.model,
           prompt: policy.prompt,
