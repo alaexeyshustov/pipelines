@@ -723,7 +723,7 @@ DEPENDENCIES
   brakeman
   capybara (~> 3.40)
   csv
-  cuprite (~> 0.15)
+  cuprite (~> 0.17)
   diffy
   dotenv-rails
   dry-cli
