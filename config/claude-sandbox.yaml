@@ -1,0 +1,66 @@
+#cloud-config
+# OrbStack isolated machine — Arch Linux dev sandbox for Claude Code (yolo mode)
+#
+# Usage:
+#   orb create --isolated --mount ~/code:/work -c claude-sandbox.yml arch claude-sandbox
+#
+# Re-running after edits requires recreating the machine:
+#   orb delete claude-sandbox
+#   orb create --isolated --mount ~/code:/work -c claude-sandbox.yml arch claude-sandbox
+
+write_files:
+  # zsh as default shell config — minimal, fast, no framework overhead
+  - path: /home/arch/.zshrc
+    owner: arch:arch
+    content: |
+      # mise (Ruby, Node version management)
+      eval "$(mise activate zsh)"
+
+      # pnpm
+      export PNPM_HOME="$HOME/.local/share/pnpm"
+      export PATH="$PNPM_HOME:$PATH"
+
+      # bun
+      export BUN_INSTALL="$HOME/.bun"
+      export PATH="$BUN_INSTALL/bin:$PATH"
+
+      # basic sane defaults
+      export EDITOR="nvim"
+      HISTSIZE=10000
+      SAVEHIST=10000
+      setopt SHARE_HISTORY
+      setopt HIST_IGNORE_DUPS
+
+      # prompt: keep it simple, no theme dependency
+      PROMPT='%F{cyan}%n@%m%f %F{yellow}%~%f %# '
+
+      cd /work 2>/dev/null || true
+
+runcmd:
+  # --- base system update + core packages ---
+  - pacman -Syu --noconfirm
+  - pacman -S --noconfirm base-devel git curl wget unzip zsh openssh
+      sqlite github-cli neovim ca-certificates
+
+  # --- set zsh as default shell for the default user ---
+  - chsh -s /usr/bin/zsh arch
+
+  # --- mise (handles Ruby, Node version management) ---
+  - su - arch -c "curl https://mise.run | sh"
+  - su - arch -c "echo 'eval \"\$(~/.local/bin/mise activate zsh)\"' >> ~/.zshrc"
+  - su - arch -c "~/.local/bin/mise use --global ruby@3"
+  - su - arch -c "~/.local/bin/mise use --global node@lts"
+
+  # --- pnpm (standalone install, not via npm) ---
+  - su - arch -c "curl -fsSL https://get.pnpm.io/install.sh | sh -"
+
+  # --- bun ---
+  - su - arch -c "curl -fsSL https://bun.sh/install | bash"
+
+  # --- claude code cli (needs node from mise on PATH) ---
+  - su - arch -c "export PATH=\"\$HOME/.local/bin:\$PATH\" && eval \"\$(~/.local/bin/mise activate bash)\" && pnpm setup && export PNPM_HOME=\"\$HOME/.local/share/pnpm\" && export PATH=\"\$PNPM_HOME:\$PATH\" && pnpm add -g @anthropic-ai/claude-code"
+
+  # --- sqlite already installed via pacman above; confirm libs for Ruby's sqlite3 gem ---
+  - pacman -S --noconfirm sqlite
+
+final_message: "claude-sandbox ready. SSH in with: orb -m claude-sandbox (or ssh arch@claude-sandbox.orb.local). Run 'claude' to log in, then 'claude --dangerously-skip-permissions' from /work."
