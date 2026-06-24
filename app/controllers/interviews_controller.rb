@@ -21,23 +21,23 @@ class InterviewsController < ApplicationController
     @interview = Interview.new
   end
 
+  def edit
+  end
   def create
     @interview = Interview.new(interview_params)
     if @interview.save
       redirect_to interviews_index_with_filters, notice: "Interview record created."
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
-  def edit
-  end
 
   def update
     if @interview.update(interview_params)
       redirect_to interviews_index_with_filters, notice: "Interview record updated."
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 
@@ -52,7 +52,7 @@ class InterviewsController < ApplicationController
 
     result = Interviews::BatchService.new(ids: ids.to_a, batch_action: batch_action.to_s).call
     if result.csv?
-      send_data result.csv, filename: "interviews_#{Date.today}.csv", type: "text/csv", disposition: "attachment"
+      send_data result.csv, filename: "interviews_#{Time.zone.today}.csv", type: "text/csv", disposition: "attachment"
     else
       redirect_to interviews_index_with_filters, **flash_for(result)
     end
@@ -78,11 +78,11 @@ class InterviewsController < ApplicationController
   end
 
   def interview_params
-    params.require(:interview).permit(
-      :company, :job_title, :status,
+    params.expect(
+      interview: [ :company, :job_title, :status,
       :applied_at, :rejected_at,
       :first_interview_at, :second_interview_at,
-      :third_interview_at, :fourth_interview_at
+      :third_interview_at, :fourth_interview_at ]
     )
   end
 end

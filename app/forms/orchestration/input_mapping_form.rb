@@ -19,10 +19,10 @@ module Orchestration
     def save
       return false unless valid?
 
-      @result = Orchestration::InputMappingUpdater.call(
+      @result = Orchestration::InputMappingUpdater.new(
         step_action: @step_action,
         input_mapping: build_mapping
-      )
+      ).update
       @result.saved
     end
 
@@ -38,14 +38,17 @@ module Orchestration
     def build_mapping
       mapping = @base_mapping
         .reject { |_k, spec| spec.is_a?(Hash) && spec["_destroy"] == "1" }
-        .transform_values do |spec|
-          next spec unless spec.is_a?(Hash)
-          spec.except("_destroy").reject { |k, v| k == "path" && v.blank? }
-        end
+        .transform_values { |spec| clean_spec(spec) }
       if @new_key && @new_from
         mapping[@new_key] = { "from" => @new_from, "path" => @new_path }.compact
       end
       mapping
+    end
+
+    def clean_spec(spec)
+      return spec unless spec.is_a?(Hash)
+
+      spec.except("_destroy").reject { |k, v| k == "path" && v.blank? }
     end
   end
 end

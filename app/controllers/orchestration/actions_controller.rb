@@ -18,23 +18,23 @@ module Orchestration
       @action = Orchestration::Action.new
     end
 
+    def edit
+    end
     def create
       @action = Orchestration::Action.new(action_params)
       if @action.save
         redirect_to orchestration_actions_path, notice: "Action created."
       else
-        render :new, status: :unprocessable_entity
+        render :new, status: :unprocessable_content
       end
     end
 
-    def edit
-    end
 
     def update
       if @action.update(action_params)
         redirect_to orchestration_actions_path, notice: "Action updated."
       else
-        render :edit, status: :unprocessable_entity
+        render :edit, status: :unprocessable_content
       end
     end
 
@@ -64,8 +64,8 @@ module Orchestration
     end
 
     def action_params
-      params.require(:orchestration_action).permit(
-        :name, :description, :kind, :agent_id, :agent_class
+      params.expect(
+        orchestration_action: [ :name, :description, :kind, :agent_id, :agent_class ]
       )
     end
   end

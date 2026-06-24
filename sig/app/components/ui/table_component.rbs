@@ -60,6 +60,8 @@ module UI
       private
 
       def cell_value: (ApplicationRecord record) -> String
+      def badge_cell_value: (ApplicationRecord record) -> String
+      def component_cell_value: (ApplicationRecord record) -> String
       def cell_css_classes: () -> String
       def resolved_classes: () -> String
       def derive_label: (String? key) -> String?

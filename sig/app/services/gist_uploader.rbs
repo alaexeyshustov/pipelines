@@ -9,11 +9,14 @@ class GistUploader
   @filename: String
 
   def self.from_env: (filename: String) -> GistUploader
+  def self.call: (String content, token: String, ?gist_id: String?, filename: String) -> String?
 
   def initialize: (token: String, ?gist_id: String?, filename: String) -> void
-  def upload: (String content) -> String?
+  def call: (String content) -> String?
 
   private
 
   def request: (Symbol method, String path, _ToJson body) -> json_object
+  def build_http_client: (URI::Generic uri) -> Net::HTTP
+  def build_http_request: (Symbol method, URI::Generic uri, _ToJson body) -> (Net::HTTP::Post | Net::HTTP::Patch)
 end

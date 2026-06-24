@@ -8,13 +8,15 @@ module Emails
     @after_date: Date
     @before_date: Date?
 
+    def self.call: (provider: String, after_date: String | Date, ?before_date: String | Date | nil) -> Array[email_hash]
+
     def initialize: (provider: String, after_date: String | Date, ?before_date: String | Date | nil) -> void
     def call: () -> Array[email_hash]
 
     private
 
+    def fetch_page: (Integer offset) -> Array[Hash[Symbol, json_object_value]]
     def normalize: (Hash[Symbol, json_object_value] email) -> email_hash
-
     def to_date: (String | Date date) -> Date
   end
 end

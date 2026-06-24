@@ -7,6 +7,7 @@ class ApplicationMail < ApplicationRecord
   validates :date, :provider, :email_id, presence: true
   validates :email_id, uniqueness: true
 
+  # rubocop:disable Metrics/BlockLength
   scope :groupped, -> {
     group(:company, :job_title).select(<<~SQL)
       company,
@@ -16,6 +17,7 @@ class ApplicationMail < ApplicationRecord
       json_group_array(action ORDER BY date ASC) AS actions
     SQL
   }
+  # rubocop:enable Metrics/BlockLength
 
   # Returns all records as an array of plain hashes (for tool responses).
   def self.as_rows(scope = all)

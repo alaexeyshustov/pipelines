@@ -11,6 +11,8 @@ module Orchestration
       private
 
       def build_input_schema!: () -> json_object
+      def extract_keyword_names: (Array[[Symbol, Symbol]] params) -> Array[String]
+      def validate_schema_consistency!: (Hash[String, json_object] declared, Array[String] keywords) -> void
     end
   end
 end

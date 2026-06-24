@@ -28,12 +28,7 @@ module Evaluation
       prompt_to_analyze = agent_system_prompt
       raise Error, "No prompt found for agent '#{@agent_name}'" if prompt_to_analyze.blank?
 
-      response = RubyLLM.chat(model: @model)
-                        .with_temperature(0)
-                        .with_instructions(SYSTEM_PROMPT)
-                        .ask(prompt_to_analyze)
-
-      parse_response(response.content)
+      parse_response(query_llm(prompt_to_analyze).content)
     rescue Error
       raise
     rescue StandardError => e
@@ -41,6 +36,13 @@ module Evaluation
     end
 
     private
+
+    def query_llm(prompt)
+      RubyLLM.chat(model: @model)
+              .with_temperature(0)
+              .with_instructions(SYSTEM_PROMPT)
+              .ask(prompt)
+    end
 
     def agent_system_prompt
       Prompt.last_for_agent(@agent_name)&.system_prompt
@@ -50,24 +52,35 @@ module Evaluation
       parsed = content.is_a?(String) ? JSON.parse(content) : content
       raise Error, "Expected JSON array" unless parsed.is_a?(Array)
 
-      parsed.filter_map do |entry|
-        next unless entry.is_a?(Hash)
+      parsed.filter_map { |entry| parse_metric_entry(entry) }
+    end
 
-        name        = entry["name"].to_s.strip
-        description = entry["description"].to_s.strip
-        weight      = Float(entry["weight"]).to_f
+    def parse_metric_entry(entry)
+      return unless entry.is_a?(Hash)
 
-        next if name.blank? || description.blank?
-        unless weight.between?(0.0, 1.0)
-          Rails.logger.warn("MetricSuggester: dropping entry with out-of-range weight #{weight}")
-          next
-        end
+      name, description, weight = extract_metric_fields(entry)
+      return if name.blank? || description.blank?
+      return if out_of_range_weight?(weight)
 
-        { name: name, description: description, weight: weight }
-      rescue ArgumentError, TypeError
-        Rails.logger.warn("MetricSuggester: dropping unparseable entry #{entry.inspect}")
-        nil
-      end
+      { name: name, description: description, weight: weight }
+    rescue ArgumentError, TypeError
+      Rails.logger.warn("MetricSuggester: dropping unparseable entry #{entry.inspect}")
+      nil
+    end
+
+    def extract_metric_fields(entry)
+      [
+        entry["name"].to_s.strip,
+        entry["description"].to_s.strip,
+        Float(entry["weight"]) #: Float
+      ]
+    end
+
+    def out_of_range_weight?(weight)
+      return false if weight.between?(0.0, 1.0)
+
+      Rails.logger.warn("MetricSuggester: dropping entry with out-of-range weight #{weight}")
+      true
     end
   end
 end

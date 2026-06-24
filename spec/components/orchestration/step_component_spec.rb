@@ -179,7 +179,7 @@ RSpec.describe Orchestration::StepComponent, type: :component do
     end
 
     it "excludes the step_action's own output_key from from select" do
-      option_values = rendered.css("select[data-testid='from-select'] option").map { |o| o["value"] }
+      option_values = rendered.css("select[data-testid='from-select'] option").pluck("value")
       expect(option_values).not_to include("my_action")
     end
   end
@@ -205,7 +205,7 @@ RSpec.describe Orchestration::StepComponent, type: :component do
     it "renders path as a select with schema property names as options" do
       select = rendered.css("select[data-testid='path-select']").first
       expect(select).to be_present
-      option_values = select.css("option").map { |o| o["value"] }
+      option_values = select.css("option").pluck("value")
       expect(option_values).to include("email", "name")
     end
   end
@@ -263,11 +263,11 @@ RSpec.describe Orchestration::StepComponent, type: :component do
   context "when the validator reports errors for this step" do
     let(:error_message) { "input_mapping key \"email\" references unknown output key \"missing\"" }
     let(:component) do
-      issue = Orchestration::Pipeline::Validator::Issue.new(
+      issue = Orchestration::PipelineValidator::Issue.new(
         code: :unknown_from, message: error_message,
         mapping_key: "email", from: "missing", path: nil
       )
-      result = Orchestration::Pipeline::Validator::StepResult.new(
+      result = Orchestration::PipelineValidator::StepResult.new(
         step_action_id: 99, output_key: "my_action",
         errors: [ issue ], warnings: []
       )

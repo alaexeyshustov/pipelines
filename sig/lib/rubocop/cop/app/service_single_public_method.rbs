@@ -1,0 +1,18 @@
+module RuboCop
+  module Cop
+    module App
+      class ServiceSinglePublicMethod < ::RuboCop::Cop::Base
+        MSG: String
+        ALLOWED: Array[Symbol]
+
+        def on_class: (::RuboCop::Cop::_Node node) -> void
+
+        private
+
+        def check_class_methods: (Array[::RuboCop::Cop::_Node] children) -> void
+        def service_file?: () -> bool
+        def visibility_toggle?: (::RuboCop::Cop::_Node node) -> bool
+      end
+    end
+  end
+end

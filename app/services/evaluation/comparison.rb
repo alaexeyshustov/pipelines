@@ -14,13 +14,7 @@ module Evaluation
     def call
       baseline_metrics  = per_metric_averages(@baseline_experiment)
       candidate_metrics = per_metric_averages(@candidate_experiment)
-      all_metric_names  = (baseline_metrics.keys | candidate_metrics.keys)
-
-      metric_deltas = all_metric_names.index_with do |name|
-        b = baseline_metrics[name]
-        c = candidate_metrics[name]
-        (b && c) ? c - b : nil
-      end
+      metric_deltas     = compute_metric_deltas(baseline_metrics, candidate_metrics)
 
       baseline_score  = overall_average(@baseline_experiment)
       candidate_score = overall_average(@candidate_experiment)
@@ -37,6 +31,15 @@ module Evaluation
     end
 
     private
+
+    def compute_metric_deltas(baseline_metrics, candidate_metrics)
+      all_metric_names = (baseline_metrics.keys | candidate_metrics.keys)
+      all_metric_names.index_with do |name|
+        b = baseline_metrics[name]
+        c = candidate_metrics[name]
+        (b && c) ? c - b : nil
+      end
+    end
 
     def per_metric_averages(experiment)
       EvaluationResult.per_metric_averages(experiment)

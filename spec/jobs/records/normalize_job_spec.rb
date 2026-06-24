@@ -9,7 +9,7 @@ RSpec.describe Records::NormalizeJob do
 
   before do
     inputs = captured_inputs
-    stub_const("Records::NormalizeAgent", Class.new do
+    stub_const("Orchestration::Agents::RecordsNormalizer", Class.new do
       define_method(:ask) { |input| inputs << input }
     end)
   end
@@ -22,7 +22,7 @@ RSpec.describe Records::NormalizeJob do
       "destination_table" => "application_mails",
       "columns_to_normalize" => %w[company job_title]
     )
-    expect(parsed["records_to_normalize"].map { |r| r["id"] }).to match_array(ids)
+    expect(parsed["records_to_normalize"].pluck("id")).to match_array(ids)
   end
 
   it_behaves_like 'a records job that ignores missing IDs', 'records_to_normalize'

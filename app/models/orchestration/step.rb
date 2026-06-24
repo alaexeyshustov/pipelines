@@ -2,8 +2,8 @@ module Orchestration
   class Step < ApplicationRecord
     self.table_name = "orchestration_steps"
 
-    belongs_to :pipeline, class_name: "Orchestration::Pipeline"
-    has_many :step_actions, -> { order(:position) }, class_name: "Orchestration::StepAction", dependent: :destroy
+    belongs_to :pipeline, class_name: "Orchestration::Pipeline", inverse_of: :steps
+    has_many :step_actions, -> { order(:position) }, class_name: "Orchestration::StepAction", dependent: :destroy, inverse_of: :step
     has_many :actions, through: :step_actions, class_name: "Orchestration::Action"
 
     validates :name, presence: true
@@ -22,10 +22,11 @@ module Orchestration
     end
 
     def self.derive_status(action_runs)
-      return "pending" if action_runs.empty?
-      return "failed" if action_runs.any? { |ar| ar.status == "failed" }
-      return "running" if action_runs.any? { |ar| ar.status == "running" }
-      return "completed" if action_runs.all? { |ar| ar.status == "completed" }
+      statuses = action_runs.map(&:status)
+      return "pending"   if statuses.empty?
+      return "failed"    if statuses.include?("failed")
+      return "running"   if statuses.include?("running")
+      return "completed" if statuses.all?("completed")
 
       "pending"
     end

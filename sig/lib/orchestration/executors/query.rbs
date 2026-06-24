@@ -1,0 +1,19 @@
+module Orchestration
+  module Executors
+    class Query
+      include Executable
+      extend Executable::ClassMethods
+      extend Records::ModelResolver
+
+      @column_name: String
+      @column_values: Array[json_object_value]
+      @columns: Array[String]
+      @table: String
+
+      def self.call: (table: String, column_name: String, column_values: Array[json_object_value], ?columns: Array[String]?) -> Hash[String, Array[json_object]]
+
+      def initialize: (table: String, column_name: String, column_values: Array[json_object_value], ?columns: Array[String]?) -> void
+      def execute: () -> Hash[String, Array[json_object]]
+    end
+  end
+end

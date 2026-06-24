@@ -21,7 +21,7 @@ module GmailHelpers
   end
 
   def teardown_gmail
-    File.delete(TOKEN_PATH) if File.exist?(TOKEN_PATH)
+    FileUtils.rm_f(TOKEN_PATH)
     Emails.instance_variable_set(:@provider_registry, nil)
   end
 

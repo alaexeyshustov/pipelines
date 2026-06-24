@@ -1,20 +1,25 @@
 module Emails
   module Adapters
+    # rubocop:disable Metrics/ClassLength
     class YahooAdapter < BaseAdapter
       def self.setup(_opts = {})
-        puts "Yahoo setup:"
-        puts "1. Sign in to your Yahoo account and go to Account Security settings."
-        puts "2. Generate an app password for 'Mail' and 'Other device'."
-        puts "3. Set YAHOO_USERNAME to your Yahoo email and YAHOO_APP_PASSWORD to the generated password in your environment variables."
-        puts "4. Run `bin/cli test` to test the connection."
+        Rails.logger.debug "Yahoo setup:"
+        Rails.logger.debug "1. Sign in to your Yahoo account and go to Account Security settings."
+        Rails.logger.debug "2. Generate an app password for 'Mail' and 'Other device'."
+        Rails.logger.debug "3. Set YAHOO_USERNAME to your Yahoo email and YAHOO_APP_PASSWORD to the generated password in your environment variables."
+        Rails.logger.debug "4. Run `bin/cli test` to test the connection."
       end
 
       def self.test_connection(opts = {})
         connection = from_env(opts)
         connection.list_messages(max_results: 1)
+        # rubocop:disable Rails/Output
         puts "✓ Yahoo Mail connection successful"
+        # rubocop:enable Rails/Output
       rescue StandardError => error
+        # rubocop:disable Rails/Output
         puts "ERROR: Yahoo Mail connection failed - #{error.message}"
+        # rubocop:enable Rails/Output
       end
 
       def self.from_env(opts = {})
@@ -53,7 +58,7 @@ module Emails
           criteria = ImapSearchCriteria.new(query: query).build
           uids = imap.uid_search(criteria).sort.reverse
           uids = uids[offset, max_results] || []
-          uids.map { |uid| list_message(uid, mailbox) }.compact
+          uids.filter_map { |uid| list_message(uid, mailbox) }
         end
       end
 
@@ -65,7 +70,7 @@ module Emails
           criteria = ImapSearchCriteria.new(after_date: after_date, before_date: before_date).build
           uids = imap.uid_search(criteria).sort.reverse
           uids = uids[offset, max_results] || []
-          uids.map { |uid| list_message(uid, mailbox) }.compact
+          uids.filter_map { |uid| list_message(uid, mailbox) }
         end
       end
 
@@ -107,33 +112,8 @@ module Emails
 
       def modify_labels(message_uid, add: [], remove: [], source_mailbox: "INBOX")
         uid = message_uid.to_i
-
-        unless add.empty?
-          with_lock do
-            ensure_mailbox(source_mailbox)
-            add.each do |label|
-              if imap_flag?(label)
-                imap.uid_store(uid, "+FLAGS", [ label ])
-              else
-                imap.uid_copy(uid, label)
-              end
-            end
-          end
-        end
-
-        remove.each do |label|
-          with_lock do
-            if imap_flag?(label)
-              ensure_mailbox(source_mailbox)
-              imap.uid_store(uid, "-FLAGS", [ label ])
-            else
-              ensure_mailbox(label)
-              imap.uid_store(uid, "+FLAGS", [ :Deleted ])
-              imap.expunge
-            end
-          end
-        end
-
+        add_labels(uid, add, source_mailbox) unless add.empty?
+        remove_labels(uid, remove, source_mailbox)
         { message_id: uid, added: add, removed: remove }
       end
 
@@ -141,6 +121,40 @@ module Emails
       FULL_FIELDS   = %w[RFC822 FLAGS UID].freeze
 
       private
+
+      def add_labels(uid, add, source_mailbox)
+        with_lock { apply_add_labels(uid, add, source_mailbox) }
+      end
+
+      def apply_add_labels(uid, add, source_mailbox)
+        ensure_mailbox(source_mailbox)
+        add.each do |label|
+          if imap_flag?(label)
+            imap.uid_store(uid, "+FLAGS", [ label ])
+          else
+            imap.uid_copy(uid, label)
+          end
+        end
+      end
+
+      def remove_labels(uid, remove, source_mailbox)
+        remove.each { |label| remove_label(uid, label, source_mailbox) }
+      end
+
+      def remove_label(uid, label, source_mailbox)
+        with_lock { apply_remove_label(uid, label, source_mailbox) }
+      end
+
+      def apply_remove_label(uid, label, source_mailbox)
+        if imap_flag?(label)
+          ensure_mailbox(source_mailbox)
+          imap.uid_store(uid, "-FLAGS", [ label ])
+        else
+          ensure_mailbox(label)
+          imap.uid_store(uid, "+FLAGS", [ :Deleted ])
+          imap.expunge
+        end
+      end
 
       def imap
         @imap ||= begin
@@ -158,6 +172,7 @@ module Emails
         @current_mailbox = mailbox
       end
 
+      # rubocop:disable Metrics/BlockLength
       def with_lock
         attempts = 0
         @mutex.synchronize do
@@ -170,16 +185,21 @@ module Emails
           retry
         end
       end
+      # rubocop:enable Metrics/BlockLength
 
       def parse_mail(uid, fields)
-        result = imap.uid_fetch(uid, fields)&.first&.attr
-        raw    = result&.values_at("RFC822", "RFC822.HEADER")&.compact&.first
+        raw = fetch_raw_mail(uid, fields)
         return nil if raw.blank?
 
         Mail.new(raw)
       rescue StandardError => error
         $stderr.puts "Warning: failed to parse message UID #{uid}: #{error.message}"
         nil
+      end
+
+      def fetch_raw_mail(uid, fields)
+        result = imap.uid_fetch(uid, fields)&.first&.attr
+        result&.values_at("RFC822", "RFC822.HEADER")&.compact&.first
       end
 
       def to_message(parsed, mail)
@@ -218,4 +238,5 @@ module Emails
       end
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

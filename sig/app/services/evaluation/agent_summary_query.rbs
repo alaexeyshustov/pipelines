@@ -24,6 +24,8 @@ module Evaluation
 
     private
 
+    def extract_prompt_names: (Array[Experiment] experiments) -> Array[String]
+    def fetch_stats_data: (Array[Experiment] all_experiments, Hash[String, Experiment] latest) -> { history_avgs: Hash[Integer, Float?], latest_stats: Hash[Integer, { avg: Float?, count: Integer }] }
     def fetch_all_experiments: () -> Array[Experiment]
     def fetch_evaluation_stats: (Array[Integer] experiment_ids) -> Array[[Integer, Float?, Integer]]
     def build_history_averages: (Array[[Integer, Float?, Integer]] stats_rows) -> Hash[Integer, Float?]

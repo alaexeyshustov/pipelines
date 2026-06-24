@@ -28,7 +28,7 @@ RSpec.describe UI::DetailCardComponent, type: :component do
   end
 
   it "renders a dt for each attribute label" do
-    labels = rendered.css("dt").map(&:text).map(&:strip)
+    labels = rendered.css("dt").map { |x| x.text.strip }
     expect(labels).to eq([ "Company", "Status", "Applied At", "Email ID" ])
   end
 

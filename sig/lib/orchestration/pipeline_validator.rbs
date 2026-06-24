@@ -1,0 +1,42 @@
+module Orchestration
+  class PipelineValidator
+    class Issue < Data
+      def self.new: (code: Symbol, message: String, mapping_key: String?, from: String?, path: String?) -> Issue
+      attr_reader code: Symbol
+      attr_reader message: String
+      attr_reader mapping_key: String?
+      attr_reader from: String?
+      attr_reader path: String?
+    end
+
+    class StepResult < Data
+      def self.new: (step_action_id: Integer, output_key: String, errors: Array[Issue], warnings: Array[Issue]) -> StepResult
+      attr_reader step_action_id: Integer
+      attr_reader output_key: String
+      attr_reader errors: Array[Issue]
+      attr_reader warnings: Array[Issue]
+    end
+
+    include SteepHacks
+
+    @pipeline: Pipeline
+
+    def initialize: (Pipeline pipeline) -> void
+    def validate: () -> Array[StepResult]
+
+    private
+
+    def validate_step_action: (StepAction sa, json_object known_schemas) -> StepResult
+    def ordered_step_actions: () -> Array[StepAction]
+    def validate_input_mapping: (StepAction step_action, json_object known_schemas, Array[Issue] errors, Array[Issue] warnings) -> void
+    def process_mapping_spec: (String mapping_key, json_object spec, json_object known_schemas, Array[Issue] errors) -> void
+    def add_unknown_from_error: (String mapping_key, String from, json_object known_schemas, Array[Issue] errors) -> bool
+    def validate_input_schema_coverage: (StepAction step_action, Array[Issue] errors) -> void
+    def validate_path_vs_schema: (String from, String? path, String mapping_key, json_object? upstream_schema, Array[Issue] errors) -> void
+    def path_valid_in_schema?: (String path, json_object schema) -> bool
+    def advance_schema_node: (json_object current, String seg) -> (json_object_value | :invalid)
+    def advance_through_object: (json_object current, String seg) -> (json_object_value | :invalid)
+    def advance_through_array: (json_object current, String seg) -> (json_object? | :invalid)
+  end
+end
+

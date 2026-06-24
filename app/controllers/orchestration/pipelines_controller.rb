@@ -14,24 +14,26 @@ module Orchestration
         .order("orchestration_pipelines.name")
     end
 
-    def new
-      @pipeline = Orchestration::Pipeline.new
-    end
-
-    def create
-      @pipeline = Orchestration::Pipeline.new(pipeline_params)
-      if @pipeline.save
-        redirect_to orchestration_pipeline_path(@pipeline), notice: "Pipeline created."
-      else
-        render :new, status: :unprocessable_entity
-      end
-    end
-
     def show
       @steps = @pipeline.steps.includes(step_actions: { action: :agent })
       @actions = Orchestration::Action.order(:name)
       @latest_run = @pipeline.pipeline_runs.order(created_at: :desc).first
     end
+    def new
+      @pipeline = Orchestration::Pipeline.new
+    end
+
+    def edit
+    end
+    def create
+      @pipeline = Orchestration::Pipeline.new(pipeline_params)
+      if @pipeline.save
+        redirect_to orchestration_pipeline_path(@pipeline), notice: "Pipeline created."
+      else
+        render :new, status: :unprocessable_content
+      end
+    end
+
 
     def run
       form = Orchestration::PipelineRunForm.new(pipeline: @pipeline, initial_input_params: params[:initial_input])
@@ -51,14 +53,12 @@ module Orchestration
                   notice: "Pipeline #{@pipeline.enabled? ? 'enabled' : 'disabled'}."
     end
 
-    def edit
-    end
 
     def update
       if @pipeline.update(pipeline_params)
         redirect_to orchestration_pipeline_path(@pipeline), notice: "Pipeline updated."
       else
-        render :edit, status: :unprocessable_entity
+        render :edit, status: :unprocessable_content
       end
     end
 
@@ -74,8 +74,8 @@ module Orchestration
     end
 
     def pipeline_params
-      permitted = params.require(:orchestration_pipeline).permit(
-        :name, :description, :enabled, :cron_expression, :model, :initial_input_schema
+      permitted = params.expect(
+        orchestration_pipeline: [ :name, :description, :enabled, :cron_expression, :model, :initial_input_schema ]
       )
 
       begin

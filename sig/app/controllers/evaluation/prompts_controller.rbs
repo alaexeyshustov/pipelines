@@ -4,5 +4,10 @@ module Evaluation
 
     def index: () -> void
     def compare: () -> void
+
+    private
+
+    def find_compare_prompts: () -> [ Evaluation::Prompt?, Evaluation::Prompt? ]
+    def find_completed_experiments: (Evaluation::Prompt prompt_a, Evaluation::Prompt prompt_b) -> [ Evaluation::Experiment?, Evaluation::Experiment? ]
   end
 end

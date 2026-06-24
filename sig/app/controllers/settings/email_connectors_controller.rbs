@@ -16,6 +16,7 @@ module Settings
 
     private
 
+    def exchange_gmail_oauth_code: (EmailConnector connector) -> Signet::OAuth2::Client
     def set_email_connector: () -> void
     def email_connector_params: () -> ActionController::Parameters
   end

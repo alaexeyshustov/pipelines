@@ -1,0 +1,16 @@
+module RuboCop
+  module Cop
+    module App
+      class ComponentMustHavePreview < ::RuboCop::Cop::Base
+        MSG: String
+
+        def on_class: (::RuboCop::Cop::_Node node) -> void
+
+        private
+
+        def component_file?: () -> bool
+        def derive_preview_path: () -> String?
+      end
+    end
+  end
+end

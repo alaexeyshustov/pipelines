@@ -21,28 +21,22 @@ module Emails
 
       def extract_body(mail)
         if mail.multipart?
-          parts = mail.parts # : Array[Mail::Part]
-          plain = parts.find do |part|
-            mime = part.mime_type # : String?
-            mime == "text/plain"
-          end
-          return decode_part(plain) if plain
-
-          html = parts.find do |part|
-            mime = part.mime_type # : String?
-            mime == "text/html"
-          end
-          return strip_html(decode_part(html)) if html
-
-          parts.filter_map { |part| extract_body(part) }.reject(&:empty?).join("\n\n")
+          extract_multipart_body(mail)
         else
           mail_mime = mail.mime_type # : String?
-          if mail_mime == "text/html"
-            strip_html(decode_part(mail))
-          else
-            decode_part(mail)
-          end
+          mail_mime == "text/html" ? strip_html(decode_part(mail)) : decode_part(mail)
         end
+      end
+
+      def extract_multipart_body(mail)
+        parts = mail.parts # : Array[Mail::Part]
+        plain = parts.find { |part| part.mime_type == "text/plain" } # : Mail::Part?
+        return decode_part(plain) if plain
+
+        html = parts.find { |part| part.mime_type == "text/html" } # : Mail::Part?
+        return strip_html(decode_part(html)) if html
+
+        parts.filter_map { |part| extract_body(part) }.reject(&:empty?).join("\n\n")
       end
 
       def decode_part(part)

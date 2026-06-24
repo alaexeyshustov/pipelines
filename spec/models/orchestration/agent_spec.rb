@@ -56,7 +56,7 @@ RSpec.describe Orchestration::Agent do
     end
 
     it "accepts valid tool constants" do
-      agent.tools = [ "Emails::ClassifyAgent" ]
+      agent.tools = [ "Records::TempFileTool" ]
       expect(agent).to be_valid
     end
   end

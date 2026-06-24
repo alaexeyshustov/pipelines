@@ -4,6 +4,8 @@ module Evaluation
 
     private
 
+    def determine_sample_ids: (Evaluation::Experiment experiment) -> Array[Integer]?
+    def sampling_ids_from_state: (Evaluation::Experiment experiment) -> Array[Integer]?
     def recoverable_dataset_sample_ids: (Evaluation::Experiment experiment) -> Array[Integer]
     def sampling_jobs_still_in_flight?: (Integer experiment_id) -> bool
   end

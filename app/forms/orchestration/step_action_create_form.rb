@@ -14,25 +14,24 @@ module Orchestration
     def save
       return false unless valid?
 
-      next_position = (@step.step_actions.maximum(:position) || 0) + 1
-      key = Orchestration::OutputKeyDeriver.call(action_name: action.name, step: @step)
-      @step_action = @step.step_actions.build(
-        action_id: action.id,
-        position: next_position,
-        output_key: key
-      )
-
-      begin
-        saved = @step_action.save
-      rescue ActiveRecord::RecordNotUnique
-        @step_action.output_key = "#{key}_#{SecureRandom.hex(3)}"
-        saved = @step_action.save
-      end
-
-      saved
+      key          = Orchestration::OutputKeyDeriver.new(action_name: action.name, step: @step).derive
+      @step_action = build_step_action(key)
+      save_with_unique_key_retry(key)
     end
 
     private
+
+    def build_step_action(key)
+      next_position = (@step.step_actions.maximum(:position) || 0) + 1
+      @step.step_actions.build(action_id: action.id, position: next_position, output_key: key)
+    end
+
+    def save_with_unique_key_retry(key)
+      @step_action.save
+    rescue ActiveRecord::RecordNotUnique
+      @step_action.output_key = "#{key}_#{SecureRandom.hex(3)}"
+      @step_action.save
+    end
 
     def action_exists
       errors.add(:base, "Invalid action.") unless action

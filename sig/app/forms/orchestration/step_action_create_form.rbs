@@ -10,6 +10,8 @@ module Orchestration
 
     private
 
+    def build_step_action: (String key) -> Orchestration::StepAction
+    def save_with_unique_key_retry: (String key) -> bool
     def action_exists: () -> void
     def action: () -> Orchestration::Action?
   end

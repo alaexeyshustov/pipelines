@@ -4,24 +4,25 @@ module Evaluation
     belongs_to :experiment, class_name: "Evaluation::Experiment", optional: true
     belongs_to :dataset_sample, class_name: "Evaluation::DatasetSample", optional: true
     belongs_to :sample, class_name: "Evaluation::Sample", optional: true
-    has_many :justifications, class_name: "Evaluation::Justification", dependent: :destroy, foreign_key: :evaluation_result_id
+    has_many :justifications, class_name: "Evaluation::Justification", dependent: :destroy
     validates :evaluator_class, presence: true
 
     accepts_nested_attributes_for :justifications, allow_destroy: true
 
     def self.per_metric_averages(experiment)
+      joins(justification_join_source)
+        .where(experiment: experiment)
+        .group(Justification.arel_table[:metric_name])
+        .average(arel_table[:score])
+        .transform_keys(&:to_s)
+    end
+
+    def self.justification_join_source
       results_table        = arel_table
       justifications_table = Justification.arel_table
-
-      joins(
-        results_table.join(justifications_table)
-          .on(justifications_table[:evaluation_result_id].eq(results_table[:id]))
-          .join_sources
-      )
-        .where(experiment: experiment)
-        .group(justifications_table[:metric_name])
-        .average(results_table[:score])
-        .transform_keys(&:to_s)
+      results_table.join(justifications_table)
+                   .on(justifications_table[:evaluation_result_id].eq(results_table[:id]))
+                   .join_sources
     end
   end
 end

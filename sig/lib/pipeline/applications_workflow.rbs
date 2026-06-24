@@ -23,5 +23,9 @@ module Pipeline
     def map_and_store: (Array[json_object] filtered_emails) -> Array[json_object]?
     def finalize: (Array[json_object] saved_emails) -> json_object_value
     def fetch_from_providers: () -> Array[json_object]
+    def run_provider_tasks: () -> Array[json_object]
+    def normalize_provider_result: (json_object_value result) -> Array[json_object]
+    def filter_hash_emails: (Array[json_object_value] emails) -> Array[json_object]
+    def normalize_hash_result: (json_object result) -> Array[json_object]
   end
 end

@@ -25,31 +25,40 @@ module UI
 
     def subcomponent
       case @type
-      when :button
-        ActionComponent::ButtonComponent.new(
-          label: @label, url: @url, method: :post,
-          variant: @variant || :neutral,
-          data: {
-            action: "batch#batchSubmit",
-            "batch-batch-action-param": @action,
-            "batch-confirm-msg-param": @confirm,
-            "batch-require-selection-param": @require_selection
-          }
-        )
-      when :dialog
-        component = ActionComponent::DialogComponent.new(
-          label: @label, dialog_title: @dialog_title,
-          url: @url, method: :post,
-          confirm_label: @confirm,
-          variant: @variant
-        )
-        component.with_body { content } if content.present?
-        component
-      when :raw
-        ActionComponent::RawComponent.new.with_content(content)
+      when :button then button_subcomponent
+      when :dialog then dialog_subcomponent
+      when :raw    then raw_subcomponent
       else
         raise ArgumentError, "Unknown batch action type: #{@type.inspect}. Must be one of #{TYPES.inspect}"
       end
+    end
+
+    def button_subcomponent
+      ActionComponent::ButtonComponent.new(
+        label: @label, url: @url, method: :post,
+        variant: @variant || :neutral,
+        data: {
+          action: "batch#batchSubmit",
+          "batch-batch-action-param": @action,
+          "batch-confirm-msg-param": @confirm,
+          "batch-require-selection-param": @require_selection
+        }
+      )
+    end
+
+    def dialog_subcomponent
+      component = ActionComponent::DialogComponent.new(
+        label: @label, dialog_title: @dialog_title,
+        url: @url, method: :post,
+        confirm_label: @confirm,
+        variant: @variant
+      )
+      component.with_body { content } if content.present?
+      component
+    end
+
+    def raw_subcomponent
+      ActionComponent::RawComponent.new.with_content(content)
     end
   end
 end

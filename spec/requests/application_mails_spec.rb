@@ -29,7 +29,7 @@ RSpec.describe "ApplicationMails" do
     end
 
     it "lists existing records" do
-      mail = create(:application_mail, company: "Acme Corp", job_title: "Engineer")
+      create(:application_mail, company: "Acme Corp", job_title: "Engineer")
       get application_mails_path
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Acme Corp")
@@ -164,7 +164,7 @@ RSpec.describe "ApplicationMails" do
 
         post batch_application_mails_path, params: { ids: mails.map(&:id), batch_action: "fill" }
 
-        expect(Records::FillJob).to have_received(:perform_later).with(mails.map(&:id).map(&:to_s))
+        expect(Records::FillJob).to have_received(:perform_later).with(mails.map { |x| x.id.to_s })
         expect(response).to redirect_to(application_mails_path)
         expect(flash[:notice]).to include("Fill")
       end
@@ -202,7 +202,7 @@ RSpec.describe "ApplicationMails" do
 
         post batch_application_mails_path, params: { ids: mails.map(&:id), batch_action: "normalize" }
 
-        expect(Records::NormalizeJob).to have_received(:perform_later).with(mails.map(&:id).map(&:to_s))
+        expect(Records::NormalizeJob).to have_received(:perform_later).with(mails.map { |x| x.id.to_s })
         expect(response).to redirect_to(application_mails_path)
         expect(flash[:notice]).to include("Normalize")
       end
@@ -216,7 +216,7 @@ RSpec.describe "ApplicationMails" do
 
         post batch_application_mails_path, params: { ids: mails.map(&:id), batch_action: "reconcile" }
 
-        expect(Records::ReconcileJob).to have_received(:perform_later).with(mails.map(&:id).map(&:to_s))
+        expect(Records::ReconcileJob).to have_received(:perform_later).with(mails.map { |x| x.id.to_s })
         expect(response).to redirect_to(application_mails_path)
         expect(flash[:notice]).to include("Reconcile")
       end

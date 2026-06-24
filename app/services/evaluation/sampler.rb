@@ -19,22 +19,28 @@ module Evaluation
       raise ArgumentError, "No agent found for experiment" unless agent_record
 
       resolved_action = find_action_for!(agent_record)
+      agent  = build_agent(resolved_action, agent_record)
+      result = agent.ask(@dataset_sample.input.to_json)
+      persist_sample(agent, result)
+    end
 
+    private
+
+    def build_agent(resolved_action, agent_record)
       tool_classes  = resolve_tools(agent_record)
       wrapped_tools = wrap_write_tools(tool_classes)
+      policy = Orchestration::AgentResolutionPolicy.new(
+        action:          resolved_action,
+        tool_classes:    wrapped_tools, # steep:ignore
+        pipeline_model:  @experiment.sample_model,
+        prompt_override: @prompt&.system_prompt
+      ).resolve
+      Orchestration::RuntimeAgentBuilder.new(policy:).build
+    end
 
-      policy = Orchestration::AgentResolutionPolicy.call(
-        action:           resolved_action,
-        tool_classes:     wrapped_tools, # steep:ignore
-        pipeline_model:   @experiment.sample_model,
-        prompt_override:  @prompt&.system_prompt
-      )
-      agent  = Orchestration::RuntimeAgentBuilder.new(policy: policy).build
-      result = agent.ask(@dataset_sample.input.to_json)
-
+    def persist_sample(agent, result)
       tool_calls = capture_tool_calls(agent)
       output     = result.content.is_a?(String) ? result.content : result.content.to_json
-
       Evaluation::Sample.create!(
         experiment_id:     @experiment.id,
         dataset_sample_id: @dataset_sample.id,
@@ -43,8 +49,6 @@ module Evaluation
         output:            output
       )
     end
-
-    private
 
     def find_agent_record
       agent_name = @experiment.agent_name
@@ -68,23 +72,27 @@ module Evaluation
 
     def resolve_tools(agent_record)
       configured = agent_record.tools.presence
-      if configured
-        return configured.map do |tool|
-          namespace = tool.to_s.split("::").first
-          unless Orchestration::Agent::ALLOWED_TOOL_NAMESPACES.include?(namespace)
-            raise ArgumentError, "Tool '#{tool}' is outside allowed namespaces"
-          end
-
-          tool.constantize
-        rescue NameError
-          raise ArgumentError, "Unknown tool class: #{tool}"
-        end
-      end
+      return resolve_configured_tools(configured) if configured
 
       agent_class = agent_record.name.safe_constantize # : singleton(RubyLLM::Agent)
       return agent_class.tools if agent_class.respond_to?(:tools) # steep:ignore
 
       raise ArgumentError, "agent #{agent_record.name.inspect} has no configured tools"
+    end
+
+    def resolve_configured_tools(configured)
+      configured.map { |tool| resolve_tool(tool) }
+    end
+
+    def resolve_tool(tool)
+      namespace = tool.to_s.split("::").first
+      unless Orchestration::Agent::ALLOWED_TOOL_NAMESPACES.include?(namespace)
+        raise ArgumentError, "Tool '#{tool}' is outside allowed namespaces"
+      end
+
+      tool.constantize
+    rescue NameError
+      raise ArgumentError, "Unknown tool class: #{tool}"
     end
 
     def wrap_write_tools(tool_classes)

@@ -59,11 +59,11 @@ module Orchestration
     def render_pipeline_show
       @steps = @pipeline.steps.includes(step_actions: { action: :agent })
       @actions = Orchestration::Action.order(:name)
-      render "orchestration/pipelines/show", status: :unprocessable_entity
+      render "orchestration/pipelines/show", status: :unprocessable_content
     end
 
     def step_params
-      params.require(:orchestration_step).permit(:name)
+      params.expect(orchestration_step: [ :name ])
     end
   end
 end

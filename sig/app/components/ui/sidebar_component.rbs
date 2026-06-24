@@ -24,6 +24,10 @@ module UI
 
     private
 
+    def llm_nav_group: () -> NavGroup
+    def mails_nav_group: () -> NavGroup
+    def orchestration_nav_group: () -> NavGroup
+    def settings_nav_group: () -> NavGroup
     def current_path_matches?: (String path) -> bool
   end
 end

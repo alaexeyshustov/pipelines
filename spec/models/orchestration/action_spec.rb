@@ -103,7 +103,8 @@ RSpec.describe Orchestration::Action do
         stub_const("MyExecutable", Class.new do
           include Orchestration::Executable
           input_schema(topic: { "type" => "string" })
-          def self.call(topic:, **); end
+          def initialize(topic:, **); end
+          def execute; end
         end)
         action = create(:orchestration_action, :service_kind, agent_class: "MyExecutable")
 

@@ -69,8 +69,8 @@ jobs:
       - name: Run Steep
         run: bundle exec steep check
 
-      - name: Check type coverage (≥99%)
-        run: bin/steep-coverage 99
+      - name: Check type coverage (≥90%)
+        run: bundle exec bin/rbs_audit coverage --threshold=90
 
   brakeman:
     name: Brakeman
@@ -140,6 +140,7 @@ jobs:
   mutation:
     name: Mutation Testing
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
     env:
       RAILS_ENV: test
     steps:

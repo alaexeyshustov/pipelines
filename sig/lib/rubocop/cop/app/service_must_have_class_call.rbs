@@ -1,0 +1,17 @@
+module RuboCop
+  module Cop
+    module App
+      class ServiceMustHaveClassCall < ::RuboCop::Cop::Base
+        MSG: String
+
+        def on_class: (::RuboCop::Cop::_Node node) -> void
+
+        private
+
+        def service_file?: () -> bool
+        def error_class?: (::RuboCop::Cop::_Node node) -> bool
+        def has_class_call?: (::RuboCop::Cop::_Node node) -> bool
+      end
+    end
+  end
+end

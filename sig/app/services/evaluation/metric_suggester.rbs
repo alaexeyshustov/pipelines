@@ -16,7 +16,11 @@ module Evaluation
 
     private
 
+    def query_llm: (String prompt) -> RubyLLM::Message
     def agent_system_prompt: () -> String?
     def parse_response: (json_object_value) -> Array[{ name: String, description: String, weight: Float }]
+    def parse_metric_entry: (json_object_value entry) -> { name: String, description: String, weight: Float }?
+    def extract_metric_fields: (json_object entry) -> [ String, String, Float ]
+    def out_of_range_weight?: (Float weight) -> bool
   end
 end

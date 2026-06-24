@@ -2,11 +2,11 @@ require 'rails_helper'
 
 RSpec.describe Emails::Adapters::GmailBodyExtractor do
   def make_body(data)
-    instance_double(Google::Apis::GmailV1::MessagePartBody, data: data)
+    Google::Apis::GmailV1::MessagePartBody.new(data: data)
   end
 
   def make_part(mime_type:, data: nil, parts: nil)
-    instance_double(Google::Apis::GmailV1::MessagePart,
+    Google::Apis::GmailV1::MessagePart.new(
       mime_type: mime_type,
       body:      make_body(data),
       parts:     parts
@@ -14,7 +14,7 @@ RSpec.describe Emails::Adapters::GmailBodyExtractor do
   end
 
   def make_payload(parts: nil, data: nil)
-    instance_double(Google::Apis::GmailV1::MessagePart,
+    Google::Apis::GmailV1::MessagePart.new(
       parts: parts,
       body:  make_body(data)
     )
@@ -72,7 +72,7 @@ RSpec.describe Emails::Adapters::GmailBodyExtractor do
       let(:inner_plain) { make_part(mime_type: 'text/plain', data: 'Nested plain') }
       let(:inner_html)  { make_part(mime_type: 'text/html',  data: '<p>Nested HTML</p>') }
       let(:inner_multipart) do
-        instance_double(Google::Apis::GmailV1::MessagePart,
+        Google::Apis::GmailV1::MessagePart.new(
           mime_type: 'multipart/alternative',
           body:      make_body(nil),
           parts:     [ inner_plain, inner_html ]
@@ -87,7 +87,7 @@ RSpec.describe Emails::Adapters::GmailBodyExtractor do
 
     context 'when multipart payload has only non-text parts' do
       let(:attachment) do
-        instance_double(Google::Apis::GmailV1::MessagePart,
+        Google::Apis::GmailV1::MessagePart.new(
           mime_type: 'application/pdf',
           body:      make_body(nil),
           parts:     nil

@@ -15,14 +15,21 @@ module Interviews
     @ids: Array[String] | Array[Integer]
     @batch_action: String
 
+    def self.call: (ids: Array[String] | Array[Integer], batch_action: String) -> Result
+
     def initialize: (ids: Array[String] | Array[Integer], batch_action: String) -> void
     def call: () -> Result
 
     private
 
     def ids_needed?: () -> bool
+    def perform_batch_action: (Integer count) -> Result
+    def delete_interviews: (Integer count) -> Result
+    def export_interviews: () -> Result
+    def handle_merge: (Integer count) -> Result
 
     def merge_records: () -> void
+    def build_merge_attributes: (Interview::relation records) -> { status: String?, first_interview_at: String?, second_interview_at: String?, third_interview_at: String?, fourth_interview_at: String? }
     def collect_dates: (Interview::relation records) -> Array[String]
   end
 end

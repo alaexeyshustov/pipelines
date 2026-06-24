@@ -16,7 +16,7 @@ RSpec.describe Orchestration::Executable do
             date:      { "type" => "string" },
             providers: { "type" => "array", "items" => { "type" => "string" } }
           )
-          def self.call(date:, providers: [], **); end
+          def initialize(date:, providers: [], **); end
         end.input_schema
       end
 
@@ -43,7 +43,7 @@ RSpec.describe Orchestration::Executable do
       it 'raises ArgumentError at schema access time' do
         klass = make_executor do
           input_schema(date: { "type" => "string" })
-          def self.call(date:, topic:, **); end
+          def initialize(date:, topic:, **); end
         end
 
         expect { klass.input_schema }.to raise_error(ArgumentError, /topic/)
@@ -54,7 +54,7 @@ RSpec.describe Orchestration::Executable do
       it 'raises ArgumentError at schema access time' do
         klass = make_executor do
           input_schema(date: { "type" => "string" }, ghost: { "type" => "string" })
-          def self.call(date:, **); end
+          def initialize(date:, **); end
         end
 
         expect { klass.input_schema }.to raise_error(ArgumentError, /ghost/)
@@ -63,7 +63,7 @@ RSpec.describe Orchestration::Executable do
 
     context 'when input_schema is not declared' do
       it 'returns nil' do
-        klass = make_executor { def self.call(**); end }
+        klass = make_executor { def initialize(**); end }
         expect(klass.input_schema).to be_nil
       end
     end
@@ -72,7 +72,7 @@ RSpec.describe Orchestration::Executable do
       it 'raises ArgumentError when types are declared but no keyword args exist' do
         klass = make_executor do
           input_schema(date: { "type" => "string" })
-          def self.call(**); end
+          def initialize(**); end
         end
 
         expect { klass.input_schema }.to raise_error(ArgumentError, /date/)

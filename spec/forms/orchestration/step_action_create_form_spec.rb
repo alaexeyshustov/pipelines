@@ -63,7 +63,7 @@ RSpec.describe Orchestration::StepActionCreateForm do
 
     context "when a unique-key collision occurs (race condition)" do
       before do
-        allow(Orchestration::OutputKeyDeriver).to receive(:call).and_return("classify_emails")
+        allow_any_instance_of(Orchestration::OutputKeyDeriver).to receive(:derive).and_return("classify_emails") # rubocop:disable RSpec/AnyInstance
 
         first_call = true
         # rubocop:disable RSpec/AnyInstance

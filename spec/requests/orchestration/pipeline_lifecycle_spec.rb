@@ -18,7 +18,7 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
           orchestration_action: {
             name: "Query Interviews",
             kind: "service",
-            agent_class: "Orchestration::QueryExecutor",
+            agent_class: "Orchestration::Executors::Query",
             description: "Fetches interviews from the database"
           }
         }
@@ -26,9 +26,9 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
 
       query_action = Orchestration::Action.last
       expect(response).to redirect_to(orchestration_actions_path)
-      expect(query_action.agent_class).to eq("Orchestration::QueryExecutor")
+      expect(query_action.agent_class).to eq("Orchestration::Executors::Query")
 
-      classify_agent_record = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      classify_agent_record = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
 
       expect {
         post orchestration_actions_path, params: {
@@ -43,7 +43,7 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
 
       classify_action = Orchestration::Action.last
       expect(response).to redirect_to(orchestration_actions_path)
-      expect(classify_action.agent.name).to eq("Emails::ClassifyAgent")
+      expect(classify_action.agent.name).to eq("Orchestration::Agents::EmailsClassifier")
 
       # --- pipeline ---
 
@@ -110,11 +110,11 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
     let!(:query_action) do
       create(:orchestration_action, :service_kind,
         name: "Query Interviews",
-        agent_class: "Orchestration::QueryExecutor")
+        agent_class: "Orchestration::Executors::Query")
     end
     let!(:classify_agent) do
       create(:orchestration_agent,
-             name: "Emails::ClassifyAgent",
+             name: "Orchestration::Agents::EmailsClassifier",
              model: "mistral-large-latest",
              tools: [ "Records::TempFileTool" ])
     end
@@ -144,7 +144,7 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
         triggered_by: "manual"
       )
 
-      Orchestration::PipelineRunner.new(pipeline_run).call
+      Orchestration::PipelineRunner.new(pipeline_run).run
 
       pipeline_run.reload
       expect(pipeline_run.status).to eq("completed")
@@ -183,19 +183,19 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
   describe "edit: updating an existing pipeline's metadata, steps, and action attachments" do
     let!(:ingest_action) do
       create(:orchestration_action, :service_kind, name: "Transform Data",
-        agent_class: "Orchestration::IngestionExecutor")
+        agent_class: "Orchestration::Executors::Ingestion")
     end
     let!(:pipeline) { create(:orchestration_pipeline, name: "Job Application Pipeline", enabled: true) }
     let!(:fetch_step) { create(:orchestration_step, pipeline: pipeline, name: "Fetch Interviews", position: 1) }
     let!(:classify_step) { create(:orchestration_step, pipeline: pipeline, name: "Classify Emails", position: 2) }
     let!(:fetch_step_action) do
       query_action = create(:orchestration_action, :service_kind, name: "Query Interviews",
-        agent_class: "Orchestration::QueryExecutor")
+        agent_class: "Orchestration::Executors::Query")
       create(:orchestration_step_action, step: fetch_step, action: query_action, position: 1)
     end
 
     before do
-      classify_agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      classify_agent = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
       classify_action = create(:orchestration_action, name: "Classify Emails", agent: classify_agent)
       create(:orchestration_step_action, step: classify_step, action: classify_action, position: 1)
     end
@@ -272,7 +272,7 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
       expect(fetch_step.reload.position).to eq(2)
     end
 
-    # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
+    # rubocop:disable RSpec/MultipleExpectations
     it "detaches an action from a step and attaches a different one" do
       expect {
         delete orchestration_pipeline_step_step_action_path(pipeline, fetch_step, fetch_step_action)
@@ -287,7 +287,7 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
       expect(fetch_step.reload.step_actions.count).to eq(1)
       expect(fetch_step.step_actions.first.action).to eq(ingest_action)
     end
-    # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength
+    # rubocop:enable RSpec/MultipleExpectations
 
     it "toggles a step's enabled state" do
       patch toggle_orchestration_pipeline_step_path(pipeline, fetch_step)

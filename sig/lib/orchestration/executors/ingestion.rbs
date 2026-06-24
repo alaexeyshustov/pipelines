@@ -1,0 +1,33 @@
+module Orchestration
+  module Executors
+    class Ingestion
+      SUPPORTED_OPERATIONS: Array[String]
+
+      include Executable
+      extend Executable::ClassMethods
+
+      @data: json_object
+      @operations: Array[json_object]
+
+      def self.call: (?operations: Array[json_object]) -> json_object
+
+      def initialize: (?operations: Array[json_object]) -> void
+      def execute: () -> json_object
+
+      private
+
+      def execute_operation: (json_object output, json_object op) -> json_object
+      def apply_filter_by_ids: (json_object output, json_object op) -> json_object
+      def filter_items: (json_object output, String source, String ids_from) -> Array[json_object_value]
+
+      def build_updated_output: (json_object output, String dest, json_object_value value) -> json_object
+      def apply_rename: (json_object output, json_object op) -> json_object
+      def apply_pick: (json_object output, json_object op) -> json_object
+      def apply_merge_by_index: (json_object output, json_object op) -> json_object
+      def fetch_hash_array: (json_object output, String key) -> Array[json_object]
+      def merge_items: (Array[json_object] source_arr, Array[json_object_value] ids_arr, String inject) -> Array[json_object]
+      def dig_path: (json_object hash, String path) -> json_object_value
+      def item_id: (json_object_value item) -> String?
+    end
+  end
+end

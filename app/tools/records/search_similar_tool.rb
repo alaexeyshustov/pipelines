@@ -18,42 +18,46 @@ module Records
       model = resolve_model(table)
       return { error: "Unknown column #{column}" } unless model.tool_column_names.include?(column)
 
-      substring_matches = fetch_substring_matches(model, column, value)
-      fuzzy_matches     = fetch_fuzzy_matches(model, column, value)
-
-      merged = (substring_matches + fuzzy_matches)
-                 .group_by { |match| match[:value] }
-                 .map { |val, entries| { value: val, ids: entries.flat_map { |entry| entry[:ids] }.uniq.sort } }
-                 .sort_by { |match| match[:value] }
-
-      { matches: merged }
+      { matches: merged_matches(model, column, value) }
     rescue ModelNotFound => error
       { error: error.message }
     end
 
     private
 
+    def merged_matches(model, column, value)
+      (fetch_substring_matches(model, column, value) + fetch_fuzzy_matches(model, column, value))
+        .group_by { |match| match[:value] }
+        .map { |val, entries| { value: val, ids: entries.flat_map { |entry| entry[:ids] }.uniq.sort } }
+        .sort_by { |match| match[:value] } #: Array[Hash[Symbol, String | Array[Integer]]]
+    end
+
     # SQL: stored value contains query OR query contains stored value.
     def fetch_substring_matches(model, column, value)
       conn   = model.connection
       quoted = conn.quote_column_name(column)
-      sql    = <<~SQL
+      sql    = build_substring_sql(quoted, model.table_name)
+
+      conn.select_all(model.sanitize_sql([ sql, { value: value, like: "%#{value}%" } ]))
+          .filter_map { |row| map_substring_row(row, column) }
+    end
+
+    def build_substring_sql(quoted, table_name)
+      <<~SQL
         SELECT #{quoted}, GROUP_CONCAT(id) AS ids
-        FROM #{model.table_name}
+        FROM #{table_name}
         WHERE #{quoted} IS NOT NULL AND #{quoted} != ''
           AND (#{quoted} LIKE :like OR :value LIKE '%' || #{quoted} || '%')
         GROUP BY #{quoted}
         ORDER BY #{quoted}
       SQL
+    end
 
-      conn.select_all(
-        model.sanitize_sql([ sql, { value: value, like: "%#{value}%" } ])
-      ).filter_map do |row|
-        match_value = row[column]
-        next unless match_value
+    def map_substring_row(row, column)
+      match_value = row[column]
+      return unless match_value
 
-        { value: match_value, ids: row["ids"].to_s.split(",").map(&:to_i) }
-      end
+      { value: match_value, ids: row["ids"].to_s.split(",").map(&:to_i) }
     end
 
     # Ruby-side: word-level Levenshtein — catches typos like "Softwear" → "Software".

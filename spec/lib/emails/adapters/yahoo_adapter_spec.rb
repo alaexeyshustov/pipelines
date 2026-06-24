@@ -10,7 +10,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     )
   end
 
-  let(:imap) { instance_double(Net::IMAP) }
+  let(:imap) { Net::IMAP.allocate }
 
   let(:header_text) do
     "Subject: Job Application Update\r\n" \
@@ -20,7 +20,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
   end
 
   let(:fetch_data) do
-    [ instance_double(Net::IMAP::FetchData, attr: { 'RFC822.HEADER' => header_text, 'FLAGS' => [], 'UID' => 101 }) ]
+    [ Net::IMAP::FetchData.new(101, { 'RFC822.HEADER' => header_text, 'FLAGS' => [], 'UID' => 101 }) ]
   end
 
   before do
@@ -79,7 +79,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     end
 
     let(:full_fetch_data) do
-      [ instance_double(Net::IMAP::FetchData, attr: { 'RFC822' => full_message_text, 'FLAGS' => [], 'UID' => 101 }) ]
+      [ Net::IMAP::FetchData.new(101, { 'RFC822' => full_message_text, 'FLAGS' => [], 'UID' => 101 }) ]
     end
 
     before do
@@ -111,7 +111,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
   end
 
   describe '#get_labels' do
-    let(:mailbox) { instance_double(Net::IMAP::MailboxList, name: 'INBOX', delim: '/', attr: [ :Noselect ]) }
+    let(:mailbox) { Net::IMAP::MailboxList.new([ :Noselect ], '/', 'INBOX') }
 
     before do
       allow(imap).to receive(:list).with('', '*').and_return([ mailbox ])
@@ -278,7 +278,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
   describe 'fetch_and_parse error handling' do
     before do
       allow(imap).to receive(:select)
-      allow(imap).to receive_messages(uid_search: [ 101 ], uid_fetch: [ instance_double(Net::IMAP::FetchData, attr: { 'RFC822.HEADER' => '', 'RFC822' => nil, 'FLAGS' => [], 'UID' => 101 }) ])
+      allow(imap).to receive_messages(uid_search: [ 101 ], uid_fetch: [ Net::IMAP::FetchData.new(101, { 'RFC822.HEADER' => '', 'RFC822' => nil, 'FLAGS' => [], 'UID' => 101 }) ])
     end
 
     it 'skips messages that fail to parse' do

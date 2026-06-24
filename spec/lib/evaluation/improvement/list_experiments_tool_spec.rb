@@ -72,7 +72,7 @@ RSpec.describe Evaluation::Improvement::ListExperimentsTool do
         result_with_justification(later_experiment, metric_name: "accuracy", score: 4.0)
 
         results = tool.execute(prompt_name: prompt_name, current_experiment_id: current_experiment.id)
-        ids = results.map { |r| r[:experiment_id] }
+        ids = results.pluck(:experiment_id)
         expect(ids).to eq([ past_experiment.id, later_experiment.id ])
       end
     end

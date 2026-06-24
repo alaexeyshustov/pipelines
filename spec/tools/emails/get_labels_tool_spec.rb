@@ -22,7 +22,7 @@ RSpec.describe Emails::GetLabelsTool do
   it 'returns the list of labels' do
     result = tool.execute(provider: 'gmail')
     expect(result).to be_an(Array)
-    expect(result.map { |l| l[:name] }).to include('INBOX', 'applications')
+    expect(result.pluck(:name)).to include('INBOX', 'applications')
   end
 
   it 'fetches labels from the Gmail API' do

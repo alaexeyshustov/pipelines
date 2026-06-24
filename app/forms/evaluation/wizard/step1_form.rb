@@ -2,10 +2,12 @@
 
 module Evaluation
   module Wizard
-    class Step1Form
+    class Step1Form < ::BaseForm
       def initialize(draft_payload:)
         @payload = draft_payload
       end
+
+      def advance!(_payload) = true
 
       def agent_names      = Evaluation::Prompt.distinct.pluck(:name).sort
       def prompts          = Evaluation::Prompt.order(version: :desc)

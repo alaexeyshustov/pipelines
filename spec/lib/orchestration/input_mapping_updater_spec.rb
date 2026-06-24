@@ -1,0 +1,87 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+RSpec.describe Orchestration::InputMappingUpdater do
+  let(:pipeline)    { create(:orchestration_pipeline) }
+  let(:step)        { create(:orchestration_step, pipeline: pipeline) }
+  let(:action)      { create(:orchestration_action, name: "Classify Emails") }
+  let(:step_action) { create(:orchestration_step_action, step: step, action: action, output_key: "classify_emails") }
+
+  def build_updater(input_mapping:, pipeline_validator: Orchestration::PipelineValidator)
+    described_class.new(
+      step_action: step_action,
+      input_mapping: input_mapping,
+      pipeline_validator: pipeline_validator
+    )
+  end
+
+  describe "#update" do
+    context "with a valid mapping (no validator errors)" do
+      it "returns a saved result" do
+        result = build_updater(input_mapping: { "email" => { "from" => "_initial" } }).update
+
+        expect(result.saved).to be true
+      end
+
+      it "persists the mapping to the database" do
+        build_updater(input_mapping: { "email" => { "from" => "_initial" } }).update
+
+        expect(step_action.reload.input_mapping).to eq("email" => { "from" => "_initial" })
+      end
+
+      it "returns empty errors" do
+        result = build_updater(input_mapping: { "email" => { "from" => "_initial" } }).update
+
+        expect(result.errors).to be_empty
+      end
+    end
+
+    context "when the mapping triggers validator errors (unknown from key)" do
+      it "returns a not-saved result" do
+        result = build_updater(input_mapping: { "email" => { "from" => "nonexistent_key" } }).update
+
+        expect(result.saved).to be false
+      end
+
+      it "populates errors on the result" do
+        result = build_updater(input_mapping: { "email" => { "from" => "nonexistent_key" } }).update
+
+        expect(result.errors).not_to be_empty
+        expect(result.errors.first.code).to eq(:unknown_from)
+      end
+
+      it "does not persist the mapping (rolls back)" do
+        original_mapping = step_action.input_mapping
+
+        build_updater(input_mapping: { "email" => { "from" => "nonexistent_key" } }).update
+
+        expect(step_action.reload.input_mapping).to eq(original_mapping)
+      end
+    end
+
+    context "when the input_mapping is empty" do
+      it "saves and returns empty errors and warnings" do
+        result = build_updater(input_mapping: {}).update
+
+        expect(result.saved).to be true
+        expect(result.errors).to be_empty
+        expect(result.warnings).to be_empty
+      end
+    end
+
+    context "when the step_action does not appear in the validator results" do
+      it "treats missing step_result as no errors and no warnings" do
+        null_validator = Class.new do
+          def initialize(_pipeline); end
+          def validate; []; end
+        end
+
+        result = build_updater(input_mapping: {}, pipeline_validator: null_validator).update
+
+        expect(result.errors).to be_empty
+        expect(result.warnings).to be_empty
+      end
+    end
+  end
+end

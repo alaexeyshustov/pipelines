@@ -205,7 +205,17 @@ RSpec.describe UI::TableComponent, type: :component do
   end
 
   context "with batch actions" do
-    let(:pagy) { instance_double(Pagy::Offset, limit: 25, last: 3, series_nav: "") }
+    let(:request) do
+      ActionDispatch::Request.new(
+        "REQUEST_METHOD" => "GET",
+        "PATH_INFO"      => "/items",
+        "QUERY_STRING"   => "",
+        "rack.input"     => StringIO.new,
+        "SERVER_NAME"    => "www.example.com",
+        "SERVER_PORT"    => "80"
+      )
+    end
+    let(:pagy) { Pagy::Offset.new(count: 75, limit: 25, page: 1, request: request) }
     let(:filters) do
       ApplicationController::Filters.new(
         path: "/items", q: nil, per_page: "25", page: nil, sort: "", direction: "desc",
@@ -238,7 +248,7 @@ RSpec.describe UI::TableComponent, type: :component do
 
     it "renders per-page links for each option" do
       links = rendered.css("div.ml-auto a")
-      expect(links.map(&:text).map(&:strip)).to eq(%w[10 25 50])
+      expect(links.map { |x| x.text.strip }).to eq(%w[10 25 50])
     end
 
     it "highlights the active per-page link" do

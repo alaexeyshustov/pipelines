@@ -35,6 +35,7 @@ module Evaluation
 
     private
 
+    def compute_metric_deltas: (Hash[String, Float] baseline_metrics, Hash[String, Float] candidate_metrics) -> Hash[String, Float?]
     def per_metric_averages: (Evaluation::Experiment experiment) -> Hash[String, Float]
     def overall_average: (Evaluation::Experiment experiment) -> Float?
   end

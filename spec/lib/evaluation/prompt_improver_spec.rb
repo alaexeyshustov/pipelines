@@ -6,12 +6,18 @@ RSpec.describe Evaluation::PromptImprover do
   let!(:experiment) { create(:evaluation_experiment, status: :completed) }
   let(:prompt) { experiment.prompt }
 
+  def build_response(content)
+    msg = RubyLLM::Message.allocate
+    msg.instance_variable_set(:@content, content)
+    msg
+  end
+
   def stub_improvement_agent(system_prompt: "Improved system", user_prompt: "Improved user")
     response_content = { "system_prompt" => system_prompt, "user_prompt" => user_prompt }
-    agent_double = instance_double(Evaluation::Improvement::Agent)
-    allow(agent_double).to receive_messages(with_model: agent_double, ask: double(content: response_content))
-    allow(Evaluation::Improvement::Agent).to receive(:create).and_return(agent_double)
-    agent_double
+    agent = Evaluation::Improvement::Agent.allocate
+    allow(agent).to receive_messages(with_model: agent, ask: build_response(response_content))
+    allow(Evaluation::Improvement::Agent).to receive(:create).and_return(agent)
+    agent
   end
 
   describe ".call" do
@@ -55,18 +61,18 @@ RSpec.describe Evaluation::PromptImprover do
     end
 
     it "raises PromptImprover::Error when the response is missing system_prompt" do
-      agent_double = instance_double(Evaluation::Improvement::Agent)
-      allow(agent_double).to receive_messages(with_model: agent_double, ask: double(content: { "user_prompt" => "ok" }))
-      allow(Evaluation::Improvement::Agent).to receive(:create).and_return(agent_double)
+      agent = Evaluation::Improvement::Agent.allocate
+      allow(agent).to receive_messages(with_model: agent, ask: build_response({ "user_prompt" => "ok" }))
+      allow(Evaluation::Improvement::Agent).to receive(:create).and_return(agent)
 
       expect { described_class.call(experiment: experiment) }
         .to raise_error(Evaluation::PromptImprover::Error, /Missing system_prompt/)
     end
 
     it "raises PromptImprover::Error when the response content is invalid JSON string" do
-      agent_double = instance_double(Evaluation::Improvement::Agent)
-      allow(agent_double).to receive_messages(with_model: agent_double, ask: double(content: "not json"))
-      allow(Evaluation::Improvement::Agent).to receive(:create).and_return(agent_double)
+      agent = Evaluation::Improvement::Agent.allocate
+      allow(agent).to receive_messages(with_model: agent, ask: build_response("not json"))
+      allow(Evaluation::Improvement::Agent).to receive(:create).and_return(agent)
 
       expect { described_class.call(experiment: experiment) }
         .to raise_error(Evaluation::PromptImprover::Error)

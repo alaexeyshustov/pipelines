@@ -22,23 +22,23 @@ module Orchestration
       @agent = Orchestration::Agent.new
     end
 
+    def edit
+    end
     def create
       @agent = Orchestration::Agent.new(agent_params)
       if @agent.save
         redirect_to orchestration_agents_path, notice: "Agent created."
       else
-        render :new, status: :unprocessable_entity
+        render :new, status: :unprocessable_content
       end
     end
 
-    def edit
-    end
 
     def update
       if @agent.update(agent_params)
         redirect_to orchestration_agents_path, notice: "Agent updated."
       else
-        render :edit, status: :unprocessable_entity
+        render :edit, status: :unprocessable_content
       end
     end
 
@@ -63,11 +63,11 @@ module Orchestration
     end
 
     def agent_params
-      permitted = params.require(:orchestration_agent).permit(
-        :name, :description, :model, :prompt, :output_schema, tools: []
+      permitted = params.expect(
+        orchestration_agent: [ :name, :description, :model, :prompt, :output_schema, tools: [] ]
       )
 
-      permitted[:tools] = Array(permitted[:tools]).reject(&:blank?) if permitted.key?(:tools)
+      permitted[:tools] = Array(permitted[:tools]).compact_blank if permitted.key?(:tools)
 
       begin
         parse_json_field(permitted, :output_schema)

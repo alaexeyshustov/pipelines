@@ -28,7 +28,7 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
            input: { "emails" => [ { "id" => "1", "subject" => "Job offer" } ] })
   end
 
-  context "when completed action runs with chats exist" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+  context "when completed action runs with chats exist" do
     let(:chat) { create(:chat) }
     let(:action_run) { create_completed_action_run(chat: chat) }
 
@@ -55,7 +55,7 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
     end
   end
 
-  context "when run twice" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+  context "when run twice" do
     let(:chat) { create(:chat) }
     let(:action_run) { create_completed_action_run(chat: chat) }
 

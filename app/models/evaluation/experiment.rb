@@ -10,7 +10,7 @@ module Evaluation
     has_many :samples, class_name: "Evaluation::Sample", dependent: :destroy
     has_many :evaluation_results, through: :samples, class_name: "Evaluation::EvaluationResult"
 
-    validates :name, :dataset, presence: true
+    validates :name, presence: true
 
     serialize :metadata, coder: JSON
 

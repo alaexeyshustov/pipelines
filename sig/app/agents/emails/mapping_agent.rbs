@@ -1,4 +1,0 @@
-module Emails
-  class MappingAgent < RubyLLM::Agent
-  end
-end

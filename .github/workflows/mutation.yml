@@ -31,12 +31,7 @@ jobs:
 
       - name: Run mutation testing
         run: |
-          # Run only the focused high-logic subjects; positional args override .mutant.yml matcher.
-          bundle exec mutant run --jobs 4 \
-            'Orchestration::PipelineRunner' \
-            'Orchestration::NormalizeActionRunFailure' \
-            'Orchestration::IngestionExecutor' \
-            'Orchestration::InputMappingResolver' 2>&1 | tee mutant_output.txt || true
+          bundle exec mutant run --jobs 4 2>&1 | tee mutant_output.txt || true
           score=$(grep "Coverage:" mutant_output.txt | grep -v "Line Coverage" | grep -oE '[0-9]+(\.[0-9]+)?%' | tr -d '%')
           echo "Mutation score: ${score}%"
           if [ -z "$score" ]; then

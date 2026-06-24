@@ -18,6 +18,7 @@ end
 Rails.autoloaders.each do |autoloader|
   autoloader.inflector.inflect(
     "rubocop" => "RuboCop",
-    "rbs" => "RBS"
+    "rbs" => "RBS",
+    "json" => "JSON"
   )
 end

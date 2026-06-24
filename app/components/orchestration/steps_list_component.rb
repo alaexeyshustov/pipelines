@@ -24,14 +24,22 @@ module Orchestration
     end
 
     def compute_validator_results_per_step
-      all_results = @pipeline.validate_steps
-      collector =  Hash.new # : Hash[Integer, Integer]
-      step_action_id_to_step_id = @steps.each_with_object(collector) do |step, map|
+      all_results    = @pipeline.validate_steps
+      sa_to_step_map = build_step_action_to_step_map
+      group_results_by_step(all_results, sa_to_step_map)
+    end
+
+    def build_step_action_to_step_map
+      collector = Hash.new # : Hash[Integer, Integer]
+      @steps.each_with_object(collector) do |step, map|
         step.step_actions.each { |sa| map[sa.id] = step.id }
       end
+    end
+
+    def group_results_by_step(all_results, sa_to_step_map)
       collector = Hash.new { |h, k| h[k] = [] } # : Hash[Integer, Array[Orchestration::ValidatorResult]]
       all_results.each_with_object(collector) do |result, map|
-        step_id = step_action_id_to_step_id[result.step_action_id]
+        step_id = sa_to_step_map[result.step_action_id]
         map[step_id] << result if step_id
       end
     end

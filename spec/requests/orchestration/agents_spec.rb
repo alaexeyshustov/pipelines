@@ -5,14 +5,14 @@ require "rails_helper"
 RSpec.describe "Orchestration::Agents" do
   describe "GET /orchestration/agents" do
     it "returns 200 and lists agents" do
-      create(:orchestration_agent, name: "Emails::ClassifyAgent", enabled: true)
+      create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier", enabled: true)
       get orchestration_agents_path
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Emails::ClassifyAgent")
+      expect(response.body).to include("Orchestration::Agents::EmailsClassifier")
     end
 
     it "shows action usage count per agent" do
-      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      agent = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
       create(:orchestration_action, name: "Action One", kind: :agent, agent: agent)
       create(:orchestration_action, name: "Action Two", kind: :agent, agent: agent)
       get orchestration_agents_path
@@ -20,10 +20,10 @@ RSpec.describe "Orchestration::Agents" do
     end
 
     it "links agent name to show page" do
-      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      agent = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
       get orchestration_agents_path
       expect(response.body).to include("href=\"#{orchestration_agent_path(agent)}\"")
-      expect(response.body).to match(/href="#{orchestration_agent_path(agent)}"[^>]*>\s*Emails::ClassifyAgent/)
+      expect(response.body).to match(/href="#{orchestration_agent_path(agent)}"[^>]*>\s*Orchestration::Agents::EmailsClassifier/)
     end
   end
 
@@ -40,7 +40,7 @@ RSpec.describe "Orchestration::Agents" do
       let(:valid_params) do
         {
           orchestration_agent: {
-            name: "Emails::ClassifyAgent",
+            name: "Orchestration::Agents::EmailsClassifier",
             description: "Classifies emails",
             model: "mistral-small",
             tools: [],
@@ -50,7 +50,7 @@ RSpec.describe "Orchestration::Agents" do
         }
       end
 
-      it "creates an agent and redirects" do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
+      it "creates an agent and redirects" do # rubocop:disable RSpec/MultipleExpectations
         expect {
           post orchestration_agents_path, params: valid_params
         }.to change(Orchestration::Agent, :count).by(1)
@@ -73,7 +73,7 @@ RSpec.describe "Orchestration::Agents" do
       it "preserves valid fields when output_schema JSON is invalid" do
         post orchestration_agents_path, params: {
           orchestration_agent: {
-            name: "Emails::ClassifyAgent",
+            name: "Orchestration::Agents::EmailsClassifier",
             tools: [ "Records::TempFileTool" ],
             output_schema: "{invalid"
           }
@@ -88,21 +88,21 @@ RSpec.describe "Orchestration::Agents" do
 
   describe "GET /orchestration/agents/:id" do
     it "returns 200 and shows agent name" do
-      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      agent = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
       get orchestration_agent_path(agent)
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Emails::ClassifyAgent")
+      expect(response.body).to include("Orchestration::Agents::EmailsClassifier")
     end
 
     it "lists actions that reference this agent" do
-      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      agent = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
       create(:orchestration_action, name: "Classify Email Step", kind: :agent, agent: agent)
       get orchestration_agent_path(agent)
       expect(response.body).to include("Classify Email Step")
     end
 
     it "shows pipeline name for actions attached to pipelines" do
-      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      agent = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
       action = create(:orchestration_action, name: "Classify Email Step", kind: :agent, agent: agent)
       step_action = create(:orchestration_step_action, action: action)
       get orchestration_agent_path(agent)
@@ -110,7 +110,7 @@ RSpec.describe "Orchestration::Agents" do
     end
 
     it "deduplicates pipeline name when action appears in multiple steps of the same pipeline" do
-      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      agent = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
       action = create(:orchestration_action, name: "Classify Email Step", kind: :agent, agent: agent)
       pipeline = create(:orchestration_pipeline)
       step_a = create(:orchestration_step, pipeline: pipeline)
@@ -131,19 +131,19 @@ RSpec.describe "Orchestration::Agents" do
 
   describe "GET /orchestration/agents/:id/edit" do
     it "returns 200 with form populated" do
-      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      agent = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
       get edit_orchestration_agent_path(agent)
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Emails::ClassifyAgent")
+      expect(response.body).to include("Orchestration::Agents::EmailsClassifier")
     end
   end
 
   describe "PATCH /orchestration/agents/:id" do
     context "with valid params" do
       it "updates and redirects" do
-        agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+        agent = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
         patch orchestration_agent_path(agent), params: {
-          orchestration_agent: { name: "Emails::ClassifyAgent", description: "Updated" }
+          orchestration_agent: { name: "Orchestration::Agents::EmailsClassifier", description: "Updated" }
         }
         expect(response).to redirect_to(orchestration_agents_path)
         expect(agent.reload.description).to eq("Updated")
@@ -152,7 +152,7 @@ RSpec.describe "Orchestration::Agents" do
 
     context "with invalid params" do
       it "renders edit with 422" do
-        agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+        agent = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
         patch orchestration_agent_path(agent), params: { orchestration_agent: { name: "" } }
         expect(response).to have_http_status(:unprocessable_content)
       end
@@ -161,7 +161,7 @@ RSpec.describe "Orchestration::Agents" do
 
   describe "DELETE /orchestration/agents/:id" do
     it "destroys unreferenced agent and redirects" do
-      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      agent = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
       expect {
         delete orchestration_agent_path(agent)
       }.to change(Orchestration::Agent, :count).by(-1)
@@ -169,7 +169,7 @@ RSpec.describe "Orchestration::Agents" do
     end
 
     it "shows error when agent is referenced by an action" do
-      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      agent = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
       create(:orchestration_action, kind: :agent, agent: agent)
       expect {
         delete orchestration_agent_path(agent)
@@ -182,7 +182,7 @@ RSpec.describe "Orchestration::Agents" do
 
   describe "PATCH /orchestration/agents/:id/toggle" do
     it "toggles enabled state and redirects" do
-      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent", enabled: true)
+      agent = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier", enabled: true)
       patch toggle_orchestration_agent_path(agent)
       expect(response).to redirect_to(orchestration_agents_path)
       expect(agent.reload.enabled).to be false

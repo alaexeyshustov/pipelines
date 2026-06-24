@@ -20,14 +20,9 @@ RSpec.describe Evaluation::MetricExtractor do
       usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 }
     }.to_json
   end
-  let(:prompt_double) { instance_double(Evaluation::Prompt, system_prompt: instructions) }
-  let(:prompt_relation) { instance_double(ActiveRecord::Relation) }
 
   before do
-    allow(Evaluation::Prompt).to receive(:where).with(name: agent_name).and_return(prompt_relation)
-    allow(prompt_relation).to receive(:order).with(version: :desc, id: :desc).and_return(prompt_relation)
-    allow(prompt_relation).to receive(:first).and_return(prompt_double)
-
+    create(:orchestration_prompt, name: agent_name, system_prompt: instructions)
     stub_request(:post, %r{api\.openai\.com})
       .to_return(status: 200, body: llm_response_body, headers: { 'Content-Type' => 'application/json' })
   end
@@ -58,18 +53,16 @@ RSpec.describe Evaluation::MetricExtractor do
 
     it 'sends the system prompt and agent instructions to the LLM' do
       extractor.call
-      expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
+      expect(WebMock).to(have_requested(:post, %r{api\.openai\.com}).with { |req|
         body = JSON.parse(req.body)
         messages = body["messages"]
         messages.any? { |m| m["content"].to_s.include?("evaluation expert") } &&
           messages.any? { |m| m["content"].to_s.include?(instructions) }
-      }
+      })
     end
 
     context 'when agent prompt is not found' do
-      before do
-        allow(prompt_relation).to receive(:first).and_return(nil)
-      end
+      subject(:extractor) { described_class.new('NonExistentAgent') }
 
       it 'raises an ArgumentError' do
         expect { extractor.call }.to raise_error(ArgumentError, /No prompt found/)

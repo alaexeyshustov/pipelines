@@ -6,16 +6,17 @@ RSpec.describe Evaluation::Wizard::DatasetStepComponent, type: :component do
   subject(:rendered) { render_inline(described_class.new(form: build_form)) }
 
   let(:agent_name)  { "Emails::ClassifyAgent" }
-  let(:datasets)    { create_list(:evaluation_dataset, 2) }
+  let!(:datasets)   { create_list(:evaluation_dataset, 2, agent_name: agent_name) }
   let(:draft_token) { "abc123" }
 
   def build_form(overrides = {})
-    instance_double(Evaluation::Wizard::Step3Form,
-      agent_name:          agent_name,
-      datasets:            datasets,
-      draft_token:         draft_token,
-      selected_dataset_id: nil,
-      **overrides
+    payload = {
+      "agent_name" => overrides.fetch(:agent_name, agent_name),
+      "dataset_id" => overrides.fetch(:selected_dataset_id, nil)
+    }
+    Evaluation::Wizard::Step3Form.new(
+      draft_payload: payload,
+      draft_token:   overrides.fetch(:draft_token, draft_token)
     )
   end
 
@@ -24,8 +25,8 @@ RSpec.describe Evaluation::Wizard::DatasetStepComponent, type: :component do
   end
 
   it "marks selected dataset when selected_dataset_id provided" do
-    selected = create(:evaluation_dataset)
-    rendered = render_inline(described_class.new(form: build_form(datasets: [ selected ], selected_dataset_id: selected.id)))
+    selected = create(:evaluation_dataset, agent_name: agent_name)
+    rendered = render_inline(described_class.new(form: build_form(selected_dataset_id: selected.id)))
     radio = rendered.css("input[type='radio'][value='#{selected.id}']").first
     expect(radio["checked"]).to be_present
   end

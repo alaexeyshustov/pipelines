@@ -8,8 +8,11 @@ module Records
 
     private
 
-    def fetch_substring_matches: (_HasColumnNames model, String column, String value) -> Array[{ value: String, ids: Array[Integer] }]
-    def fetch_fuzzy_matches: (_HasColumnNames model, String column, String value) -> Array[{ value: String, ids: Array[Integer] }]
+    def merged_matches: (_HasColumnNames model, String column, String value) -> Array[Hash[Symbol, String | Array[Integer]]]
+    def fetch_substring_matches: (_HasColumnNames model, String column, String value) -> Array[Hash[Symbol, String | Array[Integer]]]
+    def build_substring_sql: (String quoted, String table_name) -> String
+    def map_substring_row: (Hash[String, String | nil] row, String column) -> Hash[Symbol, String | Array[Integer]]?
+    def fetch_fuzzy_matches: (_HasColumnNames model, String column, String value) -> Array[Hash[Symbol, String | Array[Integer]]]
   end
 
   class FuzzyMatcher
@@ -25,5 +28,6 @@ module Records
     def normalize_words: (String str) -> Array[String]
     def words_similar?: (String word_a, String word_b) -> bool
     def levenshtein: (String str_a, String str_b) -> Integer
+    def levenshtein_row: (String char_a, Integer row, Array[Integer] prev, String str_b) -> Array[Integer]
   end
 end

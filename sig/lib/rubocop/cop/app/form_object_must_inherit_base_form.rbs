@@ -1,0 +1,17 @@
+module RuboCop
+  module Cop
+    module App
+      class FormObjectMustInheritBaseForm < ::RuboCop::Cop::Base
+        MSG: String
+
+        def on_class: (::RuboCop::Cop::_Node node) -> void
+
+        private
+
+        def form_file?: () -> bool
+        def inherits_base_form?: (::RuboCop::Cop::_Node node) -> bool
+        def const_to_str: (::RuboCop::Cop::_Node? node) -> String?
+      end
+    end
+  end
+end

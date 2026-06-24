@@ -1,4 +1,0 @@
-module Emails
-  class ClassifyAgent < RubyLLM::Agent
-  end
-end

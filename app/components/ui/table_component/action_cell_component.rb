@@ -54,7 +54,7 @@ module UI
         end
 
         def non_get?
-          ![ :get, "get" ].include?(@method)
+          [ :get, "get" ].exclude?(@method)
         end
       end
     end

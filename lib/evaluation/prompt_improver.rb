@@ -42,20 +42,25 @@ module Evaluation
 
 
     def build_improvement_message(current_prompt:, evaluation_data:, metrics:)
-      data = {
+      message = build_message_data(current_prompt, evaluation_data, metrics).to_json
+      append_output_schema(message, current_prompt.name.to_s)
+    end
+
+    def build_message_data(current_prompt, evaluation_data, metrics)
+      {
         experiment_id: @experiment.id,
         prompt_name: current_prompt.name.to_s,
         system_prompt: current_prompt.system_prompt,
         metrics: metrics.map { |m| { name: m.name, description: m.description } },
         scores: evaluation_data.map { |r| { metric_name: r.metric_name, score: r.evaluation_result.score, justification: r.justification } }
       }
+    end
 
-      message = data.to_json
+    def append_output_schema(message, agent_name)
+      agent_schema = Orchestration::Agent.find_by(name: agent_name)&.output_schema
+      return message if agent_schema.blank?
 
-      agent_schema = Orchestration::Agent.find_by(name: current_prompt.name.to_s)&.output_schema
-      message += "\n\n<output_schema>\n#{agent_schema.to_json}\n</output_schema>" if agent_schema.present?
-
-      message
+      message + "\n\n<output_schema>\n#{agent_schema.to_json}\n</output_schema>"
     end
 
     def run_agent(input)

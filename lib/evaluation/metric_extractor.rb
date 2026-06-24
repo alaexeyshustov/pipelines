@@ -41,31 +41,29 @@ module Evaluation
 
     def parse_metrics(content)
       parsed = content.is_a?(String) ? JSON.parse(content) : content
-      case parsed
-      when Array
-        parsed.each_with_index do |metric, i|
-          unless metric.is_a?(Hash) &&
-                 metric["name"].is_a?(String) && metric["name"].present? &&
-                 metric["description"].is_a?(String) && metric["description"].present?
-            raise ArgumentError,
-                  "Invalid metric at index #{i} for agent #{@agent_name}: expected Hash with string name and description"
-          end
-        end
+      raise ArgumentError, "Metric extraction returned non-array for agent #{@agent_name}" unless parsed.is_a?(Array)
 
-        parsed.filter_map do |metric|
-          next unless metric.is_a?(Hash)
+      validate_metric_entries!(parsed)
 
-          {
-            "name" => metric["name"].to_s,
-            "description" => metric["description"].to_s
-          }
-        end
-      else
-        raise ArgumentError, "Metric extraction returned non-array for agent #{@agent_name}"
+      parsed.filter_map do |metric|
+        next unless metric.is_a?(Hash)
+
+        { "name" => metric["name"].to_s, "description" => metric["description"].to_s }
       end
     rescue JSON::ParserError => e
       raise ArgumentError,
             "Metric extraction returned invalid JSON for agent #{@agent_name}: #{truncate(content.to_s)} (#{e.message})"
+    end
+
+    def validate_metric_entries!(entries)
+      entries.each_with_index do |metric, i|
+        next if metric.is_a?(Hash) &&
+                metric["name"].is_a?(String) && metric["name"].present? &&
+                metric["description"].is_a?(String) && metric["description"].present?
+
+        raise ArgumentError,
+              "Invalid metric at index #{i} for agent #{@agent_name}: expected Hash with string name and description"
+      end
     end
 
     def truncate(content, limit = 200)

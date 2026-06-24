@@ -1,0 +1,6 @@
+module RuboCop
+  module Cop
+    module AppCops
+    end
+  end
+end

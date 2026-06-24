@@ -50,21 +50,26 @@ module UI
     end
 
     def field_kind(schema)
-      if schema["format"] == "hardcoded"
-        :hardcoded
-      elsif schema["type"] == "array" && schema.dig("items", "enum").present?
-        :checkboxes
-      elsif schema["format"] == "date"
-        :date
-      elsif schema["type"] == "string" && schema["enum"].present?
-        :select
-      elsif schema["type"] == "boolean"
-        :boolean
-      elsif %w[integer number].include?(schema["type"])
-        :number
-      else
-        :text
+      if schema["format"] == "hardcoded"   then :hardcoded
+      elsif array_with_checkboxes?(schema) then :checkboxes
+      elsif schema["format"] == "date"     then :date
+      elsif string_with_enum?(schema)      then :select
+      elsif schema["type"] == "boolean"    then :boolean
+      elsif numeric_type?(schema)          then :number
+      else :text
       end
+    end
+
+    def numeric_type?(schema)
+      %w[integer number].include?(schema["type"])
+    end
+
+    def array_with_checkboxes?(schema)
+      schema["type"] == "array" && schema.dig("items", "enum").present?
+    end
+
+    def string_with_enum?(schema)
+      schema["type"] == "string" && schema["enum"].present?
     end
   end
 end

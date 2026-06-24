@@ -4,12 +4,13 @@ require "googleauth/stores/file_token_store"
 
 module Emails
   module Adapters
+    # rubocop:disable Metrics/ClassLength
     class GmailAdapter < BaseAdapter
       APPLICATION_NAME = "Application Pipeline"
       SCOPE = [ "https://www.googleapis.com/auth/gmail.modify" ].freeze
 
       def self.setup(opts = {})
-        puts <<~INSTRUCTIONS
+        Rails.logger.debug { <<~INSTRUCTIONS }
           Gmail setup:
           1. Create a project in Google Cloud Console.
           2. Enable the Gmail API for your project.
@@ -19,25 +20,29 @@ module Emails
           Clearing any existing token and launching OAuth authorization flow...
         INSTRUCTIONS
         from_env(opts).authorize
-        puts "✓ Gmail OAuth token saved."
+        Rails.logger.debug "✓ Gmail OAuth token saved."
       end
 
       def self.test_connection(opts = {})
         adapter = from_env(opts)
         adapter.on_init
         adapter.instance_variable_get(:@service).get_user_profile("me")
+        # rubocop:disable Rails/Output
         puts "✓ Gmail connection successful"
+        # rubocop:enable Rails/Output
       rescue StandardError => error
+        # rubocop:disable Rails/Output
         puts "ERROR: Gmail connection failed - #{error.message}"
+        # rubocop:enable Rails/Output
       end
 
       def self.reset
         token_path = Rails.root.join("token.yaml").to_s
         if File.exist?(token_path)
           File.delete(token_path)
-          puts "✓ Token deleted: #{token_path}"
+          Rails.logger.debug { "✓ Token deleted: #{token_path}" }
         else
-          puts "✓ No token found at #{token_path} (already clean)"
+          Rails.logger.debug { "✓ No token found at #{token_path} (already clean)" }
         end
       end
 
@@ -46,7 +51,7 @@ module Emails
         credentials_path = opts[:credentials_path] || ENV.fetch("GMAIL_CREDENTIALS_PATH", root.join("credentials.json").to_s)
         token_path       = opts[:token_path]       || ENV.fetch("GMAIL_TOKEN_PATH", root.join("token.yaml").to_s)
         unless File.exist?(credentials_path)
-          raise   "Missing Gmail credentials file. Please create #{credentials_path} with your Google API credentials."
+          raise "Missing Gmail credentials file. Please create #{credentials_path} with your Google API credentials."
         end
         adapter = new(credentials_path: credentials_path, token_path: token_path)
         adapter.on_init
@@ -95,19 +100,7 @@ module Emails
         message = @service.get_user_message("me", message_id.to_s, format: "full")
         raise "Message not found: #{message_id}" unless message
 
-        parsed = GmailMessageParser.new(message).to_h
-        {
-          id: parsed[:id],
-          provider: parsed[:provider],
-          subject: parsed[:subject],
-          from: parsed[:from],
-          to: parsed[:to],
-          date: parsed[:date],
-          snippet: parsed[:snippet],
-          body: GmailBodyExtractor.new(message.payload).body,
-          thread_id: parsed[:thread_id],
-          labels: parsed[:labels]
-        }
+        format_message(message, GmailMessageParser.new(message).to_h)
       end
 
       def get_unread_count
@@ -146,13 +139,7 @@ module Emails
       def create_label(name:)
         label  = Google::Apis::GmailV1::Label.new(name: name)
         result = @service.create_user_label("me", label)
-        raise "Label create error: #{name}" unless result
-        id = result.id
-        result_name = result.name
-        type = result.type
-        raise "Label create error: #{name}" unless id && result_name && type
-
-        { id: id, name: result_name, type: type }
+        validate_label_result!(result, name)
       rescue Google::Apis::ClientError => error
         raise error unless error.message.include?("Label name exists or conflicts")
         find_existing_label(name)
@@ -160,8 +147,34 @@ module Emails
 
       private
 
+      def validate_label_result!(result, name)
+        raise "Label create error: #{name}" unless result
+
+        id = result.id
+        result_name = result.name
+        type = result.type
+        raise "Label create error: #{name}" unless id && result_name && type
+
+        { id: id, name: result_name, type: type }
+      end
+
+      def format_message(message, parsed)
+        {
+          id: parsed[:id],
+          provider: parsed[:provider],
+          subject: parsed[:subject],
+          from: parsed[:from],
+          to: parsed[:to],
+          date: parsed[:date],
+          snippet: parsed[:snippet],
+          body: GmailBodyExtractor.new(message.payload).body,
+          thread_id: parsed[:thread_id],
+          labels: parsed[:labels]
+        }
+      end
+
       def fetch_messages(max_results, offset, &block)
-        GmailPaginator.new(max_results, offset, &block).messages.map { |msg| list_message(msg.id.to_s) }.compact
+        GmailPaginator.new(max_results, offset, &block).messages.filter_map { |msg| list_message(msg.id.to_s) }
       end
 
       def find_existing_label(name)
@@ -174,7 +187,8 @@ module Emails
         # steep:ignore:start
         id_map = get_labels.each_with_object({}) do |lbl, map|
           id, name = lbl.values_at(:id, :name)
-          map.merge!(id => id, name => id)
+          map[id] = id
+          map[name] = id
         end
         # steep:ignore:end
         Array.wrap(label_ids).filter_map { |label| id_map[label] }
@@ -187,4 +201,5 @@ module Emails
       end
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

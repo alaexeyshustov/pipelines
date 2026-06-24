@@ -28,7 +28,7 @@ RSpec.describe "Settings::EmailConnectors" do
         configuration: { credentials_path: "credentials.json", token_path: "token.yaml" }
       )
     end
-    let(:auth_double) { instance_double(Emails::GmailAuth) }
+    let(:auth_double) { Emails::GmailAuth.allocate }
     let(:auth_url) { "https://accounts.google.com/o/oauth2/auth?scope=gmail" }
 
     before do
@@ -72,7 +72,7 @@ RSpec.describe "Settings::EmailConnectors" do
         configuration: { credentials_path: "credentials.json", token_path: "token.yaml" }
       )
     end
-    let(:auth_double) { instance_double(Emails::GmailAuth) }
+    let(:auth_double) { Emails::GmailAuth.allocate }
     let(:auth_url) { "https://accounts.google.com/o/oauth2/auth?scope=gmail" }
 
     before do

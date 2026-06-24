@@ -7,6 +7,11 @@ module Emails
 
       def initialize: (Integer uid, Mail::Message mail, String mailbox) -> void
       def to_h: () -> message
+
+      private
+
+      def decode_subject: () -> String
+      def format_addresses: (String | Array[String] | nil addresses) -> String
     end
   end
 end

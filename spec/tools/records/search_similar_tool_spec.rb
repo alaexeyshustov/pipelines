@@ -14,7 +14,7 @@ RSpec.describe Records::SearchSimilarTool do
   describe '#execute' do
     it 'finds rows with a matching substring' do
       result = tool.execute(table: 'application_mails', column: 'company', value: 'Google')
-      values = result[:matches].map { |m| m[:value] }
+      values = result[:matches].pluck(:value)
       expect(values).to include('Google', 'Google LLC', 'Google Inc.')
       expect(values).not_to include('Acme Corp')
     end
@@ -35,19 +35,19 @@ RSpec.describe Records::SearchSimilarTool do
 
     it 'finds rows where the stored value is a partial of the query' do
       result = tool.execute(table: 'application_mails', column: 'company', value: 'Google Incorporated')
-      values = result[:matches].map { |m| m[:value] }
+      values = result[:matches].pluck(:value)
       expect(values).to include('Google', 'Google LLC', 'Google Inc.')
     end
 
     it 'finds phonetically similar values via soundex' do
       result = tool.execute(table: 'application_mails', column: 'job_title', value: 'Softwear Enginear')
-      values = result[:matches].map { |m| m[:value] }
+      values = result[:matches].pluck(:value)
       expect(values).to include('Software Engineer')
     end
 
     it 'returns distinct value entries only' do
       result = tool.execute(table: 'application_mails', column: 'job_title', value: 'Software Engineer')
-      values = result[:matches].map { |m| m[:value] }
+      values = result[:matches].pluck(:value)
       expect(values.uniq).to eq(values)
     end
 
@@ -69,7 +69,7 @@ RSpec.describe Records::SearchSimilarTool do
     it 'searches the interviews table' do
       interview = create(:interview, company: 'Acme Corp', job_title: 'Engineer')
       result = tool.execute(table: 'interviews', column: 'company', value: 'Acme')
-      values = result[:matches].map { |m| m[:value] }
+      values = result[:matches].pluck(:value)
       expect(values).to include('Acme Corp')
       acme_match = result[:matches].find { |m| m[:value] == 'Acme Corp' }
       expect(acme_match[:ids]).to include(interview.id)

@@ -14,6 +14,6 @@ end
 
 ActiveSupport.on_load(:active_record) do
   if defined?(ActiveRecord::ConnectionAdapters::SQLite3Adapter)
-    ActiveRecord::ConnectionAdapters::SQLite3Adapter.prepend(SqliteVecExtension)
+    ActiveSupport.on_load(:active_record_sqlite3adapter) { prepend SqliteVecExtension }
   end
 end

@@ -1,0 +1,18 @@
+module RuboCop
+  module Cop
+    module App
+      class FormObjectMustIncludeActiveModel < ::RuboCop::Cop::Base
+        MSG: String
+
+        def on_class: (::RuboCop::Cop::_Node node) -> void
+
+        private
+
+        def form_file?: () -> bool
+        def includes_module?: (::RuboCop::Cop::_Node node, String mod_name) -> bool
+        def include_of?: (::RuboCop::Cop::_Node node, String mod_name) -> bool
+        def const_to_str: (::RuboCop::Cop::_Node? node) -> String?
+      end
+    end
+  end
+end

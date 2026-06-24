@@ -17,6 +17,7 @@ module UI
         content_tag(:th, "", class: PADDING_CLASSES.fetch(@style, PADDING_CLASSES[:default]))
       end
 
+      # rubocop:disable Rails/OutputSafety
       def render_cell(record)
         return "" if @actions.nil?
 
@@ -29,6 +30,7 @@ module UI
 
         content_tag(:td, actions_html, class: cell_class)
       end
+      # rubocop:enable Rails/OutputSafety
     end
   end
 end

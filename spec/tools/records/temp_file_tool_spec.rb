@@ -6,7 +6,7 @@ RSpec.describe Records::TempFileTool do
   let(:filename) { "test_manage_#{SecureRandom.hex(4)}.txt" }
   let(:path)     { Rails.root.join('tmp', filename) }
 
-  after { File.delete(path) if File.exist?(path) }
+  after { FileUtils.rm_f(path) }
 
   describe 'write action' do
     it 'writes content to a file and confirms success' do

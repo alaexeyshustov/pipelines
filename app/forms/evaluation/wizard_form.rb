@@ -1,14 +1,12 @@
 # frozen_string_literal: true
 
 module Evaluation
-  class WizardForm
-    include ActiveModel::Validations
+  class WizardForm < ::BaseForm
     include SteepHacks
 
     WIZARD_STEPS = 4
 
-    validate :dataset_selected
-    validate :active_metrics_present, if: :complete?
+    validate :all_steps_valid
 
     def initialize(wizard_token:, step_param: nil)
       @wizard_token = wizard_token
@@ -24,12 +22,10 @@ module Evaluation
     end
 
     def advance!(step, payload)
-      if step == 2
-        agent_name = (draft.payload || empty_object)["agent_name"]
-        if agent_name.present? && Evaluation::Metric.for_agent(agent_name).active.none?
-          errors.add(:base, "Please generate or add at least one active metric before continuing.")
-          return false
-        end
+      form = step_form(step)
+      unless form.advance!(payload)
+        form.errors.each { |e| errors.import(e) }
+        return false
       end
       draft.advance!(step + 1, payload)
       true
@@ -51,15 +47,12 @@ module Evaluation
 
     private
 
-    def dataset_selected
-      errors.add(:dataset, "must be selected") if (draft.payload || empty_object)["dataset_id"].blank?
-    end
-
-    def active_metrics_present
-      agent_name = (draft.payload || empty_object)["agent_name"]
-      return if agent_name.blank?
-      return if Evaluation::Metric.for_agent(agent_name).active.any?
-      errors.add(:base, "No active metrics exist for this agent. Please go back to the Metrics step and generate or add metrics.")
+    def all_steps_valid
+      (1..WIZARD_STEPS).each do |s|
+        form = step_form(s)
+        next if form.valid?
+        form.errors.each { |e| errors.import(e) }
+      end
     end
 
     def draft

@@ -13,7 +13,7 @@ module Records
         initial_status:     Interview::STATUSES.first
       }.to_json
 
-      Records::ReconcileAgent.new.ask(input)
+      Orchestration::Agents::RecordsReconciler.new.ask(input)
     end
   end
 end

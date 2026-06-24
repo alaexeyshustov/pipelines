@@ -1,0 +1,11 @@
+module Orchestration
+  class OutputKeyDeriver
+    def initialize: (action_name: String, step: Step) -> void
+    def derive: () -> String
+
+    private
+
+    attr_reader action_name: String
+    attr_reader step: Step
+  end
+end

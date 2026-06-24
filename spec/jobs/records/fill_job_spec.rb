@@ -9,7 +9,7 @@ RSpec.describe Records::FillJob do
 
   before do
     inputs = captured_inputs
-    stub_const("Records::FillAgent", Class.new do
+    stub_const("Orchestration::Agents::RecordsFiller", Class.new do
       define_method(:ask) { |input| inputs << input }
     end)
   end
@@ -19,7 +19,7 @@ RSpec.describe Records::FillJob do
 
     parsed = JSON.parse(captured_inputs.last)
     expect(parsed["destination_table"]).to eq("application_mails")
-    expect(parsed["emails"].map { |e| e["id"] }).to match_array(ids)
+    expect(parsed["emails"].pluck("id")).to match_array(ids)
   end
 
   it_behaves_like 'a records job that ignores missing IDs', 'emails'

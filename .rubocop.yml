@@ -1,7 +1,7 @@
 inherit_gem:
   rubocop-rails-omakase: rubocop.yml
 require:
-  - ./lib/rubocop/cop/rbs/lint/no_untyped
+  - ./lib/rubocop/cop/app_cops
 plugins:
   - rubocop-rspec
   - rubocop-rspec_rails
@@ -12,12 +12,91 @@ AllCops:
   Exclude:
     - ".gem_rbs_collection/**/*"
 
+Lint:
+ Enabled: true
+Metrics:
+ Enabled: true
+Naming:
+ Enabled: false
+Performance:
+ Enabled: true
+Rails:
+ Enabled: true
+Security:
+ Enabled: true
+
+Rails/SquishedSQLHeredocs:
+ Enabled: false
+Rails/NegateInclude:
+  Enabled: false
+Rails/I18nLocaleTexts:
+ Enabled: false
+Rails/SkipsModelValidations:
+ Enabled: false
+Rails/Delegate:
+  Enabled: false
+Rails/WhereRange:
+  Enabled: false
+Metrics/ParameterLists:
+  Enabled: false
+Metrics/ClassLength:
+  Enabled: true
+  Max: 110
+  Exclude:
+    - 'db/**/*'
+    - 'config/**/*'
+Metrics/BlockLength:
+  Enabled: true
+  Max: 6
+  CountAsOne:
+  - hash
+  AllowedMethods: [ 'describe', 'context', 'schema', 'scope', 'aasm', 'respond_to', 'class_methods' ]
+  Exclude:
+    - 'Gemfile'
+    - 'Steepfile'
+    - 'lib/tasks/**/*.rake'
+    - 'app/schemas/**/*'
+    - 'db/**/*'
+    - 'config/**/*'
+Metrics/MethodLength:
+  Enabled: true
+  Max: 10
+  CountAsOne:
+    - hash
+  AllowedMethods:
+    - initialize
+  Exclude:
+    - 'db/**/*'
+    - 'config/**/*'
+Metrics/AbcSize:
+  Enabled: true
+  Exclude:
+    - 'db/**/*'
+    - 'db/*'
+    - 'config/**/*'
+    - 'config/*'
+Metrics/CyclomaticComplexity:
+  Enabled: true
+  Exclude:
+    - 'db/**/*'
+    - 'config/**/*'
+Metrics/PerceivedComplexity:
+  Enabled: true
+  Exclude:
+    - 'db/**/*'
+    - 'config/**/*'
+Naming/MethodParameterName:
+  Enabled: false
+Naming/PredicatePrefix:
+  Enabled: false
+
 Layout/LeadingCommentSpace:
   AllowRBSInlineAnnotation: true
-
+Lint/MissingSuper:
+  Enabled: false
 RSpec/MultipleExpectations:
   Max: 3
 RSpec/ExampleLength:
   Max: 10
 RSpec/MultipleMemoizedHelpers:
-  Max: 6
+  Enabled: false

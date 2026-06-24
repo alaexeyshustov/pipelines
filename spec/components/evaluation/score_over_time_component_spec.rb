@@ -49,7 +49,7 @@ RSpec.describe Evaluation::ScoreOverTimeComponent, type: :component do
                &.attr("data-evaluation--score-chart-points-value")
       points = JSON.parse(json)
       expect(points.length).to eq(3)
-      expect(points.map { |p| p["avg_score"] }).to eq([ 3.0, 4.0, 4.5 ])
+      expect(points.pluck("avg_score")).to eq([ 3.0, 4.0, 4.5 ])
     end
   end
 end

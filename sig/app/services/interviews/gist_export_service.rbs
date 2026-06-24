@@ -13,11 +13,14 @@ module Interviews
     @ids: Array[String] | Array[Integer] | nil
     @gist_id: String
 
+    def self.call: (ids: Array[String] | Array[Integer] | nil, gist_id: String) -> Result
+
     def initialize: (ids: Array[String] | Array[Integer] | nil, gist_id: String) -> void
     def call: () -> Result
 
     private
 
+    def build_error_result: (Net::HTTPResponse response) -> Result
     def parse_error_body: (String body) -> json_object?
     def patch_gist: (String token, String csv_content) -> Net::HTTPResponse
   end

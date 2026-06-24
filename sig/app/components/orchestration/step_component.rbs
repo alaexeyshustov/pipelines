@@ -6,9 +6,9 @@ module Orchestration
     @pipeline: Pipeline
     @actions: Action::relation
     @upstream_schemas: Hash[String, json_object?]
-    @validator_results: Array[Pipeline::Validator::StepResult]
+    @validator_results: Array[PipelineValidator::StepResult]
 
-    def initialize: (step: Step, step_counter: Integer, step_iteration: ActionView::PartialIteration, pipeline: Pipeline, actions: Action::relation, ?upstream_schemas_per_step: Hash[Integer, Hash[String, json_object?]], ?validator_results_per_step: Hash[Integer, Array[Pipeline::Validator::StepResult]]) -> void
+    def initialize: (step: Step, step_counter: Integer, step_iteration: ActionView::PartialIteration, pipeline: Pipeline, actions: Action::relation, ?upstream_schemas_per_step: Hash[Integer, Hash[String, json_object?]], ?validator_results_per_step: Hash[Integer, Array[PipelineValidator::StepResult]]) -> void
     def before_render: () -> void
     def move_up?: () -> bool
     def move_down?: () -> bool
@@ -18,10 +18,15 @@ module Orchestration
     def actions_select_options: () -> Array[[String, Integer]]
     def from_options: () -> Array[[String, String]]
     def path_options_for: (String from_key) -> Array[[String, String]]?
-    def all_validator_errors: () -> Array[Pipeline::Validator::Issue]
+    def all_validator_errors: () -> Array[PipelineValidator::Issue]
     def validity_badge_classes: () -> String
     def validity_badge_label: () -> String
     def detach_buttons: () -> Array[UI::DialogComponent]
     def remove_button: () -> UI::DialogComponent?
+
+    private
+
+    def setup_detach_button: (StepAction sa) -> void
+    def setup_remove_button: () -> void
   end
 end

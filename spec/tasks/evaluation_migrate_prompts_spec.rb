@@ -5,13 +5,13 @@ RSpec.describe "evaluation:migrate_prompts rake task" do # rubocop:disable RSpec
   let(:task_name) { "evaluation:migrate_prompts" }
   let(:agent_classes) do
     %w[
-      Emails::ClassifyAgent
-      Emails::FilterAgent
-      Emails::MappingAgent
-      Records::FillAgent
-      Records::NormalizeAgent
-      Records::StoreAgent
-      Records::ReconcileAgent
+      Orchestration::Agents::EmailsClassifier
+      Orchestration::Agents::EmailsFilter
+      Orchestration::Agents::EmailsMapper
+      Orchestration::Agents::RecordsFiller
+      Orchestration::Agents::RecordsNormalizer
+      Orchestration::Agents::RecordsStorer
+      Orchestration::Agents::RecordsReconciler
     ]
   end
 
@@ -51,12 +51,12 @@ RSpec.describe "evaluation:migrate_prompts rake task" do # rubocop:disable RSpec
 
   it "updates system_prompt if instructions changed on re-run" do
     Rake::Task[task_name].invoke
-    original = Evaluation::Prompt.find_by!(name: "Emails::ClassifyAgent")
+    original = Evaluation::Prompt.find_by!(name: "Orchestration::Agents::EmailsClassifier")
     original.update!(system_prompt: "old instructions")
 
     Rake::Task[task_name].reenable
     Rake::Task[task_name].invoke
 
-    expect(original.reload.system_prompt).to eq(Emails::ClassifyAgent.instructions)
+    expect(original.reload.system_prompt).to eq(Orchestration::Agents::EmailsClassifier.instructions)
   end
 end

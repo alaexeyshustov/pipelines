@@ -38,7 +38,7 @@ RSpec.describe Evaluation::Improvement::GetExperimentJustificationsTool do
       output = tool.execute(experiment_id: experiment.id)
 
       expect(output.size).to eq(2)
-      metric_names = output.map { |r| r[:metric_name] }
+      metric_names = output.pluck(:metric_name)
       expect(metric_names).to contain_exactly("accuracy", "clarity")
     end
 

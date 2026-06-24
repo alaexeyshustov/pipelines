@@ -125,7 +125,7 @@ RECONCILE_EMAILS_INPUT_MAPPING = {
 # db/migrate/20260504140000_backfill_agent_configs_from_legacy_classes.rb.
 # Seeds cover fresh installs; the migration covers existing installations.
 AGENT_DEFINITIONS = {
-  "Emails::ClassifyAgent" => {
+  "Orchestration::Agents::EmailsClassifier" => {
     model:         LlmModels.emails_agent,
     tools:         [ "Records::TempFileTool" ],
     output_schema: CLASSIFY_EMAILS_OUTPUT_SCHEMA,
@@ -144,7 +144,7 @@ AGENT_DEFINITIONS = {
         Tags should be concise and descriptive (e.g. "job", "application", "interview", "offer").
     PROMPT
   },
-  "Emails::FilterAgent" => {
+  "Orchestration::Agents::EmailsFilter" => {
     model:         LlmModels.emails_agent,
     tools:         [ "Records::TempFileTool" ],
     output_schema: FILTER_EMAILS_OUTPUT_SCHEMA,
@@ -169,7 +169,7 @@ AGENT_DEFINITIONS = {
       If no emails are related to the <topic>, return: {"results": []}
     PROMPT
   },
-  "Emails::MappingAgent" => {
+  "Orchestration::Agents::EmailsMapper" => {
     model:  LlmModels.emails_agent,
     tools:  [ "Emails::GetTool", "Records::TempFileTool" ],
     prompt: <<~PROMPT
@@ -186,7 +186,7 @@ AGENT_DEFINITIONS = {
       3. Base the "action" field strictly on the email body text, not just the subject line.
     PROMPT
   },
-  "Records::StoreAgent" => {
+  "Orchestration::Agents::RecordsStorer" => {
     model:         LlmModels.emails_agent,
     tools:         [ "Emails::GetLabelsTool", "Emails::CreateLabelTool", "Emails::AddLabelsTool",
                     "Records::InsertRowsTool", "Records::ReadSchemaTool", "Emails::GetTool" ],
@@ -211,7 +211,7 @@ AGENT_DEFINITIONS = {
       3. Store a new row in the <table> with the mapped data using insert_rows.
     PROMPT
   },
-  "Records::NormalizeAgent" => {
+  "Orchestration::Agents::RecordsNormalizer" => {
     model:  LlmModels.records_agent,
     tools:  [ "Records::ListRowsTool", "Records::ReadRowsTool", "Records::UpdateRowsTool",
               "Records::ReadSchemaTool", "Records::SearchSimilarTool" ],
@@ -240,7 +240,7 @@ AGENT_DEFINITIONS = {
          Skip rows where no new value could be determined.
     PROMPT
   },
-  "Records::ReconcileAgent" => {
+  "Orchestration::Agents::RecordsReconciler" => {
     model:  LlmModels.records_agent,
     tools:  [ "Records::ReadSchemaTool", "Records::TempFileTool", "Records::SearchSimilarTool",
               "Records::InsertRowsTool", "Records::UpdateRowsTool", "Records::ReadRowsTool" ],
@@ -277,7 +277,7 @@ AGENT_DEFINITIONS = {
         to the earliest non-null date among those columns.
     PROMPT
   },
-  "Records::FillAgent" => {
+  "Orchestration::Agents::RecordsFiller" => {
     model:  LlmModels.records_agent,
     tools:  [ "Records::UpdateRowsTool", "Emails::GetTool" ],
     prompt: <<~PROMPT
@@ -298,16 +298,16 @@ AGENT_DEFINITIONS = {
 }.freeze
 
 steps = [
-  { name: "Fetch Emails",                   kind: :service, agent_class: "Emails::FetchExecutor",              sa_input_mapping: FETCH_EMAILS_INPUT_MAPPING    },
-  { name: "Classify Emails",                kind: :agent,   agent_name: "Emails::ClassifyAgent",               sa_input_mapping: CLASSIFY_EMAILS_INPUT_MAPPING },
-  { name: "Filter Emails",                  kind: :agent,   agent_name: "Emails::FilterAgent",                 sa_input_mapping: FILTER_EMAILS_INPUT_MAPPING   },
-  { name: "Ingest Emails",                  kind: :service, agent_class: "Orchestration::IngestionExecutor",   sa_input_mapping: INGEST_EMAILS_INPUT_MAPPING   },
-  { name: "Map Emails",                     kind: :agent,   agent_name: "Emails::MappingAgent",                sa_input_mapping: MAP_EMAILS_INPUT_MAPPING      },
-  { name: "Store Emails",                   kind: :agent,   agent_name: "Records::StoreAgent",                 sa_input_mapping: STORE_EMAILS_INPUT_MAPPING    },
-  { name: "Query Email Records",            kind: :service, agent_class: "Orchestration::QueryExecutor",       sa_input_mapping: QUERY_EMAIL_RECORDS_INPUT_MAPPING },
-  { name: "Normalize Emails",               kind: :agent,   agent_name: "Records::NormalizeAgent",             sa_input_mapping: NORMALIZE_EMAILS_INPUT_MAPPING },
-  { name: "Reconcile Emails to Interviews", kind: :agent,   agent_name: "Records::ReconcileAgent",             sa_input_mapping: RECONCILE_EMAILS_INPUT_MAPPING },
-  { name: "Export to Gist",                 kind: :service, agent_class: "Interviews::GistExportExecutor",     sa_input_mapping: {}                             }
+  { name: "Fetch Emails",                   kind: :service, agent_class: "Orchestration::Executors::EmailsFetcher",              sa_input_mapping: FETCH_EMAILS_INPUT_MAPPING    },
+  { name: "Classify Emails",                kind: :agent,   agent_name: "Orchestration::Agents::EmailsClassifier",               sa_input_mapping: CLASSIFY_EMAILS_INPUT_MAPPING },
+  { name: "Filter Emails",                  kind: :agent,   agent_name: "Orchestration::Agents::EmailsFilter",                 sa_input_mapping: FILTER_EMAILS_INPUT_MAPPING   },
+  { name: "Ingest Emails",                  kind: :service, agent_class: "Orchestration::Executors::Ingestion",   sa_input_mapping: INGEST_EMAILS_INPUT_MAPPING   },
+  { name: "Map Emails",                     kind: :agent,   agent_name: "Orchestration::Agents::EmailsMapper",                sa_input_mapping: MAP_EMAILS_INPUT_MAPPING      },
+  { name: "Store Emails",                   kind: :agent,   agent_name: "Orchestration::Agents::RecordsStorer",                 sa_input_mapping: STORE_EMAILS_INPUT_MAPPING    },
+  { name: "Query Email Records",            kind: :service, agent_class: "Orchestration::Executors::Query",       sa_input_mapping: QUERY_EMAIL_RECORDS_INPUT_MAPPING },
+  { name: "Normalize Emails",               kind: :agent,   agent_name: "Orchestration::Agents::RecordsNormalizer",             sa_input_mapping: NORMALIZE_EMAILS_INPUT_MAPPING },
+  { name: "Reconcile Emails to Interviews", kind: :agent,   agent_name: "Orchestration::Agents::RecordsReconciler",             sa_input_mapping: RECONCILE_EMAILS_INPUT_MAPPING },
+  { name: "Export to Gist",                 kind: :service, agent_class: "Orchestration::Executors::InterviewsGistExporter",     sa_input_mapping: {}                             }
 ]
 
 Orchestration::Action.where(name: "Merge Email Records").destroy_all
@@ -375,8 +375,8 @@ steps.each_with_index do |step_attrs, index|
   )
 end
 
-# Create agents that exist in app/agents/ but are not part of any pipeline step.
-%w[Records::FillAgent].each do |name|
+# Create agents not part of any pipeline step.
+%w[Orchestration::Agents::RecordsFiller].each do |name|
   config = AGENT_DEFINITIONS.fetch(name)
   Orchestration::Agent.find_or_initialize_by(name: name).tap do |a|
     a.model  = config[:model]  if config[:model].present?
@@ -388,9 +388,9 @@ end
 
 # == Evaluation Datasets per Agent ==
 
-puts "Seeding Leva::Dataset from ActionRun history per agent..."
+Rails.logger.debug "Seeding Evaluation::Dataset from ActionRun history per agent..."
 
 AGENT_DEFINITIONS.each_key do |agent_name|
   result = Evaluation::DatasetSeeder.call(agent_name: agent_name, sample_size: 20)
-  puts "Dataset '#{result.agent_name}': #{result.created} created, #{result.skipped} skipped."
+  Rails.logger.debug { "Dataset '#{result.agent_name}': #{result.created} created, #{result.skipped} skipped." }
 end

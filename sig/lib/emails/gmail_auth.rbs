@@ -17,6 +17,10 @@ module Emails
 
     private
 
+    def setup_tcp_auth_context: () -> [ TCPServer, String, Google::Auth::UserAuthorizer ]
+    def perform_interactive_auth: (Google::Auth::UserAuthorizer authorizer, TCPServer tcp_server, String callback_uri) -> Signet::OAuth2::Client
+    def require_interactive_auth!: (TCPServer tcp_server, String url) -> void
+    def accept_oauth_callback: (TCPServer tcp_server) -> String
     def build_authorizer: (callback_uri: String) -> Google::Auth::UserAuthorizer
     def interactive_authorization_allowed?: () -> bool
     def open_authorization_url: (String) -> bool

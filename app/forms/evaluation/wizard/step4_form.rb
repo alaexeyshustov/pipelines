@@ -2,10 +2,12 @@
 
 module Evaluation
   module Wizard
-    class Step4Form
+    class Step4Form < ::BaseForm
       def initialize(draft_payload:)
         @payload = draft_payload
       end
+
+      def advance!(_payload) = true
 
       def agent_name      = @payload["agent_name"]
       def experiment_name = @payload["experiment_name"]

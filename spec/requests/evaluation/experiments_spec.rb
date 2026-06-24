@@ -383,7 +383,7 @@ RSpec.describe "Evaluation::Experiments" do
     it "returns 200 with the prompt fields as JSON" do
       get prompt_content_evaluation_experiments_path, params: { prompt_id: prompt.id }
       expect(response).to have_http_status(:ok)
-      data = JSON.parse(response.body)
+      data = response.parsed_body
       expect(data["system_prompt"]).to eq("You are helpful.")
       expect(data["user_prompt"]).to eq("{{input}}")
     end
@@ -414,7 +414,7 @@ RSpec.describe "Evaluation::Experiments" do
            params: { based_on_prompt_id: based_on.id,
                      system_prompt: "Updated.", user_prompt: "{{input}}" },
            as: :json
-      data = JSON.parse(response.body)
+      data = response.parsed_body
       expect(response).to have_http_status(:ok)
       expect(data["id"]).to be_present
       expect(data["version"]).to be > based_on.version
@@ -453,14 +453,14 @@ RSpec.describe "Evaluation::Experiments" do
     it "returns 200 with JSON array" do
       get prompt_versions_evaluation_experiments_path, params: { agent_name: "classify_agent" }
       expect(response).to have_http_status(:ok)
-      data = JSON.parse(response.body)
+      data = response.parsed_body
       expect(data).to be_an(Array)
       expect(data.first["id"]).to eq(prompt.id)
     end
 
     it "returns empty array for unknown agent" do
       get prompt_versions_evaluation_experiments_path, params: { agent_name: "unknown_agent" }
-      expect(JSON.parse(response.body)).to eq([])
+      expect(response.parsed_body).to eq([])
     end
   end
 
@@ -557,7 +557,7 @@ RSpec.describe "Evaluation::Experiments" do
            params: { agent_name: "Emails::ClassifyAgent" },
            as: :json
 
-      data = JSON.parse(response.body)
+      data = response.parsed_body
       expect(response).to have_http_status(:ok)
       expect(data["id"]).to eq(Evaluation::Prompt.last.id)
       expect(data["version"]).to be_present

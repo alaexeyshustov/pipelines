@@ -24,14 +24,8 @@ RSpec.describe Evaluation::MetricSuggester do
     }.to_json
   end
 
-  let(:prompt_double)   { instance_double(Evaluation::Prompt, system_prompt: instructions) }
-  let(:prompt_relation) { instance_double(ActiveRecord::Relation) }
-
   before do
-    allow(Evaluation::Prompt).to receive(:where).with(name: agent_name).and_return(prompt_relation)
-    allow(prompt_relation).to receive(:order).with(version: :desc, id: :desc).and_return(prompt_relation)
-    allow(prompt_relation).to receive(:first).and_return(prompt_double)
-
+    create(:orchestration_prompt, name: agent_name, system_prompt: instructions)
     stub_request(:post, %r{api\.openai\.com})
       .to_return(status: 200, body: llm_response_body, headers: { "Content-Type" => "application/json" })
   end
@@ -60,10 +54,10 @@ RSpec.describe Evaluation::MetricSuggester do
 
     it "sends the agent system prompt to the LLM" do
       suggester.call
-      expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
+      expect(WebMock).to(have_requested(:post, %r{api\.openai\.com}).with { |req|
         body = JSON.parse(req.body)
         body["messages"].any? { |m| m["content"].to_s.include?(instructions) }
-      }
+      })
     end
 
     it "does not persist any metrics" do
@@ -71,7 +65,7 @@ RSpec.describe Evaluation::MetricSuggester do
     end
 
     context "when agent prompt is not found" do
-      before { allow(prompt_relation).to receive(:first).and_return(nil) }
+      subject(:suggester) { described_class.new(agent_name: "NonExistentAgent") }
 
       it "raises MetricSuggester::Error" do
         expect { suggester.call }.to raise_error(Evaluation::MetricSuggester::Error, /No prompt found/)
@@ -118,7 +112,7 @@ RSpec.describe Evaluation::MetricSuggester do
 
       it "drops the invalid entry and returns the rest" do
         result = suggester.call
-        expect(result.map { _1[:name] }).to eq([ "good_metric" ])
+        expect(result.pluck(:name)).to eq([ "good_metric" ])
       end
     end
 
@@ -132,7 +126,7 @@ RSpec.describe Evaluation::MetricSuggester do
 
       it "drops the blank-name entry" do
         result = suggester.call
-        expect(result.map { _1[:name] }).to eq([ "valid_name" ])
+        expect(result.pluck(:name)).to eq([ "valid_name" ])
       end
     end
 
@@ -146,7 +140,7 @@ RSpec.describe Evaluation::MetricSuggester do
 
       it "drops the unparseable entry" do
         result = suggester.call
-        expect(result.map { _1[:name] }).to eq([ "ok" ])
+        expect(result.pluck(:name)).to eq([ "ok" ])
       end
     end
   end

@@ -17,5 +17,6 @@ module Orchestration
 
     def new_key_format_valid: () -> void
     def build_mapping: () -> json_object
+    def clean_spec: (json_object_value spec) -> json_object_value
   end
 end

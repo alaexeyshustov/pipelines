@@ -39,18 +39,27 @@ module Orchestration
 
     def schema_paths(schema, prefix = "")
       if schema["properties"].present? || schema["type"] == "object"
-        (schema["properties"] || empty_object).flat_map do |key, child|
-          full = prefix.empty? ? key : "#{prefix}.#{key}"
-          [ full ] + schema_paths(child, full)
-        end
+        object_schema_paths(schema, prefix)
       elsif schema["type"] == "array"
-        items = schema["items"]
-        return [] if items.nil?
-        full = prefix.empty? ? "0" : "#{prefix}.0"
-        [ full ] + schema_paths(items, full)
+        array_schema_paths(schema, prefix)
       else
         []
       end
+    end
+
+    def object_schema_paths(schema, prefix)
+      (schema["properties"] || empty_object).flat_map do |key, child|
+        full = prefix.empty? ? key : "#{prefix}.#{key}"
+        [ full ] + schema_paths(child, full)
+      end
+    end
+
+    def array_schema_paths(schema, prefix)
+      items = schema["items"]
+      return [] if items.nil?
+
+      full = prefix.empty? ? "0" : "#{prefix}.0"
+      [ full ] + schema_paths(items, full)
     end
 
     def mapping_rows
