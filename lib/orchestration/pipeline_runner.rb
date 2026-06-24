@@ -1,0 +1,247 @@
+module Orchestration
+  # rubocop:disable Metrics/ClassLength
+  class PipelineRunner
+    include SteepHacks
+
+    def initialize(pipeline_run)
+      @pipeline_run = pipeline_run
+    end
+
+    def run
+      @pipeline_run.update!(status: "running", started_at: Time.current)
+      previous_outputs = build_initial_outputs
+      process_steps(previous_outputs)
+    end
+
+    private
+
+    def build_initial_outputs
+      initial_input = @pipeline_run.initial_input
+      initial_input.nil? ? Hash.new : { "_initial" => initial_input }
+    end
+
+    def process_steps(previous_outputs)
+      steps = @pipeline_run.pipeline.steps.where(enabled: true).order(:position).to_a # : Array[Step]
+      completed = steps.each do |step|
+        action_runs = run_step(step, previous_outputs)
+        break if handle_step_failure(action_runs)
+        accumulate_step_outputs(action_runs, previous_outputs)
+      end
+      @pipeline_run.update!(status: "completed", finished_at: Time.current) if completed
+    end
+
+    def handle_step_failure(action_runs)
+      failed_run = action_runs.find { |ar| ar.status == "failed" }
+      return false unless failed_run
+
+      @pipeline_run.update!(status: "failed", error: failed_run.error, finished_at: Time.current)
+      true
+    end
+
+    def accumulate_step_outputs(action_runs, previous_outputs)
+      action_runs.each do |ar|
+        previous_outputs[ar.step_action.output_key] = ar.output || empty_object
+      end
+    end
+
+    def run_step(step, previous_outputs)
+      action_runs = prepare_action_runs(step, previous_outputs)
+      unless action_runs.any? { |ar| ar.status == "failed" }
+        runnable = action_runs.select { |ar| ar.status == "pending" }
+        run_actions_in_parallel(runnable) if runnable.any?
+      end
+      action_runs.each(&:reload)
+    end
+
+    def prepare_action_runs(step, previous_outputs)
+      step.step_actions.to_a.map do |step_action| # : Array[StepAction]
+        action_run = create_action_run(step_action)
+        resolve_action_input(action_run, step_action, previous_outputs)
+        action_run
+      end
+    end
+
+    def create_action_run(step_action)
+      empty_input = empty_object # : json_object
+      @pipeline_run.action_runs.create!(step_action: step_action, status: "pending", input: empty_input) # : ActionRun
+    end
+
+    def resolve_action_input(action_run, step_action, previous_outputs)
+      resolved = InputMappingResolver.new(
+        input_mapping: step_action.input_mapping || empty_object,
+        previous_outputs: previous_outputs
+      ).resolve
+      action_run.update!(input: resolved)
+    rescue InputMappingResolver::UnknownOutputKey, InputMappingResolver::MissingPath => e
+      action_run.update!(status: "failed", error: e.message, finished_at: Time.current)
+    end
+
+    def run_actions_in_parallel(action_runs)
+      Sync do
+        barrier = Async::Barrier.new
+        semaphore = Async::Semaphore.new(10, parent: barrier)
+
+        action_runs.each do |action_run|
+          semaphore.async { execute_action(action_run) }
+        end
+
+        barrier.wait
+      end
+    end
+
+    def execute_action(action_run)
+      action_run.update!(status: "running", started_at: Time.current)
+      action    = action_run.step_action.action
+      policy    = action.agent? ? resolve_policy(action_run) : nil
+      validate_input_schema!(action_run)
+      execution = run_agent(action_run, policy:)
+      validate_agent_output!(action, execution, policy:)
+      action_run.update!(status: "completed", output: execution[:output], error: nil, error_details: nil, finished_at: Time.current)
+    rescue StandardError => error
+      handle_action_failure(action_run, error, raw_content: execution&.dig(:raw_content))
+    end
+
+    def validate_agent_output!(action, execution, policy:)
+      return unless action.agent?
+      raise ArgumentError, "policy missing for agent action" unless policy
+
+      validate_output!(execution[:output], policy:, raw_content: execution[:raw_content])
+    end
+
+    def validate_input_schema!(action_run)
+      schema = action_run.step_action.action.input_schema
+      return unless schema
+
+      SchemaValidator.new(schema).validate!(action_run.input || empty_object)
+    end
+
+    def run_agent(action_run, policy: nil)
+      action = action_run.step_action.action
+      input  = action_run.input || empty_object # : json_object
+
+      if action.agent?
+        raise ArgumentError, "policy missing for agent action" unless policy
+        run_as_agent(action_run, input, policy)
+      else
+        run_as_service(action, input)
+      end
+    end
+
+    def run_as_agent(action_run, input, policy)
+      agent = RuntimeAgentBuilder.new(policy: policy).build
+      action_run.update_columns(**build_agent_columns(agent, policy))
+      result = agent.ask(input.to_json)
+      output = parse_content(result.content, policy.output_schema.present?)
+      { output: normalize_agent_output(output, result, policy), raw_content: result.content }
+    end
+
+    def build_agent_columns(agent, policy)
+      chat_id = agent.respond_to?(:chat) ? agent.chat&.id : agent.id
+      {
+        chat_id: chat_id,
+        agent_snapshot: {
+          model: policy.model,
+          prompt: policy.prompt,
+          tools: policy.tools&.map(&:to_s) || [],
+          output_schema: policy.output_schema
+        }
+      }
+    end
+
+    def normalize_agent_output(output, result, policy)
+      if policy.output_schema.present?
+        output
+      else
+        { "result" => output.nil? && result.content.is_a?(String) ? result.content : output }
+      end
+    end
+
+    def run_as_service(action, input)
+      klass = ServiceRegistry.lookup(action.agent_class)
+      raise ArgumentError, "Service class not found: #{action.agent_class}" unless klass
+
+      { output: klass.call(**input.transform_keys(&:to_sym)), raw_content: nil }
+    end
+
+    def resolve_policy(action_run)
+      action = action_run.step_action.action
+      AgentResolutionPolicy.new(
+        action: action,
+        pipeline_model: @pipeline_run.pipeline.model,
+        prompt_override: prompt_for(action.agent&.name)
+      ).resolve
+    end
+
+    def parse_content(content, structured_output_expected)
+      return content.transform_keys(&:to_s) if content.is_a?(Hash)
+
+      return parse_string_content(content, structured_output_expected) if content.is_a?(String)
+
+      raise InvalidModelOutputError.new("Invalid model output: expected JSON object", raw_content: content) if structured_output_expected
+
+      nil
+    end
+
+    def parse_string_content(content, structured_output_expected)
+      parsed = JSON.parse(content)
+      return parsed.transform_keys(&:to_s) if parsed.is_a?(Hash)
+
+      raise InvalidModelOutputError.new("Invalid model output: expected JSON object", raw_content: parsed) if structured_output_expected
+
+      nil
+    rescue JSON::ParserError => error
+      raise InvalidModelOutputError.new("Invalid model output: #{error.message}", raw_content: content) if structured_output_expected
+
+      nil
+    end
+
+    def validate_output!(output, policy:, raw_content:)
+      SchemaValidator.new(policy.output_schema).validate!(output)
+    rescue SchemaValidator::Error => error
+      raise error if policy.output_schema.blank?
+
+      raise InvalidModelOutputError.new(error.message, raw_content: raw_content)
+    end
+
+    def handle_action_failure(action_run, error, raw_content:)
+      failure = NormalizeActionRunFailure.new(error:, action_run:, raw_content:).normalize
+      action_run.update!(
+        status: "failed",
+        error: failure.summary,
+        error_details: failure.details,
+        finished_at: Time.current
+      )
+      log_action_failure(action_run, failure) if failure.details.present?
+    end
+
+    def log_action_failure(action_run, failure)
+      details = failure.details || empty_object
+
+      Rails.logger.error(
+        {
+          event: "orchestration.action_run_failed",
+          category: details["category"],
+          provider: details["provider"],
+          model: details["model"],
+          status_code: details["status_code"],
+          action_run_id: action_run.id,
+          pipeline_run_id: @pipeline_run.id,
+          chat_id: details["chat_id"],
+          summary: failure.summary
+        }.to_json
+      )
+    end
+
+    def prompt_for(agent_class)
+      @prompt_cache ||= Hash.new
+      return @prompt_cache[agent_class] if @prompt_cache.key?(agent_class)
+
+      @prompt_cache[agent_class] = Evaluation::Prompt
+        .where(name: agent_class)
+        .order(version: :desc, id: :desc)
+        .first
+        &.system_prompt
+    end
+  end
+  # rubocop:enable Metrics/ClassLength
+end

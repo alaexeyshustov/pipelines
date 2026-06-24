@@ -47,7 +47,7 @@ RSpec.describe "Orchestration::StepActions" do
 
     context "when a unique-key collision occurs (race condition)" do
       before do
-        allow(Orchestration::OutputKeyDeriver).to receive(:call).and_return("classify_emails")
+        allow_any_instance_of(Orchestration::OutputKeyDeriver).to receive(:derive).and_return("classify_emails") # rubocop:disable RSpec/AnyInstance
 
         # AR uniqueness validation passes before the INSERT; the collision arrives from a
         # concurrent commit that can only be simulated by stubbing save on the instance.
@@ -102,7 +102,7 @@ RSpec.describe "Orchestration::StepActions" do
       end
     end
 
-    context "when Pipeline::Validator returns errors" do
+    context "when PipelineValidator returns errors" do
       let(:bad_from) { "nonexistent_key" }
 
       it "does not save the input_mapping and redirects with alert" do

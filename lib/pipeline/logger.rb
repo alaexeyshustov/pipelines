@@ -38,12 +38,12 @@ module Pipeline
     end
 
     def debug(message = nil, &block) = @logger.debug(message, &block)
-    def debug?                       = @logger.debug?
+    delegate :debug?, to: :@logger
     def info(message = nil, &block)  = @logger.info(message, &block)
-    def info?                        = @logger.info?
+    delegate :info?, to: :@logger
     def warn(message = nil, &block)  = @logger.warn(message, &block)
-    def warn?                        = @logger.warn?
+    delegate :warn?, to: :@logger
     def error(message = nil, &block) = @logger.error(message, &block)
-    def error?                       = @logger.error?
+    delegate :error?, to: :@logger
   end
 end

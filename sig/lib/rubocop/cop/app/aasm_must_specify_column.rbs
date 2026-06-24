@@ -1,0 +1,17 @@
+module RuboCop
+  module Cop
+    module App
+      class AasmMustSpecifyColumn < ::RuboCop::Cop::Base
+        MSG: String
+
+        def on_block: (::RuboCop::Cop::_Node node) -> void
+        alias on_numblock on_block
+
+        private
+
+        def model_file?: () -> bool
+        def has_column_kwarg?: (::RuboCop::Cop::_Node send_node) -> bool
+      end
+    end
+  end
+end

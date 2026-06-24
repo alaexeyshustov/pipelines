@@ -1,0 +1,19 @@
+module RuboCop
+  module Cop
+    module App
+      class ServiceResultMustUseDataDefine < ::RuboCop::Cop::Base
+        extend ::RuboCop::Cop::AutocorrectLogic
+
+        MSG: String
+
+        def on_casgn: (::RuboCop::Cop::_Node node) -> void
+        def autocorrect: (::RuboCop::Cop::_Corrector corrector, ::RuboCop::Cop::_Node node) -> void
+
+        private
+
+        def service_file?: () -> bool
+        def result_struct?: (::RuboCop::Cop::_Node node) -> bool
+      end
+    end
+  end
+end

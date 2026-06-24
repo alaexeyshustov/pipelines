@@ -11,7 +11,7 @@ module Emails
     def name = "classify_emails"
 
     def execute(emails:, **_opts)
-      return {} if emails.nil? || emails.empty?
+      return {} if emails.blank?
 
       emails = emails.filter_map do |email|
         email = JSON.parse(email) if email.is_a?(String)
@@ -26,7 +26,7 @@ module Emails
       end
 
       input = { emails: emails }.to_json
-      Emails::ClassifyAgent.create.ask(input).content
+      Orchestration::Agents::EmailsClassifier.create.ask(input).content
     end
   end
 end

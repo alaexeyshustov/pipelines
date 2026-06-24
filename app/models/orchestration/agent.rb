@@ -16,15 +16,20 @@ module Orchestration
     before_destroy :ensure_not_referenced
 
     def self.available_tools
-      Dir.glob(Rails.root.join("app/tools/**/*.rb")).filter_map do |path|
-        relative = path.delete_prefix("#{Rails.root}/app/tools/")
-        class_name = relative.delete_suffix(".rb").split("/").map(&:camelize).join("::")
-        namespace = class_name.split("::").first
-        next unless ALLOWED_TOOL_NAMESPACES.include?(namespace)
-        class_name if class_name.constantize < RubyLLM::Tool
-      rescue NameError
-        nil
-      end.sort
+      Rails.root.glob("app/tools/**/*.rb")
+        .filter_map { |path| tool_class_name_from_path(path) }
+        .sort
+    end
+
+    def self.tool_class_name_from_path(path)
+      relative = path.relative_path_from(Rails.root.join("app/tools")).to_s
+      class_name = relative.delete_suffix(".rb").split("/").map(&:camelize).join("::")
+      namespace = class_name.split("::").first
+      return unless ALLOWED_TOOL_NAMESPACES.include?(namespace)
+
+      class_name if class_name.constantize < RubyLLM::Tool
+    rescue NameError
+      nil
     end
 
     def self.available_models
@@ -40,17 +45,19 @@ module Orchestration
     def tools_must_be_valid
       return if tools.blank?
 
-      tools.each do |tool|
-        namespace = tool.to_s.split("::").first
-        unless ALLOWED_TOOL_NAMESPACES.include?(namespace)
-          errors.add(:tools, "contains tool outside allowed namespaces: #{tool}")
-          next
-        end
+      tools.each { |tool| validate_tool(tool) }
+    end
 
-        tool.constantize
-      rescue NameError
-        errors.add(:tools, "contains invalid tool: #{tool}")
+    def validate_tool(tool)
+      namespace = tool.to_s.split("::").first
+      unless ALLOWED_TOOL_NAMESPACES.include?(namespace)
+        errors.add(:tools, "contains tool outside allowed namespaces: #{tool}")
+        return
       end
+
+      tool.constantize
+    rescue NameError
+      errors.add(:tools, "contains invalid tool: #{tool}")
     end
 
     def ensure_not_referenced

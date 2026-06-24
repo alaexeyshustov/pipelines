@@ -8,19 +8,27 @@ module Emails
       end
 
       def to_h
-        raw_date = @mail.date    # : DateTime?
-        raw_body = @mail.body    # : Mail::Body?
-        decoded  = raw_body&.decoded # : String?
+        decoded = @mail.body&.decoded # : String?
         {
-          id:      @uid.to_s,
+          id:       @uid.to_s,
           provider: "yahoo",
-          subject: ImapBodyParser.decode_header(@mail.subject) || "(No Subject)",
-          from:    Array(@mail.from).join(", ").presence || "Unknown",
-          to:      Array(@mail.to).join(", ").presence   || "Unknown",
-          date:    raw_date&.to_s || "Unknown",
-          snippet: decoded.to_s[0, 200],
-          labels:  [ @mailbox ]
+          subject:  decode_subject,
+          from:     format_addresses(@mail.from),
+          to:       format_addresses(@mail.to),
+          date:     @mail.date&.to_s || "Unknown",
+          snippet:  decoded.to_s[0, 200],
+          labels:   [ @mailbox ]
         }
+      end
+
+      private
+
+      def decode_subject
+        ImapBodyParser.decode_header(@mail.subject) || "(No Subject)"
+      end
+
+      def format_addresses(addresses)
+        Array(addresses).join(", ").presence || "Unknown"
       end
     end
   end

@@ -5,6 +5,6 @@ module Evaluation
     belongs_to :dataset, class_name: "Evaluation::Dataset"
     has_many :samples, class_name: "Evaluation::Sample", dependent: :destroy
 
-    validates :dataset, :input, presence: true
+    validates :input, presence: true
   end
 end

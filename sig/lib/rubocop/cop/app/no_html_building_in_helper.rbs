@@ -1,0 +1,17 @@
+module RuboCop
+  module Cop
+    module App
+      class NoHtmlBuildingInHelper < ::RuboCop::Cop::Base
+        MSG: String
+        FORBIDDEN_METHODS: Array[Symbol]
+
+        def on_send: (::RuboCop::Cop::_Node node) -> void
+
+        private
+
+        def helper_file?: () -> bool
+        def tag_builder_call?: (::RuboCop::Cop::_Node node) -> bool
+      end
+    end
+  end
+end

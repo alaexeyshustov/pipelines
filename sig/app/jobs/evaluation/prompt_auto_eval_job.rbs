@@ -1,5 +1,10 @@
 module Evaluation
   class PromptAutoEvalJob < ApplicationJob
     def perform: (prompt_id: Integer) -> void
+
+    private
+
+    def find_previous_experiment: (Evaluation::Prompt prompt) -> Evaluation::Experiment?
+    def create_auto_eval_experiment: (Evaluation::Prompt prompt, Evaluation::Experiment previous_experiment) -> Evaluation::Experiment
   end
 end

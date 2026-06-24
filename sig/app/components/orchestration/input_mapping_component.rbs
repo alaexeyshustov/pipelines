@@ -26,5 +26,7 @@ module Orchestration
 
     def mapping_rows: () -> Array[MappingRow]
     def schema_paths: (json_object schema, ?String prefix) -> Array[[String, String]]
+    def object_schema_paths: (json_object schema, String prefix) -> Array[String]
+    def array_schema_paths: (json_object schema, String prefix) -> Array[String]
   end
 end

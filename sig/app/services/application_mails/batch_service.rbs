@@ -11,7 +11,17 @@ module ApplicationMails
     @ids: Array[String] | Array[Integer]
     @batch_action: String
 
+    def self.call: (ids: Array[String] | Array[Integer], batch_action: String) -> Result
+
     def initialize: (ids: Array[String] | Array[Integer], batch_action: String) -> void
     def call: () -> Result
+
+    private
+
+    def dispatch: (Integer count) -> Result
+    def delete_records: (Integer count) -> Result
+    def enqueue_fill: (Integer count) -> Result
+    def enqueue_normalize: (Integer count) -> Result
+    def enqueue_reconcile: (Integer count) -> Result
   end
 end

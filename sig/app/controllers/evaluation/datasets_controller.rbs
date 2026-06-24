@@ -2,5 +2,14 @@ module Evaluation
   class DatasetsController < ApplicationController
     def generate: () -> void
     def resync: () -> void
+
+    private
+
+    def generation_job_params: () -> { draft_token: String?, agent_name: String?, dataset_name: String?, count: String?, hints: String? }
+    def generation_started_html: () -> ActiveSupport::SafeBuffer
+    def resync_sample_size: () -> Integer
+    def resync_error_stream: (StandardError e) -> String
+    def resync_success_streams: (Evaluation::Dataset dataset, Integer new_count) -> Array[String]
+    def inline_error_html: (String message) -> ActiveSupport::SafeBuffer
   end
 end

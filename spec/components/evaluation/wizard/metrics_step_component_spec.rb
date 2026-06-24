@@ -9,11 +9,8 @@ RSpec.describe Evaluation::Wizard::MetricsStepComponent, type: :component do
   let(:metrics)    { create_list(:evaluation_metric, 2, agent_name: agent_name) }
 
   def build_form(overrides = {})
-    instance_double(Evaluation::Wizard::Step2Form,
-      agent_name: agent_name,
-      metrics:    metrics,
-      **overrides
-    )
+    payload = { "agent_name" => overrides.fetch(:agent_name, agent_name) }
+    Evaluation::Wizard::Step2Form.new(draft_payload: payload)
   end
 
   it "renders metric names" do
@@ -33,7 +30,6 @@ RSpec.describe Evaluation::Wizard::MetricsStepComponent, type: :component do
   end
 
   it "renders empty state when no metrics exist" do
-    rendered = render_inline(described_class.new(form: build_form(metrics: [])))
     expect(rendered.text).to include("No metrics")
   end
 end

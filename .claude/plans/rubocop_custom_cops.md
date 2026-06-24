@@ -24,8 +24,7 @@ All cops live in `lib/rubocop/cop/app/` and are loaded via `.rubocop.yml`.
 
 | Cop | Rule |
 |-----|------|
-| `App/FormObjectMustIncludeActiveModelModel` | Classes in `app/forms/` must `include ActiveModel::Model` |
-| `App/FormObjectMustIncludeActiveModelAttributes` | Classes in `app/forms/` must `include ActiveModel::Attributes` |
+| `App/FormObjectMustIncludeActiveModel` | Classes in `app/forms/` must `include ActiveModel::Model` |
 
 ### Specs (`spec/**/*.rb`)
 

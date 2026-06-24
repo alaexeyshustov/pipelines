@@ -11,6 +11,7 @@ module Emails
       private
 
       def skip_to_offset: () -> String?
+      def advance_page: (Integer skipped, String? page_token) -> [ Integer, String? ]
     end
   end
 end

@@ -159,7 +159,7 @@ RSpec.describe "Interviews" do
       it "includes all selected records in the CSV body" do
         rows = CSV.parse(response.body, headers: true)
         expect(rows.size).to eq(2)
-        expect(rows.map { |r| r["company"] }).to contain_exactly("Acme", "Beta")
+        expect(rows.pluck("company")).to contain_exactly("Acme", "Beta")
         expect(response.headers["Content-Disposition"]).to include("interviews_")
       end
     end
@@ -179,7 +179,7 @@ RSpec.describe "Interviews" do
       it "returns a CSV with all records" do
         rows = CSV.parse(response.body, headers: true)
         expect(rows.size).to eq(2)
-        expect(rows.map { |r| r["company"] }).to contain_exactly("Acme", "Beta")
+        expect(rows.pluck("company")).to contain_exactly("Acme", "Beta")
       end
     end
 

@@ -17,7 +17,16 @@ module Records
     def execute(table:, id:, data:)
       model  = resolve_model(table)
       record = model.find(id.to_i)
+      apply_update(record, model, data)
+    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique,
+           ActiveRecord::RecordNotFound, ModelNotFound => e
+      Rails.logger.warn "Update failed for #{table}: #{e.message}"
+      { status: "update_failed", error: e.message }
+    end
 
+    private
+
+    def apply_update(record, model, data)
       attrs = JSON.parse(data) #: json_object_value
       raise ArgumentError, "data must be a JSON object" unless attrs.is_a?(Hash)
       return { status: "invalid_attributes" } if attrs.empty?
@@ -25,14 +34,6 @@ module Records
       attrs = attrs.transform_keys(&:to_s).slice(*model.tool_column_names)
       record.update(attrs) unless attrs.empty?
       { status: "row_updated" }
-    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique => e
-      Rails.logger.warn "Skipping row for #{model}: #{e.message}"
-      { status: "update_failed", error: e.message }
-    rescue ActiveRecord::RecordNotFound => e
-      Rails.logger.warn "Row not found for #{model}: #{e.message}"
-      { status: "update_failed", error: e.message }
-    rescue ModelNotFound => e
-      { status: "update_failed", error: e.message }
     end
   end
 end

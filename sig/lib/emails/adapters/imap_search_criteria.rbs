@@ -14,6 +14,10 @@ module Emails
       private
 
       def parse_query_criteria: (String query) -> Array[String]
+      def parse_token: (String token, Array[String] criteria, Array[String] bare_words) -> void
+      def parse_prefix_token: (String token, Array[String] criteria) -> bool
+      def push_date_criteria: (Array[String] criteria, String keyword, String date_str) -> Array[String]
+      def parse_is_token: (String token, Array[String] criteria) -> bool
       def imap_date: (String date_str) -> String
     end
   end

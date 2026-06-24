@@ -14,7 +14,7 @@ module Evaluation
     end
 
     def self.cleanup_expired
-      where("updated_at < ?", 24.hours.ago).delete_all
+      where(updated_at: ...24.hours.ago).delete_all
     end
 
     # Merges updates into payload and advances the step.

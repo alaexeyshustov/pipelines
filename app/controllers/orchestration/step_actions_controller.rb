@@ -20,30 +20,11 @@ module Orchestration
 
     def update
       @step_action = @step.step_actions.find(params[:id])
-      sa_params = params[:orchestration_step_action]
-      form = Orchestration::InputMappingForm.new(
-        step_action: @step_action,
-        input_mapping: sa_params&.[](:input_mapping),
-        new_key:  sa_params&.dig(:new_key),
-        new_from: sa_params&.dig(:new_from),
-        new_path: sa_params&.dig(:new_path)
-      )
-
+      form = build_input_mapping_form
       if form.save
-        result = form.result
-        notice = if result.warnings.any?
-          "Mapping saved. Warning: #{result.warnings.map { |w| "#{w.code}: #{w.message}" }.join("; ")}"
-        else
-          "Mapping saved."
-        end
-        redirect_to orchestration_pipeline_path(@pipeline), notice: notice
+        redirect_to orchestration_pipeline_path(@pipeline), notice: build_notice_message(form.result)
       else
-        error_summary = if form.result
-          form.result.errors.map(&:message).join("; ").presence || "Invalid mapping."
-        else
-          form.errors.full_messages.first || "Invalid mapping."
-        end
-        redirect_to orchestration_pipeline_path(@pipeline), alert: error_summary
+        redirect_to orchestration_pipeline_path(@pipeline), alert: build_error_summary(form)
       end
     end
 
@@ -54,6 +35,33 @@ module Orchestration
     end
 
     private
+
+    def build_input_mapping_form
+      sa_params = params[:orchestration_step_action]
+      Orchestration::InputMappingForm.new(
+        step_action:   @step_action,
+        input_mapping: sa_params&.[](:input_mapping),
+        new_key:       sa_params&.dig(:new_key),
+        new_from:      sa_params&.dig(:new_from),
+        new_path:      sa_params&.dig(:new_path)
+      )
+    end
+
+    def build_notice_message(result)
+      if result&.warnings&.any?
+        "Mapping saved. Warning: #{result.warnings.map { |w| "#{w.code}: #{w.message}" }.join("; ")}"
+      else
+        "Mapping saved."
+      end
+    end
+
+    def build_error_summary(form)
+      if form.result
+        form.result.errors.map(&:message).join("; ").presence || "Invalid mapping."
+      else
+        form.errors.full_messages.first || "Invalid mapping."
+      end
+    end
 
     def set_pipeline
       @pipeline = Orchestration::Pipeline.find(params[:pipeline_id])

@@ -70,7 +70,7 @@ RSpec.describe Evaluation::DatasetSeeder do
     end
 
     it "skips action runs with service-kind step actions" do # rubocop:disable RSpec/ExampleLength
-      service_action = create(:orchestration_action, kind: :service, agent: nil, agent_class: "Orchestration::QueryExecutor")
+      service_action = create(:orchestration_action, kind: :service, agent: nil, agent_class: "Orchestration::Executors::Query")
       service_step_action = create(:orchestration_step_action, action: service_action)
       service_pipeline_run = create(:orchestration_pipeline_run, pipeline: service_step_action.step.pipeline)
       create(:orchestration_action_run,

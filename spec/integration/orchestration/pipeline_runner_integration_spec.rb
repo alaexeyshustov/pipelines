@@ -77,25 +77,25 @@ RSpec.describe Orchestration::PipelineRunner, type: :integration do
     end
 
     it "completes the pipeline run end-to-end through real RubyLLM agent" do
-      described_class.new(pipeline_run).call
+      described_class.new(pipeline_run).run
       expect(pipeline_run.reload.status).to eq("completed")
     end
 
     it "creates exactly one completed ActionRun" do
-      described_class.new(pipeline_run).call
+      described_class.new(pipeline_run).run
       action_runs = Orchestration::ActionRun.where(pipeline_run: pipeline_run)
       expect(action_runs.count).to eq(1)
       expect(action_runs.first.status).to eq("completed")
     end
 
     it "stores results-keyed output on the ActionRun" do
-      described_class.new(pipeline_run).call
+      described_class.new(pipeline_run).run
       action_run = Orchestration::ActionRun.where(pipeline_run: pipeline_run).first
       expect(action_run.output.keys).to include("results")
     end
 
     it "has a committed cassette with at least one HTTP interaction" do
-      described_class.new(pipeline_run).call
+      described_class.new(pipeline_run).run
       cassette_path = Rails.root.join(
         "spec/cassettes/orchestration/pipeline_runner/classify_only.yml"
       )

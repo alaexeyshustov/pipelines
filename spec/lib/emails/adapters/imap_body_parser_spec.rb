@@ -2,12 +2,14 @@ require 'rails_helper'
 
 RSpec.describe Emails::Adapters::ImapBodyParser do
   def make_part(mime_type:, decoded: '', multipart: false, parts: [])
-    instance_double(Mail::Part,
-      mime_type:  mime_type,
-      multipart?: multipart,
-      parts:      parts,
-      decoded:    decoded
-    )
+    if multipart
+      part = Mail::Part.new
+      part.content_type = "#{mime_type}; boundary=----=_Part_test"
+      parts.each { |sub| part.add_part(sub) }
+      part
+    else
+      Mail::Part.new("Content-Type: #{mime_type}\r\n\r\n#{decoded}")
+    end
   end
 
   describe '.decode_header' do
@@ -35,9 +37,7 @@ RSpec.describe Emails::Adapters::ImapBodyParser do
     subject(:parser) { described_class.new(mail) }
 
     context 'when mail is a simple text/plain message' do
-      let(:mail) do
-        instance_double(Mail::Message, multipart?: false, mime_type: 'text/plain', decoded: 'Plain text content')
-      end
+      let(:mail) { Mail.new("Content-Type: text/plain\r\n\r\nPlain text content") }
 
       it 'returns the decoded plain text' do
         expect(parser.body).to eq('Plain text content')
@@ -45,9 +45,7 @@ RSpec.describe Emails::Adapters::ImapBodyParser do
     end
 
     context 'when mail is a simple text/html message' do
-      let(:mail) do
-        instance_double(Mail::Message, multipart?: false, mime_type: 'text/html', decoded: '<p>Hello <b>World</b></p>')
-      end
+      let(:mail) { Mail.new("Content-Type: text/html\r\n\r\n<p>Hello <b>World</b></p>") }
 
       it 'strips HTML tags' do
         expect(parser.body).to eq('Hello World')
@@ -57,7 +55,13 @@ RSpec.describe Emails::Adapters::ImapBodyParser do
     context 'when mail is multipart with text/plain and text/html' do
       let(:plain_part) { make_part(mime_type: 'text/plain', decoded: 'Plain text') }
       let(:html_part)  { make_part(mime_type: 'text/html',  decoded: '<b>HTML</b>') }
-      let(:mail)       { instance_double(Mail::Message, multipart?: true, parts: [ plain_part, html_part ]) }
+      let(:mail) do
+        m = Mail.new
+        m.content_type = "multipart/alternative; boundary=----=_Msg_test"
+        m.add_part(plain_part)
+        m.add_part(html_part)
+        m
+      end
 
       it 'prefers text/plain over text/html' do
         expect(parser.body).to eq('Plain text')
@@ -66,7 +70,12 @@ RSpec.describe Emails::Adapters::ImapBodyParser do
 
     context 'when mail is multipart with only text/html' do
       let(:html_part) { make_part(mime_type: 'text/html', decoded: '<p>HTML only</p>') }
-      let(:mail)      { instance_double(Mail::Message, multipart?: true, parts: [ html_part ]) }
+      let(:mail) do
+        m = Mail.new
+        m.content_type = "multipart/alternative; boundary=----=_Msg_test"
+        m.add_part(html_part)
+        m
+      end
 
       it 'returns the body with HTML tags stripped' do
         expect(parser.body).to eq('HTML only')
@@ -76,7 +85,12 @@ RSpec.describe Emails::Adapters::ImapBodyParser do
     context 'when mail is multipart with no text parts (recursive fallback)' do
       let(:nested_plain) { make_part(mime_type: 'text/plain', decoded: 'Nested content') }
       let(:nested_part)  { make_part(mime_type: 'multipart/alternative', multipart: true, parts: [ nested_plain ]) }
-      let(:mail)         { instance_double(Mail::Message, multipart?: true, parts: [ nested_part ]) }
+      let(:mail) do
+        m = Mail.new
+        m.content_type = "multipart/mixed; boundary=----=_Msg_test"
+        m.add_part(nested_part)
+        m
+      end
 
       it 'recursively extracts body from nested parts' do
         expect(parser.body).to eq('Nested content')
@@ -85,7 +99,12 @@ RSpec.describe Emails::Adapters::ImapBodyParser do
 
     context 'when mail is multipart with only non-text attachments' do
       let(:attachment) { make_part(mime_type: 'application/pdf', decoded: '') }
-      let(:mail)       { instance_double(Mail::Message, multipart?: true, parts: [ attachment ]) }
+      let(:mail) do
+        m = Mail.new
+        m.content_type = "multipart/mixed; boundary=----=_Msg_test"
+        m.add_part(attachment)
+        m
+      end
 
       it 'returns an empty string' do
         expect(parser.body).to eq('')

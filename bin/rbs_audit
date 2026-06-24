@@ -6,161 +6,243 @@ require "set"
 require "dry/cli"
 
 module RbsAuditCLI
+  ROOT = File.expand_path("../..", __FILE__)
+  SIG_DIR = File.join(ROOT, "sig")
+  RUBY_DIRS = %w[app lib].map { File.join(ROOT, _1) }
+  SKIP_DIRS = %w[
+    app/assets
+    app/views
+    app/javascript
+    app/mailers
+    config
+    db
+    spec
+    test
+  ].map { File.join(ROOT, _1) }
+  SKIP_FILES = %w[
+    app/helpers/application_helper.rb
+  ].map { File.join(ROOT, _1) }
+
+  module SteepStats
+    def self.load(threshold)
+      threshold = threshold.to_f
+      raw = `bundle exec steep stats --log-level=fatal 2>/dev/null`
+
+      if raw.empty?
+        warn "steep stats produced no output"
+        exit 1
+      end
+
+      total_typed = 0
+      total_all = 0
+      under_threshold = []
+
+      raw.each_line do |line|
+        parts = line.chomp.split(",")
+        next unless parts.size == 7 && parts[2] == "success"
+
+        total_typed += parts[3].to_i
+        total_all   += parts[5].to_i
+
+        pct = parts[6].to_f
+        under_threshold << [parts[1], pct] if pct < threshold
+      end
+
+      if total_all.zero?
+        warn "No typed call sites found in steep stats output"
+        exit 1
+      end
+
+      {
+        total_typed:     total_typed,
+        total_all:       total_all,
+        coverage:        (total_typed.to_f / total_all * 100).round(2),
+        under_threshold: under_threshold.sort_by { |_, pct| pct }
+      }
+    end
+  end
+
+  module RbsAnalysis
+    def self.ruby_files
+      RUBY_DIRS.flat_map { |dir| Dir.glob(File.join(dir, "**/*.rb")) }
+               .reject { |f| SKIP_DIRS.any? { f.start_with?(_1) } || SKIP_FILES.include?(f) || File.basename(f) == "application_helper.rb" }
+               .sort
+    end
+
+    def self.sig_for(ruby_file)
+      relative = ruby_file.sub("#{ROOT}/", "")
+      sig_path  = File.join(SIG_DIR, relative.sub(/\.rb$/, ".rbs"))
+      sig_path if File.exist?(sig_path)
+    end
+
+    def self.parse_prototype(text)
+      result = { classes: Set.new, public_methods: Set.new, private_methods: Set.new,
+                 instance_vars: Set.new, constants: Set.new, attrs: Set.new }
+      in_private = false
+
+      text.each_line do |line|
+        stripped = line.strip
+
+        if stripped =~ /^(?:class|module)\s+([\w:]+)/
+          in_private = false
+          result[:classes] << $1
+        end
+
+        in_private = true  if stripped == "private"
+        in_private = false if stripped == "end"
+
+        result[:instance_vars] << "@#{$1}" if stripped =~ /^@(\w+):\s/
+        result[:constants]     << $1        if stripped =~ /^([A-Z][A-Z0-9_]+):\s/
+
+        if stripped =~ /^def (?:self\.)?(\w+[?!]?):/
+          in_private ? result[:private_methods] << $1 : result[:public_methods] << $1
+        end
+
+        result[:attrs] << $1 if stripped =~ /^attr_(?:reader|writer|accessor)\s+(\w+)/
+      end
+
+      result
+    end
+
+    def self.parse_rbs(rbs_file)
+      result = { public_methods: Set.new, private_methods: Set.new,
+                 instance_vars: Set.new, constants: Set.new, attrs: Set.new }
+      in_private = false
+
+      File.read(rbs_file).each_line do |line|
+        stripped = line.strip
+        next if stripped.start_with?("#")
+
+        if stripped == "private"
+          in_private = true
+          next
+        end
+
+        result[:instance_vars] << "@#{$1}" if stripped =~ /^@(\w+):\s/
+        result[:constants]     << $1        if stripped =~ /^([A-Z][A-Z0-9_]+):\s/
+
+        if stripped =~ /^def (?:self\.)?(\w+[?!]?):/
+          in_private ? result[:private_methods] << $1 : result[:public_methods] << $1
+        end
+
+        result[:attrs] << $1 if stripped =~ /^attr_(?:reader|writer|accessor)\s+(\w+)/
+      end
+
+      result
+    end
+
+    def self.analyse
+      missing_sig_files = []
+      gaps = {}
+
+      ruby_files.each do |ruby_file|
+        relative = ruby_file.sub("#{ROOT}/", "")
+        next if File.size(ruby_file) == 0
+
+        prototype_output = `cd "#{ROOT}" && bundle exec rbs prototype rb "#{relative}" 2>/dev/null`
+        next if prototype_output.strip.empty?
+
+        prototype = parse_prototype(prototype_output)
+        next if prototype[:public_methods].empty? &&
+                prototype[:private_methods].empty? &&
+                prototype[:instance_vars].empty? &&
+                prototype[:constants].empty?
+
+        sig_file = sig_for(ruby_file)
+        unless sig_file
+          missing_sig_files << relative
+          next
+        end
+
+        actual    = parse_rbs(sig_file)
+        file_gaps = {}
+
+        missing_pub = prototype[:public_methods] - actual[:public_methods] - actual[:attrs]
+        file_gaps[:missing_public_methods] = missing_pub.to_a.sort unless missing_pub.empty?
+
+        missing_priv = prototype[:private_methods] - actual[:private_methods] - actual[:attrs]
+        file_gaps[:missing_private_methods] = missing_priv.to_a.sort unless missing_priv.empty?
+
+        missing_ivars = prototype[:instance_vars] - actual[:instance_vars]
+        missing_ivars = missing_ivars.reject do |ivar|
+          attr_name = ivar.sub("@", "")
+          actual[:attrs].include?(attr_name) ||
+            actual[:public_methods].include?(attr_name) ||
+            actual[:private_methods].include?(attr_name)
+        end
+        file_gaps[:missing_instance_vars] = missing_ivars.to_a.sort unless missing_ivars.empty?
+
+        missing_consts = prototype[:constants] - actual[:constants]
+        file_gaps[:missing_constants] = missing_consts.to_a.sort unless missing_consts.empty?
+
+        gaps[relative] = file_gaps unless file_gaps.empty?
+      end
+
+      { missing_sig_files: missing_sig_files, gaps: gaps }
+    end
+  end
+
   module Commands
     extend Dry::CLI::Registry
 
-    class Audit < Dry::CLI::Command
-      ROOT = File.expand_path("../..", __FILE__)
+    class Coverage < Dry::CLI::Command
+      desc "Show type coverage percentage from steep stats"
 
-      RUBY_DIRS = %w[app lib].map { File.join(ROOT, _1) }
-      SIG_DIR   = File.join(ROOT, "sig")
+      option :threshold, type: :float, default: 99.0, desc: "Minimum required coverage percentage"
 
-      SKIP_DIRS = %w[
-        app/assets
-        app/views
-        app/javascript
-        app/mailers
-        config
-        db
-        spec
-        test
-      ].map { File.join(ROOT, _1) }
+      def call(threshold: 99.0, **)
+        threshold = threshold.to_f
+        stats = SteepStats.load(threshold)
+        puts "Type coverage: #{stats[:coverage]}% (#{stats[:total_typed]}/#{stats[:total_all]} calls typed)"
 
-      SKIP_FILES = %w[
-        app/helpers/application_helper.rb
-      ].map { File.join(ROOT, _1) }
-
-      desc "Audit RBS signature coverage against Ruby source files"
-
-      option :fail_on_gaps, type: :boolean, default: false,
-             desc: "Exit with status 1 if any gaps or missing sig files are found (useful for CI)"
-
-      def call(fail_on_gaps: false, **)
-        missing_sig_files = []
-        gaps = {}
-
-        ruby_files.each do |ruby_file|
-          relative = ruby_file.sub("#{ROOT}/", "")
-
-          next if File.size(ruby_file) == 0
-
-          prototype_output = `cd "#{ROOT}" && bundle exec rbs prototype rb "#{relative}" 2>/dev/null`
-          next if prototype_output.strip.empty?
-
-          prototype = parse_prototype(prototype_output)
-
-          next if prototype[:public_methods].empty? &&
-                  prototype[:private_methods].empty? &&
-                  prototype[:instance_vars].empty? &&
-                  prototype[:constants].empty?
-
-          sig_file = sig_for(ruby_file)
-
-          unless sig_file
-            missing_sig_files << relative
-            next
-          end
-
-          actual     = parse_rbs(sig_file)
-          file_gaps  = {}
-
-          missing_pub = prototype[:public_methods] - actual[:public_methods] - actual[:attrs]
-          file_gaps[:missing_public_methods] = missing_pub.to_a.sort unless missing_pub.empty?
-
-          missing_priv = prototype[:private_methods] - actual[:private_methods] - actual[:attrs]
-          file_gaps[:missing_private_methods] = missing_priv.to_a.sort unless missing_priv.empty?
-
-          missing_ivars = prototype[:instance_vars] - actual[:instance_vars]
-          missing_ivars = missing_ivars.reject do |ivar|
-            attr_name = ivar.sub("@", "")
-            actual[:attrs].include?(attr_name) ||
-              actual[:public_methods].include?(attr_name) ||
-              actual[:private_methods].include?(attr_name)
-          end
-          file_gaps[:missing_instance_vars] = missing_ivars.to_a.sort unless missing_ivars.empty?
-
-          missing_consts = prototype[:constants] - actual[:constants]
-          file_gaps[:missing_constants] = missing_consts.to_a.sort unless missing_consts.empty?
-
-          gaps[relative] = file_gaps unless file_gaps.empty?
+        if stats[:coverage] < threshold
+          warn "Coverage #{stats[:coverage]}% is below the required #{threshold}%"
+          exit 1
         end
 
-        print_report(missing_sig_files, gaps)
+        puts "OK: coverage meets the #{threshold}% threshold"
+      end
+    end
 
-        exit 1 if fail_on_gaps && (missing_sig_files.any? || gaps.any?)
+    class List < Dry::CLI::Command
+      desc "List files below the coverage threshold, sorted by coverage ascending"
+
+      option :threshold, type: :float, default: 99.0, desc: "Coverage threshold percentage"
+
+      def call(threshold: 99.0, **)
+        threshold = threshold.to_f
+        stats = SteepStats.load(threshold)
+        puts "Type coverage: #{stats[:coverage]}% (#{stats[:total_typed]}/#{stats[:total_all]} calls typed)"
+
+        if stats[:under_threshold].empty?
+          puts "All files meet the #{threshold}% threshold."
+        else
+          puts "\nFiles below #{threshold}% (ascending):"
+          stats[:under_threshold].each do |file, pct|
+            puts "  #{pct}%\t#{file}"
+          end
+        end
+
+        if stats[:coverage] < threshold
+          warn "Coverage #{stats[:coverage]}% is below the required #{threshold}%"
+          exit 1
+        end
+      end
+    end
+
+    class Audit < Dry::CLI::Command
+      desc "Show detailed RBS signature coverage analysis"
+
+      option :fail_on_gaps, type: :boolean, default: false,
+             desc: "Exit with status 1 if any gaps or missing sig files are found"
+
+      def call(fail_on_gaps: false, **)
+        result = RbsAnalysis.analyse
+        print_report(result[:missing_sig_files], result[:gaps])
+        exit 1 if fail_on_gaps && (result[:missing_sig_files].any? || result[:gaps].any?)
       end
 
       private
-
-      def ruby_files
-        RUBY_DIRS.flat_map { |dir| Dir.glob(File.join(dir, "**/*.rb")) }
-                 .reject { |f| SKIP_DIRS.any? { f.start_with?(_1) } || SKIP_FILES.include?(f) || File.basename(f) == "application_helper.rb" }
-                 .sort
-      end
-
-      def sig_for(ruby_file)
-        relative = ruby_file.sub("#{ROOT}/", "")
-        sig_path = File.join(SIG_DIR, relative.sub(/\.rb$/, ".rbs"))
-        sig_path if File.exist?(sig_path)
-      end
-
-      def parse_prototype(text)
-        result = { classes: Set.new, public_methods: Set.new, private_methods: Set.new,
-                   instance_vars: Set.new, constants: Set.new, attrs: Set.new }
-
-        in_private = false
-
-        text.each_line do |line|
-          stripped = line.strip
-
-          if stripped =~ /^(?:class|module)\s+([\w:]+)/
-            in_private = false
-            result[:classes] << $1
-          end
-
-          in_private = true  if stripped == "private"
-          in_private = false if stripped == "end"
-
-          result[:instance_vars] << "@#{$1}" if stripped =~ /^@(\w+):\s/
-          result[:constants]     << $1        if stripped =~ /^([A-Z][A-Z0-9_]+):\s/
-
-          if stripped =~ /^def (?:self\.)?(\w+[?!]?):/
-            in_private ? result[:private_methods] << $1 : result[:public_methods] << $1
-          end
-
-          result[:attrs] << $1 if stripped =~ /^attr_(?:reader|writer|accessor)\s+(\w+)/
-        end
-
-        result
-      end
-
-      def parse_rbs(rbs_file)
-        result = { public_methods: Set.new, private_methods: Set.new,
-                   instance_vars: Set.new, constants: Set.new, attrs: Set.new }
-
-        in_private = false
-
-        File.read(rbs_file).each_line do |line|
-          stripped = line.strip
-          next if stripped.start_with?("#")
-
-          if stripped == "private"
-            in_private = true
-            next
-          end
-
-          result[:instance_vars] << "@#{$1}" if stripped =~ /^@(\w+):\s/
-          result[:constants]     << $1        if stripped =~ /^([A-Z][A-Z0-9_]+):\s/
-
-          if stripped =~ /^def (?:self\.)?(\w+[?!]?):/
-            in_private ? result[:private_methods] << $1 : result[:public_methods] << $1
-          end
-
-          result[:attrs] << $1 if stripped =~ /^attr_(?:reader|writer|accessor)\s+(\w+)/
-        end
-
-        result
-      end
 
       def print_report(missing_sig_files, gaps)
         puts "=" * 70
@@ -214,7 +296,9 @@ module RbsAuditCLI
       end
     end
 
-    register "audit", Audit
+    register "coverage", Coverage
+    register "list",     List
+    register "audit",    Audit
   end
 end
 

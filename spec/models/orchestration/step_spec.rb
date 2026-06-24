@@ -17,7 +17,7 @@ RSpec.describe Orchestration::Step do
 
   describe '.derive_status' do
     def stub_run(status)
-      instance_double(Orchestration::ActionRun, status: status)
+      build(:orchestration_action_run, status: status)
     end
 
     it 'returns pending when action_runs is empty' do

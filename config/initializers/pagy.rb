@@ -20,10 +20,10 @@ class Pagy
       ghost   = "#{base} border-transparent text-gray-400 cursor-not-allowed"
       gap_cls = "inline-flex items-center justify-center min-w-[2rem] h-8 px-1 text-sm text-gray-400 select-none"
 
-      prev_text  = I18n.translate("pagy.previous")
-      next_text  = I18n.translate("pagy.next")
-      prev_label = I18n.translate("pagy.aria_label.previous")
-      next_label = I18n.translate("pagy.aria_label.next")
+      prev_text  = Pagy::I18n.translate("pagy.previous")
+      next_text  = Pagy::I18n.translate("pagy.next")
+      prev_label = Pagy::I18n.translate("pagy.aria_label.previous")
+      next_label = Pagy::I18n.translate("pagy.aria_label.next")
 
       html = if previous
                %(<a href="#{page_url(previous)}" rel="prev" aria-label="#{prev_label}" class="#{normal}">#{prev_text}</a>)
@@ -38,7 +38,7 @@ class Pagy
         when String
                   %(<a role="link" aria-disabled="true" aria-current="page" class="#{active}">#{page_label(item)}</a>)
         when :gap
-                  %(<a role="separator" aria-disabled="true" class="#{gap_cls}">#{I18n.translate('pagy.gap')}</a>)
+                  %(<a role="separator" aria-disabled="true" class="#{gap_cls}">#{Pagy::I18n.translate('pagy.gap')}</a>)
         else
                   raise InternalError, "unexpected series item: #{item.inspect}"
         end

@@ -1,0 +1,15 @@
+module RuboCop
+  module Cop
+    module App
+      class NoAllEachInJob < ::RuboCop::Cop::Base
+        MSG: String
+
+        def on_send: (::RuboCop::Cop::_Node node) -> void
+
+        private
+
+        def job_file?: () -> bool
+      end
+    end
+  end
+end

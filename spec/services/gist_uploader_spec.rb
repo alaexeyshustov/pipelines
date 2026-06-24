@@ -21,7 +21,7 @@ RSpec.describe GistUploader do
     end
   end
 
-  describe '#upload' do
+  describe '#call' do
     context 'when gist_id is provided (update)' do
       subject(:uploader) { described_class.new(token: token, gist_id: 'gist_42', filename: filename) }
 
@@ -42,11 +42,11 @@ RSpec.describe GistUploader do
       end
 
       it 'PATCHes the existing gist and returns html_url' do
-        expect(uploader.upload(content)).to eq(html_url)
+        expect(uploader.call(content)).to eq(html_url)
       end
 
       it 'sends the file content in the request body' do
-        uploader.upload(content)
+        uploader.call(content)
         expect(WebMock).to have_requested(:patch, "https://api.github.com/gists/gist_42")
           .with(body: hash_including('files' => { filename => { 'content' => content } }))
       end
@@ -65,11 +65,11 @@ RSpec.describe GistUploader do
       end
 
       it 'POSTs a new gist and returns html_url' do
-        expect(uploader.upload(content)).to eq(html_url)
+        expect(uploader.call(content)).to eq(html_url)
       end
 
       it 'includes description and public: false in the request body' do
-        uploader.upload(content)
+        uploader.call(content)
         expect(WebMock).to have_requested(:post, "https://api.github.com/gists")
           .with(body: hash_including('description' => 'Job interviews tracker', 'public' => false))
       end
@@ -88,7 +88,7 @@ RSpec.describe GistUploader do
       end
 
       it 'raises ApiError with the status code and message' do
-        expect { uploader.upload(content) }
+        expect { uploader.call(content) }
           .to raise_error(GistUploader::ApiError, /401.*Bad credentials/)
       end
     end

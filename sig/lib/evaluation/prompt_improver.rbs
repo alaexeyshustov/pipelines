@@ -16,6 +16,18 @@ module Evaluation
     def evaluation_data: () -> Array[Justification]
     def metrics: (Prompt current_prompt) -> Array[Metric]
     def build_improvement_message: (current_prompt: Prompt, evaluation_data: Array[Justification], metrics: Array[Metric]) -> String
+    type metric_entry = { name: String?, description: String? }
+    type score_entry = { metric_name: String, score: Float?, justification: String? }
+    type message_data = {
+      experiment_id: Integer,
+      prompt_name: String,
+      system_prompt: String?,
+      metrics: Array[metric_entry],
+      scores: Array[score_entry]
+    }
+
+    def build_message_data: (Prompt current_prompt, Array[Justification] evaluation_data, Array[Metric] metrics) -> message_data
+    def append_output_schema: (String message, String agent_name) -> String
     def run_agent: (String input) -> Hash[Symbol, String]
     def parse_response: (json_object_value content) -> Hash[Symbol, String]
   end

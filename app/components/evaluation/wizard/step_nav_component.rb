@@ -25,7 +25,7 @@ module Evaluation
       end
 
       def steps
-        STEPS.length.times.map { |i| { label: step_label(i), state: step_state(i) } }
+        Array.new(STEPS.length) { |i| { label: step_label(i), state: step_state(i) } }
       end
     end
   end

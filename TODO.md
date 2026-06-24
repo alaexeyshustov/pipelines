@@ -25,3 +25,4 @@
 [ ] refactoring: long classes - find pure functions and extract to helpers
 [ ] refactoring: save repeated queries to models
 [ ] refactoring: decouple orchestration from evaluation, move orchestration to lib/
+[ ] refactoring: move all orchestration agents and services to lib/orchestration

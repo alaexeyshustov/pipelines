@@ -15,5 +15,10 @@ class EmailConnector < ApplicationRecord
 
   private
 
+  def resolve_adapter_class: () -> (singleton(Emails::Adapters::GmailAdapter) | singleton(Emails::Adapters::YahooAdapter) | nil)
+  def probe_connection: ((singleton(Emails::Adapters::GmailAdapter) | singleton(Emails::Adapters::YahooAdapter)) adapter_class) -> { success: bool, ?error: String }
+  def run_provider_check: ((singleton(Emails::Adapters::GmailAdapter) | singleton(Emails::Adapters::YahooAdapter)) adapter_class) -> void
+  def connect_gmail_adapter: (singleton(Emails::Adapters::GmailAdapter) adapter_class) -> void
+  def connect_yahoo_adapter: (singleton(Emails::Adapters::YahooAdapter) adapter_class) -> void
   def convert_configuration_to_hash: () -> void
 end

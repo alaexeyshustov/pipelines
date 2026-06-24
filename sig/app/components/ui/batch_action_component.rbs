@@ -30,6 +30,9 @@ module UI
     private
 
     def subcomponent: () -> ViewComponent::Base
+    def button_subcomponent: () -> ViewComponent::Base
+    def dialog_subcomponent: () -> ViewComponent::Base
+    def raw_subcomponent: () -> ViewComponent::Base
   end
 
   # BatchActionComponent::ButtonComponent delegates to ActionComponent::ButtonComponent

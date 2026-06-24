@@ -5,18 +5,22 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
 
   let(:agent_name) { "Emails::ClassifyAgent" }
 
-  def stub_judge_agent(scores: nil)
-    scores ||= [
+  def default_scores
+    [
       { "metric_name" => "tool_call_accuracy", "score" => 4, "justification" => "Correct tool called." },
       { "metric_name" => "output_quality",      "score" => 5, "justification" => "Clear output." }
     ]
-    response_content = { "evaluations" => scores }
-    response = Struct.new(:content).new(response_content)
-    judge_stub = Class.new do
-      def with_model(_m) = self
-      def ask(_msg) = nil
-    end.new
+  end
+
+  def build_judge_stub(scores)
+    response = Struct.new(:content).new({ "evaluations" => scores })
+    judge_stub = Class.new { def with_model(_m) = self; def ask(_msg) = nil }.new
     allow(judge_stub).to receive(:ask).and_return(response)
+    judge_stub
+  end
+
+  def stub_judge_agent(scores: nil)
+    judge_stub = build_judge_stub(scores || default_scores)
     allow(Evaluation::Judge::Agent).to receive(:create).and_return(judge_stub)
     judge_stub
   end

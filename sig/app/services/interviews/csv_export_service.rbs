@@ -3,6 +3,8 @@ module Interviews
     @ids: Array[String] | Array[Integer] | nil
     @columns: Array[String]
 
+    def self.call: (ids: Array[String] | Array[Integer] | nil) -> String
+
     def initialize: (ids: Array[String] | Array[Integer] | nil) -> void
     def call: () -> String
   end

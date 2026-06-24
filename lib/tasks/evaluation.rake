@@ -1,5 +1,5 @@
 namespace :evaluation do
-  desc "Print candidate metrics for an agent without persisting (e.g. rake evaluation:extract_metrics[Emails::ClassifyAgent])"
+  desc "Print candidate metrics for an agent without persisting (e.g. rake evaluation:extract_metrics[Orchestration::Agents::EmailsClassifier])"
   task :extract_metrics, [ :agent_name ] => :environment do |_, args|
     agent_name = args[:agent_name] or raise ArgumentError, "Usage: rake evaluation:extract_metrics[AgentName]"
     candidates = Evaluation::MetricExtractor.call(agent_name)
@@ -10,7 +10,7 @@ namespace :evaluation do
     end
   end
 
-  desc "Seed an evaluation dataset from historical action runs (e.g. rake evaluation:seed_dataset[Emails::ClassifyAgent,20])"
+  desc "Seed an evaluation dataset from historical action runs (e.g. rake evaluation:seed_dataset[Orchestration::Agents::EmailsClassifier,20])"
   task :seed_dataset, [ :agent_name, :sample_size ] => :environment do |_, args|
     agent_name  = args[:agent_name]  or raise ArgumentError, "Usage: rake evaluation:seed_dataset[AgentName,sample_size]"
     sample_size = (args[:sample_size] || 20).to_i
@@ -21,7 +21,7 @@ namespace :evaluation do
     puts "Dataset '#{result.agent_name}': #{result.created} created, #{result.skipped} skipped."
   end
 
-  desc "Persist extracted metrics for an agent (e.g. rake evaluation:seed_metrics[Emails::ClassifyAgent])"
+  desc "Persist extracted metrics for an agent (e.g. rake evaluation:seed_metrics[Orchestration::Agents::EmailsClassifier])"
   task :seed_metrics, [ :agent_name ] => :environment do |_, args|
     agent_name = args[:agent_name] or raise ArgumentError, "Usage: rake evaluation:seed_metrics[AgentName]"
     candidates = Evaluation::MetricExtractor.call(agent_name)
@@ -40,13 +40,13 @@ namespace :evaluation do
   desc "Migrate hardcoded agent instructions into Evaluation::Prompt records"
   task migrate_prompts: :environment do
     agent_classes = %w[
-      Emails::ClassifyAgent
-      Emails::FilterAgent
-      Emails::MappingAgent
-      Records::FillAgent
-      Records::NormalizeAgent
-      Records::StoreAgent
-      Records::ReconcileAgent
+      Orchestration::Agents::EmailsClassifier
+      Orchestration::Agents::EmailsFilter
+      Orchestration::Agents::EmailsMapper
+      Orchestration::Agents::RecordsFiller
+      Orchestration::Agents::RecordsNormalizer
+      Orchestration::Agents::RecordsStorer
+      Orchestration::Agents::RecordsReconciler
     ].freeze
 
     agent_classes.each do |agent_class|

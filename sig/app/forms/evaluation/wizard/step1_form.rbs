@@ -5,6 +5,8 @@ module Evaluation
 
       def initialize: (draft_payload: wizard_payload) -> void
 
+      def advance!: () -> bool
+
       def agent_names: () -> Array[String]
       def prompts: () -> Prompt::relation
       def agent_name: () -> String?

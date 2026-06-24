@@ -9,7 +9,9 @@ module Emails
       private
 
       def extract_body: (Google::Apis::GmailV1::MessagePart payload) -> String
+      def extract_from_multipart: (Google::Apis::GmailV1::MessagePart payload, Array[Google::Apis::GmailV1::MessagePart] parts) -> String
       def collect_parts: (Google::Apis::GmailV1::MessagePart payload, String mime_type) -> Array[String]
+      def collect_part: (Google::Apis::GmailV1::MessagePart part, String mime_type) -> Array[String]
       def decode_body: (String? data) -> String
     end
   end

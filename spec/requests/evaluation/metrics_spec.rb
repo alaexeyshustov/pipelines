@@ -153,7 +153,7 @@ RSpec.describe "Evaluation::Metrics" do
       it "returns 422 with JSON error" do
         post generate_evaluation_metrics_path, params: { agent_name: "Emails::ClassifyAgent" }
         expect(response).to have_http_status(:unprocessable_content)
-        expect(JSON.parse(response.body)["error"]).to include("LLM unavailable")
+        expect(response.parsed_body["error"]).to include("LLM unavailable")
       end
     end
   end

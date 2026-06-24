@@ -4,6 +4,8 @@ require "csv"
 
 module Interviews
   class CsvExportService
+    def self.call(ids:) = new(ids:).call
+
     def initialize(ids:)
       @ids = ids
       @columns = Interview::COLUMN_NAMES.without("id")

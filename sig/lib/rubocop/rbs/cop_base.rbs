@@ -1,8 +1,61 @@
 module RuboCop
   module Cop
+    interface _ProcessedSource
+      def path: () -> String
+    end
+
+    interface _SourceRange
+      def join: (top) -> _SourceRange
+    end
+
+    interface _Loc
+      def selector: () -> top
+      def keyword: () -> _SourceRange
+      def name: () -> _SourceRange
+    end
+
+    interface _Node
+      def method_name: () -> Symbol
+      def receiver: () -> _Node?
+      def arguments: () -> Array[_Node]
+      def children: () -> Array[_Node]
+      def body: () -> _Node?
+      def each_ancestor: (Symbol) -> Enumerator[_Node, void]
+      def pairs: () -> Array[_Node]
+      def key: () -> _Node
+      def value: () -> (Symbol | String | Integer | Float | bool | nil)
+      def namespace: () -> _Node?
+      def short_name: () -> Symbol
+      def source_range: () -> top
+      def loc: () -> ::RuboCop::Cop::_Loc
+      def to_a: () -> [_Node?, Symbol, _Node?]
+      def hash_type?: () -> bool
+      def sym_type?: () -> bool
+      def send_type?: () -> bool
+      def const_type?: () -> bool
+      def class_type?: () -> bool
+      def begin_type?: () -> bool
+      def def_type?: () -> bool
+      def defs_type?: () -> bool
+      def self_type?: () -> bool
+      def cbase_type?: () -> bool
+      def nil?: () -> bool
+      def parent_class: () -> _Node?
+      def const_name: () -> String?
+      def identifier: () -> _Node
+    end
+
+    interface _Corrector
+      def replace: (top range, String content) -> void
+    end
+
     class Base
       def add_offense: (top range, ?message: String) -> void
       def range_between: (Integer start_pos, Integer end_pos) -> top
+      def processed_source: () -> _ProcessedSource
+    end
+
+    module AutocorrectLogic
     end
 
     module RangeHelp
@@ -25,4 +78,16 @@ module RuboCop
       def location_to_range: (top location) -> top
     end
   end
+end
+
+# Patch NilClass so that `_Node?` values can have node predicate methods
+# called on them after `&.`-guarded checks that Steep does not narrow.
+class NilClass
+  def cbase_type?: () -> bool
+  def self_type?: () -> bool
+  def method_name: () -> Symbol
+  def short_name: () -> Symbol
+  def receiver: () -> ::RuboCop::Cop::_Node?
+  def source_range: () -> top
+  def loc: () -> ::RuboCop::Cop::_Loc
 end

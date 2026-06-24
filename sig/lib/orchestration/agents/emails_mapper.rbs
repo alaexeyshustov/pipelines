@@ -1,0 +1,6 @@
+module Orchestration
+  module Agents
+    class EmailsMapper < RubyLLM::Agent
+    end
+  end
+end

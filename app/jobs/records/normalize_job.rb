@@ -10,7 +10,7 @@ module Records
         columns_to_normalize: %w[company job_title]
       }.to_json
 
-      Records::NormalizeAgent.new.ask(input)
+      Orchestration::Agents::RecordsNormalizer.new.ask(input)
     end
   end
 end

@@ -206,6 +206,13 @@ class Array[unchecked out Elem]
   def index_by: [K] () { (Elem) -> K } -> Hash[K, Elem]
 end
 
+module Arel
+  module Nodes
+    class Join
+    end
+  end
+end
+
 # rubocop:disable RBS/Lint/NoUntyped
 module Arel
   class Table
@@ -216,6 +223,7 @@ module Arel
   class SelectManager
     def on: (*untyped exprs) -> self
           | ...
+    def join_sources: () -> Array[Arel::Nodes::Join]
   end
 end
 # rubocop:enable RBS/Lint/NoUntyped

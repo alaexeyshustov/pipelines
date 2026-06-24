@@ -1,0 +1,28 @@
+module Orchestration
+  class SchemaValidator
+    Error: singleton(StandardError)
+
+    @schema: json_object?
+
+    def initialize: (json_object? schema) -> void
+    def validate!: (json_object_value data) -> void
+
+    SCALAR_TYPES: Hash[String, Array[
+        singleton(Integer) |
+          singleton(String) |
+          singleton(Numeric) |
+          singleton(TrueClass) |
+          singleton(FalseClass)
+
+    ]]
+
+    private
+
+    def validate_node!: (json_object_value value, json_object? schema, String path) -> void
+    def validate_object!: (json_object_value value, json_object schema, String path) -> void
+    def validate_required_keys!: (json_object value, json_object_value? required, String path) -> void
+    def validate_object_properties!: (json_object value, json_object_value? properties, String path) -> void
+    def validate_array!: (json_object_value value, json_object schema, String path) -> void
+    def validate_scalar_type!: (json_object_value value, json_object schema, String path) -> void
+  end
+end

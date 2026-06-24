@@ -4,10 +4,10 @@ module Orchestration
     @pipeline: Pipeline
     @step: Step
     @upstream_schemas: Hash[String, json_object?]
-    @validator_results: Array[Pipeline::Validator::StepResult]
+    @validator_results: Array[PipelineValidator::StepResult]
 
-    def initialize: (step_action: StepAction, step_action_counter: Integer, step_action_iteration: ActionView::PartialIteration, pipeline: Pipeline, step: Step, upstream_schemas: Hash[String, json_object?], validator_results: Array[Pipeline::Validator::StepResult]) -> void
-    def validation_errors: () -> Array[Pipeline::Validator::Issue]
-    def validation_warnings: () -> Array[Pipeline::Validator::Issue]
+    def initialize: (step_action: StepAction, step_action_counter: Integer, step_action_iteration: ActionView::PartialIteration, pipeline: Pipeline, step: Step, upstream_schemas: Hash[String, json_object?], validator_results: Array[PipelineValidator::StepResult]) -> void
+    def validation_errors: () -> Array[PipelineValidator::Issue]
+    def validation_warnings: () -> Array[PipelineValidator::Issue]
   end
 end

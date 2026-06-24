@@ -5,6 +5,7 @@ module Orchestration
     ALLOWED_TOOL_NAMESPACES: Array[String]
 
     def self.available_tools: () -> Array[String]
+    def self.tool_class_name_from_path: (String path) -> String?
     def self.available_models: () -> Array[[String, Array[String]]]
 
     def actions: () -> Action::relation
@@ -30,6 +31,7 @@ module Orchestration
     private
 
     def tools_must_be_valid: () -> void
+    def validate_tool: (String tool) -> void
     def ensure_not_referenced: () -> void
   end
 end

@@ -6,6 +6,8 @@ module Evaluation
 
       def initialize: (draft_payload: wizard_payload, draft_token: String?) -> void
 
+      def advance!: () -> bool
+
       def agent_name: () -> String?
       def selected_dataset_id: () -> String?
       def draft_token: () -> String?

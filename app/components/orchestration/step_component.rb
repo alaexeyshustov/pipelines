@@ -19,23 +19,30 @@ module Orchestration
     end
 
     def before_render
-      @step.step_actions.each do |sa|
-        with_detach_button(
-          label: "×",
-          dialog_title: "Detach action \"#{sa.action.name}\"?",
-          button_class: "ml-1 text-gray-400 hover:text-red-500 bg-transparent border-0 cursor-pointer p-0 font-bold"
-        ) do |c|
-          c.with_confirm_action do
-            helpers.button_to(
-              "Yes, detach",
-              helpers.orchestration_pipeline_step_step_action_path(@pipeline, @step, sa),
-              method: :delete,
-              class: "px-4 py-2 text-sm text-white font-medium bg-red-600 rounded-lg hover:bg-red-700 cursor-pointer"
-            )
-          end
+      @step.step_actions.each { |sa| setup_detach_button(sa) }
+      setup_remove_button
+    end
+
+    private
+
+    def setup_detach_button(sa)
+      with_detach_button(
+        label: "×",
+        dialog_title: "Detach action \"#{sa.action.name}\"?",
+        button_class: "ml-1 text-gray-400 hover:text-red-500 bg-transparent border-0 cursor-pointer p-0 font-bold"
+      ) do |c|
+        c.with_confirm_action do
+          helpers.button_to(
+            "Yes, detach",
+            helpers.orchestration_pipeline_step_step_action_path(@pipeline, @step, sa),
+            method: :delete,
+            class: "px-4 py-2 text-sm text-white font-medium bg-red-600 rounded-lg hover:bg-red-700 cursor-pointer"
+          )
         end
       end
+    end
 
+    def setup_remove_button
       with_remove_button(
         label: "Remove",
         dialog_title: "Remove step \"#{@step.name}\"?",
@@ -51,6 +58,8 @@ module Orchestration
         end
       end
     end
+
+    public
 
     def move_up?
       !@step_iteration.first?

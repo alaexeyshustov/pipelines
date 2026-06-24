@@ -38,7 +38,7 @@ RSpec.describe ApplicationMail do
       create(:application_mail, date: '2026-03-01', email_id: 'b@gmail.com')
       create(:application_mail, date: '2026-01-01', email_id: 'a@gmail.com')
 
-      dates = described_class.as_rows.map { |r| r['date'] }
+      dates = described_class.as_rows.pluck('date')
       expect(dates).to eq(dates.sort)
     end
 
@@ -54,7 +54,7 @@ RSpec.describe ApplicationMail do
     end
 
     it 'accepts a custom scope' do
-      gmail  = create(:application_mail, provider: 'gmail',  email_id: 'g@gmail.com')
+      create(:application_mail, provider: 'gmail',  email_id: 'g@gmail.com')
       _yahoo = create(:application_mail, provider: 'yahoo',  email_id: 'y@yahoo.com')
 
       rows = described_class.as_rows(described_class.where(provider: 'gmail'))

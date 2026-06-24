@@ -13,25 +13,25 @@ module Evaluation
 
     def call
       dataset
-      created = 0
-      skipped = 0
-
-      candidate_runs.each do |run|
-        sample = sample_for(run)
-        if sample.new_record?
-          sample.input = run.input
-          sample.expected_tool_calls = ToolCallExtractor.call(run.chat)
-          sample.save!
-          created += 1
-        else
-          skipped += 1
-        end
+      counts = candidate_runs.each_with_object({ created: 0, skipped: 0 }) do |run, acc|
+        process_run(run, acc)
       end
-
-      Result.new(agent_name: @agent_name, created: created, skipped: skipped)
+      Result.new(agent_name: @agent_name, created: counts[:created], skipped: counts[:skipped])
     end
 
     private
+
+    def process_run(run, acc)
+      sample = sample_for(run)
+      if sample.new_record?
+        sample.input = run.input
+        sample.expected_tool_calls = ToolCallExtractor.call(run.chat)
+        sample.save!
+        acc[:created] += 1
+      else
+        acc[:skipped] += 1
+      end
+    end
 
     def dataset
       @dataset ||= Dataset.find_or_create_by!(name: @agent_name) { |d| d.agent_name = @agent_name }

@@ -1,0 +1,38 @@
+module Orchestration
+  class PipelineRunner
+    include SteepHacks
+
+    @pipeline_run: PipelineRun
+    @prompt_cache: Hash[String?, String?]
+
+    def initialize: (PipelineRun pipeline_run) -> void
+    def run: () -> void
+
+    private
+
+    def build_initial_outputs: () -> Hash[String, json_object]
+    def process_steps: (Hash[String, json_object] previous_outputs) -> void
+    def handle_step_failure: (Array[ActionRun] action_runs) -> bool
+    def accumulate_step_outputs: (Array[ActionRun] action_runs, Hash[String, json_object] previous_outputs) -> void
+    def run_step: (Step step, Hash[String, json_object] previous_outputs) -> Array[ActionRun]
+    def prepare_action_runs: (Step step, Hash[String, json_object] previous_outputs) -> Array[ActionRun]
+    def create_action_run: (StepAction step_action) -> ActionRun
+    def resolve_action_input: (ActionRun action_run, StepAction step_action, Hash[String, json_object] previous_outputs) -> void
+    def run_actions_in_parallel: (Array[ActionRun] action_runs) -> void
+    def execute_action: (ActionRun action_run) -> void
+    def validate_agent_output!: (Action action, { output: json_object?, raw_content: json_object_value? } execution, policy: AgentResolutionPolicy::Result?) -> void
+    def run_agent: (ActionRun action_run, ?policy: AgentResolutionPolicy::Result?) -> { output: json_object?, raw_content: json_object_value? }
+    def run_as_agent: (ActionRun action_run, json_object input, AgentResolutionPolicy::Result policy) -> { output: json_object?, raw_content: json_object_value? }
+    def build_agent_columns: (RubyLLM::Agent agent, AgentResolutionPolicy::Result policy) -> { chat_id: String?, agent_snapshot: { model: String?, prompt: String?, tools: Array[String], output_schema: json_object? } }
+    def normalize_agent_output: (json_object? output, RubyLLM::Message result, AgentResolutionPolicy::Result policy) -> json_object?
+    def run_as_service: (Action action, json_object input) -> { output: json_object?, raw_content: nil }
+    def resolve_policy: (ActionRun action_run) -> AgentResolutionPolicy::Result
+    def parse_content: (json_object_value content, bool structured_output_expected) -> json_object?
+    def parse_string_content: (String content, bool structured_output_expected) -> json_object?
+    def validate_output!: (json_object? output, policy: AgentResolutionPolicy::Result, raw_content: json_object_value?) -> void
+    def validate_input_schema!: (ActionRun action_run) -> void
+    def handle_action_failure: (ActionRun action_run, StandardError error, raw_content: json_object_value?) -> void
+    def log_action_failure: (ActionRun action_run, NormalizeActionRunFailure::Result failure) -> void
+    def prompt_for: (String? agent_name) -> String?
+  end
+end

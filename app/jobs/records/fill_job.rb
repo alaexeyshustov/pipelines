@@ -9,7 +9,7 @@ module Records
         destination_table: "application_mails"
       }.to_json
 
-      Records::FillAgent.new.ask(input)
+      Orchestration::Agents::RecordsFiller.new.ask(input)
     end
   end
 end

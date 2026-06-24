@@ -27,17 +27,8 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
   let(:params) { { draft_token: draft_token, agent_name: agent_name, dataset_name: "Synthetic emails v1", count: 3 } }
 
   before do
-    instructions  = "You are an email classifier. Classify emails."
-    prompt_rel    = instance_double(ActiveRecord::Relation)
-    prompt_double = instance_double(Evaluation::Prompt, system_prompt: instructions)
-
-    allow(Evaluation::Prompt).to receive(:where).with(name: agent_name).and_return(prompt_rel)
-    allow(prompt_rel).to receive(:order).with(version: :desc, id: :desc).and_return(prompt_rel)
-    allow(prompt_rel).to receive(:first).and_return(prompt_double)
-
-    allow(Evaluation::Dataset).to receive(:where).with(name: agent_name).and_return(
-      instance_double(ActiveRecord::Relation, first: nil)
-    )
+    instructions = "You are an email classifier. Classify emails."
+    create(:orchestration_prompt, name: agent_name, system_prompt: instructions)
 
     stub_request(:post, %r{api\.openai\.com})
       .to_return(status: 200, body: llm_response_body, headers: { "Content-Type" => "application/json" })
@@ -90,31 +81,30 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
     it "sends agent instructions in the LLM request" do
       described_class.perform_now(**params)
 
-      expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
+      expect(WebMock).to(have_requested(:post, %r{api\.openai\.com}).with { |req|
         body = JSON.parse(req.body)
         body["messages"].any? { |m| m["content"].to_s.include?("You are an email classifier. Classify emails.") }
-      }
+      })
     end
 
     context "when optional hints are provided" do
       it "includes hints in the LLM user message" do
         described_class.perform_now(**params, hints: "focus on spam")
 
-        expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
+        expect(WebMock).to(have_requested(:post, %r{api\.openai\.com}).with { |req|
           body = JSON.parse(req.body)
           body["messages"].any? { |m| m["content"].to_s.include?("focus on spam") }
-        }
+        })
       end
     end
 
-    context "when few-shot samples exist" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+    context "when few-shot samples exist" do
       before do
         ds = create(:evaluation_dataset, name: agent_name)
         create(:evaluation_dataset_sample,
                dataset: ds,
                input: { "subject" => "Real email", "body" => "See attached" },
                source_run_id: 1)
-        allow(Evaluation::Dataset).to receive(:where).with(name: agent_name).and_call_original
       end
 
       it "still creates the dataset and records" do
@@ -126,10 +116,10 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
       it "includes few-shot samples in the LLM user message" do
         described_class.perform_now(**params)
 
-        expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
+        expect(WebMock).to(have_requested(:post, %r{api\.openai\.com}).with { |req|
           body = JSON.parse(req.body)
           body["messages"].any? { |m| m["content"].to_s.include?("few-shot") }
-        }
+        })
       end
     end
 
@@ -166,12 +156,11 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
       end
     end
 
-    context "when dataset_id is provided (resync)" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+    context "when dataset_id is provided (resync)" do
       let!(:existing_dataset) { create(:evaluation_dataset, name: "Existing", agent_name: agent_name) }
       let!(:old_sample) { create(:evaluation_dataset_sample, dataset: existing_dataset) }
       let(:resync_params) { { draft_token: draft_token, agent_name: agent_name, dataset_id: existing_dataset.id, count: 3 } }
 
-      before { allow(Evaluation::Dataset).to receive(:where).and_call_original }
 
       it "does not create a new dataset" do
         expect { described_class.perform_now(**resync_params) }.not_to change(Evaluation::Dataset, :count)

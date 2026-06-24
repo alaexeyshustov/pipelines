@@ -9,9 +9,12 @@ module Evaluation
       def load_experiments: (String prompt_name, Integer current_experiment_id) -> Experiment::relation
       def load_metrics: (String prompt_name) -> Array[::Evaluation::Metric]
       def bulk_per_metric_averages: (Array[::Evaluation::Experiment] experiments) -> Hash[Integer, Hash[String, Numeric?]]
+      def accumulate_metric: (Hash[Integer, Hash[String, Numeric?]] memo, [Integer, String] key, Numeric? avg) -> void
       def averages_for: (Array[::Evaluation::Experiment] experiments) -> Hash[[Integer, String], Numeric?]
+      def result_justification_join: () -> Array[Arel::Nodes::Join]
       def format_experiment: (::Evaluation::Experiment experiment, Array[::Evaluation::Metric] metrics, Hash[String, Numeric?] averages) -> { experiment_id: Integer, date: String, prompt_version: Integer, per_metric_averages: Hash[String, Numeric?], overall_average: Float }
       def weighted_average: (Hash[String, Numeric?] averages, Array[::Evaluation::Metric] metrics) -> Float
+      def accumulate_weights: (Hash[String, Numeric?] averages, Array[::Evaluation::Metric] metrics) -> [ Float, Float ]
     end
   end
 end

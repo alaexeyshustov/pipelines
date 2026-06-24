@@ -7,7 +7,7 @@ RSpec.describe UI::JsonFieldsComponent, type: :component do
     render_inline(described_class.new(form: form, schema: schema, name_prefix: "initial_input"))
   end
 
-  let(:form) { instance_double(ActionView::Helpers::FormBuilder) }
+  let(:form) { nil }
 
   let(:schema) do
     {
@@ -40,7 +40,7 @@ RSpec.describe UI::JsonFieldsComponent, type: :component do
   describe "checkboxes" do
     it "renders checkboxes for an array field with enum items" do
       checkboxes = rendered.css("input[type='checkbox'][name='initial_input[sources][]']")
-      expect(checkboxes.map { |c| c["value"] }).to match_array(%w[gmail yahoo])
+      expect(checkboxes.pluck("value")).to match_array(%w[gmail yahoo])
     end
   end
 
@@ -51,7 +51,7 @@ RSpec.describe UI::JsonFieldsComponent, type: :component do
     end
 
     it "renders options for each enum value" do
-      options = rendered.css("select[name='initial_input[status]'] option").map { |o| o["value"] }
+      options = rendered.css("select[name='initial_input[status]'] option").pluck("value")
       expect(options).to include("active", "inactive")
     end
   end

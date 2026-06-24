@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe Evaluation::Sampler do # rubocop:disable RSpec/MultipleMemoizedHelpers
+RSpec.describe Evaluation::Sampler do
   let(:orchestration_agent) do
     create(:orchestration_agent,
            name: "Emails::ClassifyAgent",
@@ -80,7 +80,7 @@ RSpec.describe Evaluation::Sampler do # rubocop:disable RSpec/MultipleMemoizedHe
       )
   end
 
-  describe ".call" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+  describe ".call" do
     subject(:sample) do
       described_class.call(experiment: experiment, dataset_sample: dataset_sample, prompt: experiment.prompt)
     end
@@ -117,7 +117,7 @@ RSpec.describe Evaluation::Sampler do # rubocop:disable RSpec/MultipleMemoizedHe
       expect(Rails.logger).to have_received(:info).with(include("temp_file").and(include("blocked")))
     end
 
-    context "when experiment has a sample_model" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+    context "when experiment has a sample_model" do
       let(:experiment) do
         create(:evaluation_experiment,
                prompt: classify_prompt,
@@ -125,14 +125,14 @@ RSpec.describe Evaluation::Sampler do # rubocop:disable RSpec/MultipleMemoizedHe
       end
 
       it "passes sample_model to AgentResolutionPolicy" do
-        allow(Orchestration::AgentResolutionPolicy).to receive(:call).and_call_original
+        allow(Orchestration::AgentResolutionPolicy).to receive(:new).and_call_original
         sample
-        expect(Orchestration::AgentResolutionPolicy).to have_received(:call)
+        expect(Orchestration::AgentResolutionPolicy).to have_received(:new)
           .with(hash_including(pipeline_model: "mistral-small-latest"))
       end
     end
 
-    context "when a prompt with a system_prompt override is given" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+    context "when a prompt with a system_prompt override is given" do
       let(:evaluation_prompt) do
         create(:orchestration_prompt,
                name: "Emails::ClassifyAgent",
@@ -140,14 +140,14 @@ RSpec.describe Evaluation::Sampler do # rubocop:disable RSpec/MultipleMemoizedHe
       end
 
       it "passes the system_prompt as prompt_override to AgentResolutionPolicy" do
-        allow(Orchestration::AgentResolutionPolicy).to receive(:call).and_call_original
+        allow(Orchestration::AgentResolutionPolicy).to receive(:new).and_call_original
         described_class.call(experiment: experiment, dataset_sample: dataset_sample, prompt: evaluation_prompt)
-        expect(Orchestration::AgentResolutionPolicy).to have_received(:call)
+        expect(Orchestration::AgentResolutionPolicy).to have_received(:new)
           .with(hash_including(prompt_override: "Custom evaluation instructions."))
       end
     end
 
-    context "when the agent tool is read-only" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+    context "when the agent tool is read-only" do
       let(:orchestration_agent) do
         create(:orchestration_agent,
                name: "Emails::ClassifyAgent",
@@ -177,7 +177,7 @@ RSpec.describe Evaluation::Sampler do # rubocop:disable RSpec/MultipleMemoizedHe
       end
     end
 
-    context "when the agent returns output without calling any tools" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+    context "when the agent returns output without calling any tools" do
       let(:mistral_no_tool_response) do
         {
           id: "chatcmpl-1", object: "chat.completion", model: "mistral-large-latest",
@@ -208,7 +208,7 @@ RSpec.describe Evaluation::Sampler do # rubocop:disable RSpec/MultipleMemoizedHe
       end
     end
 
-    context "when no agent is found for the experiment" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+    context "when no agent is found for the experiment" do
       it "raises ArgumentError" do
         other_experiment = create(:evaluation_experiment)
         other_sample = create(:evaluation_dataset_sample, dataset: other_experiment.dataset)

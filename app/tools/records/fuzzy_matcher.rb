@@ -31,17 +31,18 @@ module Records
       return str_b.length if str_a.empty?
       return str_a.length if str_b.empty?
 
-      b_len = str_b.length
-      prev  = (0..b_len).to_a
-      str_a.each_char.with_index(1) do |char_a, row|
-        curr = [ row ]
-        str_b.each_char.with_index(1) do |char_b, col|
-          diag = prev[col - 1]
-          curr << (char_a == char_b ? diag : 1 + [ prev[col], curr.last, diag ].min)
-        end
-        prev = curr
-      end
+      prev = (0..str_b.length).to_a
+      str_a.each_char.with_index(1) { |char_a, row| prev = levenshtein_row(char_a, row, prev, str_b) }
       prev.last
+    end
+
+    def levenshtein_row(char_a, row, prev, str_b)
+      curr = [ row ]
+      str_b.each_char.with_index(1) do |char_b, col|
+        diag = prev[col - 1]
+        curr << (char_a == char_b ? diag : 1 + [ prev[col], curr.last, diag ].min)
+      end
+      curr
     end
   end
 end

@@ -73,27 +73,27 @@ RSpec.describe Evaluation::PromptImprover do
 
     it "includes the current system prompt in the LLM request" do
       described_class.call(experiment: experiment)
-      expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
+      expect(WebMock).to(have_requested(:post, %r{api\.openai\.com}).with { |req|
         req.body.include?("You classify emails.")
-      }
+      })
     end
 
     it "includes evaluation scores and justifications in the LLM request" do
       make_eval_result(score: 2.0, metric_name: "accuracy", justification: "Missed several emails.")
       described_class.call(experiment: experiment)
-      expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
+      expect(WebMock).to(have_requested(:post, %r{api\.openai\.com}).with { |req|
         req.body.include?("accuracy") && req.body.include?("Missed several emails.")
-      }
+      })
     end
 
     it "includes metric rubrics in the LLM request" do
       described_class.call(experiment: experiment)
-      expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
+      expect(WebMock).to(have_requested(:post, %r{api\.openai\.com}).with { |req|
         req.body.include?("How accurate is it?")
-      }
+      })
     end
 
-    context "when the agent has an output schema" do # rubocop:disable RSpec/MultipleMemoizedHelpers
+    context "when the agent has an output schema" do
       before do
         create(:orchestration_agent, name: agent_name,
                output_schema: { "type" => "object", "properties" => { "results" => { "type" => "array" } } })
@@ -101,11 +101,11 @@ RSpec.describe Evaluation::PromptImprover do
 
       it "includes the schema in the user message" do
         described_class.call(experiment: experiment)
-        expect(WebMock).to have_requested(:post, %r{api\.openai\.com}).with { |req|
+        expect(WebMock).to(have_requested(:post, %r{api\.openai\.com}).with { |req|
           body = JSON.parse(req.body)
           user_message = body["messages"].find { |m| m["role"] == "user" }&.fetch("content", "")
           user_message.include?("<output_schema>") && user_message.include?("\"results\"")
-        }
+        })
       end
     end
 

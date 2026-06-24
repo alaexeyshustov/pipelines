@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe Emails do
-  let(:adapter) { instance_double(Emails::Adapters::BaseAdapter) }
+  let(:adapter) { Emails::Adapters::BaseAdapter.new }
 
   before do
     allow(Emails::Adapters::GmailAdapter).to receive(:from_env).and_return(adapter)
@@ -25,7 +25,7 @@ RSpec.describe Emails do
     end
 
     it 'registers multiple providers at once' do
-      yahoo_adapter = instance_double(Emails::Adapters::YahooAdapter)
+      yahoo_adapter = Emails::Adapters::YahooAdapter.allocate
       allow(Emails::Adapters::YahooAdapter).to receive(:from_env).and_return(yahoo_adapter)
 
       described_class.configure(gmail: {}, yahoo: {})

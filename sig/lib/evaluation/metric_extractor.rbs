@@ -14,6 +14,7 @@ module Evaluation
 
     def load_prompt!: () -> Prompt
     def parse_metrics: (json_object_value content) -> Array[Hash[String, String]]
+    def validate_metric_entries!: (Array[json_object_value] entries) -> void
     def truncate: (String content, ?Integer limit) -> String
   end
 end

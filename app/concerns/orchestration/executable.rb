@@ -19,22 +19,10 @@ module Orchestration
 
       def build_input_schema!
         declared = @_input_schema_types
-        params   = method(:call).parameters
-        keywords = params.select { |type, _| type == :keyreq || type == :key }
-                         .map { |_, name| name.to_s }
+        params   = instance_method(:initialize).parameters
+        keywords = extract_keyword_names(params)
 
-        extra_declared = declared.keys - keywords
-        missing_types  = keywords - declared.keys
-
-        if extra_declared.any?
-          raise ArgumentError,
-            "#{name}: input_schema declares types for undeclared keyword args: #{extra_declared.join(', ')}"
-        end
-
-        if missing_types.any?
-          raise ArgumentError,
-            "#{name}: keyword args missing from input_schema declaration: #{missing_types.join(', ')}"
-        end
+        validate_schema_consistency!(declared, keywords)
 
         required = params.select { |type, _| type == :keyreq }.map { |_, name| name.to_s }
 
@@ -44,6 +32,26 @@ module Orchestration
         }
         schema["required"] = required if required.any?
         schema
+      end
+
+      def extract_keyword_names(params)
+        params.select { |type, _| type == :keyreq || type == :key }
+              .map { |_, name| name.to_s }
+      end
+
+      def validate_schema_consistency!(declared, keywords)
+        extra_declared = declared.keys - keywords
+        missing_types  = keywords - declared.keys
+
+        if extra_declared.any?
+          raise ArgumentError,
+            "#{name}: input_schema declares types for undeclared keyword args: #{extra_declared.join(', ')}"
+        end
+
+        return unless missing_types.any?
+
+        raise ArgumentError,
+          "#{name}: keyword args missing from input_schema declaration: #{missing_types.join(', ')}"
       end
     end
   end

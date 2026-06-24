@@ -2,14 +2,14 @@ module Orchestration
   class Pipeline < ApplicationRecord
     self.table_name = "orchestration_pipelines"
 
-    has_many :steps, -> { order(:position) }, class_name: "Orchestration::Step", dependent: :destroy
+    has_many :steps, -> { order(:position) }, class_name: "Orchestration::Step", dependent: :destroy, inverse_of: :pipeline
     has_many :pipeline_runs, class_name: "Orchestration::PipelineRun", dependent: :destroy
 
     validates :name, presence: true
     validate :cron_expression_parseable, if: -> { cron_expression.present? }
 
     def validate_steps
-      Pipeline::Validator.call(self)
+      PipelineValidator.new(self).validate
     end
 
     def next_run_at(from: Time.current)

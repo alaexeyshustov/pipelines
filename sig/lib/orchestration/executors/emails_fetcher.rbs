@@ -1,0 +1,28 @@
+module Orchestration
+  module Executors
+    type fetch_result = {
+      'emails' => Array[::Emails::message],
+    }
+    class EmailsFetcher
+      DEFAULT_DATE: String
+      DEFAULT_PROVIDERS: Array[String]
+      DEFAULT_MAX_RESULTS: Integer
+
+      include Executable
+      extend Executable::ClassMethods
+
+      @date: String?
+      @max_results: Integer
+      @providers: Array[String]
+
+      def self.call: (?date: String?, ?providers: Array[String], ?max_results: Integer) -> fetch_result
+
+      def initialize: (?date: String?, ?providers: Array[String], ?max_results: Integer) -> void
+      def execute: () -> fetch_result
+
+      private
+
+      def fetch_emails_async: (Array[String] providers, Date parsed_date, Integer max_results) -> Array[::Emails::message]
+    end
+  end
+end

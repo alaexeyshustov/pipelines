@@ -23,5 +23,8 @@ module UI
     def properties: () -> json_object
     def required_fields: () -> Array[String]
     def field_kind: (json_object schema) -> Symbol
+    def array_with_checkboxes?: (json_object schema) -> bool
+    def string_with_enum?: (json_object schema) -> bool
+    def numeric_type?: (json_object schema) -> bool
   end
 end

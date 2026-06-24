@@ -3,5 +3,11 @@ module Records
     def self.readonly?: () -> bool
     def name: () -> String
     def execute: (action: String, filename: String, ?content: String?) -> String
+
+    private
+
+    def read_file: (Pathname path, String filename) -> String
+    def write_file: (Pathname root, Pathname path, String filename, String? content) -> String
+    def delete_file: (Pathname path, String filename) -> String
   end
 end

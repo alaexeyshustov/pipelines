@@ -13,15 +13,15 @@ RSpec.describe "Orchestration::Actions" do
     end
 
     it "shows agent name for agent-kind actions" do
-      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      agent = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
       create(:orchestration_action, name: "My Action", kind: :agent, agent: agent)
       get orchestration_actions_path
-      expect(response.body).to match(/href="#{orchestration_agent_path(agent)}"[^>]*>\s*Emails::ClassifyAgent/)
+      expect(response.body).to match(/href="#{orchestration_agent_path(agent)}"[^>]*>\s*Orchestration::Agents::EmailsClassifier/)
     end
 
     it "shows pipeline usage count" do
       action = create(:orchestration_action)
-      step_action = create(:orchestration_step_action, action: action)
+      create(:orchestration_step_action, action: action)
       get orchestration_actions_path
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("1")
@@ -39,7 +39,7 @@ RSpec.describe "Orchestration::Actions" do
 
   describe "POST /orchestration/actions" do
     context "with valid params" do
-      let(:orchestration_agent) { create(:orchestration_agent, name: "Emails::ClassifyAgent") }
+      let(:orchestration_agent) { create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier") }
       let(:valid_params) do
         {
           orchestration_action: {

@@ -4,8 +4,9 @@ require "async"
 require "async/semaphore"
 
 module Pipeline
+  # rubocop:disable Metrics/ClassLength
   class ApplicationsWorkflow
-    def initialize(model:, logger:, date: Date.today)
+    def initialize(model:, logger:, date: Time.zone.today)
       @model  = model
       @logger = logger
       @date   = date.is_a?(Date) ? date : Date.parse(date.to_s)
@@ -41,7 +42,7 @@ module Pipeline
     def step2_classify_email(emails:)
       input = { emails: emails.map { |email| email.slice("id", "subject") } }.to_json
 
-      Emails::ClassifyAgent.create.with_model(@model).ask(input).content
+      Orchestration::Agents::EmailsClassifier.create.with_model(@model).ask(input).content
     end
 
     def step3_filter_emails(emails:, tags:)
@@ -56,12 +57,12 @@ module Pipeline
       }.to_json
       # steep:ignore:end
 
-      Emails::FilterAgent.create.with_model(@model).ask(input).content
+      Orchestration::Agents::EmailsFilter.create.with_model(@model).ask(input).content
     end
 
     def step4_map_emails(emails:)
       input = { emails: emails }.to_json
-      content = Emails::MappingAgent.create
+      content = Orchestration::Agents::EmailsMapper.create
         .with_model(@model)
         .with_schema(ApplicationMailsSchema)
         .ask(input)
@@ -74,7 +75,7 @@ module Pipeline
 
     def step5_store_mapped_emails(emails:)
       input = { table: "application_mails", label: "applications", emails: emails }.to_json
-      content = Records::StoreAgent.create.with_model(@model).ask(input).content
+      content = Orchestration::Agents::RecordsStorer.create.with_model(@model).ask(input).content
       return content.transform_keys(&:to_s) if content.is_a?(Hash)
 
       {}
@@ -87,7 +88,7 @@ module Pipeline
         columns_to_normalize: [ "company", "job_title" ]
       }.to_json
 
-      Records::NormalizeAgent.create.with_model(@model).ask(input).content
+      Orchestration::Agents::RecordsNormalizer.create.with_model(@model).ask(input).content
     end
 
     def step7_reconcile_emails_to_interviews(emails: [])
@@ -101,7 +102,7 @@ module Pipeline
         statuses: [ "pending_reply", "having_interviews", "rejected", "offer_received" ],
         initial_status: "pending_reply"
       }.to_json
-      Records::ReconcileAgent.create.with_model(@model).ask(input).content
+      Orchestration::Agents::RecordsReconciler.create.with_model(@model).ask(input).content
     end
 
     def step8_upload_csv_gist(gist_id:)
@@ -153,23 +154,39 @@ module Pipeline
     end
 
     def fetch_from_providers
-      Sync do
-        semaphore = Async::Semaphore.new(5)
-        tasks = [ "gmail", "yahoo" ].map do |provider|
-          semaphore.async do
-            result = step1(provider: provider, after: @date - 1, before: @date)
-            if result.is_a?(Array)
-              result.filter_map { |email| email if email.is_a?(Hash) }
-            elsif result.is_a?(Hash)
-              results = result["results"]
-              results.is_a?(Array) ? results.filter_map { |email| email if email.is_a?(Hash) } : []
-            else
-              []
-            end
-          end
+      Sync { run_provider_tasks }
+    end
+
+    def run_provider_tasks
+      # TODO: add a helper method with_semaphore
+      semaphore = Async::Semaphore.new(5)
+      tasks = [ "gmail", "yahoo" ].map do |provider|
+        semaphore.async do
+          result = step1(provider: provider, after: @date - 1, before: @date)
+          normalize_provider_result(result)
         end
-        tasks.flat_map(&:wait)
+      end
+      tasks.flat_map(&:wait)
+    end
+
+    def normalize_provider_result(result)
+      if result.is_a?(Array)
+        filter_hash_emails(result)
+      elsif result.is_a?(Hash)
+        normalize_hash_result(result)
+      else
+        []
       end
     end
+
+    def filter_hash_emails(emails)
+      emails.filter_map { |email| email if email.is_a?(Hash) }
+    end
+
+    def normalize_hash_result(result)
+      results = result["results"]
+      results.is_a?(Array) ? filter_hash_emails(results) : []
+    end
   end
+  # rubocop:enable Metrics/ClassLength
 end

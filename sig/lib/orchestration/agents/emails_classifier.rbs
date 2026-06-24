@@ -1,0 +1,6 @@
+module Orchestration
+  module Agents
+    class EmailsClassifier < RubyLLM::Agent
+    end
+  end
+end

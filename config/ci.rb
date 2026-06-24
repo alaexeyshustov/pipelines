@@ -2,6 +2,8 @@
 
 CI.run do
   step "Setup", "bin/setup --skip-server"
+  step "Type coverage", "bin/rbs_audit coverage"
+  step "RBS audit", "bin/rbs_audit audit --fail-on-gaps"
 
 
 

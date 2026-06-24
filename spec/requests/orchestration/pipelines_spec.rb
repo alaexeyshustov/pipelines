@@ -72,7 +72,7 @@ RSpec.describe "Orchestration::Pipelines" do
     it "shows ordered steps and their actions" do
       pipeline = create(:orchestration_pipeline, name: "Show Pipeline")
       step1 = create(:orchestration_step, pipeline: pipeline, name: "First Step", position: 1)
-      step2 = create(:orchestration_step, pipeline: pipeline, name: "Second Step", position: 2)
+      create(:orchestration_step, pipeline: pipeline, name: "Second Step", position: 2)
       action = create(:orchestration_action, name: "My Action")
       create(:orchestration_step_action, step: step1, action: action, position: 1)
 

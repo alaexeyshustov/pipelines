@@ -47,18 +47,21 @@ module UI
       private
 
       def cell_value(record)
-        if @badge_component
-          @badge_component.new(status: record.public_send(@key)).render_in(helpers) # steep:ignore
-        elsif @component
-          resolved_props = @props ? @props.call(record) : {}
-          @component.new(**resolved_props).render_in(helpers)
-        elsif @cell
-          @cell.call(record)
-        elsif @key
-          record.public_send(@key).to_s # steep:ignore
-        else
-          ""
+        if @badge_component then badge_cell_value(record)
+        elsif @component    then component_cell_value(record)
+        elsif @cell         then @cell.call(record)
+        elsif @key          then record.public_send(@key).to_s # steep:ignore
+        else ""
         end
+      end
+
+      def badge_cell_value(record)
+        @badge_component.new(status: record.public_send(@key)).render_in(helpers) # steep:ignore
+      end
+
+      def component_cell_value(record)
+        resolved_props = @props ? @props.call(record) : {}
+        @component.new(**resolved_props).render_in(helpers) # steep:ignore
       end
 
       def cell_css_classes
@@ -70,7 +73,7 @@ module UI
       end
 
       def resolved_classes
-        return "px-4 py-3" if @label.nil? && !content.present?
+        return "px-4 py-3" if @label.nil? && content.blank?
 
         HEADER_CLASSES.fetch(@style, HEADER_CLASSES[:default])
       end

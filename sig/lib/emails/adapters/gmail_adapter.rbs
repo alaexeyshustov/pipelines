@@ -22,6 +22,8 @@ module Emails
 
       private
 
+      def validate_label_result!: (Google::Apis::GmailV1::Label? result, String name) -> label
+      def format_message: (Google::Apis::GmailV1::Message message, message parsed) -> message
       def fetch_messages: (Integer max_results, Integer offset) { (Integer page_size, String? page_token) -> Google::Apis::GmailV1::ListMessagesResponse? } -> Array[message]
       def find_existing_label: (String name) -> label
 

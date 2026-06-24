@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Orchestration
+  # rubocop:disable Metrics/ClassLength
   class SchemaBuildersController < ApplicationController
     def build
       root = SchemaBuilder.from_schema(parse_json)
@@ -43,19 +44,21 @@ module Orchestration
 
     def parse
       parsed = JSON.parse(params[:json].to_s)
-      unless parsed.is_a?(Hash)
-        @error = "Invalid JSON: expected an object, got #{parsed.class.name.downcase}"
-        return render :parse_error, status: :unprocessable_entity
-      end
+      return render_parse_error("Invalid JSON: expected an object, got #{parsed.class.name.downcase}") unless parsed.is_a?(Hash)
+
       @builder = SchemaBuilder.from_schema(parsed)
       @json = @builder.to_schema.to_json
       render :build
     rescue JSON::ParserError
-      @error = "Invalid JSON: #{$!.message}"
-      render :parse_error, status: :unprocessable_entity
+      render_parse_error("Invalid JSON: #{$!.message}")
     end
 
     private
+
+    def render_parse_error(message)
+      @error = message
+      render :parse_error, status: :unprocessable_content
+    end
 
     def parse_json
       parsed = JSON.parse(params[:json].to_s)
@@ -73,17 +76,19 @@ module Orchestration
     def apply_inline_params(root, path, builder_params)
       root.with_mutation(path) do |node|
         schema = node.to_schema
-
-        apply_description(schema, builder_params)
-        apply_format(schema, builder_params)
-        apply_enum(schema, node, builder_params)
-        apply_minimum(schema, node, builder_params)
-        apply_maximum(schema, node, builder_params)
-        apply_required_toggle(schema, builder_params)
-        apply_additional_properties(schema, builder_params)
-
+        apply_all_params(schema, node, builder_params)
         SchemaBuilder.from_schema(schema)
       end
+    end
+
+    def apply_all_params(schema, node, builder_params)
+      apply_description(schema, builder_params)
+      apply_format(schema, builder_params)
+      apply_enum(schema, node, builder_params)
+      apply_minimum(schema, node, builder_params)
+      apply_maximum(schema, node, builder_params)
+      apply_required_toggle(schema, builder_params)
+      apply_additional_properties(schema, builder_params)
     end
 
     def apply_description(schema, builder_params)
@@ -103,15 +108,18 @@ module Orchestration
     def apply_enum(schema, node, builder_params)
       return unless builder_params.key?(:enum_text)
 
-      values = builder_params[:enum_text].to_s.split("\n").map(&:strip).reject(&:blank?)
+      values = builder_params[:enum_text].to_s.split("\n").map(&:strip).compact_blank
       return schema.delete("enum") if values.empty?
 
-      schema["enum"] =
-        case node.type
-        when "integer" then values.map(&:to_i)
-        when "number"  then values.map(&:to_f)
-        else values
-        end
+      schema["enum"] = coerce_enum_values(values, node.type)
+    end
+
+    def coerce_enum_values(values, type)
+      case type
+      when "integer" then values.map(&:to_i)
+      when "number"  then values.map(&:to_f)
+      else values
+      end
     end
 
     def apply_minimum(schema, node, builder_params)
@@ -137,7 +145,7 @@ module Orchestration
     end
 
     def apply_required_toggle(schema, builder_params)
-      return unless builder_params[:required_toggle].present?
+      return if builder_params[:required_toggle].blank?
 
       prop = builder_params[:required_toggle]
       req = Array(schema["required"])
@@ -151,4 +159,5 @@ module Orchestration
       schema["additionalProperties"] = builder_params[:additional_properties] == "true"
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

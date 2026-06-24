@@ -10,6 +10,8 @@ module Records
 
     private
 
+    def process_rows: (_HasColumnNames model, Array[json_object] records) -> result
+    def accumulate_insert_result: (single_result result, Array[Integer] ids, Array[{ existing_id: Integer }] duplicate, Array[json_object] invalids) -> void
     def build_key_attrs: (Array[String] key_cols, json_object attrs) -> Hash[String, json_object_value]?
 
     def extract_key_columns: (ActiveRecord::Validations::UniquenessValidator validator) -> Array[String]

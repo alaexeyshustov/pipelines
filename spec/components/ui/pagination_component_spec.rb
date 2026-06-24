@@ -3,9 +3,18 @@
 require "rails_helper"
 
 RSpec.describe UI::PaginationComponent, type: :component do
-  let(:nav_html) { '<nav class="flex items-center gap-1 mt-6 justify-center" aria-label="Pages"><a href="/items?page=2">Next</a></nav>' }
-  let(:multi_page_pagy) { instance_double(Pagy::Offset, last: 3, series_nav: nav_html) }
-  let(:single_page_pagy) { instance_double(Pagy::Offset, last: 1) }
+  let(:request) do
+    ActionDispatch::Request.new(
+      "REQUEST_METHOD" => "GET",
+      "PATH_INFO"      => "/items",
+      "QUERY_STRING"   => "",
+      "rack.input"     => StringIO.new,
+      "SERVER_NAME"    => "www.example.com",
+      "SERVER_PORT"    => "80"
+    )
+  end
+  let(:multi_page_pagy)  { Pagy::Offset.new(count: 75, limit: 25, page: 1, request: request) }
+  let(:single_page_pagy) { Pagy::Offset.new(count: 25, limit: 25, page: 1, request: request) }
 
   describe "#render?" do
     it "renders when there are multiple pages" do

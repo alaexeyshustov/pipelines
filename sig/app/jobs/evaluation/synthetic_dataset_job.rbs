@@ -3,10 +3,11 @@ module Evaluation
     SYSTEM_PROMPT: String
     DEFAULT_MODEL: String
 
-    def perform: (draft_token: String, agent_name: String, dataset_name: String, count: Integer, ?hints: String) -> void
+    def perform: (draft_token: String, agent_name: String, count: Integer, ?dataset_name: String?, ?dataset_id: Integer?, ?hints: String, ?model: String?) -> void
 
     private
 
+    def persist_results: (String draft_token, String agent_name, String? dataset_name, Integer? dataset_id, Array[json_object] inputs) -> void
     def fetch_system_prompt: (String) -> String
     def fetch_few_shot_samples: (String) -> Array[json_object_value]
     def build_user_message: (system_prompt_text: String, count: Integer, hints: String, few_shot: Array[json_object_value]) -> String

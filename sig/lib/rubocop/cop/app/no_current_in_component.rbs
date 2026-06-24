@@ -1,0 +1,16 @@
+module RuboCop
+  module Cop
+    module App
+      class NoCurrentInComponent < ::RuboCop::Cop::Base
+        MSG: String
+
+        def on_send: (::RuboCop::Cop::_Node node) -> void
+
+        private
+
+        def component_file?: () -> bool
+        def current_access?: (::RuboCop::Cop::_Node node) -> bool
+      end
+    end
+  end
+end

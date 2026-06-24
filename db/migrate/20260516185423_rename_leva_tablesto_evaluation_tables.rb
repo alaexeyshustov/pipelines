@@ -1,5 +1,5 @@
 class RenameLevaTablestoEvaluationTables < ActiveRecord::Migration[8.1]
-  def change
+  def up
     rename_table :leva_datasets,           :evaluation_datasets
     rename_table :leva_dataset_records,    :evaluation_dataset_records
     rename_table :leva_experiments,        :evaluation_experiments
@@ -7,5 +7,9 @@ class RenameLevaTablestoEvaluationTables < ActiveRecord::Migration[8.1]
     rename_table :leva_evaluation_results, :evaluation_evaluation_results
     rename_table :leva_prompts,            :evaluation_prompts
     drop_table :leva_optimization_runs, if_exists: true
+  end
+
+  def down
+    raise StandardError, 'Irreversable migration'
   end
 end

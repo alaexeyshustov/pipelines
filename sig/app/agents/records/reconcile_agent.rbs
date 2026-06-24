@@ -1,4 +1,0 @@
-module Records
-  class ReconcileAgent < RubyLLM::Agent
-  end
-end

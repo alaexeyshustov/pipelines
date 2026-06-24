@@ -14,23 +14,7 @@ module Records
     def name = "insert_rows"
 
     def execute(table:, data:)
-      model = resolve_model(table)
-      records = parse_records(data)
-      ids = Array.new
-      duplicate = Array.new
-      invalids = Array.new
-
-      records.each do |row|
-        attrs = row.transform_keys(&:to_s).slice(*model.tool_column_names)
-        next if attrs.empty?
-
-        result = insert_record(model, attrs)
-        ids << result[:id] if result.key?(:id)
-        duplicate << result[:duplicate] if result.key?(:duplicate)
-        invalids << result[:invalid] if result.key?(:invalid)
-      end
-
-      { status: "rows_added", ids: ids, duplicate: duplicate, invalids: invalids, rows_added: ids.size }
+      process_rows(resolve_model(table), parse_records(data))
     rescue JSON::ParserError => error
       { status: "invalid_data", error: "Failed to parse JSON data: #{error.message}" }
     rescue ModelNotFound => error
@@ -38,6 +22,24 @@ module Records
     end
 
     private
+
+    def process_rows(model, records)
+      ids = [] #: Array[Integer]
+      duplicate = [] #: Array[{ existing_id: Integer }]
+      invalids = [] #: Array[json_object]
+      records.each do |row|
+        attrs = row.transform_keys(&:to_s).slice(*model.tool_column_names)
+        next if attrs.empty?
+        accumulate_insert_result(insert_record(model, attrs), ids, duplicate, invalids)
+      end
+      { status: "rows_added", ids: ids, duplicate: duplicate, invalids: invalids, rows_added: ids.size }
+    end
+
+    def accumulate_insert_result(result, ids, duplicate, invalids)
+      ids << result[:id] if result.key?(:id) # steep:ignore
+      duplicate << result[:duplicate] if result.key?(:duplicate) # steep:ignore
+      invalids << result[:invalid] if result.key?(:invalid) # steep:ignore
+    end
 
     def insert_record(model, attrs)
       record = model.create!(attrs)
@@ -95,7 +97,7 @@ module Records
     def parse_records(data)
       records = JSON.parse(data) #: Array[json_object]
       raise ArgumentError, "data must be a JSON array of objects" unless records.is_a?(Array)
-      raise ArgumentError, "data must be a JSON array of objects" unless records.all? { |record| record.is_a?(Hash) }
+      raise ArgumentError, "data must be a JSON array of objects" unless records.all?(Hash)
 
       records
     end

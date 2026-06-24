@@ -5,18 +5,7 @@ module Evaluation
     queue_as :default
 
     def perform(experiment)
-      dataset_sample_ids = nil
-
-      experiment.with_lock do
-        if experiment.may_start_sampling?
-          dataset_sample_ids = experiment.dataset.dataset_samples.ids
-          experiment.update!(pending_samples_count: dataset_sample_ids.size)
-          experiment.start_sampling!
-        elsif experiment.sampling?
-          dataset_sample_ids = recoverable_dataset_sample_ids(experiment)
-        end
-      end
-
+      dataset_sample_ids = determine_sample_ids(experiment)
       return if dataset_sample_ids.nil?
 
       if dataset_sample_ids.empty?
@@ -24,10 +13,25 @@ module Evaluation
         return
       end
 
-      dataset_sample_ids.each { |dataset_sample_id| Evaluation::SamplingJob.perform_later(experiment.id, dataset_sample_id) }
+      dataset_sample_ids.each { |id| Evaluation::SamplingJob.perform_later(experiment.id, id) }
     end
 
     private
+
+    def determine_sample_ids(experiment)
+      experiment.with_lock { sampling_ids_from_state(experiment) }
+    end
+
+    def sampling_ids_from_state(experiment)
+      if experiment.may_start_sampling?
+        ids = experiment.dataset.dataset_samples.ids
+        experiment.update!(pending_samples_count: ids.size)
+        experiment.start_sampling!
+        ids
+      elsif experiment.sampling?
+        recoverable_dataset_sample_ids(experiment)
+      end
+    end
 
     def recoverable_dataset_sample_ids(experiment)
       missing_dataset_sample_ids = experiment.dataset.dataset_samples
@@ -45,10 +49,10 @@ module Evaluation
         .where(class_name: "Evaluation::SamplingJob", finished_at: nil)
         .where("arguments LIKE ?", "%[#{experiment_id},%")
 
-      SolidQueue::ReadyExecution.where(job_id: jobs.select(:id)).exists? ||
-        SolidQueue::ClaimedExecution.where(job_id: jobs.select(:id)).exists? ||
-        SolidQueue::ScheduledExecution.where(job_id: jobs.select(:id)).exists? ||
-        SolidQueue::BlockedExecution.where(job_id: jobs.select(:id)).exists?
+      SolidQueue::ReadyExecution.exists?(job_id: jobs.select(:id)) ||
+        SolidQueue::ClaimedExecution.exists?(job_id: jobs.select(:id)) ||
+        SolidQueue::ScheduledExecution.exists?(job_id: jobs.select(:id)) ||
+        SolidQueue::BlockedExecution.exists?(job_id: jobs.select(:id))
     end
   end
 end

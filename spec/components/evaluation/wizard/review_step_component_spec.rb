@@ -5,18 +5,17 @@ require "rails_helper"
 RSpec.describe Evaluation::Wizard::ReviewStepComponent, type: :component do
   subject(:rendered) { render_inline(described_class.new(form: build_form)) }
 
-  let(:prompt)  { build(:orchestration_prompt, name: "classify_agent", version: 3) }
-  let(:dataset) { build(:evaluation_dataset, name: "emails_dataset") }
+  let(:prompt)  { create(:orchestration_prompt, name: "classify_agent") }
+  let(:dataset) { create(:evaluation_dataset, name: "emails_dataset") }
 
   def build_form(overrides = {})
-    instance_double(Evaluation::Wizard::Step4Form,
-      agent_name:      "Emails::ClassifyAgent",
-      prompt:          prompt,
-      experiment_name: "My Eval",
-      metrics_count:   4,
-      dataset:         dataset,
-      **overrides
-    )
+    payload = {
+      "agent_name"      => "Emails::ClassifyAgent",
+      "experiment_name" => "My Eval",
+      "prompt_id"       => overrides.fetch(:prompt_id, prompt.id),
+      "dataset_id"      => overrides.fetch(:dataset_id, dataset.id)
+    }
+    Evaluation::Wizard::Step4Form.new(draft_payload: payload)
   end
 
   it "renders the experiment name" do
@@ -32,7 +31,8 @@ RSpec.describe Evaluation::Wizard::ReviewStepComponent, type: :component do
   end
 
   it "renders the metrics count" do
-    expect(rendered.text).to include("4")
+    create_list(:evaluation_metric, 4, agent_name: "Emails::ClassifyAgent", active: true)
+    expect(render_inline(described_class.new(form: build_form)).text).to include("4")
   end
 
   it "renders a Run Experiment submit button" do
@@ -44,8 +44,6 @@ RSpec.describe Evaluation::Wizard::ReviewStepComponent, type: :component do
   end
 
   context "when metrics_count is 0" do
-    subject(:rendered) { render_inline(described_class.new(form: build_form(metrics_count: 0))) }
-
     it "shows an auto-generate info notice" do
       expect(rendered.text).to include("auto-generated with AI")
     end
@@ -56,11 +54,11 @@ RSpec.describe Evaluation::Wizard::ReviewStepComponent, type: :component do
   end
 
   it "renders prompt version when prompt present" do
-    expect(rendered.text).to include("v3")
+    expect(rendered.text).to include("v#{prompt.version}")
   end
 
   it "renders gracefully when prompt is nil" do
-    rendered = render_inline(described_class.new(form: build_form(prompt: nil)))
+    rendered = render_inline(described_class.new(form: build_form(prompt_id: nil)))
     expect(rendered.text).to include("My Eval")
   end
 end

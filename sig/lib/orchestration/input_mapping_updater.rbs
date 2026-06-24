@@ -1,0 +1,24 @@
+module Orchestration
+  class InputMappingUpdater
+    class Result
+      attr_reader saved: bool
+      attr_reader errors: Array[PipelineValidator::Issue]
+      attr_reader warnings: Array[PipelineValidator::Issue]
+
+      def self.new: (saved: bool, errors: Array[PipelineValidator::Issue], warnings: Array[PipelineValidator::Issue]) -> instance
+    end
+
+    @pipeline_validator: singleton(PipelineValidator)
+    @step_action: StepAction
+    @pipeline: Pipeline
+    @input_mapping: json_object
+
+    def initialize: (step_action: StepAction, input_mapping: json_object, ?pipeline_validator: singleton(PipelineValidator)) -> void
+    def update: () -> Result
+
+    private
+
+    def run_validation_transaction: () -> [ Array[PipelineValidator::Issue], Array[PipelineValidator::Issue], bool ]
+    def fetch_step_validation_results: () -> [ Array[PipelineValidator::Issue], Array[PipelineValidator::Issue] ]
+  end
+end

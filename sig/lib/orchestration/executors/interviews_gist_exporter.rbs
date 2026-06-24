@@ -1,0 +1,17 @@
+module Orchestration
+  module Executors
+    class InterviewsGistExporter
+      type result = { "ok" => bool, "message" => String } | { "skipped" => bool, "reason" => String }
+
+      include Executable
+      extend Executable::ClassMethods
+
+      @gist_id: String?
+
+      def self.call: (?gist_id: String?) -> result
+
+      def initialize: (?gist_id: String?) -> void
+      def execute: () -> result
+    end
+  end
+end

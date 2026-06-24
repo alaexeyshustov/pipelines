@@ -12,20 +12,29 @@ module Evaluation
       all_experiments = fetch_all_experiments
       return [] if all_experiments.empty?
 
-      prompt_names = all_experiments.filter_map { |e| e.prompt&.name&.to_s }.uniq
-      grouped = group_by_agent(all_experiments)
-      latest = latest_per_agent(grouped)
-      latest_ids = latest.values.compact.map(&:id)
+      prompt_names = extract_prompt_names(all_experiments)
+      grouped      = group_by_agent(all_experiments)
+      latest       = latest_per_agent(grouped)
+      eval_stats   = fetch_stats_data(all_experiments, latest)
+      active_vers  = active_versions_for(prompt_names)
 
-      all_stats = fetch_evaluation_stats(all_experiments.map(&:id))
-      history_avgs = build_history_averages(all_stats)
-      latest_stats = build_latest_stats(all_stats, latest_ids)
-      active_vers = active_versions_for(prompt_names)
-
-      build_agent_summaries(prompt_names, grouped, latest, latest_stats, history_avgs, active_vers)
+      build_agent_summaries(prompt_names, grouped, latest, eval_stats[:latest_stats], eval_stats[:history_avgs], active_vers)
     end
 
     private
+
+    def extract_prompt_names(experiments)
+      experiments.filter_map { |e| e.prompt&.name&.to_s }.uniq
+    end
+
+    def fetch_stats_data(all_experiments, latest)
+      latest_ids   = latest.values.compact.map(&:id)
+      all_stats    = fetch_evaluation_stats(all_experiments.map(&:id))
+      {
+        history_avgs: build_history_averages(all_stats),
+        latest_stats: build_latest_stats(all_stats, latest_ids)
+      }
+    end
 
     def fetch_all_experiments
       Evaluation::Experiment

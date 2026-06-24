@@ -20,23 +20,23 @@ class ApplicationMailsController < ApplicationController
     @mail = ApplicationMail.new
   end
 
+  def edit
+  end
   def create
     @mail = ApplicationMail.new(mail_params)
     if @mail.save
       redirect_to application_mails_path, notice: "Email record created."
     else
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
 
-  def edit
-  end
 
   def update
     if @mail.update(mail_params)
       redirect_to application_mails_path, notice: "Email record updated."
     else
-      render :edit, status: :unprocessable_entity
+      render :edit, status: :unprocessable_content
     end
   end
 
@@ -59,6 +59,6 @@ class ApplicationMailsController < ApplicationController
   end
 
   def mail_params
-    params.require(:application_mail).permit(:date, :provider, :email_id, :company, :job_title, :action)
+    params.expect(application_mail: [ :date, :provider, :email_id, :company, :job_title, :action ])
   end
 end

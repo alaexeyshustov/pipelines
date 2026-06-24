@@ -1,6 +1,12 @@
 module Evaluation
   class ExperimentDetailComponent < ViewComponent::Base
+    @dataset_samples: DatasetSample::relation?
     @experiment: Experiment
+
+    @judge_model: String?
+    @per_metric_avg: Hash[String, Float]?
+
+    @sample_count: Integer?
 
     def initialize: (experiment: Experiment) -> void
 
@@ -12,5 +18,10 @@ module Evaluation
     def dataset_samples: () -> DatasetSample::relation
     def judge_model: () -> String
     def output_schema_json: () -> String
+
+    private
+
+    def setup_header: () -> void
+    def setup_metric_rows: () -> void
   end
 end

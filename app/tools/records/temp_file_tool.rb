@@ -17,25 +17,35 @@ module Records
       path = root.join("tmp", filename)
 
       case action
-      when "read"
-        File.exist?(path) ? File.read(path.to_s) : "File not found: #{filename}"
-      when "write"
-        if content.nil? || content.strip.empty?
-          "Content is required for write action"
-        else
-          FileUtils.mkdir_p(root.join("tmp"))
-          File.write(path.to_s, content)
-          "File written successfully: #{filename}"
-        end
-      when "delete"
-        if File.exist?(path)
-          File.delete(path)
-          "File deleted successfully: #{filename}"
-        else
-          "File not found, cannot delete: #{filename}"
-        end
+      when "read"   then read_file(path, filename)
+      when "write"  then write_file(root, path, filename, content)
+      when "delete" then delete_file(path, filename)
+      else "Unknown action '#{action}'. Use: read, write, or delete."
+      end
+    end
+
+    private
+
+    def read_file(path, filename)
+      File.exist?(path) ? File.read(path.to_s) : "File not found: #{filename}"
+    end
+
+    def write_file(root, path, filename, content)
+      if content.nil? || content.strip.empty?
+        "Content is required for write action"
       else
-        "Unknown action '#{action}'. Use: read, write, or delete."
+        FileUtils.mkdir_p(root.join("tmp"))
+        File.write(path.to_s, content)
+        "File written successfully: #{filename}"
+      end
+    end
+
+    def delete_file(path, filename)
+      if File.exist?(path)
+        File.delete(path)
+        "File deleted successfully: #{filename}"
+      else
+        "File not found, cannot delete: #{filename}"
       end
     end
   end

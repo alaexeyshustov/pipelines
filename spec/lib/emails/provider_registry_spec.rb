@@ -5,7 +5,7 @@ require 'rails_helper'
 RSpec.describe Emails::ProviderRegistry do
   subject(:registry) { described_class.new }
 
-  let(:adapter) { instance_double(Emails::Adapters::BaseAdapter) }
+  let(:adapter) { Emails::Adapters::BaseAdapter.new }
 
   before { registry.register('gmail', adapter) }
 

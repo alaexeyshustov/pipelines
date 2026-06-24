@@ -25,25 +25,42 @@ module Emails
         criteria   = Array.new
         bare_words = Array.new
 
-        query.split(/\s+/).each do |token|
-          case token
-          when /\Afrom:(.+)\z/i    then criteria += [ "FROM",    $1 ]
-          when /\Ato:(.+)\z/i      then criteria += [ "TO",      $1 ]
-          when /\Asubject:(.+)\z/i then criteria += [ "SUBJECT", $1 ]
-          when /\Ais:unread\z/i    then criteria << "UNSEEN"
-          when /\Ais:read\z/i      then criteria << "SEEN"
-          when /\Ais:flagged\z/i   then criteria << "FLAGGED"
-          when /\Aafter:(\d{4}[-\/]\d{2}[-\/]\d{2})\z/i
-            criteria += [ "SINCE",  imap_date($1.to_s) ]
-          when /\Abefore:(\d{4}[-\/]\d{2}[-\/]\d{2})\z/i
-            criteria += [ "BEFORE", imap_date($1.to_s) ]
-          else
-            bare_words << token
-          end
-        end
+        query.split(/\s+/).each { |token| parse_token(token, criteria, bare_words) }
 
         criteria += [ "TEXT", bare_words.join(" ") ] unless bare_words.empty?
         criteria
+      end
+
+      def parse_token(token, criteria, bare_words)
+        unless parse_prefix_token(token, criteria) || parse_is_token(token, criteria)
+          bare_words << token
+        end
+      end
+
+      def parse_prefix_token(token, criteria)
+        case token
+        when /\Afrom:(.+)\z/i    then criteria.push("FROM",    $1.to_s)
+        when /\Ato:(.+)\z/i      then criteria.push("TO",      $1.to_s)
+        when /\Asubject:(.+)\z/i then criteria.push("SUBJECT", $1.to_s)
+        when /\Aafter:(\d{4}[-\/]\d{2}[-\/]\d{2})\z/i  then push_date_criteria(criteria, "SINCE",  $1.to_s)
+        when /\Abefore:(\d{4}[-\/]\d{2}[-\/]\d{2})\z/i then push_date_criteria(criteria, "BEFORE", $1.to_s)
+        else return false
+        end
+        true
+      end
+
+      def push_date_criteria(criteria, keyword, date_str)
+        criteria.push(keyword, imap_date(date_str))
+      end
+
+      def parse_is_token(token, criteria)
+        case token
+        when /\Ais:unread\z/i  then criteria << "UNSEEN"
+        when /\Ais:read\z/i    then criteria << "SEEN"
+        when /\Ais:flagged\z/i then criteria << "FLAGGED"
+        else return false
+        end
+        true
       end
 
       def imap_date(date_str)

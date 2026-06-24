@@ -11,6 +11,7 @@ module Emails
       private
 
       def extract_body: (Mail::Message | Mail::Part mail) -> String
+      def extract_multipart_body: (Mail::Message | Mail::Part mail) -> String
       def decode_part: ((Mail::Message | Mail::Part)? part) -> String
       def strip_html: (String html) -> String
     end

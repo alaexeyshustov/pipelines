@@ -2,7 +2,6 @@
 
 module Evaluation
   class SyntheticDatasetJob < ApplicationJob
-    # TODO: remove it, use the real data only
     queue_as :default
 
     SYSTEM_PROMPT = <<~PROMPT.freeze
@@ -15,31 +14,29 @@ module Evaluation
     DEFAULT_MODEL = LlmModels.evaluation
 
     def perform(draft_token:, agent_name:, count:, dataset_name: nil, dataset_id: nil, hints: "", model: nil)
-      system_prompt_text = fetch_system_prompt(agent_name)
-      few_shot           = fetch_few_shot_samples(agent_name)
-      model              = model || DEFAULT_MODEL
+      model   = model || DEFAULT_MODEL
+      inputs  = call_llm(build_user_message(
+        system_prompt_text: fetch_system_prompt(agent_name),
+        count: count, hints: hints,
+        few_shot: fetch_few_shot_samples(agent_name)
+      ), model)
 
-      user_message = build_user_message(
-        system_prompt_text: system_prompt_text,
-        count:              count,
-        hints:              hints,
-        few_shot:           few_shot
-      )
-
-      inputs = call_llm(user_message, model)
-
-      if dataset_id
-        resync_dataset(dataset_id, inputs)
-      else
-        dataset = create_dataset_with_records(dataset_name, agent_name, inputs)
-        update_draft(draft_token, status: "complete", dataset_id: dataset.id)
-      end
+      persist_results(draft_token, agent_name, dataset_name, dataset_id, inputs)
     rescue StandardError => e
       logger.error("[SyntheticDatasetJob] Failed for draft #{draft_token}: #{e.message}")
       update_draft(draft_token, status: "error", error_message: e.message) unless dataset_id
     end
 
     private
+
+    def persist_results(draft_token, agent_name, dataset_name, dataset_id, inputs)
+      if dataset_id
+        resync_dataset(dataset_id, inputs)
+      else
+        dataset = create_dataset_with_records(dataset_name, agent_name, inputs)
+        update_draft(draft_token, status: "complete", dataset_id: dataset.id)
+      end
+    end
 
     def fetch_system_prompt(agent_name)
       Evaluation::Prompt

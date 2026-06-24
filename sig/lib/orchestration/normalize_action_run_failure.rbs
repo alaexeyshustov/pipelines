@@ -1,0 +1,65 @@
+module Orchestration
+  class NormalizeActionRunFailure
+    MAX_EXCERPT_LENGTH: Integer
+    REDACTED_VALUE: String
+    REDACTED_EMAIL: String
+
+    @error: StandardError
+    @action_run: ActionRun
+    @raw_content: json_object_value?
+    @model_name: String?
+    @provider_name: String?
+
+    interface _Response
+      def status: () -> Integer
+      def body: () -> (String | json_object | nil)
+    end
+
+    class Result
+      def initialize: (summary: String, details: json_object?) -> void
+      def summary: () -> String
+      def details: () -> json_object?
+    end
+
+    def initialize: (error: StandardError, action_run: ActionRun, raw_content: json_object_value?) -> void
+    def normalize: () -> Result
+
+    private
+
+    def provider_http_error?: () -> bool
+    def transport_error?: () -> bool
+    def invalid_model_output?: () -> bool
+    def provider_http_error_result: () -> Result
+    def transport_error_result: () -> Result
+    def invalid_model_output_result: () -> Result
+    def build_details: (
+      category: String,
+      message: String,
+      status_code: Integer?,
+      parsed_error: json_object_value,
+      raw_response_excerpt: String?
+    ) -> json_object
+    def request_context: () -> json_object?
+    def response_candidate: () -> _Response?
+    def response: () -> _Response
+    def response_status: () -> Integer
+    def response_body: () -> (String | json_object | nil)
+    def provider_error_message: (json_object_value parsed_error) -> String
+    def extract_candidate_message: (json_object_value parsed_error) -> String?
+    def fallback_if_unknown: (json_object_value candidate, json_object_value fallback) -> json_object_value
+    def extract_parsed_error: (String | json_object | nil body) -> json_object_value
+    def parse_json: (json_object_value value) -> (json_object_value | nil)
+    def invalid_model_raw_content: () -> json_object_value?
+    def model_name: () -> String?
+    def provider_name: () -> String?
+    def provider_display_name: () -> String
+    def sanitized_excerpt: (json_object_value value) -> String?
+    def stringify: (json_object_value value) -> String
+    def sanitize_value: (json_object_value value) -> json_object_value
+    def sanitize_hash: (json_object value) -> json_object
+    def sensitive_key?: (String | Symbol key) -> bool
+    def sanitize_string: (String value) -> String
+    def truncate: (String value) -> String
+    def ruby_llm_error?: (StandardError error) -> bool
+  end
+end

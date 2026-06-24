@@ -34,7 +34,7 @@ module Orchestration
     end
 
     def initial_input_valid
-      return unless @pipeline.initial_input_schema.present?
+      return if @pipeline.initial_input_schema.blank?
 
       Orchestration::SchemaValidator.new(@pipeline.initial_input_schema).validate!(extract_initial_input)
     rescue Orchestration::SchemaValidator::Error => e

@@ -12,6 +12,8 @@ module Interviews
       def ok? = ok
     end
 
+    def self.call(ids:, gist_id:) = new(ids:, gist_id:).call
+
     def initialize(ids:, gist_id:)
       @ids     = ids
       @gist_id = gist_id
@@ -21,7 +23,7 @@ module Interviews
       return Result.new(ok: false, message: "Gist ID is required.") if @gist_id.blank?
 
       token = ENV["GITHUB_TOKEN"]
-      return Result.new(ok: false, message: "GITHUB_TOKEN is not configured.") if token.nil? || token.empty?
+      return Result.new(ok: false, message: "GITHUB_TOKEN is not configured.") if token.blank?
 
       csv_content = Interviews::CsvExportService.new(ids: @ids).call
       response    = patch_gist(token, csv_content)
@@ -29,17 +31,21 @@ module Interviews
       if response.is_a?(Net::HTTPSuccess)
         Result.new(ok: true, message: "Interviews exported to gist #{@gist_id}.")
       else
-        body = parse_error_body(response.body)
-        message = body&.[]("message")
-        if message.is_a?(String) && !message.empty?
-          Result.new(ok: false, message: message.to_s)
-        else
-          Result.new(ok: false, message: "GitHub API error (#{response.code}).")
-        end
+        build_error_result(response)
       end
     end
 
     private
+
+    def build_error_result(response)
+      body = parse_error_body(response.body)
+      message = body&.[]("message")
+      if message.is_a?(String) && !message.empty?
+        Result.new(ok: false, message: message.to_s)
+      else
+        Result.new(ok: false, message: "GitHub API error (#{response.code}).")
+      end
+    end
 
     def parse_error_body(body)
       parsed = JSON.parse(body)

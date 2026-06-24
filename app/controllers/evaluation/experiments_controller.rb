@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Evaluation
+  # rubocop:disable Metrics/ClassLength
   class ExperimentsController < ApplicationController
     before_action :set_experiment, only: [ :show, :improve, :compare, :activate, :status_frame, :metric_results, :destroy ]
 
@@ -8,28 +9,15 @@ module Evaluation
       @experiments = Experiment.order(created_at: :desc).includes(:prompt)
     end
 
+    def show; end
     def new
       @wizard_form = build_wizard_form(step_param: params[:step])
     end
 
-    def show; end
 
     def create
       @wizard_form = build_wizard_form(step_param: params[:current_step])
-
-      if @wizard_form.complete? && @wizard_form.valid?
-        experiment = @wizard_form.complete!
-        session.delete(:wizard_token)
-        redirect_to evaluation_experiment_path(experiment), notice: "Experiment '#{experiment.name}' started."
-      elsif @wizard_form.complete?
-        render_wizard_error
-      else
-        if @wizard_form.advance!(@wizard_form.step, wizard_params)
-          redirect_to new_evaluation_experiment_path(step: @wizard_form.step + 1)
-        else
-          render_wizard_error
-        end
-      end
+      @wizard_form.complete? ? complete_wizard_or_error : advance_wizard_or_error
     end
 
     def destroy
@@ -75,12 +63,7 @@ module Evaluation
         return
       end
 
-      prompt = Evaluation::Prompt.create!(
-        name: based_on.name,
-        system_prompt: fork_prompt_params[:system_prompt] || based_on.system_prompt,
-        user_prompt:   fork_prompt_params[:user_prompt]   || based_on.user_prompt,
-        output_schema: fork_prompt_params[:output_schema] || based_on.output_schema
-      )
+      prompt = fork_prompt_record(based_on)
       render json: { id: prompt.id, version: prompt.version }
     rescue ActiveRecord::RecordInvalid => e
       render json: { error: e.message }, status: :unprocessable_content
@@ -119,11 +102,9 @@ module Evaluation
       redirect_to evaluation_experiment_path(@experiment),
                   notice: "Prompt improvement triggered. Evaluating prompt v#{new_prompt.version}…"
     rescue PromptImprover::Error => e
-      logger.error("PromptImprover failed for experiment #{@experiment.id}: #{e.message}")
-      redirect_to evaluation_experiment_path(@experiment), alert: "Prompt improvement failed. Please try again later."
+      log_and_redirect_improve_failure("PromptImprover failed", e)
     rescue ArgumentError => e
-      logger.error("PromptImprover argument error for experiment #{@experiment.id}: #{e.message}")
-      redirect_to evaluation_experiment_path(@experiment), alert: "Prompt improvement failed. Please try again later."
+      log_and_redirect_improve_failure("PromptImprover argument error", e)
     end
 
     def compare
@@ -177,9 +158,42 @@ module Evaluation
       params.fetch(:wizard, {}).permit(:agent_name, :prompt_id, :experiment_name, :sample_model, :evaluation_model, :dataset_id).to_h
     end
 
+    def complete_wizard_or_error
+      if @wizard_form.valid?
+        experiment = @wizard_form.complete!
+        session.delete(:wizard_token)
+        redirect_to evaluation_experiment_path(experiment), notice: "Experiment '#{experiment.name}' started."
+      else
+        render_wizard_error
+      end
+    end
+
+    def advance_wizard_or_error
+      if @wizard_form.advance!(@wizard_form.step, wizard_params)
+        redirect_to new_evaluation_experiment_path(step: @wizard_form.step + 1)
+      else
+        render_wizard_error
+      end
+    end
+
+    def fork_prompt_record(based_on)
+      Evaluation::Prompt.create!(
+        name: based_on.name,
+        system_prompt: fork_prompt_params[:system_prompt] || based_on.system_prompt,
+        user_prompt:   fork_prompt_params[:user_prompt]   || based_on.user_prompt,
+        output_schema: fork_prompt_params[:output_schema] || based_on.output_schema
+      )
+    end
+
+    def log_and_redirect_improve_failure(context, e)
+      logger.error("#{context} for experiment #{@experiment.id}: #{e.message}")
+      redirect_to evaluation_experiment_path(@experiment), alert: "Prompt improvement failed. Please try again later."
+    end
+
     def render_wizard_error
       flash.now[:alert] = @wizard_form.errors.full_messages.to_sentence
-      render :new, status: :unprocessable_entity
+      render :new, status: :unprocessable_content
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end

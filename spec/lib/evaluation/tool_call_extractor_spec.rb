@@ -42,7 +42,7 @@ RSpec.describe Evaluation::ToolCallExtractor do
       create(:message, chat: chat, role: "tool", content: "b", parent_tool_call: tc2)
 
       result = described_class.call(chat)
-      expect(result.map { |r| r["tool_name"] }).to eq(%w[tool_a tool_b])
+      expect(result.pluck("tool_name")).to eq(%w[tool_a tool_b])
     end
   end
 end
