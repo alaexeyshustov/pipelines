@@ -39,8 +39,7 @@ write_files:
 runcmd:
   # --- base system update + core packages ---
   - pacman -Syu --noconfirm
-  - pacman -S --noconfirm base-devel git curl wget unzip zsh openssh
-      sqlite github-cli neovim ca-certificates
+  - pacman -S --noconfirm base-devel git curl wget unzip zsh openssh sqlite github-cli neovim ca-certificates
 
   # --- set zsh as default shell for the default user ---
   - chsh -s /usr/bin/zsh arch
