@@ -2,11 +2,11 @@
 # OrbStack isolated machine — Arch Linux dev sandbox for Claude Code (yolo mode)
 #
 # Usage:
-#   orb create --isolated --mount ~/code:/work -c claude-sandbox.yml arch claude-sandbox
+#   orb create --isolated --mount ~/code:/work -c config/claude-sandbox.yaml arch claude-sandbox
 #
 # Re-running after edits requires recreating the machine:
 #   orb delete claude-sandbox
-#   orb create --isolated --mount ~/code:/work -c claude-sandbox.yml arch claude-sandbox
+#   orb create --isolated --mount ~/code:/work -c config/claude-sandbox.yaml arch claude-sandbox
 
 write_files:
   # zsh as default shell config — minimal, fast, no framework overhead
