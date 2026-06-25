@@ -57,7 +57,7 @@ runcmd:
   - su - arch -c "curl -fsSL https://bun.sh/install | bash"
 
   # --- claude code cli (needs node from mise on PATH) ---
-  - su - arch -c "export PATH=\"\$HOME/.local/bin:\$PATH\" && eval \"\$(~/.local/bin/mise activate bash)\" && pnpm setup && export PNPM_HOME=\"\$HOME/.local/share/pnpm\" && export PATH=\"\$PNPM_HOME:\$PATH\" && pnpm add -g @anthropic-ai/claude-code"
+  - su - arch -c "export PATH=\"\$HOME/.local/bin:\$PATH\" && eval \"\$(~/.local/bin/mise activate zsh)\" && pnpm setup && export PNPM_HOME=\"\$HOME/.local/share/pnpm\" && export PATH=\"\$PNPM_HOME:\$PATH\" && pnpm add -g @anthropic-ai/claude-code"
 
   # --- sqlite already installed via pacman above; confirm libs for Ruby's sqlite3 gem ---
   - pacman -S --noconfirm sqlite
