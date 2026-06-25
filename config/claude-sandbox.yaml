@@ -45,8 +45,8 @@ runcmd:
   - chsh -s /usr/bin/zsh arch
 
   # --- mise (handles Ruby, Node version management) ---
-  - su - arch -c "curl https://mise.run | sh"
-  - su - arch -c "echo 'eval \"\$(~/.local/bin/mise activate zsh)\"' >> ~/.zshrc"
+  - su - arch -c "curl -fsSL https://mise.run | sh"
+  - su - arch -c "grep -q 'mise activate zsh' ~/.zshrc || echo 'eval \"\\$(~/.local/bin/mise activate zsh)\"' >> ~/.zshrc"
   - su - arch -c "~/.local/bin/mise use --global ruby@3"
   - su - arch -c "~/.local/bin/mise use --global node@lts"
 
