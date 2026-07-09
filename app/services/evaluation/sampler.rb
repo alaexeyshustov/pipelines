@@ -27,7 +27,7 @@ module Evaluation
     private
 
     def build_agent(resolved_action, agent_record)
-      tool_classes  = resolve_tools(agent_record)
+      tool_classes  = Orchestration::ToolResolver.new(agent: agent_record).resolve
       wrapped_tools = wrap_write_tools(tool_classes)
       policy = Orchestration::AgentResolutionPolicy.new(
         action:          resolved_action,
@@ -68,31 +68,6 @@ module Evaluation
       else
         action
       end
-    end
-
-    def resolve_tools(agent_record)
-      configured = agent_record.tools.presence
-      return resolve_configured_tools(configured) if configured
-
-      agent_class = agent_record.name.safe_constantize # : singleton(RubyLLM::Agent)
-      return agent_class.tools if agent_class.respond_to?(:tools) # steep:ignore
-
-      raise ArgumentError, "agent #{agent_record.name.inspect} has no configured tools"
-    end
-
-    def resolve_configured_tools(configured)
-      configured.map { |tool| resolve_tool(tool) }
-    end
-
-    def resolve_tool(tool)
-      namespace = tool.to_s.split("::").first
-      unless Orchestration::Agent::ALLOWED_TOOL_NAMESPACES.include?(namespace)
-        raise ArgumentError, "Tool '#{tool}' is outside allowed namespaces"
-      end
-
-      tool.constantize
-    rescue NameError
-      raise ArgumentError, "Unknown tool class: #{tool}"
     end
 
     def wrap_write_tools(tool_classes)
