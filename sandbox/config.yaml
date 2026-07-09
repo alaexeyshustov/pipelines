@@ -1,0 +1,43 @@
+#cloud-config
+# OrbStack isolated machine — Ubuntu dev sandbox for Claude Code (yolo mode)
+# Tools are managed by mise directly; no Docker layer.
+# Only ~/projects/pipelines is mounted at /work.
+#
+# Usage (two steps):
+#   1. orb create --isolated --mount ~/projects/pipelines:/work -c sandbox/isolated-config.yaml ubuntu pipeline-sandbox
+#   2. orb -m pipeline-sandbox -- sudo bash /work/sandbox/setup.sh
+#
+# Re-running after edits:
+#   orb delete pipeline-sandbox
+#   repeat steps above
+#
+# Track setup progress:
+#   orb run -m pipeline-sandbox journalctl -fu sandbox-setup
+
+package_update: true
+package_upgrade: false
+
+packages:
+  - build-essential
+  - libssl-dev
+  - libyaml-dev
+  - libreadline-dev
+  - zlib1g-dev
+  - libffi-dev
+  - libgdbm-dev
+  - git
+  - curl
+  - wget
+  - unzip
+  - zsh
+  - openssh-client
+  - sqlite3
+  - libsqlite3-dev
+  - neovim
+  - ca-certificates
+  - gnupg
+  - sudo
+  - clang 
+  - libclang-dev
+
+final_message: "Packages installed. Run: orb -m pipeline-sandbox -- sudo bash /work/sandbox/setup.sh"

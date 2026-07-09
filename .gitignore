@@ -49,8 +49,9 @@ coverage/
 !/app/assets/builds/.keep
 
 node_modules/
-
+.pnpm-store/
 .claude/worktrees/
 .claude/settings.local.json
+.DS_Store
 
 .gem_rbs_collection/

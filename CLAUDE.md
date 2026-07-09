@@ -1,4 +1,4 @@
-Rails 8.1 / Ruby 4.0 application that pulls Gmail and Yahoo Mail job-application emails, classifies them with Mistral AI, labels them in-provider, and tracks application/interview progress in SQLite.
+Rails 8.1 / Ruby 4.0 application which runs pipelines for emails and dcoument automatisation.
 
 ## Essentials
 
