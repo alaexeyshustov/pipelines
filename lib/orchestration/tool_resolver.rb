@@ -2,6 +2,23 @@
 
 module Orchestration
   class ToolResolver
+    REGISTRY = {
+      "Emails::AddLabelsTool"      => Emails::AddLabelsTool,
+      "Emails::ClassifyTool"       => Emails::ClassifyTool,
+      "Emails::CreateLabelTool"    => Emails::CreateLabelTool,
+      "Emails::GetLabelsTool"      => Emails::GetLabelsTool,
+      "Emails::GetTool"            => Emails::GetTool,
+      "Emails::ListTool"           => Emails::ListTool,
+      "Emails::SearchTool"         => Emails::SearchTool,
+      "Records::InsertRowsTool"    => Records::InsertRowsTool,
+      "Records::ListRowsTool"      => Records::ListRowsTool,
+      "Records::ReadRowsTool"      => Records::ReadRowsTool,
+      "Records::ReadSchemaTool"    => Records::ReadSchemaTool,
+      "Records::SearchSimilarTool" => Records::SearchSimilarTool,
+      "Records::TempFileTool"      => Records::TempFileTool,
+      "Records::UpdateRowsTool"    => Records::UpdateRowsTool
+    }.freeze
+
     def initialize(agent:)
       @agent = agent
     end
@@ -23,14 +40,7 @@ module Orchestration
     end
 
     def resolve_class(tool)
-      namespace = tool.to_s.split("::").first
-      unless Orchestration::Agent::ALLOWED_TOOL_NAMESPACES.include?(namespace)
-        raise ArgumentError, "Tool '#{tool}' is outside allowed namespaces"
-      end
-
-      tool.constantize
-    rescue NameError
-      raise ArgumentError, "Unknown tool class: #{tool}"
+      REGISTRY.fetch(tool) { raise ArgumentError, "Unknown tool class: #{tool}" }
     end
   end
 end

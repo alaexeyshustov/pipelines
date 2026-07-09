@@ -8,18 +8,23 @@ RSpec.describe Orchestration::ToolResolver do
   let(:agent_record) { create(:orchestration_agent, tools: [ "Records::TempFileTool" ]) }
 
   describe "#resolve" do
-    it "constantizes configured tool class names" do
+    it "resolves configured tool class names via the registry" do
       expect(resolved).to eq([ Records::TempFileTool ])
     end
 
     it "raises ArgumentError when a tool is outside allowed namespaces" do
       allow(agent_record).to receive(:tools).and_return([ "Kernel::Exec" ])
-      expect { resolved }.to raise_error(ArgumentError, /Tool 'Kernel::Exec' is outside allowed namespaces/)
+      expect { resolved }.to raise_error(ArgumentError, /Unknown tool class: Kernel::Exec/)
     end
 
     it "raises ArgumentError when a tool class cannot be found" do
       allow(agent_record).to receive(:tools).and_return([ "Records::NonExistentTool" ])
       expect { resolved }.to raise_error(ArgumentError, /Unknown tool class: Records::NonExistentTool/)
+    end
+
+    it "raises ArgumentError when the resolved constant is not a registered RubyLLM::Tool subclass" do
+      allow(agent_record).to receive(:tools).and_return([ "Records::ModelResolver" ])
+      expect { resolved }.to raise_error(ArgumentError, /Unknown tool class: Records::ModelResolver/)
     end
 
     context "when configured tools are blank" do

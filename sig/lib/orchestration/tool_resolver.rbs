@@ -1,5 +1,7 @@
 module Orchestration
   class ToolResolver
+    REGISTRY: Hash[String, singleton(RubyLLM::Tool)]
+
     @agent: Agent
 
     def initialize: (agent: Agent) -> void
