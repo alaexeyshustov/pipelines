@@ -12,8 +12,20 @@ module Orchestration
     validate :tools_must_be_valid
 
     scope :enabled, -> { where(enabled: true) }
+    scope :with_action_counts, -> {
+      left_joins(:actions)
+        .select("orchestration_agents.*, COUNT(DISTINCT orchestration_actions.id) AS action_count")
+        .group("orchestration_agents.id")
+        .order("orchestration_agents.name")
+    }
 
     before_destroy :ensure_not_referenced
+
+    def actions_with_usage
+      actions.includes(step_actions: { step: :pipeline }).order(:name)
+    end
+
+    def self.named(name) = find_by(name:)
 
     def self.available_tools
       Rails.root.glob("app/tools/**/*.rb")

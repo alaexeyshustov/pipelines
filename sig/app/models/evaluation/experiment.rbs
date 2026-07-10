@@ -13,6 +13,8 @@ module Evaluation
     def self.includes: (*top) -> relation
     def self.order: (*top) -> relation
     def self.not: (*top) -> relation
+    def self.completed_for_prompt_name: (String? name) -> relation
+    def self.sibling_for_prompt_name: (String? name, excluding_id: Integer) -> relation
 
     def id: () -> Integer
     def created_at: () -> Time

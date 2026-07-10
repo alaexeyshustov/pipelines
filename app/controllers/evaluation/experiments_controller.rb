@@ -30,7 +30,7 @@ module Evaluation
     end
 
     def snapshot_agent_prompt
-      agent = Orchestration::Agent.find_by(name: params[:agent_name])
+      agent = Orchestration::Agent.named(params[:agent_name])
 
       if agent.nil? || agent.prompt.blank?
         render json: { error: "Agent not found or has no prompt" }, status: :unprocessable_content
@@ -70,10 +70,7 @@ module Evaluation
     end
 
     def prompt_versions
-      prompts = Prompt
-        .where(name: params[:agent_name])
-        .order(version: :desc)
-        .select(:id, :version, :metadata)
+      prompts = Prompt.metadata_versions_for(params[:agent_name])
       render json: prompts.map { |p|
         meta = begin; JSON.parse(p.metadata || "{}"); rescue JSON::ParserError; {}; end
         { id: p.id, version: p.version, active: meta["active"] == true }
@@ -109,9 +106,7 @@ module Evaluation
 
     def compare
       @candidate = Experiment
-        .joins(:prompt)
-        .where(evaluation_prompts: { name: @experiment.prompt&.name })
-        .where.not(id: @experiment.id)
+        .sibling_for_prompt_name(@experiment.prompt&.name, excluding_id: @experiment.id)
         .find_by(id: params[:candidate_id])
 
       unless @candidate

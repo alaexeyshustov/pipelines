@@ -33,7 +33,7 @@ module ApplicationMails
     end
 
     def delete_records(count)
-      ApplicationMail.where(id: @ids).destroy_all
+      ApplicationMail.destroy_by_ids(@ids)
       Result.new(ok: true, message: "Deleted #{count} record(s).")
     end
 

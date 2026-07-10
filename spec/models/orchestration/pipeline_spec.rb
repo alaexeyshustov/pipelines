@@ -104,4 +104,91 @@ RSpec.describe Orchestration::Pipeline do
       expect(result).to be > Time.current
     end
   end
+
+  describe "#latest_run" do
+    it "returns the most recently created run" do
+      pipeline = create(:orchestration_pipeline)
+      create(:orchestration_pipeline_run, pipeline: pipeline, created_at: 2.days.ago)
+      newest = create(:orchestration_pipeline_run, pipeline: pipeline, created_at: 1.hour.ago)
+      expect(pipeline.latest_run).to eq(newest)
+    end
+
+    it "returns nil when the pipeline has no runs" do
+      pipeline = create(:orchestration_pipeline)
+      expect(pipeline.latest_run).to be_nil
+    end
+  end
+
+  describe "#run_in_progress?" do
+    it "is true when a pending run exists" do
+      pipeline = create(:orchestration_pipeline)
+      create(:orchestration_pipeline_run, pipeline: pipeline, status: "pending")
+      expect(pipeline.run_in_progress?).to be true
+    end
+
+    it "is true when a running run exists" do
+      pipeline = create(:orchestration_pipeline)
+      create(:orchestration_pipeline_run, pipeline: pipeline, status: "running")
+      expect(pipeline.run_in_progress?).to be true
+    end
+
+    it "is false when only completed or failed runs exist" do
+      pipeline = create(:orchestration_pipeline)
+      create(:orchestration_pipeline_run, pipeline: pipeline, status: "completed")
+      create(:orchestration_pipeline_run, pipeline: pipeline, status: "failed")
+      expect(pipeline.run_in_progress?).to be false
+    end
+
+    it "is false when the pipeline has no runs" do
+      pipeline = create(:orchestration_pipeline)
+      expect(pipeline.run_in_progress?).to be false
+    end
+  end
+
+  describe "#enabled_steps" do
+    it "returns only enabled steps ordered by position" do
+      pipeline = create(:orchestration_pipeline)
+      step2 = create(:orchestration_step, pipeline: pipeline, position: 2, enabled: true)
+      create(:orchestration_step, pipeline: pipeline, position: 3, enabled: false)
+      step1 = create(:orchestration_step, pipeline: pipeline, position: 1, enabled: true)
+      expect(pipeline.enabled_steps.to_a).to eq([ step1, step2 ])
+    end
+  end
+
+  describe "#steps_with_actions" do
+    it "returns the pipeline steps ordered by position" do
+      pipeline = create(:orchestration_pipeline)
+      step2 = create(:orchestration_step, pipeline: pipeline, position: 2)
+      step1 = create(:orchestration_step, pipeline: pipeline, position: 1)
+      expect(pipeline.steps_with_actions.to_a).to eq([ step1, step2 ])
+    end
+
+    it "eager loads each step's step_actions" do
+      pipeline = create(:orchestration_pipeline)
+      step = create(:orchestration_step, pipeline: pipeline)
+      action = create(:orchestration_action, kind: :agent)
+      create(:orchestration_step_action, step: step, action: action, position: 1)
+      loaded_step = pipeline.steps_with_actions.to_a.first
+      expect(loaded_step.step_actions).to be_loaded
+    end
+  end
+
+  describe ".with_step_counts" do
+    before do
+      create(:orchestration_pipeline, name: "Alpha")
+      pipeline_b = create(:orchestration_pipeline, name: "Bravo")
+      pipeline_c = create(:orchestration_pipeline, name: "Charlie")
+      create_list(:orchestration_step, 3, pipeline: pipeline_c)
+      create(:orchestration_step, pipeline: pipeline_b)
+    end
+
+    it "returns the exact step_count per pipeline" do
+      counts = described_class.with_step_counts.to_h { |p| [ p.name, p.step_count.to_i ] }
+      expect(counts).to eq("Alpha" => 0, "Bravo" => 1, "Charlie" => 3)
+    end
+
+    it "orders pipelines by name" do
+      expect(described_class.with_step_counts.map(&:name)).to eq(%w[Alpha Bravo Charlie])
+    end
+  end
 end

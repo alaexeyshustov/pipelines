@@ -10,6 +10,7 @@ module Evaluation
     def self.average: (Symbol column) -> Float?
     def self.pluck: (*(String | Symbol)) -> Array[json_object_value]
     def self.justification_join_source: () -> Array[Arel::Nodes::Join]
+    def self.overall_average: (Experiment experiment) -> Float?
     def self.per_metric_averages: (Experiment experiment) -> Hash[String, Float]
 
     def score: () -> Float?

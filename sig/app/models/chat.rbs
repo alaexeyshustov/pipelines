@@ -1,5 +1,9 @@
 class Chat < ApplicationRecord
+  include Batchable
+
   type relation = _Relation[Chat, Integer]
+
+  def self.destroy_by_ids: (Array[Integer] | Array[String] ids) -> Array[Chat]
 
   def model_id: () -> Integer?
   def model_id=: (Integer?) -> Integer?

@@ -6,5 +6,11 @@ module Evaluation
     validates :name, presence: true
 
     scope :for_agent, ->(name) { where(agent_name: name) }
+    scope :with_record_counts, -> {
+      left_joins(:dataset_samples)
+        .group("evaluation_datasets.id")
+        .select("evaluation_datasets.*, COUNT(evaluation_dataset_samples.id) AS record_count")
+        .order(:name)
+    }
   end
 end

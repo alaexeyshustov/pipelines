@@ -6,12 +6,7 @@ module Orchestration
     before_action :load_agents, only: [ :new, :create, :edit, :update ]
 
     def index
-      @actions = Orchestration::Action
-        .includes(:agent)
-        .left_joins(step_actions: { step: :pipeline })
-        .select("orchestration_actions.*, COUNT(DISTINCT orchestration_pipelines.id) AS pipeline_count")
-        .group("orchestration_actions.id")
-        .order("orchestration_actions.name")
+      @actions = Orchestration::Action.with_pipeline_counts
     end
 
     def new

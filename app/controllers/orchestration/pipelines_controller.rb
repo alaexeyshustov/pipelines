@@ -7,17 +7,13 @@ module Orchestration
     before_action :set_pipeline, only: [ :show, :edit, :update, :destroy, :run, :toggle ]
 
     def index
-      @pipelines = Orchestration::Pipeline
-        .left_joins(:steps)
-        .select("orchestration_pipelines.*, COUNT(orchestration_steps.id) AS step_count")
-        .group("orchestration_pipelines.id")
-        .order("orchestration_pipelines.name")
+      @pipelines = Orchestration::Pipeline.with_step_counts
     end
 
     def show
-      @steps = @pipeline.steps.includes(step_actions: { action: :agent })
+      @steps = @pipeline.steps_with_actions
       @actions = Orchestration::Action.order(:name)
-      @latest_run = @pipeline.pipeline_runs.order(created_at: :desc).first
+      @latest_run = @pipeline.latest_run
     end
     def new
       @pipeline = Orchestration::Pipeline.new

@@ -3,6 +3,7 @@ module Orchestration
     type relation = _Relation[Pipeline, Integer]
 
     def self.table_name: () -> String
+    def self.with_step_counts: () -> relation
 
     def name: () -> String?
     def name=: (String?) -> String?
@@ -18,6 +19,11 @@ module Orchestration
     def initial_input_schema=: (json_object?) -> json_object?
 
     def validate_steps: () -> Array[PipelineValidator::StepResult]
+
+    def latest_run: () -> PipelineRun?
+    def run_in_progress?: () -> bool
+    def enabled_steps: () -> Step::relation
+    def steps_with_actions: () -> Step::relation
 
     def next_run_at: (?from: Time) -> Time?
 

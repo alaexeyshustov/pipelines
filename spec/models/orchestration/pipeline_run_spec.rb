@@ -22,6 +22,30 @@ RSpec.describe Orchestration::PipelineRun do
     it 'contains expected STATUSES' do
       expect(Orchestration::PipelineRun::STATUSES).to eq(%w[pending running completed failed])
     end
+
+    it 'contains expected ACTIVE_STATUSES' do
+      expect(Orchestration::PipelineRun::ACTIVE_STATUSES).to eq(%w[pending running])
+    end
+  end
+
+  describe '.recent_first' do
+    it 'orders runs newest first by created_at' do
+      older = create(:orchestration_pipeline_run, created_at: 2.days.ago)
+      newer = create(:orchestration_pipeline_run, created_at: 1.hour.ago)
+      expect(described_class.recent_first.to_a).to eq([ newer, older ])
+    end
+  end
+
+  describe '.in_progress' do
+    it 'returns pending and running runs and excludes completed and failed' do
+      pending = create(:orchestration_pipeline_run, status: 'pending')
+      running = create(:orchestration_pipeline_run, status: 'running')
+      completed = create(:orchestration_pipeline_run, status: 'completed')
+      failed = create(:orchestration_pipeline_run, status: 'failed')
+      result = described_class.in_progress
+      expect(result).to include(pending, running)
+      expect(result).not_to include(completed, failed)
+    end
   end
 
   describe 'associations' do

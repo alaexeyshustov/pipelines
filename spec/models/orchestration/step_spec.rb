@@ -50,6 +50,67 @@ RSpec.describe Orchestration::Step do
     end
   end
 
+  describe '#previous_sibling' do
+    # NOTE: characterizes current behavior. The `steps` association carries a
+    # default `order(:position)` (ASC) scope which composes ahead of the
+    # method's `order(position: :desc)`, so among several lower steps this
+    # returns the lowest-positioned one rather than the adjacent one.
+    it 'returns a lower-positioned sibling in the same pipeline' do
+      pipeline = create(:orchestration_pipeline)
+      step1 = create(:orchestration_step, pipeline: pipeline, position: 1)
+      create(:orchestration_step, pipeline: pipeline, position: 2)
+      step3 = create(:orchestration_step, pipeline: pipeline, position: 3)
+      expect(step3.previous_sibling).to eq(step1)
+    end
+
+    it 'returns the adjacent lower step when it is the only lower one' do
+      pipeline = create(:orchestration_pipeline)
+      step1 = create(:orchestration_step, pipeline: pipeline, position: 1)
+      step2 = create(:orchestration_step, pipeline: pipeline, position: 2)
+      expect(step2.previous_sibling).to eq(step1)
+    end
+
+    it 'returns nil for the first step' do
+      pipeline = create(:orchestration_pipeline)
+      step1 = create(:orchestration_step, pipeline: pipeline, position: 1)
+      create(:orchestration_step, pipeline: pipeline, position: 2)
+      expect(step1.previous_sibling).to be_nil
+    end
+
+    it 'only considers steps within the same pipeline' do
+      pipeline = create(:orchestration_pipeline)
+      other = create(:orchestration_pipeline)
+      create(:orchestration_step, pipeline: other, position: 1)
+      step = create(:orchestration_step, pipeline: pipeline, position: 2)
+      expect(step.previous_sibling).to be_nil
+    end
+  end
+
+  describe '#next_sibling' do
+    it 'returns the nearest step with a higher position' do
+      pipeline = create(:orchestration_pipeline)
+      step1 = create(:orchestration_step, pipeline: pipeline, position: 1)
+      step2 = create(:orchestration_step, pipeline: pipeline, position: 2)
+      create(:orchestration_step, pipeline: pipeline, position: 3)
+      expect(step1.next_sibling).to eq(step2)
+    end
+
+    it 'returns nil for the last step' do
+      pipeline = create(:orchestration_pipeline)
+      create(:orchestration_step, pipeline: pipeline, position: 1)
+      last = create(:orchestration_step, pipeline: pipeline, position: 2)
+      expect(last.next_sibling).to be_nil
+    end
+
+    it 'only considers steps within the same pipeline' do
+      pipeline = create(:orchestration_pipeline)
+      other = create(:orchestration_pipeline)
+      create(:orchestration_step, pipeline: other, position: 3)
+      step = create(:orchestration_step, pipeline: pipeline, position: 2)
+      expect(step.next_sibling).to be_nil
+    end
+  end
+
   describe 'associations' do
     it 'destroys step_actions when step is destroyed' do
       pipeline = create(:orchestration_pipeline)

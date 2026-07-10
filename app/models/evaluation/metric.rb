@@ -9,5 +9,6 @@ module Evaluation
 
     scope :for_agent, ->(agent_name) { where(agent_name: agent_name) }
     scope :active, -> { where(active: true) }
+    scope :active_for_agent, ->(agent_name) { active.for_agent(agent_name) }
   end
 end

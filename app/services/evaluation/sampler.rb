@@ -54,7 +54,7 @@ module Evaluation
       agent_name = @experiment.agent_name
       return unless agent_name
 
-      Orchestration::Agent.find_by(name: agent_name)
+      Orchestration::Agent.named(agent_name)
     end
 
     def find_action_for(agent_record)

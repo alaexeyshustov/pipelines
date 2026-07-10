@@ -5,6 +5,7 @@ module Evaluation
     queue_as :default
 
     retry_on RubyLLM::Error, attempts: 3 do |job, _error|
+      # job.arguments[0] is SolidQueue's positional job-callback convention; intentionally not extracted into a named model method to avoid leaking framework coupling into the domain model.
       experiment = Evaluation::Experiment.find_by(id: job.arguments[0])
       next unless experiment
 

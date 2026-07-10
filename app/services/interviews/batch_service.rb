@@ -36,7 +36,7 @@ module Interviews
     end
 
     def delete_interviews(count)
-      Interview.where(id: @ids).destroy_all
+      Interview.destroy_by_ids(@ids)
       Result.new(ok: true, message: "Deleted #{count} record(s).")
     end
 

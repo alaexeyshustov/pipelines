@@ -21,7 +21,7 @@ module Orchestration
     end
 
     def process_steps(previous_outputs)
-      steps = @pipeline_run.pipeline.steps.where(enabled: true).order(:position).to_a # : Array[Step]
+      steps = @pipeline_run.pipeline.enabled_steps.to_a # : Array[Step]
       completed = steps.each do |step|
         action_runs = run_step(step, previous_outputs)
         break if handle_step_failure(action_runs)
@@ -236,11 +236,7 @@ module Orchestration
       @prompt_cache ||= Hash.new
       return @prompt_cache[agent_class] if @prompt_cache.key?(agent_class)
 
-      @prompt_cache[agent_class] = Evaluation::Prompt
-        .where(name: agent_class)
-        .order(version: :desc, id: :desc)
-        .first
-        &.system_prompt
+      @prompt_cache[agent_class] = Evaluation::Prompt.last_for_agent(agent_class)&.system_prompt
     end
   end
   # rubocop:enable Metrics/ClassLength

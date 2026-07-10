@@ -37,7 +37,7 @@ module Evaluation
     end
 
     def metrics(current_prompt)
-      Metric.where(agent_name: current_prompt.name.to_s, active: true).to_a
+      Metric.active_for_agent(current_prompt.name.to_s).to_a
     end
 
 
@@ -57,7 +57,7 @@ module Evaluation
     end
 
     def append_output_schema(message, agent_name)
-      agent_schema = Orchestration::Agent.find_by(name: agent_name)&.output_schema
+      agent_schema = Orchestration::Agent.named(agent_name)&.output_schema
       return message if agent_schema.blank?
 
       message + "\n\n<output_schema>\n#{agent_schema.to_json}\n</output_schema>"

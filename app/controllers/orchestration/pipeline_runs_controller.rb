@@ -5,7 +5,7 @@ module Orchestration
     before_action :set_pipeline
 
     def index
-      @pagy, @runs = pagy(:offset, @pipeline.pipeline_runs.order(created_at: :desc))
+      @pagy, @runs = pagy(:offset, @pipeline.pipeline_runs.recent_first)
     end
 
     def show

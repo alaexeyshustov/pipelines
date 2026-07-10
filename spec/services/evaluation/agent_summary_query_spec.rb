@@ -106,4 +106,44 @@ RSpec.describe Evaluation::AgentSummaryQuery do
       end
     end
   end
+
+  # Characterization of the private json_extract query. Locks in behavior across the
+  # extraction of Evaluation::Prompt.active_metadata_versions_for so the refactor is a no-op.
+  describe "#fetch_active_prompts (json_extract characterization)" do
+    subject(:fetched) { described_class.new.send(:fetch_active_prompts, [ "AgentA" ]) }
+
+    it "returns prompts whose metadata has active: true" do
+      active = create(:orchestration_prompt, name: "AgentA", version: 1, metadata: '{"active":true}')
+      expect(fetched).to eq([ active ])
+    end
+
+    it "excludes prompts whose metadata has active: false" do
+      create(:orchestration_prompt, name: "AgentA", version: 1, metadata: '{"active":false}')
+      expect(fetched).to eq([])
+    end
+
+    it "excludes prompts whose metadata omits the active key" do
+      create(:orchestration_prompt, name: "AgentA", version: 1, metadata: '{"other":true}')
+      expect(fetched).to eq([])
+    end
+
+    # Current behavior: SQLite's json_extract raises on non-JSON metadata rather than
+    # treating it as inactive. Locked in so the extraction preserves it exactly.
+    it "raises when a matching prompt has malformed / non-JSON metadata" do
+      create(:orchestration_prompt, name: "AgentA", version: 1, metadata: "not-json")
+      expect { fetched }.to raise_error(ActiveRecord::StatementInvalid, /malformed JSON/)
+    end
+
+    it "excludes prompts for other agent names even when active" do
+      create(:orchestration_prompt, name: "AgentB", version: 1, metadata: '{"active":true}')
+      expect(fetched).to eq([])
+    end
+
+    it "orders returned prompts by version desc" do
+      v1 = create(:orchestration_prompt, name: "AgentA", version: 1, metadata: '{"active":true}')
+      v3 = create(:orchestration_prompt, name: "AgentA", version: 3, metadata: '{"active":true}')
+      v2 = create(:orchestration_prompt, name: "AgentA", version: 2, metadata: '{"active":true}')
+      expect(fetched).to eq([ v3, v2, v1 ])
+    end
+  end
 end

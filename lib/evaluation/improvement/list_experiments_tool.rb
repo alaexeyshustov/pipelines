@@ -24,14 +24,13 @@ module Evaluation
 
       def load_experiments(prompt_name, current_experiment_id)
         Experiment
-          .joins(:prompt)
-          .where(status: :completed, evaluation_prompts: { name: prompt_name })
+          .completed_for_prompt_name(prompt_name)
           .where.not(id: current_experiment_id)
           .includes(:prompt).order(:created_at) # : Evaluation::Experiment::relation
       end
 
       def load_metrics(prompt_name)
-        Metric.where(agent_name: prompt_name, active: true).to_a # : Array[Evaluation::Metric]
+        Metric.active_for_agent(prompt_name).to_a # : Array[Evaluation::Metric]
       end
 
       def bulk_per_metric_averages(experiments)

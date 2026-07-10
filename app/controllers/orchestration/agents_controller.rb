@@ -7,15 +7,11 @@ module Orchestration
     before_action :set_agent, only: [ :show, :edit, :update, :destroy, :toggle ]
 
     def index
-      @agents = Orchestration::Agent
-        .left_joins(:actions)
-        .select("orchestration_agents.*, COUNT(DISTINCT orchestration_actions.id) AS action_count")
-        .group("orchestration_agents.id")
-        .order("orchestration_agents.name")
+      @agents = Orchestration::Agent.with_action_counts
     end
 
     def show
-      @using_actions = @agent.actions.includes(step_actions: { step: :pipeline }).order(:name)
+      @using_actions = @agent.actions_with_usage
     end
 
     def new

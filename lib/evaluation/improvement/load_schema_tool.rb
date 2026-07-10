@@ -17,7 +17,7 @@ module Evaluation
       private
 
       def schema_for(prompt_name)
-        ::Orchestration::Agent.find_by(name: prompt_name)
+        ::Orchestration::Agent.named(prompt_name)
       end
     end
   end

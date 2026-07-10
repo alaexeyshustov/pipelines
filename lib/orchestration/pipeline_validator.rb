@@ -30,7 +30,7 @@ module Orchestration
     end
 
     def ordered_step_actions
-      steps = @pipeline.steps.includes(step_actions: { action: :agent }).to_a # : Array[Orchestration::Step]
+      steps = @pipeline.steps_with_actions.to_a # : Array[Orchestration::Step]
       steps.flat_map do |step|
         step_actions = step.step_actions.to_a # : Array[Orchestration::StepAction]
         step_actions.sort_by { |sa| sa.position.to_i }

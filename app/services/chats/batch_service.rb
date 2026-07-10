@@ -22,7 +22,7 @@ module Chats
 
       case @batch_action
       when "delete"
-        Chat.where(id: @ids).destroy_all
+        Chat.destroy_by_ids(@ids)
         Result.new(ok: true, message: "Deleted #{@ids.size} chat(s).")
       else
         Result.new(ok: false, message: "Unknown batch action.")

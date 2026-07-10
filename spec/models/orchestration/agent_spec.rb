@@ -77,6 +77,34 @@ RSpec.describe Orchestration::Agent do
     end
   end
 
+  describe ".named" do
+    it "finds an agent by name" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      expect(described_class.named("Emails::ClassifyAgent")).to eq(agent)
+    end
+
+    it "returns nil for a non-existent name" do
+      expect(described_class.named("Does::NotExist")).to be_nil
+    end
+  end
+
+  describe "#actions_with_usage" do
+    it "returns the agent's actions ordered by name" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      action_b = create(:orchestration_action, kind: :agent, agent: agent, name: "Bravo")
+      action_a = create(:orchestration_action, kind: :agent, agent: agent, name: "Alpha")
+      expect(agent.actions_with_usage.to_a).to eq([ action_a, action_b ])
+    end
+
+    it "only includes the agent's own actions" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      other_agent = create(:orchestration_agent, name: "Records::StoreAgent")
+      own = create(:orchestration_action, kind: :agent, agent: agent, name: "Own")
+      create(:orchestration_action, kind: :agent, agent: other_agent, name: "Other")
+      expect(agent.actions_with_usage.to_a).to eq([ own ])
+    end
+  end
+
   describe ".available_tools" do
     it "returns tool class name strings from app/tools/" do
       tools = described_class.available_tools
@@ -125,6 +153,25 @@ RSpec.describe Orchestration::Agent do
       it "is not deleted from the database" do
         expect { persisted_agent.destroy }.not_to change(described_class, :count)
       end
+    end
+  end
+
+  describe ".with_action_counts" do
+    before do
+      create(:orchestration_agent, name: "Alpha")
+      agent_b = create(:orchestration_agent, name: "Bravo")
+      agent_c = create(:orchestration_agent, name: "Charlie")
+      create_list(:orchestration_action, 3, kind: :agent, agent: agent_c)
+      create(:orchestration_action, kind: :agent, agent: agent_b)
+    end
+
+    it "returns the exact action_count per agent" do
+      counts = described_class.with_action_counts.to_h { |a| [ a.name, a.action_count.to_i ] }
+      expect(counts).to eq("Alpha" => 0, "Bravo" => 1, "Charlie" => 3)
+    end
+
+    it "orders agents by name" do
+      expect(described_class.with_action_counts.map(&:name)).to eq(%w[Alpha Bravo Charlie])
     end
   end
 end

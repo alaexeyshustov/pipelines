@@ -1,11 +1,14 @@
 class ApplicationMail < ApplicationRecord
   include Searchable
+  include Batchable
   COLUMN_NAMES = %w[id date provider email_id company job_title action].freeze
 
   def self.tool_column_names = COLUMN_NAMES
 
   validates :date, :provider, :email_id, presence: true
   validates :email_id, uniqueness: true
+
+  scope :by_ids, ->(ids) { where(id: ids) }
 
   # rubocop:disable Metrics/BlockLength
   scope :groupped, -> {

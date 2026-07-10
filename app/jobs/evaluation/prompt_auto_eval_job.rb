@@ -21,9 +21,7 @@ module Evaluation
 
     def find_previous_experiment(prompt)
       Evaluation::Experiment
-        .joins(:prompt)
-        .where(evaluation_prompts: { name: prompt.name })
-        .where(status: :completed)
+        .completed_for_prompt_name(prompt.name)
         .order(id: :desc)
         .first
     end

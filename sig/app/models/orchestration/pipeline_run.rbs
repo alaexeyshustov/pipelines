@@ -8,9 +8,12 @@ module Orchestration
     end
 
     STATUSES: Array[String]
+    ACTIVE_STATUSES: Array[String]
     TRIGGERED_BY: Array[String]
 
     def self.table_name: () -> String
+    def self.recent_first: () -> relation
+    def self.in_progress: () -> relation
 
     def status: () -> String?
     def status=: (String?) -> String?
