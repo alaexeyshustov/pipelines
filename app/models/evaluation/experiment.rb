@@ -52,6 +52,10 @@ module Evaluation
       meta["pipeline_model"].presence || agent&.model.presence
     end
 
+    def self.completed_for_prompt_name(name) = joins(:prompt).where(status: :completed, evaluation_prompts: { name: name })
+
+    def self.sibling_for_prompt_name(name, excluding_id:) = joins(:prompt).where(evaluation_prompts: { name: name }).where.not(id: excluding_id)
+
     def newer_experiment
       return unless prompt
 

@@ -106,9 +106,7 @@ module Evaluation
 
     def compare
       @candidate = Experiment
-        .joins(:prompt)
-        .where(evaluation_prompts: { name: @experiment.prompt&.name })
-        .where.not(id: @experiment.id)
+        .sibling_for_prompt_name(@experiment.prompt&.name, excluding_id: @experiment.id)
         .find_by(id: params[:candidate_id])
 
       unless @candidate

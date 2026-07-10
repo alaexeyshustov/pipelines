@@ -24,8 +24,7 @@ module Evaluation
 
       def load_experiments(prompt_name, current_experiment_id)
         Experiment
-          .joins(:prompt)
-          .where(status: :completed, evaluation_prompts: { name: prompt_name })
+          .completed_for_prompt_name(prompt_name)
           .where.not(id: current_experiment_id)
           .includes(:prompt).order(:created_at) # : Evaluation::Experiment::relation
       end

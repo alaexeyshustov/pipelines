@@ -13,6 +13,58 @@ RSpec.describe Evaluation::Experiment do
     end
   end
 
+  describe ".completed_for_prompt_name" do
+    let(:prompt) { create(:orchestration_prompt, name: "classifier") }
+    let(:other_prompt) { create(:orchestration_prompt, name: "summarizer") }
+
+    it "returns completed experiments matching the prompt name" do
+      match = create(:evaluation_experiment, prompt: prompt, status: "completed")
+      create(:evaluation_experiment, prompt: prompt, status: "pending")
+      create(:evaluation_experiment, prompt: other_prompt, status: "completed")
+
+      expect(described_class.completed_for_prompt_name("classifier")).to contain_exactly(match)
+    end
+
+    it "excludes experiments for a different prompt name" do
+      create(:evaluation_experiment, prompt: other_prompt, status: "completed")
+
+      expect(described_class.completed_for_prompt_name("classifier")).to be_empty
+    end
+
+    it "excludes non-completed experiments for the same prompt name" do
+      create(:evaluation_experiment, prompt: prompt, status: "sampling")
+
+      expect(described_class.completed_for_prompt_name("classifier")).to be_empty
+    end
+  end
+
+  describe ".sibling_for_prompt_name" do
+    let(:prompt) { create(:orchestration_prompt, name: "classifier") }
+    let(:other_prompt) { create(:orchestration_prompt, name: "summarizer") }
+
+    it "returns experiments matching the prompt name regardless of status" do
+      completed = create(:evaluation_experiment, prompt: prompt, status: "completed")
+      pending = create(:evaluation_experiment, prompt: prompt, status: "pending")
+
+      expect(described_class.sibling_for_prompt_name("classifier", excluding_id: -1))
+        .to contain_exactly(completed, pending)
+    end
+
+    it "excludes the given id" do
+      excluded = create(:evaluation_experiment, prompt: prompt, status: "completed")
+      other = create(:evaluation_experiment, prompt: prompt, status: "completed")
+
+      expect(described_class.sibling_for_prompt_name("classifier", excluding_id: excluded.id))
+        .to contain_exactly(other)
+    end
+
+    it "excludes experiments for a different prompt name" do
+      create(:evaluation_experiment, prompt: other_prompt, status: "completed")
+
+      expect(described_class.sibling_for_prompt_name("classifier", excluding_id: -1)).to be_empty
+    end
+  end
+
   describe "AASM state machine" do
     subject(:experiment) { create(:evaluation_experiment, status: "pending") }
 
