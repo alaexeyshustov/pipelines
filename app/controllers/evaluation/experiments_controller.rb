@@ -70,10 +70,7 @@ module Evaluation
     end
 
     def prompt_versions
-      prompts = Prompt
-        .where(name: params[:agent_name])
-        .order(version: :desc)
-        .select(:id, :version, :metadata)
+      prompts = Prompt.metadata_versions_for(params[:agent_name])
       render json: prompts.map { |p|
         meta = begin; JSON.parse(p.metadata || "{}"); rescue JSON::ParserError; {}; end
         { id: p.id, version: p.version, active: meta["active"] == true }

@@ -236,11 +236,7 @@ module Orchestration
       @prompt_cache ||= Hash.new
       return @prompt_cache[agent_class] if @prompt_cache.key?(agent_class)
 
-      @prompt_cache[agent_class] = Evaluation::Prompt
-        .where(name: agent_class)
-        .order(version: :desc, id: :desc)
-        .first
-        &.system_prompt
+      @prompt_cache[agent_class] = Evaluation::Prompt.last_for_agent(agent_class)&.system_prompt
     end
   end
   # rubocop:enable Metrics/ClassLength

@@ -5,6 +5,7 @@ module Evaluation
     def self.table_name: () -> String
     def self.for_agent: (String? agent_name) -> relation
     def self.active: () -> relation
+    def self.active_for_agent: (String? agent_name) -> relation
     def self.find_or_initialize_by: (**top attrs) -> Metric
 
     def agent_name: () -> String?

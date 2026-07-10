@@ -2,7 +2,10 @@ module Evaluation
   class Prompt < ApplicationRecord
     type relation = _Relation[Prompt, Integer]
 
-    def self.last_for_agent: (String agent_name) -> Prompt?
+    def self.last_for_agent: (String? agent_name) -> Prompt?
+    def self.versions_for: (String? name) -> relation
+    def self.metadata_versions_for: (String? name) -> relation
+    def self.other_versions_for: (String? name, excluding_id: Integer) -> relation
 
     def self.table_name: () -> String
     def self.find: (Integer id) -> Prompt

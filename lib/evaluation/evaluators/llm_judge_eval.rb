@@ -9,7 +9,7 @@ module Evaluation
       end
 
       def evaluate(sample, dataset_sample, agent_name:, model: self.class.judge_model)
-        metrics = Metric.for_agent(agent_name).where(active: true).to_a # : Array[Evaluation::Metric]
+        metrics = Metric.active_for_agent(agent_name).to_a # : Array[Evaluation::Metric]
         return [] if metrics.empty?
         return log_blank_sample_error if sample.tool_calls.blank? && sample.output.blank?
 

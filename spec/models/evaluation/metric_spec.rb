@@ -77,5 +77,13 @@ RSpec.describe Evaluation::Metric do
         expect(result).not_to include(inactive_metric)
       end
     end
+
+    describe '.active_for_agent' do
+      it 'returns only active metrics for the given agent' do
+        result = described_class.active_for_agent('AgentA')
+        expect(result).to include(active_metric)
+        expect(result).not_to include(inactive_metric, other_agent)
+      end
+    end
   end
 end

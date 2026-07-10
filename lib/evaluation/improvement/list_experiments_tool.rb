@@ -31,7 +31,7 @@ module Evaluation
       end
 
       def load_metrics(prompt_name)
-        Metric.where(agent_name: prompt_name, active: true).to_a # : Array[Evaluation::Metric]
+        Metric.active_for_agent(prompt_name).to_a # : Array[Evaluation::Metric]
       end
 
       def bulk_per_metric_averages(experiments)
