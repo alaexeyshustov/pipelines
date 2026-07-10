@@ -3,7 +3,7 @@
 module Records
   class NormalizeJob < ApplicationJob
     def perform(ids)
-      mails = ApplicationMail.where(id: ids)
+      mails = ApplicationMail.by_ids(ids)
       input = {
         records_to_normalize: mails.map(&:attributes),
         destination_table:    "application_mails",

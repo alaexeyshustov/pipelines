@@ -2,12 +2,15 @@ class ApplicationMail < ApplicationRecord
   COLUMN_NAMES: Array[String]
 
   include Searchable
+  include Batchable
 
   type relation = _Relation[ApplicationMail, Integer]
 
   def self.tool_column_names: () -> Array[String]
   def self.search: (String? q) -> relation
   def self.groupped: () -> relation
+  def self.by_ids: (Array[Integer] ids) -> relation
+  def self.destroy_by_ids: (Array[Integer] | Array[String] ids) -> Array[ApplicationMail]
 
   def date: () -> String?
   def date=: (String?) -> String?

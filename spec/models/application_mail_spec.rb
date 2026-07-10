@@ -63,6 +63,22 @@ RSpec.describe ApplicationMail do
     end
   end
 
+  describe '.by_ids' do
+    it 'returns only the records with the given ids' do
+      a = create(:application_mail, email_id: 'a@gmail.com')
+      b = create(:application_mail, email_id: 'b@gmail.com')
+      _c = create(:application_mail, email_id: 'c@gmail.com')
+
+      expect(described_class.by_ids([ a.id, b.id ])).to contain_exactly(a, b)
+    end
+
+    it 'returns an empty relation when no ids match' do
+      create(:application_mail, email_id: 'a@gmail.com')
+
+      expect(described_class.by_ids([])).to be_empty
+    end
+  end
+
   describe '.groupped' do
     it 'groups records by company and job_title' do
       create(:application_mail, company: 'Acme', job_title: 'Engineer', email_id: 'a@x.com')

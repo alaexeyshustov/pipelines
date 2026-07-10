@@ -3,7 +3,7 @@
 module Records
   class ReconcileJob < ApplicationJob
     def perform(ids)
-      mails = ApplicationMail.where(id: ids)
+      mails = ApplicationMail.by_ids(ids)
       input = {
         emailsto_reconcile: mails.map(&:attributes),
         destination_table:  "interviews",

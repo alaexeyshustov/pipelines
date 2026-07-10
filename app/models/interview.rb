@@ -1,5 +1,6 @@
 class Interview < ApplicationRecord
   include Searchable
+  include Batchable
   validates :company, :job_title, presence: true
   validates :job_title, uniqueness: { scope: :company }
 

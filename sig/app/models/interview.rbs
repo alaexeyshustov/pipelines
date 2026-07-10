@@ -2,12 +2,14 @@ class Interview < ApplicationRecord
   COLUMN_NAMES: Array[String]
 
   include Searchable
+  include Batchable
 
   type relation = _Relation[Interview, Integer]
 
   STATUSES: Array[String]
   def self.tool_column_names: () -> Array[String]
   def self.search: (String? q) -> relation
+  def self.destroy_by_ids: (Array[Integer] | Array[String] ids) -> Array[Interview]
 
   def company: () -> String?
   def company=: (String?) -> String?

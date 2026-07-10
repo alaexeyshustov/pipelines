@@ -1,0 +1,7 @@
+module Batchable
+  extend ActiveSupport::Concern
+
+  module ClassMethods
+    def destroy_by_ids: (Array[Integer] | Array[String] ids) -> Array[ActiveRecord::Base]
+  end
+end
