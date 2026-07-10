@@ -12,6 +12,14 @@ module Orchestration
     validates :name, presence: true
     validate :kind_specific_fields_valid
 
+    scope :with_pipeline_counts, -> {
+      includes(:agent)
+        .left_joins(step_actions: { step: :pipeline })
+        .select("orchestration_actions.*, COUNT(DISTINCT orchestration_pipelines.id) AS pipeline_count")
+        .group("orchestration_actions.id")
+        .order("orchestration_actions.name")
+    }
+
     def input_schema
       agent? ? agent&.input_schema : agent_class&.safe_constantize&.input_schema
     end

@@ -104,4 +104,23 @@ RSpec.describe Orchestration::Pipeline do
       expect(result).to be > Time.current
     end
   end
+
+  describe ".with_step_counts" do
+    before do
+      create(:orchestration_pipeline, name: "Alpha")
+      pipeline_b = create(:orchestration_pipeline, name: "Bravo")
+      pipeline_c = create(:orchestration_pipeline, name: "Charlie")
+      create_list(:orchestration_step, 3, pipeline: pipeline_c)
+      create(:orchestration_step, pipeline: pipeline_b)
+    end
+
+    it "returns the exact step_count per pipeline" do
+      counts = described_class.with_step_counts.to_h { |p| [ p.name, p.step_count.to_i ] }
+      expect(counts).to eq("Alpha" => 0, "Bravo" => 1, "Charlie" => 3)
+    end
+
+    it "orders pipelines by name" do
+      expect(described_class.with_step_counts.map(&:name)).to eq(%w[Alpha Bravo Charlie])
+    end
+  end
 end

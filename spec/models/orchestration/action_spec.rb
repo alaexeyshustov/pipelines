@@ -117,4 +117,32 @@ RSpec.describe Orchestration::Action do
       end
     end
   end
+
+  describe ".with_pipeline_counts" do
+    before do
+      create(:orchestration_action, name: "Alpha")
+      action_b = create(:orchestration_action, name: "Bravo")
+      action_c = create(:orchestration_action, name: "Charlie")
+
+      pipeline_one = create(:orchestration_pipeline)
+      step_one = create(:orchestration_step, pipeline: pipeline_one)
+      step_two = create(:orchestration_step, pipeline: pipeline_one)
+      create(:orchestration_step_action, step: step_one, action: action_b)
+      create(:orchestration_step_action, step: step_two, action: action_b)
+
+      pipeline_two = create(:orchestration_pipeline)
+      pipeline_three = create(:orchestration_pipeline)
+      create(:orchestration_step_action, step: create(:orchestration_step, pipeline: pipeline_two), action: action_c)
+      create(:orchestration_step_action, step: create(:orchestration_step, pipeline: pipeline_three), action: action_c)
+    end
+
+    it "counts distinct pipelines per action, ignoring join fan-out" do
+      counts = described_class.with_pipeline_counts.to_h { |a| [ a.name, a.pipeline_count.to_i ] }
+      expect(counts).to eq("Alpha" => 0, "Bravo" => 1, "Charlie" => 2)
+    end
+
+    it "orders actions by name" do
+      expect(described_class.with_pipeline_counts.map(&:name)).to eq(%w[Alpha Bravo Charlie])
+    end
+  end
 end

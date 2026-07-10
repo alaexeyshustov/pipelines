@@ -8,6 +8,7 @@ module Evaluation
     def self.where: (**top attrs) -> relation
     def self.left_joins: (*top) -> relation
     def self.create!: (**top attrs) -> Dataset
+    def self.with_record_counts: () -> relation
 
     def name: () -> String?
     def name=: (String?) -> String?

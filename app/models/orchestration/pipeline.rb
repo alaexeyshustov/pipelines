@@ -8,6 +8,13 @@ module Orchestration
     validates :name, presence: true
     validate :cron_expression_parseable, if: -> { cron_expression.present? }
 
+    scope :with_step_counts, -> {
+      left_joins(:steps)
+        .select("orchestration_pipelines.*, COUNT(orchestration_steps.id) AS step_count")
+        .group("orchestration_pipelines.id")
+        .order("orchestration_pipelines.name")
+    }
+
     def validate_steps
       PipelineValidator.new(self).validate
     end

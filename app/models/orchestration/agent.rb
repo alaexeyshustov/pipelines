@@ -12,6 +12,12 @@ module Orchestration
     validate :tools_must_be_valid
 
     scope :enabled, -> { where(enabled: true) }
+    scope :with_action_counts, -> {
+      left_joins(:actions)
+        .select("orchestration_agents.*, COUNT(DISTINCT orchestration_actions.id) AS action_count")
+        .group("orchestration_agents.id")
+        .order("orchestration_agents.name")
+    }
 
     before_destroy :ensure_not_referenced
 

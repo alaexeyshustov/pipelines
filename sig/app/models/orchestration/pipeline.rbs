@@ -3,6 +3,7 @@ module Orchestration
     type relation = _Relation[Pipeline, Integer]
 
     def self.table_name: () -> String
+    def self.with_step_counts: () -> relation
 
     def name: () -> String?
     def name=: (String?) -> String?

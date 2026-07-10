@@ -7,11 +7,7 @@ module Orchestration
     before_action :set_pipeline, only: [ :show, :edit, :update, :destroy, :run, :toggle ]
 
     def index
-      @pipelines = Orchestration::Pipeline
-        .left_joins(:steps)
-        .select("orchestration_pipelines.*, COUNT(orchestration_steps.id) AS step_count")
-        .group("orchestration_pipelines.id")
-        .order("orchestration_pipelines.name")
+      @pipelines = Orchestration::Pipeline.with_step_counts
     end
 
     def show

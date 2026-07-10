@@ -7,6 +7,7 @@ module Orchestration
     def self.available_tools: () -> Array[String]
     def self.tool_class_name_from_path: (String path) -> String?
     def self.available_models: () -> Array[[String, Array[String]]]
+    def self.with_action_counts: () -> relation
 
     def actions: () -> Action::relation
 

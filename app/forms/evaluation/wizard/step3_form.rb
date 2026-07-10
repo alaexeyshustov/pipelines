@@ -19,10 +19,7 @@ module Evaluation
       def datasets
         Evaluation::Dataset
           .for_agent(agent_name)
-          .left_joins(:dataset_samples)
-          .group("evaluation_datasets.id")
-          .select("evaluation_datasets.*, COUNT(evaluation_dataset_samples.id) AS record_count")
-          .order(:name)
+          .with_record_counts
       end
 
       private
