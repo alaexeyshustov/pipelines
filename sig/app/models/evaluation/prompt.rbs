@@ -4,6 +4,7 @@ module Evaluation
 
     def self.last_for_agent: (String? agent_name) -> Prompt?
     def self.versions_for: (String? name) -> relation
+    def self.active_metadata_versions_for: (Array[String] agent_names) -> relation
     def self.metadata_versions_for: (String? name) -> relation
     def self.other_versions_for: (String? name, excluding_id: Integer) -> relation
 

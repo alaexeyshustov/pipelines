@@ -50,4 +50,25 @@ RSpec.describe Evaluation::EvaluationResult do
       end
     end
   end
+
+  describe ".overall_average" do
+    it "returns the average score across all results for the experiment" do
+      make_eval_result(experiment: experiment, score: 3.0, metric_name: "accuracy")
+      make_eval_result(experiment: experiment, score: 5.0, metric_name: "relevance")
+
+      expect(described_class.overall_average(experiment)).to be_within(0.001).of(4.0)
+    end
+
+    it "ignores results from other experiments" do
+      make_eval_result(experiment: experiment, score: 4.0, metric_name: "accuracy")
+      other = create(:evaluation_experiment)
+      make_eval_result(experiment: other, score: 1.0, metric_name: "accuracy")
+
+      expect(described_class.overall_average(experiment)).to be_within(0.001).of(4.0)
+    end
+
+    it "returns nil when the experiment has no results" do
+      expect(described_class.overall_average(experiment)).to be_nil
+    end
+  end
 end

@@ -13,6 +13,7 @@ module Evaluation
     before_validation :assign_next_version, on: :create
 
     scope :versions_for, ->(name) { where(name:).order(version: :desc) }
+    scope :active_metadata_versions_for, ->(agent_names) { where(name: agent_names).where("json_extract(metadata, '$.active') = ?", true) }
 
     def self.last_for_agent(agent_name)
       where(name: agent_name).order(version: :desc, id: :desc).first

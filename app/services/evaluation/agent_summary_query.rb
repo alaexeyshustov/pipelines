@@ -115,8 +115,7 @@ module Evaluation
 
     def fetch_active_prompts(agent_names)
       Evaluation::Prompt
-        .where(name: agent_names)
-        .where("json_extract(metadata, '$.active') = ?", true)
+        .active_metadata_versions_for(agent_names)
         .order(version: :desc)
         .to_a # : Array[Evaluation::Prompt]
     end
