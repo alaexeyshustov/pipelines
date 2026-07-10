@@ -11,7 +11,7 @@ module Orchestration
     end
 
     def show
-      @using_actions = @agent.actions.includes(step_actions: { step: :pipeline }).order(:name)
+      @using_actions = @agent.actions_with_usage
     end
 
     def new

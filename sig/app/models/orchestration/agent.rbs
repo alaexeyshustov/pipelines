@@ -10,6 +10,7 @@ module Orchestration
     def self.with_action_counts: () -> relation
 
     def actions: () -> Action::relation
+    def actions_with_usage: () -> Action::relation
 
     def name: () -> String
     def name=: (String) -> String

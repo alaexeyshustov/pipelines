@@ -19,6 +19,9 @@ module Orchestration
     def enabled=: (bool) -> bool
     def enabled?: () -> bool
 
+    def previous_sibling: () -> Step?
+    def next_sibling: () -> Step?
+
     def swap_position_with: (Step other) -> void
 
     def self.derive_status: (Array[ActionRun] action_runs) -> String

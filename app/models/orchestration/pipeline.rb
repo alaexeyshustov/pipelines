@@ -19,6 +19,22 @@ module Orchestration
       PipelineValidator.new(self).validate
     end
 
+    def latest_run
+      pipeline_runs.recent_first.first
+    end
+
+    def run_in_progress?
+      pipeline_runs.in_progress.exists?
+    end
+
+    def enabled_steps
+      steps.where(enabled: true)
+    end
+
+    def steps_with_actions
+      steps.includes(step_actions: { action: :agent })
+    end
+
     def next_run_at(from: Time.current)
       return nil if cron_expression.blank?
       cron = Fugit::Cron.parse(cron_expression)

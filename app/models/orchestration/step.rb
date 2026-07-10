@@ -9,6 +9,14 @@ module Orchestration
     validates :name, presence: true
     validates :position, presence: true, uniqueness: { scope: :pipeline_id }
 
+    def previous_sibling
+      pipeline.steps.where("position < ?", position).order(position: :desc).first
+    end
+
+    def next_sibling
+      pipeline.steps.where("position > ?", position).order(position: :asc).first
+    end
+
     def swap_position_with(other)
       pos_a = position
       pos_b = other.position

@@ -77,6 +77,23 @@ RSpec.describe Orchestration::Agent do
     end
   end
 
+  describe "#actions_with_usage" do
+    it "returns the agent's actions ordered by name" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      action_b = create(:orchestration_action, kind: :agent, agent: agent, name: "Bravo")
+      action_a = create(:orchestration_action, kind: :agent, agent: agent, name: "Alpha")
+      expect(agent.actions_with_usage.to_a).to eq([ action_a, action_b ])
+    end
+
+    it "only includes the agent's own actions" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      other_agent = create(:orchestration_agent, name: "Records::StoreAgent")
+      own = create(:orchestration_action, kind: :agent, agent: agent, name: "Own")
+      create(:orchestration_action, kind: :agent, agent: other_agent, name: "Other")
+      expect(agent.actions_with_usage.to_a).to eq([ own ])
+    end
+  end
+
   describe ".available_tools" do
     it "returns tool class name strings from app/tools/" do
       tools = described_class.available_tools

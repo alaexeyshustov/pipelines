@@ -21,6 +21,10 @@ module Orchestration
 
     before_destroy :ensure_not_referenced
 
+    def actions_with_usage
+      actions.includes(step_actions: { step: :pipeline }).order(:name)
+    end
+
     def self.available_tools
       Rails.root.glob("app/tools/**/*.rb")
         .filter_map { |path| tool_class_name_from_path(path) }

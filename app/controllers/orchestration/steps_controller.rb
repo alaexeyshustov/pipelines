@@ -30,13 +30,13 @@ module Orchestration
     end
 
     def move_up
-      prev_step = @pipeline.steps.where("position < ?", @step.position).order(position: :desc).first
+      prev_step = @step.previous_sibling
       @step.swap_position_with(prev_step) if prev_step
       redirect_to orchestration_pipeline_path(@pipeline)
     end
 
     def move_down
-      next_step = @pipeline.steps.where("position > ?", @step.position).order(position: :asc).first
+      next_step = @step.next_sibling
       @step.swap_position_with(next_step) if next_step
       redirect_to orchestration_pipeline_path(@pipeline)
     end
@@ -57,7 +57,7 @@ module Orchestration
     end
 
     def render_pipeline_show
-      @steps = @pipeline.steps.includes(step_actions: { action: :agent })
+      @steps = @pipeline.steps_with_actions
       @actions = Orchestration::Action.order(:name)
       render "orchestration/pipelines/show", status: :unprocessable_content
     end

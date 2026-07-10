@@ -21,7 +21,7 @@ module Orchestration
     end
 
     def process_steps(previous_outputs)
-      steps = @pipeline_run.pipeline.steps.where(enabled: true).order(:position).to_a # : Array[Step]
+      steps = @pipeline_run.pipeline.enabled_steps.to_a # : Array[Step]
       completed = steps.each do |step|
         action_runs = run_step(step, previous_outputs)
         break if handle_step_failure(action_runs)

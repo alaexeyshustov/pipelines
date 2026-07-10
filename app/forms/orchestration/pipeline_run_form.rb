@@ -28,7 +28,7 @@ module Orchestration
     private
 
     def no_active_run
-      return unless @pipeline.pipeline_runs.exists?(status: %w[pending running])
+      return unless @pipeline.run_in_progress?
 
       errors.add(:base, "A run is already pending.")
     end
