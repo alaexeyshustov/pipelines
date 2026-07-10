@@ -77,6 +77,17 @@ RSpec.describe Orchestration::Agent do
     end
   end
 
+  describe ".named" do
+    it "finds an agent by name" do
+      agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")
+      expect(described_class.named("Emails::ClassifyAgent")).to eq(agent)
+    end
+
+    it "returns nil for a non-existent name" do
+      expect(described_class.named("Does::NotExist")).to be_nil
+    end
+  end
+
   describe "#actions_with_usage" do
     it "returns the agent's actions ordered by name" do
       agent = create(:orchestration_agent, name: "Emails::ClassifyAgent")

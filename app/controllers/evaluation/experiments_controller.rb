@@ -30,7 +30,7 @@ module Evaluation
     end
 
     def snapshot_agent_prompt
-      agent = Orchestration::Agent.find_by(name: params[:agent_name])
+      agent = Orchestration::Agent.named(params[:agent_name])
 
       if agent.nil? || agent.prompt.blank?
         render json: { error: "Agent not found or has no prompt" }, status: :unprocessable_content

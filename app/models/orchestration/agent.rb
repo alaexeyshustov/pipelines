@@ -25,6 +25,8 @@ module Orchestration
       actions.includes(step_actions: { step: :pipeline }).order(:name)
     end
 
+    def self.named(name) = find_by(name:)
+
     def self.available_tools
       Rails.root.glob("app/tools/**/*.rb")
         .filter_map { |path| tool_class_name_from_path(path) }

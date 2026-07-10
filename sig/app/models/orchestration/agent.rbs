@@ -4,6 +4,7 @@ module Orchestration
 
     ALLOWED_TOOL_NAMESPACES: Array[String]
 
+    def self.named: (String name) -> Agent?
     def self.available_tools: () -> Array[String]
     def self.tool_class_name_from_path: (String path) -> String?
     def self.available_models: () -> Array[[String, Array[String]]]
