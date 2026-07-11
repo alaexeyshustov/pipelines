@@ -6,12 +6,12 @@ jobs: 4
 # NOTE (2026-07-11, RALPLAN-DR v2.1): jobs here is kept in sync with the
 # workflow's actual `--jobs` value (4) -- see spec/mutant_helper.rb for the
 # per-worker DB isolation that makes --jobs 4 safe from SQLite lock
-# contention. Re-baselining the threshold is still blocked on a known,
-# unresolved ~3.2% false-neutral-failure rate for mutant's "neutral"-type
-# mutations under this isolation (see spec/mutant_helper.rb's "KNOWN
-# LIMITATION" comment) -- do not raise this threshold until that is fixed
-# or otherwise accounted for, or a stable baseline will be measured against
-# noise.
+# contention. The ~3.2% false-neutral-failure rate for mutant's
+# "neutral"-type mutations under this isolation that previously blocked
+# re-baselining is now resolved (root cause: an at_exit hook inherited by
+# mutant's nested killforks -- see spec/mutant_helper.rb and
+# docs/claude/gotchas.md). Re-baselining MUTATION_SCORE_THRESHOLD itself is
+# still a separate follow-up step, not done here.
 includes:
   - app/agents
   - app/controllers

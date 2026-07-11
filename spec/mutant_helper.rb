@@ -74,29 +74,40 @@ ActiveSupport::ForkTracker.after_fork do
   # Inherited by any nested killfork children so the guard above skips them.
   ENV['MUTANT_ISOLATED_TEST_DB'] = worker_path.to_s
 
+  # Mutant's nested per-mutation "killfork" (Mutant::Isolation::Fork) is a
+  # plain block-form Process.fork, which runs a normal Ruby VM shutdown --
+  # including any at_exit procs already registered in this process -- once
+  # the killfork's block returns. Without the owner_pid guard, every single
+  # killfork (there is one per mutation, all still running inside this same
+  # worker) re-fires this at_exit and deletes the worker's own private DB
+  # file out from under itself while the worker is still alive and processing
+  # further mutations, producing `Could not find table` errors intermittently.
+  owner_pid = Process.pid
   at_exit do
+    next unless Process.pid == owner_pid
+
     FileUtils.rm_f(worker_path)
     FileUtils.rm_f("#{worker_path}-wal")
     FileUtils.rm_f("#{worker_path}-shm")
   end
 end
 
-# KNOWN LIMITATION (2026-07-11, tracked follow-up -- do not silently
-# "fix" by tuning thresholds around it): on a representative 343-mutation
-# scoped run, this isolation eliminates SQLite3::BusyException entirely
-# (0 occurrences across 6+ reruns at --jobs 1 and --jobs 2), but a small,
-# fully deterministic subset (11/343, ~3.2%, always mutant's "neutral"-type
-# self-verification mutations -- semantically inert transformations mutant
-# generates as an internal sanity check, not real coverage) shows
-# `ActiveRecord::StatementInvalid: Could not find table`. Root cause was
-# narrowed to the worker's private DB file intermittently reading back as
-# `File.exist? == true` but `File.size == 0` inside a killfork, but NOT
-# fully resolved despite trying: replacing the named configuration registry
-# entry (necessary, kept above, but insufficient alone), forcing
-# journal_mode away from WAL, forcing a fresh reconnect at the start of
-# every example (made things categorically worse -- broke transactional
-# fixtures), and explicit connection.disconnect! before reconnecting (also
-# made things worse). Reproduces identically at --jobs 1, ruling out
-# cross-worker concurrency. Follow-up needed before the measured mutation
-# score can be treated as fully clean; see the Ralph run's final report for
-# the day this was found.
+# RESOLVED (2026-07-11): the ~3.2% (11/343) intermittent
+# `ActiveRecord::StatementInvalid: Could not find table` failures previously
+# seen here were caused by the `at_exit` hook above firing inside mutant's
+# nested per-mutation "killfork" (Mutant::Isolation::Fork), not just at
+# true worker shutdown. Mutant's killfork is a plain block-form
+# `Process.fork { ... }`, forked from *inside* this persistent worker after
+# this hook already ran and registered the at_exit; a killfork child
+# inherits that registration, and Ruby runs normal at_exit processing when
+# the killfork's block returns (confirmed with a minimal standalone
+# Process.fork repro, independent of Rails/mutant). So every single
+# mutation's killfork was deleting the worker's own private DB file out
+# from under the still-running worker, not just the worker's real exit --
+# explaining why it reproduced identically at --jobs 1 (not a cross-worker
+# race) and why it was timing-sensitive (which killfork "won" the race
+# against the parent's next query varied run to run). Fixed by guarding the
+# at_exit body with an `owner_pid` check so only the process that actually
+# registered it performs the deletion; nested killforks now no-op. Verified
+# with 0 occurrences of `Could not find table` across 2 reruns each at
+# --jobs 1 and --jobs 2 on the same representative 343-mutation slice.
