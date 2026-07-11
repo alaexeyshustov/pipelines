@@ -22,6 +22,11 @@ test:
   primary:
     <<: *default
     database: storage/test.sqlite3
+    # Raised from the shared 5000ms default (defense-in-depth): mutation testing
+    # forks multiple worker processes that share this on-disk DB, and a longer
+    # busy-timeout gives SQLite's own retry loop more room before raising
+    # SQLite3::BusyException under contention. See docs/claude/gotchas.md.
+    timeout: 15000
     pragmas: &wal_pragmas
       journal_mode: wal
       synchronous: normal
@@ -29,6 +34,7 @@ test:
     <<: *default
     database: storage/test_queue.sqlite3
     migrations_paths: db/queue_migrate
+    timeout: 15000
     pragmas: *wal_pragmas
 
 production:
