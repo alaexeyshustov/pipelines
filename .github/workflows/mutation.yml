@@ -29,15 +29,48 @@ jobs:
       - name: Set up database
         run: bundle exec rails db:schema:load
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install JS dependencies
+        run: corepack enable pnpm && pnpm install
+
+      - name: Build assets
+        run: pnpm run build && bundle exec rails tailwindcss:build
+
       - name: Run mutation testing
         run: |
           bundle exec mutant run --jobs 4 2>&1 | tee mutant_output.txt || true
-          score=$(grep "Coverage:" mutant_output.txt | grep -v "Line Coverage" | grep -oE '[0-9]+(\.[0-9]+)?%' | tr -d '%')
-          echo "Mutation score: ${score}%"
-          if [ -z "$score" ]; then
-            echo "::error::Could not parse mutation score from output"
+
+          # Harden score parsing: fail loudly on format drift or ambiguous
+          # matches instead of silently mis-scoring (see docs/claude/gotchas.md).
+          coverage_lines=$(grep "Coverage:" mutant_output.txt | grep -v "Line Coverage" || true)
+          line_count=$(printf '%s\n' "$coverage_lines" | grep -c "Coverage:" || true)
+
+          if [ -z "$coverage_lines" ] || [ "$line_count" -eq 0 ]; then
+            echo "::error::Could not find a 'Coverage:' line in mutant output (format drift, or mutant crashed before reporting)"
             exit 1
           fi
+
+          if [ "$line_count" -ne 1 ]; then
+            echo "::error::Expected exactly one 'Coverage:' line in mutant output, found $line_count. Refusing to guess which one is authoritative:"
+            printf '%s\n' "$coverage_lines"
+            exit 1
+          fi
+
+          score_matches=$(printf '%s' "$coverage_lines" | grep -oE '[0-9]+(\.[0-9]+)?%')
+          match_count=$(printf '%s\n' "$score_matches" | grep -c '%' || true)
+
+          if [ "$match_count" -ne 1 ]; then
+            echo "::error::Expected exactly one percentage value on the Coverage line, found $match_count: $score_matches"
+            exit 1
+          fi
+
+          score=$(printf '%s' "$score_matches" | tr -d '%')
+          echo "Mutation score: ${score}%"
+
           awk -v s="$score" -v t="$MUTATION_SCORE_THRESHOLD" \
             'BEGIN { if (s+0 < t+0) { print "::error::Mutation score " s "% is below the " t "% minimum threshold"; exit 1 } }' \
             || exit 1

@@ -1,8 +1,17 @@
 integration: rspec
 usage: opensource
-jobs: 2
+jobs: 4
 # Minimum mutation score threshold: 90% (MUTATION_SCORE_THRESHOLD in .github/workflows/mutation.yml)
 # Raise MUTATION_SCORE_THRESHOLD after establishing a stable baseline.
+# NOTE (2026-07-11, RALPLAN-DR v2.1): jobs here is kept in sync with the
+# workflow's actual `--jobs` value (4) -- see spec/mutant_helper.rb for the
+# per-worker DB isolation that makes --jobs 4 safe from SQLite lock
+# contention. Re-baselining the threshold is still blocked on a known,
+# unresolved ~3.2% false-neutral-failure rate for mutant's "neutral"-type
+# mutations under this isolation (see spec/mutant_helper.rb's "KNOWN
+# LIMITATION" comment) -- do not raise this threshold until that is fixed
+# or otherwise accounted for, or a stable baseline will be measured against
+# noise.
 includes:
   - app/agents
   - app/controllers
