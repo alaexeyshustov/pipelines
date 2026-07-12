@@ -35,29 +35,29 @@ matcher:
     - EmailVector*
     - SqliteVecExtension*
   ignore:
-    - ApplicationMailsSchema
-    - Pipeline
-    # I/O-heavy adapter classes: unit tests exist but network-boundary mutations produce noise, not signal
-    - Emails::Adapters::GmailAdapter
-    - Emails::Adapters::YahooAdapter
-    - Emails::Adapters::ImapBodyParser
-    - Emails::Adapters::GmailBodyExtractor
-    - Emails::Adapters::GmailPaginator
-    - Emails::Adapters::GmailMessageParser
-    - Emails::Adapters::YahooMessageParser
-    - Emails::GmailAuth
+    - ApplicationMailsSchema*
+    - Pipeline*
+    # I/O-heavy adapter/auth classes: unit tests exist but network-boundary mutations produce noise, not signal.
+    # GmailAdapter/YahooAdapter wrap Google::Apis/Net::IMAP calls; GmailAuth opens a raw TCPServer/HTTP OAuth callback listener.
+    - Emails::Adapters::GmailAdapter*
+    - Emails::Adapters::YahooAdapter*
+    - Emails::GmailAuth*
+    # ImapBodyParser, GmailBodyExtractor, GmailPaginator, GmailMessageParser, YahooMessageParser were
+    # previously (and incorrectly) ignored as "network noise" -- they are pure MIME/header-parsing and
+    # pagination-control logic with no I/O, so they've been removed from this list and are deliberately
+    # back in mutation scope. Follow up if they surface real test gaps once mutation testing re-runs.
     # AI classifier classes: LLM-boundary mutations produce noise, not signal
-    - Emails::ClassifyAgent
-    - Emails::ClassifyTool
+    - Emails::ClassifyAgent*
+    - Emails::ClassifyTool*
     # Controllers: UI routing layer, low mutation testing value
-    - ApplicationController
-    - ApplicationMailsController
-    - InterviewsController
-    - Orchestration::ActionsController
-    - Orchestration::AgentsController
-    - Orchestration::AllPipelineRunsController
-    - Orchestration::PipelineRunsController
-    - Orchestration::PipelinesController
-    - Orchestration::SchemaBuildersController
-    - Orchestration::StepActionsController
-    - Orchestration::StepsController
+    - ApplicationController*
+    - ApplicationMailsController*
+    - InterviewsController*
+    - Orchestration::ActionsController*
+    - Orchestration::AgentsController*
+    - Orchestration::AllPipelineRunsController*
+    - Orchestration::PipelineRunsController*
+    - Orchestration::PipelinesController*
+    - Orchestration::SchemaBuildersController*
+    - Orchestration::StepActionsController*
+    - Orchestration::StepsController*
