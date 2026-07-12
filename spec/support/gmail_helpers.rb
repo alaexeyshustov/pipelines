@@ -2,11 +2,16 @@ require 'yaml/store'
 
 module GmailHelpers
   CREDENTIALS_PATH = Rails.root.join('spec/fixtures/files/gmail_credentials.json').to_s
-  TOKEN_PATH       = Rails.root.join('tmp/test_gmail_token.yaml').to_s
   GMAIL_BASE_URL   = 'https://gmail.googleapis.com/gmail/v1/users/me'.freeze
 
+  # Per-process path: computed fresh on every call (never memoized) so
+  # concurrent mutant workers each own a distinct token file on disk.
+  def self.token_path
+    Rails.root.join("tmp/test_gmail_token.#{Process.pid}.yaml").to_s
+  end
+
   def setup_gmail
-    store = YAML::Store.new(TOKEN_PATH)
+    store = YAML::Store.new(GmailHelpers.token_path)
     store.transaction do
       store['default'] = {
         'client_id'                => 'test_client_id.apps.googleusercontent.com',
@@ -17,11 +22,11 @@ module GmailHelpers
       }.to_json
     end
 
-    Emails.configure(gmail: { credentials_path: CREDENTIALS_PATH, token_path: TOKEN_PATH })
+    Emails.configure(gmail: { credentials_path: CREDENTIALS_PATH, token_path: GmailHelpers.token_path })
   end
 
   def teardown_gmail
-    FileUtils.rm_f(TOKEN_PATH)
+    FileUtils.rm_f(GmailHelpers.token_path)
     Emails.instance_variable_set(:@provider_registry, nil)
   end
 
