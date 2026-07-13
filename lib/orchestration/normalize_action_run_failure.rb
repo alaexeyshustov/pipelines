@@ -155,11 +155,7 @@ module Orchestration
     end
 
     def parse_json(value)
-      return nil unless value.is_a?(String)
-
-      JSON.parse(value)
-    rescue JSON::ParserError
-      nil
+      JSON::Helpers.safe_parse(value)
     end
 
     def invalid_model_raw_content
@@ -194,11 +190,7 @@ module Orchestration
     end
 
     def stringify(value)
-      return value.to_s if value.is_a?(String)
-
-      JSON.generate(value).to_s
-    rescue JSON::GeneratorError, TypeError
-      value.to_s
+      JSON::Helpers.safe_generate(value)
     end
 
     def sanitize_value(value)

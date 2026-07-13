@@ -48,10 +48,11 @@ module Interviews
     end
 
     def parse_error_body(body)
-      parsed = JSON.parse(body)
+      # body is always a String (Net::HTTP response#body); safe_parse's nil-fallback
+      # for a hypothetical non-String input replaces the previous behavior of
+      # raising TypeError, an accepted, practically-unreachable delta.
+      parsed = JSON::Helpers.safe_parse(body, fallback: nil)
       parsed.is_a?(Hash) ? parsed.transform_keys(&:to_s) : nil
-    rescue JSON::ParserError
-      nil
     end
 
     def patch_gist(token, csv_content)

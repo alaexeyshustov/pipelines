@@ -72,7 +72,7 @@ module Evaluation
     def prompt_versions
       prompts = Prompt.metadata_versions_for(params[:agent_name])
       render json: prompts.map { |p|
-        meta = begin; JSON.parse(p.metadata || "{}"); rescue JSON::ParserError; {}; end
+        meta = JSON::Helpers.safe_parse(p.metadata, fallback: {})
         { id: p.id, version: p.version, active: meta["active"] == true }
       }
     end
