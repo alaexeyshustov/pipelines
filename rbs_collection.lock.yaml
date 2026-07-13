@@ -505,4 +505,8 @@ gems:
     revision: 3f5e8df1ce89ea06067fa42263012c968b4e583e
     remote: https://github.com/ruby/gem_rbs_collection.git
     repo_dir: gems
+- name: webrick
+  version: 1.9.2
+  source:
+    type: rubygems
 gemfile_lock_path: Gemfile.lock
