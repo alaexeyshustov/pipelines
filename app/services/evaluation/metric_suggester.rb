@@ -49,7 +49,7 @@ module Evaluation
     end
 
     def parse_response(content)
-      parsed = content.is_a?(String) ? JSON.parse(content) : content
+      parsed = JSON::Helpers.parse_maybe(content)
       raise Error, "Expected JSON array" unless parsed.is_a?(Array)
 
       parsed.filter_map { |entry| parse_metric_entry(entry) }

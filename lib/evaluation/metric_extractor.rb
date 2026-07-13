@@ -40,7 +40,7 @@ module Evaluation
     end
 
     def parse_metrics(content)
-      parsed = content.is_a?(String) ? JSON.parse(content) : content
+      parsed = JSON::Helpers.parse_maybe(content)
       raise ArgumentError, "Metric extraction returned non-array for agent #{@agent_name}" unless parsed.is_a?(Array)
 
       validate_metric_entries!(parsed)
