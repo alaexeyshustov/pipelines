@@ -1,6 +1,6 @@
 module JSON
   module Helpers
-    def self.parse_maybe: (json_object_value value, ?fallback: json_object_value) -> json_object_value
+    def self.parse_maybe: (json_object_value value) -> json_object_value
     def self.safe_parse: (json_object_value str, ?fallback: json_object_value) -> json_object_value
     def self.safe_generate: (json_object_value value) -> String
   end

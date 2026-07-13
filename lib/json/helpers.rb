@@ -2,7 +2,7 @@
 
 module JSON
   module Helpers
-    def self.parse_maybe(value, fallback: nil)
+    def self.parse_maybe(value)
       return value unless value.is_a?(String)
 
       JSON.parse(value)

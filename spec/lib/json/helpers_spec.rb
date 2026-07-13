@@ -26,8 +26,8 @@ RSpec.describe JSON::Helpers do
       expect { described_class.parse_maybe("not json") }.to raise_error(JSON::ParserError)
     end
 
-    it "returns the given fallback default when value is nil-like but fallback is unused for non-String input" do
-      expect(described_class.parse_maybe(42, fallback: "unused")).to eq(42)
+    it "returns a non-String, non-Array, non-Hash value unchanged" do
+      expect(described_class.parse_maybe(42)).to eq(42)
     end
   end
 
