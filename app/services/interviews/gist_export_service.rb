@@ -48,10 +48,8 @@ module Interviews
     end
 
     def parse_error_body(body)
-      parsed = JSON.parse(body)
+      parsed = JSON::Helpers.safe_parse(body, fallback: nil)
       parsed.is_a?(Hash) ? parsed.transform_keys(&:to_s) : nil
-    rescue JSON::ParserError
-      nil
     end
 
     def patch_gist(token, csv_content)

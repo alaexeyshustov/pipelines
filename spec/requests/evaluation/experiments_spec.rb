@@ -462,6 +462,14 @@ RSpec.describe "Evaluation::Experiments" do
       get prompt_versions_evaluation_experiments_path, params: { agent_name: "unknown_agent" }
       expect(response.parsed_body).to eq([])
     end
+
+    it "treats malformed stored metadata as inactive instead of raising" do
+      prompt.update_column(:metadata, "not json")
+      get prompt_versions_evaluation_experiments_path, params: { agent_name: "classify_agent" }
+      expect(response).to have_http_status(:ok)
+      data = response.parsed_body
+      expect(data.first["active"]).to eq(false)
+    end
   end
 
   describe "DELETE /evaluation/experiments/:id" do
