@@ -111,6 +111,64 @@ RSpec.describe Orchestration::Step do
     end
   end
 
+  describe '#swap_position_with' do
+    it 'exchanges the positions of two adjacent steps' do
+      pipeline = create(:orchestration_pipeline)
+      step1 = create(:orchestration_step, pipeline: pipeline, position: 1)
+      step2 = create(:orchestration_step, pipeline: pipeline, position: 2)
+
+      step1.swap_position_with(step2)
+
+      expect(step1.reload.position).to eq(2)
+      expect(step2.reload.position).to eq(1)
+    end
+
+    it 'exchanges the positions of two non-adjacent steps' do
+      pipeline = create(:orchestration_pipeline)
+      step1 = create(:orchestration_step, pipeline: pipeline, position: 1)
+      step3 = create(:orchestration_step, pipeline: pipeline, position: 3)
+
+      step1.swap_position_with(step3)
+
+      expect(step1.reload.position).to eq(3)
+      expect(step3.reload.position).to eq(1)
+    end
+
+    it 'leaves other steps in the pipeline untouched' do
+      pipeline = create(:orchestration_pipeline)
+      step1 = create(:orchestration_step, pipeline: pipeline, position: 1)
+      step2 = create(:orchestration_step, pipeline: pipeline, position: 2)
+      step3 = create(:orchestration_step, pipeline: pipeline, position: 3)
+
+      step1.swap_position_with(step3)
+
+      expect(step2.reload.position).to eq(2)
+    end
+
+    it 'swaps through a temporary position without violating uniqueness' do
+      pipeline = create(:orchestration_pipeline)
+      step1 = create(:orchestration_step, pipeline: pipeline, position: 1)
+      step2 = create(:orchestration_step, pipeline: pipeline, position: 2)
+
+      expect { step1.swap_position_with(step2) }.not_to raise_error
+
+      positions = pipeline.steps.pluck(:position)
+      expect(positions).to eq(positions.uniq)
+    end
+
+    it 'keeps every position in the pipeline unique after swapping' do
+      pipeline = create(:orchestration_pipeline)
+      step1 = create(:orchestration_step, pipeline: pipeline, position: 1)
+      create(:orchestration_step, pipeline: pipeline, position: 2)
+      step3 = create(:orchestration_step, pipeline: pipeline, position: 3)
+
+      step1.swap_position_with(step3)
+
+      positions = pipeline.steps.pluck(:position).sort
+      expect(positions).to eq([ 1, 2, 3 ])
+    end
+  end
+
   describe 'associations' do
     it 'destroys step_actions when step is destroyed' do
       pipeline = create(:orchestration_pipeline)
