@@ -1,0 +1,43 @@
+{
+  "env": {
+    "ENABLE_LSP_TOOL": "1",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "permissions": {
+    "deny": [
+      "Bash(sudo *)",
+      "Bash(rm -rf /*)",
+      "Read(.env)",
+      "Read(**/.env*)"
+    ]
+  },
+  "model": "sonnet",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/block-git.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rtk hook claude"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "ruby-lsp@claude-plugins-official": true
+  },
+  "tui": "fullscreen",
+  "theme": "dark-ansi",
+  "teammateMode": "tmux"
+}

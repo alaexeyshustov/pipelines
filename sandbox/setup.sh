@@ -8,6 +8,10 @@ curl -fsSL https://mise.run | MISE_INSTALL_PATH=/usr/local/bin/mise sh
 echo 'eval "$(/usr/local/bin/mise activate zsh)"' >> /etc/zsh/zshrc
 echo 'eval "$(/usr/local/bin/mise activate bash)"' >> /etc/bash.bashrc
 
+# rtk — system-wide binary
+curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+mv ~/.local/bin/rtk /usr/local/bin/rtk
+
 # docker
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 chmod a+r /etc/apt/keyrings/docker.gpg
@@ -35,6 +39,13 @@ for u in $(ls /home 2>/dev/null); do
     cargo install --path "/home/$u/rubydex/rust/rubydex-mcp"
   PNPM_HOME="/home/$u/.local/share/pnpm"
   sudo -u "$u" env HOME="/home/$u" PNPM_HOME="$PNPM_HOME" PATH="$PNPM_HOME:$PNPM_HOME/bin:$PATH" /usr/local/bin/mise exec -- pnpm add -g '@anthropic-ai/claude-code'
+  # Claude Code global settings and hooks
+  mkdir -p "/home/$u/.claude/hooks"
+  cp /work/sandbox/settings.json "/home/$u/.claude/settings.json"
+  cp /work/sandbox/block-git.sh "/home/$u/.claude/hooks/block-git.sh"
+  chmod +x "/home/$u/.claude/hooks/block-git.sh"
+  chown -R "$u:$u" "/home/$u/.claude"
+
   usermod -aG docker "$u"
   chsh -s /usr/bin/zsh "$u" 2>/dev/null || true
   cat >> "/home/$u/.zshrc" << 'ZSHRC'
@@ -49,6 +60,7 @@ export LS_COLORS='di=1;34:ln=1;36:ex=1;32:*.rb=33:*.js=33:*.ts=33:*.json=36:*.ym
 alias ls='ls --color=auto'
 alias ll='ls -lah --color=auto'
 alias grep='grep --color=auto'
+alias clod='claude --worktree --dangerously-skip-permissions'
 
 PROMPT='%F{cyan}%n@%m%f %F{yellow}%~%f %(?..%F{red})%#%f '
 RPROMPT='%F{240}%*%f'
