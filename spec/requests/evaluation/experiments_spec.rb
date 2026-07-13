@@ -468,7 +468,7 @@ RSpec.describe "Evaluation::Experiments" do
       get prompt_versions_evaluation_experiments_path, params: { agent_name: "classify_agent" }
       expect(response).to have_http_status(:ok)
       data = response.parsed_body
-      expect(data.first["active"]).to eq(false)
+      expect(data.first["active"]).to be(false)
     end
   end
 

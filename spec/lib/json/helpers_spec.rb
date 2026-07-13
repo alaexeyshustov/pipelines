@@ -14,7 +14,7 @@ RSpec.describe JSON::Helpers do
     end
 
     it "returns an Array unchanged" do
-      array = [1, 2, 3]
+      array = [ 1, 2, 3 ]
       expect(described_class.parse_maybe(array)).to equal(array)
     end
 
