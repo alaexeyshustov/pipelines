@@ -1,0 +1,12 @@
+module Evaluation
+  class ImproveFailureLogger
+    @context: String
+    @experiment: Experiment
+    @error: StandardError
+
+    def self.call: (context: String, experiment: Experiment, error: StandardError) -> void
+
+    def initialize: (context: String, experiment: Experiment, error: StandardError) -> void
+    def call: () -> void
+  end
+end
