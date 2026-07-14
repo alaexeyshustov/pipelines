@@ -1,0 +1,18 @@
+module Orchestration
+  class SchemaBuilderParamsForm < BaseForm
+    @params: ActionController::Parameters | json_object
+
+    def initialize: (?(ActionController::Parameters | json_object) params) -> void
+    def apply: (SchemaBuilder node) -> SchemaBuilder
+
+    private
+
+    def provided?: (Symbol key) -> bool
+    def apply_string_field: (json_object schema, Symbol key) -> void
+    def apply_enum: (json_object schema, SchemaBuilder node) -> void
+    def coerce_enum_values: (Array[String] values, String? type) -> Array[json_value]
+    def apply_numeric_bound: (json_object schema, SchemaBuilder node, Symbol key) -> void
+    def apply_required_toggle: (json_object schema) -> void
+    def apply_additional_properties: (json_object schema) -> void
+  end
+end
