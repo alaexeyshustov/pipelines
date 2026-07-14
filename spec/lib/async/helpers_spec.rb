@@ -2,45 +2,32 @@ require "rails_helper"
 
 RSpec.describe Async::Helpers do
   describe ".with_semaphore" do
-    it "yields a semaphore configured with the given limit" do
-      Sync do
-        described_class.with_semaphore(3) do |semaphore|
-          expect(semaphore).to be_a(Async::Semaphore)
-          []
-        end
-      end
-    end
-
-    it "waits for and flattens the results of the dispatched tasks" do
-      result = Sync do
-        described_class.with_semaphore(2) do |semaphore|
-          [ 1, 2, 3 ].map { |n| semaphore.async { [ n, n * 2 ] } }
-        end
-      end
+    it "calls the block once per item and flattens the results" do
+      result = described_class.with_semaphore(concurrency: 2, items: [ 1, 2, 3 ]) { |n| [ n, n * 2 ] }
 
       expect(result).to contain_exactly(1, 2, 2, 4, 3, 6)
     end
 
-    it "returns an empty array when no tasks are dispatched" do
-      result = Sync do
-        described_class.with_semaphore(2) { |_semaphore| [] }
-      end
+    it "passes each item through to the block" do
+      seen = []
 
-      expect(result).to eq([])
+      described_class.with_semaphore(concurrency: 2, items: [ 1, 2, 3 ]) { |n| seen << n }
+
+      expect(seen).to contain_exactly(1, 2, 3)
     end
-  end
 
-  describe ".with_barrier" do
-    it "yields a semaphore backed by a barrier and waits for all dispatched tasks" do
-      completed = []
+    it "returns an empty array when items is empty" do
+      expect(described_class.with_semaphore(concurrency: 2, items: []) { |n| n }).to eq([])
+    end
 
-      Sync do
-        described_class.with_barrier(2) do |semaphore|
-          [ 1, 2, 3 ].each { |n| semaphore.async { completed << n } }
-        end
-      end
+    it "defaults to a concurrency of 5 and an empty items list" do
+      expect(described_class.with_semaphore { |n| n }).to eq([])
+    end
 
-      expect(completed).to contain_exactly(1, 2, 3)
+    it "keeps non-array block results unflattened" do
+      result = described_class.with_semaphore(concurrency: 2, items: [ 1, 2, 3 ]) { |n| n }
+
+      expect(result).to contain_exactly(1, 2, 3)
     end
   end
 end

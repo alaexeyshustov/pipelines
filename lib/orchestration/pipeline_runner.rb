@@ -77,12 +77,8 @@ module Orchestration
     end
 
     def run_actions_in_parallel(action_runs)
-      Sync do
-        Async::Helpers.with_barrier(10) do |semaphore|
-          action_runs.each do |action_run|
-            semaphore.async { execute_action(action_run) }
-          end
-        end
+      Async::Helpers.with_semaphore(concurrency: 10, items: action_runs) do |action_run|
+        execute_action(action_run)
       end
     end
 

@@ -24,17 +24,9 @@ module Pipeline
     private
 
     def fetch_from_providers
-      Sync { run_provider_tasks }
-    end
-
-    def run_provider_tasks
-      Async::Helpers.with_semaphore(5) do |semaphore|
-        [ "gmail", "yahoo" ].map do |provider|
-          semaphore.async do
-            result = Emails::RetrievalService.call(provider: provider, after_date: @date - 1, before_date: @date)
-            normalize_provider_result(result)
-          end
-        end
+      Async::Helpers.with_semaphore(concurrency: 5, items: [ "gmail", "yahoo" ]) do |provider|
+        result = Emails::RetrievalService.call(provider: provider, after_date: @date - 1, before_date: @date)
+        normalize_provider_result(result)
       end
     end
 

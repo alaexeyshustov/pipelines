@@ -1,16 +1,13 @@
 module Async
   module Helpers
-    def self.with_semaphore(limit)
-      semaphore = Async::Semaphore.new(limit)
-      tasks = yield(semaphore) # : Array[Async::Task[untyped]]
-      tasks.flat_map(&:wait)
-    end
-
-    def self.with_barrier(limit)
-      barrier = Async::Barrier.new
-      semaphore = Async::Semaphore.new(limit, parent: barrier)
-      yield(semaphore)
-      barrier.wait
+    def self.with_semaphore(concurrency: 5, items: [])
+      Sync do
+        semaphore = Async::Semaphore.new(concurrency)
+        tasks = items.map do |item|
+          semaphore.async { yield(item) }
+        end
+        tasks.flat_map(&:wait)
+      end
     end
   end
 end
