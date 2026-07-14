@@ -12,9 +12,7 @@ module Evaluation
       def parse_output(output)
         return "" if output.blank?
 
-        JSON.parse(output)
-      rescue JSON::ParserError, TypeError
-        output
+        JSON::Helpers.safe_parse(output, fallback: output)
       end
 
       def parse(content)
@@ -22,7 +20,7 @@ module Evaluation
         raise ArgumentError, "expected Array" unless entries.is_a?(Array)
 
         entries.each_with_index.filter_map { |entry, i| normalize_entry(entry, i) }
-      rescue JSON::ParserError, ArgumentError => e
+      rescue ArgumentError => e
         Rails.logger.error("JudgeResponseParser: failed to parse judge response: #{e.message}")
         []
       end
@@ -35,8 +33,7 @@ module Evaluation
         elsif content.is_a?(Array)
           content
         else
-          str_content = content #: String
-          JSON.parse(str_content)
+          JSON::Helpers.safe_parse(content)
         end
       end
 
