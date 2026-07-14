@@ -1,7 +1,6 @@
 module Async
   module Helpers
-    # rubocop:disable RBS/Lint/NoUntyped -- Semaphore#async is untyped in the async gem's own RBS; not narrowable from our side.
-    def self.with_semaphore: (?concurrency: Integer, ?items: Array[untyped]) { (untyped) -> untyped } -> Array[untyped]
-    # rubocop:enable RBS/Lint/NoUntyped
+    def self.with_semaphore: [T, U] (?concurrency: Integer, ?items: Array[T]) { (T) -> (Array[U] | U) } -> Array[U]
+    def self.with_barrier: [T] (?concurrency: Integer, ?items: Array[T]) { (T) -> void } -> void
   end
 end

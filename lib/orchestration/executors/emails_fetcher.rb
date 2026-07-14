@@ -32,13 +32,8 @@ module Orchestration
       end
 
       def fetch_emails_async(providers, parsed_date, max_results)
-        Sync do
-          semaphore = Async::Semaphore.new(5)
-          providers.map do |provider|
-            semaphore.async do
-              Emails.list_messages(provider, max_results:, after_date: parsed_date - 1, before_date: parsed_date)
-            end
-          end.flat_map(&:wait)
+        Async::Helpers.with_semaphore(items: providers) do |provider|
+          Emails.list_messages(provider, max_results:, after_date: parsed_date - 1, before_date: parsed_date)
         end
       end
     end

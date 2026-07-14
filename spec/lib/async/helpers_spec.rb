@@ -30,4 +30,22 @@ RSpec.describe Async::Helpers do
       expect(result).to contain_exactly(1, 2, 3)
     end
   end
+
+  describe ".with_barrier" do
+    it "calls the block once per item and waits for all of them to complete" do
+      completed = []
+
+      described_class.with_barrier(concurrency: 2, items: [ 1, 2, 3 ]) { |n| completed << n }
+
+      expect(completed).to contain_exactly(1, 2, 3)
+    end
+
+    it "does not raise when items is empty" do
+      expect { described_class.with_barrier(concurrency: 2, items: []) { |n| n } }.not_to raise_error
+    end
+
+    it "defaults to a concurrency of 5 and an empty items list" do
+      expect { described_class.with_barrier { |n| n } }.not_to raise_error
+    end
+  end
 end

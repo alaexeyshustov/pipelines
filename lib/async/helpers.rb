@@ -9,5 +9,18 @@ module Async
         tasks.flat_map(&:wait)
       end
     end
+
+    def self.with_barrier(concurrency: 5, items: [])
+      Sync do
+        barrier = Async::Barrier.new
+        semaphore = Async::Semaphore.new(concurrency, parent: barrier)
+
+        items.each do |item|
+          semaphore.async { yield(item) }
+        end
+
+        barrier.wait
+      end
+    end
   end
 end
