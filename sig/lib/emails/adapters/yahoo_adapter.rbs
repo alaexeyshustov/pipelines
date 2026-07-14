@@ -3,11 +3,9 @@ module Emails
     type imap_options = { ?username: String?, ?password: String?, ?host: String, ?port: Integer }
     type imap_config = { host: String, port: Integer, username: String, password: String }
     class YahooAdapter < BaseAdapter
-      @imap_config: imap_config
+      @session: ImapSession
+      @label_manager: ImapLabelManager
       @labels: Array[label]
-      @mutex: Mutex
-      @current_mailbox: String?
-      @imap: Net::IMAP?
 
       def self.from_env: (?imap_options) -> YahooAdapter
       def self.test_connection: (?imap_options) -> void
@@ -15,27 +13,17 @@ module Emails
       def initialize: (host: String, port: Integer, username: String, password: String) -> void
       def get_message: (String | Integer message_id, ?label: String?) -> message
       def modify_labels: (String | Integer message_uid, ?add: Array[String], ?remove: Array[String], ?source_mailbox: String) -> modify_result
-
-      private
-
-      def add_labels: (Integer uid, Array[String] add, String source_mailbox) -> void
-      def apply_add_labels: (Integer uid, Array[String] add, String source_mailbox) -> void
-      def remove_labels: (Integer uid, Array[String] remove, String source_mailbox) -> void
-      def remove_label: (Integer uid, String label, String source_mailbox) -> void
-      def apply_remove_label: (Integer uid, String label, String source_mailbox) -> void
-      def imap: () -> Net::IMAP
-      def ensure_mailbox: (String mailbox) -> void
-      def imap_flag?: (String label) -> bool
+      def create_label: (name: String) -> label
 
       HEADER_FIELDS: Array[String]
       FULL_FIELDS: Array[String]
 
-      def with_lock: [T] () { () -> T } -> T
+      private
+
+      def fetch_uids: (String mailbox, Array[String] criteria, Integer max_results, Integer offset) -> Array[message]
       def build_mailbox: (String?) -> String
       def parse_mail: (Integer uid, Array[String] fields) -> Mail::Message?
-      def fetch_raw_mail: (Integer uid, Array[String] fields) -> String?
       def to_message: (message parsed, Mail::Message mail) -> message
-      def list_message: (Integer uid, String mailbox) -> message?
     end
   end
 end

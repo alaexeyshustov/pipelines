@@ -1,6 +1,5 @@
 module Emails
   module Adapters
-    # rubocop:disable Metrics/ClassLength
     class YahooAdapter < BaseAdapter
       def self.setup(_opts = {})
         Rails.logger.debug "Yahoo setup:"
@@ -33,53 +32,30 @@ module Emails
       end
 
       def initialize(host:, port:, username:, password:)
-        @imap_config     = { host:, port:, username:, password: }
-        @mutex           = Mutex.new
-        @imap            = nil
-        @current_mailbox = nil
+        @session       = ImapSession.new(host: host, port: port, username: username, password: password)
+        @label_manager = ImapLabelManager.new(session: @session)
       end
 
       def on_exit
-        return unless @imap
-
-        @imap&.logout rescue nil
-        @imap&.disconnect rescue nil
-      rescue StandardError
-        nil
-      ensure
-        @imap = nil
+        @session.on_exit
       end
 
       def search_messages(query, max_results: 100, offset: 0, label: nil)
-        mailbox = build_mailbox(label)
-
-        with_lock do
-          ensure_mailbox(mailbox)
-          criteria = ImapSearchCriteria.new(query: query).build
-          uids = imap.uid_search(criteria).sort.reverse
-          uids = uids[offset, max_results] || []
-          uids.filter_map { |uid| list_message(uid, mailbox) }
-        end
+        criteria = ImapSearchCriteria.new(query: query).build
+        fetch_uids(build_mailbox(label), criteria, max_results, offset)
       end
 
       def list_messages(max_results: 100, after_date: nil, before_date: nil, offset: 0, label: nil)
-        mailbox = build_mailbox(label)
-
-        with_lock do
-          ensure_mailbox(mailbox)
-          criteria = ImapSearchCriteria.new(after_date: after_date, before_date: before_date).build
-          uids = imap.uid_search(criteria).sort.reverse
-          uids = uids[offset, max_results] || []
-          uids.filter_map { |uid| list_message(uid, mailbox) }
-        end
+        criteria = ImapSearchCriteria.new(after_date: after_date, before_date: before_date).build
+        fetch_uids(build_mailbox(label), criteria, max_results, offset)
       end
 
       def get_message(message_id, label: nil)
         uid     = message_id.to_i
         mailbox = build_mailbox(label)
 
-        with_lock do
-          ensure_mailbox(mailbox)
+        @session.with_lock do
+          @session.ensure_mailbox(mailbox)
           mail = parse_mail(uid, FULL_FIELDS)
           raise "Message not found: #{message_id}" unless mail
 
@@ -89,8 +65,8 @@ module Emails
       end
 
       def get_labels
-        @labels ||= with_lock do
-          (imap.list("", "*") || []).map do |mb|
+        @labels ||= @session.with_lock do
+          (@session.imap.list("", "*") || []).map do |mb|
             fname = mb.name
             { id: fname, name: fname, type: (Array(mb.attr).map(&:to_s).first || "user") }
           end
@@ -98,22 +74,17 @@ module Emails
       end
 
       def get_unread_count
-        with_lock { imap.status("INBOX", [ "UNSEEN" ])["UNSEEN"] || 0 }
+        @session.with_lock { @session.imap.status("INBOX", [ "UNSEEN" ])["UNSEEN"] || 0 }
       end
 
       def create_label(name:)
-        with_lock { imap.create(name) }
-        { id: name, name: name, type: "user" }
-      rescue Net::IMAP::NoResponseError => error
-        raise error unless error.message.include?("CREATE failed - Mailbox exists")
-
-        { id: name, name: name, type: "user" }
+        @label_manager.create_label(name: name)
       end
 
       def modify_labels(message_uid, add: [], remove: [], source_mailbox: "INBOX")
         uid = message_uid.to_i
-        add_labels(uid, add, source_mailbox) unless add.empty?
-        remove_labels(uid, remove, source_mailbox)
+        @label_manager.add_labels(uid, add, source_mailbox) unless add.empty?
+        @label_manager.remove_labels(uid, remove, source_mailbox)
         { message_id: uid, added: add, removed: remove }
       end
 
@@ -122,84 +93,23 @@ module Emails
 
       private
 
-      def add_labels(uid, add, source_mailbox)
-        with_lock { apply_add_labels(uid, add, source_mailbox) }
-      end
-
-      def apply_add_labels(uid, add, source_mailbox)
-        ensure_mailbox(source_mailbox)
-        add.each do |label|
-          if imap_flag?(label)
-            imap.uid_store(uid, "+FLAGS", [ label ])
-          else
-            imap.uid_copy(uid, label)
-          end
+      def fetch_uids(mailbox, criteria, max_results, offset)
+        @session.with_lock do
+          @session.ensure_mailbox(mailbox)
+          uids = @session.imap.uid_search(criteria).sort.reverse
+          uids = uids[offset, max_results] || []
+          uids.filter_map { |uid| parse_mail(uid, HEADER_FIELDS)&.then { |mail| YahooMessageParser.new(uid, mail, mailbox).to_h } }
         end
       end
-
-      def remove_labels(uid, remove, source_mailbox)
-        remove.each { |label| remove_label(uid, label, source_mailbox) }
-      end
-
-      def remove_label(uid, label, source_mailbox)
-        with_lock { apply_remove_label(uid, label, source_mailbox) }
-      end
-
-      def apply_remove_label(uid, label, source_mailbox)
-        if imap_flag?(label)
-          ensure_mailbox(source_mailbox)
-          imap.uid_store(uid, "-FLAGS", [ label ])
-        else
-          ensure_mailbox(label)
-          imap.uid_store(uid, "+FLAGS", [ :Deleted ])
-          imap.expunge
-        end
-      end
-
-      def imap
-        @imap ||= begin
-          conn = Net::IMAP.new(@imap_config[:host], port: @imap_config[:port], ssl: true)
-          conn.login(@imap_config[:username], @imap_config[:password])
-          @current_mailbox = nil
-          conn
-        end
-      end
-
-      def ensure_mailbox(mailbox)
-        return if @current_mailbox == mailbox
-
-        imap.select(mailbox)
-        @current_mailbox = mailbox
-      end
-
-      # rubocop:disable Metrics/BlockLength
-      def with_lock
-        attempts = 0
-        @mutex.synchronize do
-          yield
-        rescue Net::IMAP::ByeResponseError, IOError, Errno::ECONNRESET, Errno::EPIPE => error
-          raise if (attempts += 1) > 1
-          $stderr.puts "IMAP connection lost (#{error.class}: #{error.message}), reconnecting..."
-          @imap            = nil
-          @current_mailbox = nil
-          retry
-        end
-      end
-      # rubocop:enable Metrics/BlockLength
 
       def parse_mail(uid, fields)
-        raw = fetch_raw_mail(uid, fields)
+        raw = @session.fetch_raw_mail(uid, fields)
         return nil if raw.blank?
 
         Mail.new(raw)
       rescue StandardError => error
         $stderr.puts "Warning: failed to parse message UID #{uid}: #{error.message}"
         nil
-      end
-
-      def fetch_raw_mail(uid, fields)
-        result = imap.uid_fetch(uid, fields)&.first&.attr
-        result&.values_at("RFC822", "RFC822.HEADER")&.compact&.first
       end
 
       def to_message(parsed, mail)
@@ -216,13 +126,6 @@ module Emails
         }
       end
 
-      def list_message(uid, mailbox)
-        mail = parse_mail(uid, HEADER_FIELDS)
-        return nil unless mail
-
-        YahooMessageParser.new(uid, mail, mailbox).to_h
-      end
-
       def build_mailbox(label)
         return "INBOX" if label.blank?
 
@@ -232,11 +135,6 @@ module Emails
 
         match&.dig(:name) || label
       end
-
-      def imap_flag?(label)
-        label.start_with?("\\")
-      end
     end
   end
-  # rubocop:enable Metrics/ClassLength
 end

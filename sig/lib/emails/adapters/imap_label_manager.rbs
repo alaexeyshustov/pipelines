@@ -1,0 +1,19 @@
+module Emails
+  module Adapters
+    class ImapLabelManager
+      @session: ImapSession
+
+      def initialize: (session: ImapSession) -> void
+      def create_label: (name: String) -> label
+      def add_labels: (Integer uid, Array[String] add, String source_mailbox) -> void
+      def remove_labels: (Integer uid, Array[String] remove, String source_mailbox) -> void
+
+      private
+
+      def apply_add_labels: (Integer uid, Array[String] add, String source_mailbox) -> void
+      def remove_label: (Integer uid, String label, String source_mailbox) -> void
+      def apply_remove_label: (Integer uid, String label, String source_mailbox) -> void
+      def imap_flag?: (String label) -> bool
+    end
+  end
+end
