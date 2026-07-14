@@ -1,5 +1,4 @@
 module Orchestration
-  # rubocop:disable Metrics/ClassLength
   class PipelineValidator
     include SteepHacks
 
@@ -99,7 +98,7 @@ module Orchestration
     def validate_path_vs_schema(from, path, mapping_key, upstream_schema, errors)
       return if path.blank? || upstream_schema.nil?
 
-      return if path_valid_in_schema?(path, upstream_schema)
+      return if SchemaPathValidator.valid?(path, upstream_schema)
 
       errors << Issue.new(
         code: :invalid_path,
@@ -109,43 +108,5 @@ module Orchestration
         path: path
       )
     end
-
-    def path_valid_in_schema?(path, schema)
-      current = schema
-
-      path.split(".").each do |seg|
-        return false if current.nil?
-
-        result = advance_schema_node(current, seg)
-        return false if result == :invalid
-
-        current = result
-      end
-
-      true
-    end
-
-    def advance_schema_node(current, seg)
-      case current["type"]
-      when "object" then advance_through_object(current, seg)
-      when "array"  then advance_through_array(current, seg)
-      else :invalid
-      end
-    end
-
-    def advance_through_object(current, seg)
-      properties = current["properties"]
-      return :invalid unless properties.is_a?(Hash)
-      return :invalid unless properties.key?(seg)
-
-      properties[seg]
-    end
-
-    def advance_through_array(current, seg)
-      return :invalid unless seg.match?(/\A\d+\z/)
-
-      current["items"].is_a?(Hash) ? current["items"] : nil
-    end
   end
-  # rubocop:enable Metrics/ClassLength
 end
