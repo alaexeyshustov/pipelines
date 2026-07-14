@@ -241,13 +241,13 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
 
     context "when the error message exceeds MAX_EXCERPT_LENGTH characters" do
       let(:model) { "mistral-small-latest" }
-      let(:long_message) { "x" * (Orchestration::NormalizeActionRunFailure::MAX_EXCERPT_LENGTH + 10) }
+      let(:long_message) { "x" * (Orchestration::LogSanitizer::MAX_EXCERPT_LENGTH + 10) }
       let(:error) { RuntimeError.new(long_message) }
 
       it "truncates to MAX_EXCERPT_LENGTH and appends ellipsis" do
         result = described_class.new(error:, action_run:, raw_content: nil).normalize
         expect(result.summary).to end_with("...")
-        expect(result.summary.length).to eq(Orchestration::NormalizeActionRunFailure::MAX_EXCERPT_LENGTH + 3)
+        expect(result.summary.length).to eq(Orchestration::LogSanitizer::MAX_EXCERPT_LENGTH + 3)
       end
     end
   end

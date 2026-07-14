@@ -1,0 +1,28 @@
+module Orchestration
+  class ProviderErrorResponse
+    interface _Response
+      def status: () -> Integer
+      def body: () -> (String | json_object | nil)
+    end
+
+    @error: StandardError
+
+    def initialize: (error: StandardError) -> void
+    def present?: () -> bool
+    def status: () -> Integer
+    def body: () -> (String | json_object | nil)
+    def parsed_error: () -> json_object_value
+    def message: () -> String
+
+    private
+
+    def response: () -> _Response
+    def response_candidate: () -> _Response?
+    def ruby_llm_error?: (StandardError error) -> bool
+    def provider_error_message: (json_object_value parsed_error) -> String
+    def extract_candidate_message: (json_object_value parsed_error) -> String?
+    def fallback_if_unknown: (json_object_value candidate, json_object_value fallback) -> json_object_value
+    def extract_parsed_error: (String | json_object | nil body) -> json_object_value
+    def parse_json: (json_object_value value) -> (json_object_value | nil)
+  end
+end
