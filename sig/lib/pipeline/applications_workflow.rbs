@@ -3,29 +3,17 @@ module Pipeline
     @model: String
     @logger: Logger
     @date: Date
+    @agent_steps: AgentSteps
 
     def initialize: (model: String, logger: Logger, ?date: String | Date) -> void
     def run: () -> Hash[Symbol, json_object_value]
-    def step1_fetch_emails: () -> Array[json_object]
-    def step2_classify_email: (emails: Array[json_object]) -> json_object_value
-    def step3_filter_emails: (emails: Array[json_object], tags: Array[json_object]) -> json_object_value
-    def step4_map_emails: (emails: Array[json_object]) -> json_object
-    def step5_store_mapped_emails: (emails: Array[json_object]) -> json_object
-    def step6_normalize_stored_emails: (?emails: Array[json_object]) -> json_object_value
-    def step7_reconcile_emails_to_interviews: (?emails: Array[json_object]) -> json_object_value
     def step8_upload_csv_gist: (gist_id: String) -> json_object
 
     private
 
-    def step1: (provider: String, after: Date, before: Date) -> json_object_value
     def filter_emails: (Array[json_object] all_emails) -> Array[json_object]
     def results_from: (json_object_value response) -> Array[json_object]
     def map_and_store: (Array[json_object] filtered_emails) -> Array[json_object]?
     def finalize: (Array[json_object] saved_emails) -> json_object_value
-    def fetch_from_providers: () -> Array[json_object]
-    def run_provider_tasks: () -> Array[json_object]
-    def normalize_provider_result: (json_object_value result) -> Array[json_object]
-    def filter_hash_emails: (Array[json_object_value] emails) -> Array[json_object]
-    def normalize_hash_result: (json_object result) -> Array[json_object]
   end
 end
