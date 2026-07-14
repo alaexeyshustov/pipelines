@@ -14,21 +14,10 @@ module Evaluation
       private
 
       def log_blank_sample_error: () -> Array[metric_result]
-      def load_stored_results: (Array[Integer] inserted_ids) -> Array[EvaluationResult]
-      def coerce_to_array: (json_object_value content) -> json_object_value
-      def insert_results_transactionally: (Array[metric_result] metric_results, Experiment experiment, DatasetSample dataset_sample, Sample sample) -> Array[Integer]
-      def build_eval_results: (Array[metric_result] metric_results, Experiment experiment, DatasetSample dataset_sample, Sample sample) -> Array[{ experiment_id: Integer, dataset_sample_id: Integer, sample_id: Integer, score: Float, evaluator_class: String }]
-      def build_justifications: (Array[Integer] inserted_ids, Array[metric_result] metric_results) -> Array[{ evaluation_result_id: Integer, metric_name: String, justification: String }]
       def fetch_instructions: (Sample sample) -> String?
       def fetch_output_schema: (Sample sample) -> json_object?
       def call_judge: (user_input: String, ?model: String) -> Array[metric_result]
       def build_user_message: (sample: Sample, dataset_sample: DatasetSample, metrics: Array[Metric]) -> String
-      def parse_judge_response: (json_object_value content) -> Array[metric_result]
-      def normalize_entry: (json_object_value entry, Integer index) -> metric_result?
-      def extract_score_fields: (json_object entry, json_object_value raw_score) -> [ Float, String, String ]
-      def valid_score_entry?: (Float score, String metric_name, String justification) -> bool
-      def log_invalid_entry: (Integer index) -> nil
-      def parse_output: (String? output) -> json_object_value
     end
   end
 end
