@@ -73,18 +73,13 @@ RSpec.describe Emails::Adapters::GmailSession do
   end
 
   describe '#authorize' do
-    it 'delegates to GmailAuth with the session credentials and scope' do
-      session     = described_class.new(credentials_path: GmailHelpers::CREDENTIALS_PATH, token_path: GmailHelpers.token_path)
-      auth        = instance_double(Emails::GmailAuth)
-      credentials = instance_double(Signet::OAuth2::Client)
-      allow(Emails::GmailAuth).to receive(:new).with(
-        credentials_path: GmailHelpers::CREDENTIALS_PATH,
-        token_path:       GmailHelpers.token_path,
-        scope:            described_class::SCOPE
-      ).and_return(auth)
-      allow(auth).to receive(:credentials).and_return(credentials)
+    it 'returns credentials loaded from the stored token' do
+      session = described_class.new(credentials_path: GmailHelpers::CREDENTIALS_PATH, token_path: GmailHelpers.token_path)
 
-      expect(session.authorize).to eq(credentials)
+      credentials = session.authorize
+
+      expect(credentials).to be_a(Signet::OAuth2::Client)
+      expect(credentials.refresh_token).to eq('test_refresh_token')
     end
   end
 end

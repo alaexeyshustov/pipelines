@@ -1,7 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe Emails::Adapters::GmailLabelManager do
-  let(:service) { instance_double(Google::Apis::GmailV1::GmailService) }
+  subject(:manager) { described_class.new(service: service, labels_provider: labels_provider) }
+
+  let(:service) { Google::Apis::GmailV1::GmailService.new }
   let(:labels) do
     [
       { id: 'INBOX', name: 'INBOX', type: 'system' },
@@ -9,8 +11,6 @@ RSpec.describe Emails::Adapters::GmailLabelManager do
     ]
   end
   let(:labels_provider) { -> { labels } }
-
-  subject(:manager) { described_class.new(service: service, labels_provider: labels_provider) }
 
   describe '#modify_labels' do
     it 'adds labels to a message and returns the updated label list' do
