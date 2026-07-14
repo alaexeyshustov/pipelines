@@ -28,15 +28,14 @@ module Pipeline
     end
 
     def run_provider_tasks
-      # TODO: add a helper method with_semaphore
-      semaphore = Async::Semaphore.new(5)
-      tasks = [ "gmail", "yahoo" ].map do |provider|
-        semaphore.async do
-          result = Emails::RetrievalService.call(provider: provider, after_date: @date - 1, before_date: @date)
-          normalize_provider_result(result)
+      Async::Helpers.with_semaphore(5) do |semaphore|
+        [ "gmail", "yahoo" ].map do |provider|
+          semaphore.async do
+            result = Emails::RetrievalService.call(provider: provider, after_date: @date - 1, before_date: @date)
+            normalize_provider_result(result)
+          end
         end
       end
-      tasks.flat_map(&:wait)
     end
 
     def normalize_provider_result(result)

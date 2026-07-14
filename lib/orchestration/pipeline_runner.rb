@@ -78,14 +78,11 @@ module Orchestration
 
     def run_actions_in_parallel(action_runs)
       Sync do
-        barrier = Async::Barrier.new
-        semaphore = Async::Semaphore.new(10, parent: barrier)
-
-        action_runs.each do |action_run|
-          semaphore.async { execute_action(action_run) }
+        Async::Helpers.with_barrier(10) do |semaphore|
+          action_runs.each do |action_run|
+            semaphore.async { execute_action(action_run) }
+          end
         end
-
-        barrier.wait
       end
     end
 
