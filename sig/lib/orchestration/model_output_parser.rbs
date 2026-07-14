@@ -1,0 +1,10 @@
+module Orchestration
+  class ModelOutputParser
+    def parse: (json_object_value content, structured_output_expected: bool) -> json_object?
+    def validate!: (json_object? output, policy: AgentResolutionPolicy::Result, raw_content: json_object_value?) -> void
+
+    private
+
+    def parse_string: (String content, bool structured_output_expected) -> json_object?
+  end
+end

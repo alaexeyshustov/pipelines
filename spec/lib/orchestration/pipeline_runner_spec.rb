@@ -564,6 +564,20 @@ RSpec.describe Orchestration::PipelineRunner do
         described_class.new(pipeline_run).run
         expect(pipeline_run.reload.status).to eq("failed")
       end
+
+      it 'characterization: preserves status, summary, details, and raw_content together for a raising agent' do
+        described_class.new(pipeline_run).run
+        action_run = Orchestration::ActionRun.last
+
+        aggregate_failures do
+          expect(action_run.status).to eq("failed")
+          expect(action_run.error).to match(/Invalid model output/)
+          expect(action_run.error_details["category"]).to eq("invalid_model_output")
+          expect(action_run.error_details["raw_response_excerpt"]).to eq("I need more information.")
+          expect(action_run.finished_at).not_to be_nil
+          expect(pipeline_run.reload.status).to eq("failed")
+        end
+      end
     end
 
     context 'when the agent has an output_schema and the output is invalid' do
