@@ -20,7 +20,7 @@ module Orchestration
         current = result
       end
 
-      true
+      !current.nil?
     end
 
     private

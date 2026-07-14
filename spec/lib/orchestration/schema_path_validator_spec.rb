@@ -70,6 +70,11 @@ RSpec.describe Orchestration::SchemaPathValidator do
         array_schema = { "type" => "object", "properties" => { "items" => { "type" => "array" } } }
         expect(described_class.valid?("items.0.id", array_schema)).to be false
       end
+
+      it 'returns false when the path ends at a numeric segment for an array with no items schema' do
+        array_schema = { "type" => "object", "properties" => { "items" => { "type" => "array" } } }
+        expect(described_class.valid?("items.0", array_schema)).to be false
+      end
     end
 
     context 'with a scalar type in the middle of the path' do
