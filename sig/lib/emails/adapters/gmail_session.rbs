@@ -1,0 +1,19 @@
+module Emails
+  module Adapters
+    class GmailSession
+      APPLICATION_NAME: String
+      SCOPE: Array[String]
+
+      @credentials_path: String
+      @token_path: String
+
+      def self.setup: (?gmail_options) -> void
+      def self.test_connection: (?gmail_options) -> void
+      def self.reset: () -> void
+      def self.from_env: (?gmail_options) -> GmailAdapter
+
+      def initialize: (credentials_path: String, token_path: String) -> void
+      def authorize: () -> Signet::OAuth2::Client
+    end
+  end
+end
