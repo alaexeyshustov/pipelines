@@ -442,6 +442,26 @@ RSpec.describe Orchestration::PipelineRunner do
         described_class.new(pipeline_run).run
         expect(Rails.logger).to have_received(:error).with(include('"chat_id"'))
       end
+
+      it 'logs every failure field mapped to the correct value' do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
+        logged = nil
+        allow(Rails.logger).to receive(:error) { |payload| logged = payload }
+
+        described_class.new(pipeline_run).run
+        action_run = Orchestration::ActionRun.last
+
+        expect(JSON.parse(logged)).to eq(
+          "event"           => "orchestration.action_run_failed",
+          "category"        => "provider_http_error",
+          "provider"        => "openai",
+          "model"           => "gpt-4.1-mini",
+          "status_code"     => 429,
+          "action_run_id"   => action_run.id,
+          "pipeline_run_id" => pipeline_run.id,
+          "chat_id"         => action_run.chat_id,
+          "summary"         => "openai API error (429): Rate limit exceeded"
+        )
+      end
     end
 
     context "when the provider call hits a transport timeout" do
@@ -563,6 +583,51 @@ RSpec.describe Orchestration::PipelineRunner do
       it 'marks the PipelineRun as failed' do
         described_class.new(pipeline_run).run
         expect(pipeline_run.reload.status).to eq("failed")
+      end
+    end
+
+    context 'when the agent returns a JSON array string and no output_schema is expected' do
+      before do
+        create(:orchestration_step_action, step: step1, action: action, position: 1)
+        allow(stub_agent).to receive(:ask).and_return(build_message("[1,2,3]"))
+      end
+
+      it 'treats the parseable non-object as unstructured and wraps the raw string' do
+        described_class.new(pipeline_run).run
+        action_run = Orchestration::ActionRun.last
+        expect(action_run.status).to eq("completed")
+        expect(action_run.output).to eq({ "result" => "[1,2,3]" })
+      end
+    end
+
+    context 'when the agent returns a JSON scalar string and no output_schema is expected' do
+      before do
+        create(:orchestration_step_action, step: step1, action: action, position: 1)
+        allow(stub_agent).to receive(:ask).and_return(build_message("42"))
+      end
+
+      it 'treats the parseable number as unstructured and wraps the raw string' do
+        described_class.new(pipeline_run).run
+        action_run = Orchestration::ActionRun.last
+        expect(action_run.status).to eq("completed")
+        expect(action_run.output).to eq({ "result" => "42" })
+      end
+    end
+
+    context 'when the agent returns a JSON array string but an output_schema is expected' do
+      before do
+        action.agent.update!(output_schema: { "type" => "object", "required" => [ "result" ],
+                                              "properties" => { "result" => { "type" => "array" } } })
+        create(:orchestration_step_action, step: step1, action: action, position: 1)
+        allow(stub_agent).to receive_messages(with_schema: stub_agent, ask: build_message("[1,2,3]"))
+      end
+
+      it 'rejects the non-object JSON with invalid model output diagnostics' do # rubocop:disable RSpec/MultipleExpectations
+        described_class.new(pipeline_run).run
+        action_run = Orchestration::ActionRun.last
+        expect(action_run.status).to eq("failed")
+        expect(action_run.error).to match(/Invalid model output.*expected JSON object/)
+        expect(action_run.error_details["raw_response_excerpt"]).to include("[1,2,3]")
       end
     end
 

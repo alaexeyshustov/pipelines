@@ -35,6 +35,8 @@ module Orchestration
       return false unless failed_run
 
       @pipeline_run.update!(status: "failed", error: failed_run.error, finished_at: Time.current)
+      # Equivalent mutant: dropping this `true` is undetectable. ActiveRecord::Persistence#update!
+      # returns true on success (raising otherwise), so the explicit result is redundant.
       true
     end
 
@@ -215,6 +217,9 @@ module Orchestration
     end
 
     def log_action_failure(action_run, failure)
+      # Equivalent mutant: the `|| empty_object` fallback is unreachable. The sole caller
+      # (handle_action_failure) invokes this only `if failure.details.present?`, so `details`
+      # is always a present Hash here.
       details = failure.details || empty_object
 
       Rails.logger.error(
