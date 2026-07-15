@@ -3,10 +3,6 @@ module Evaluation
     class LoadSchemaTool < ::RubyLLM::Tool
       def name: () -> String
       def execute: (String prompt_name) -> json_object?
-
-      private
-
-      def schema_for: (String prompt_name) -> ::Orchestration::Agent?
     end
   end
 end

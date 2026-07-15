@@ -15,27 +15,20 @@ module Evaluation
     end
 
     def call
-      agent_record = find_agent_record
-      raise ArgumentError, "No agent found for experiment" unless agent_record
-
-      resolved_action = find_action_for!(agent_record)
-      agent  = build_agent(resolved_action, agent_record)
+      agent  = build_agent
       result = agent.ask(@dataset_sample.input.to_json)
       persist_sample(agent, result)
     end
 
     private
 
-    def build_agent(resolved_action, agent_record)
-      tool_classes  = Orchestration::ToolResolver.new(agent: agent_record).resolve
-      wrapped_tools = wrap_write_tools(tool_classes)
-      policy = Orchestration::AgentResolutionPolicy.new(
-        action:          resolved_action,
-        tool_classes:    wrapped_tools, # steep:ignore
+    def build_agent
+      Orchestration::SamplingGateway.build(
+        agent_name:      @experiment.agent_name,
         pipeline_model:  @experiment.sample_model,
-        prompt_override: @prompt&.system_prompt
-      ).resolve
-      Orchestration::RuntimeAgentBuilder.new(policy:).build
+        prompt_override: @prompt&.system_prompt,
+        tool_transform:  ->(tools) { wrap_write_tools(tools) } # steep:ignore
+      )
     end
 
     def persist_sample(agent, result)
@@ -48,26 +41,6 @@ module Evaluation
         tool_calls:        tool_calls,
         output:            output
       )
-    end
-
-    def find_agent_record
-      agent_name = @experiment.agent_name
-      return unless agent_name
-
-      Orchestration::Agent.named(agent_name)
-    end
-
-    def find_action_for(agent_record)
-      Orchestration::Action.where(kind: :agent, agent_id: agent_record.id).first
-    end
-
-    def find_action_for!(agent_record)
-      action = find_action_for(agent_record)
-      if action.nil?
-        raise ArgumentError, "No action found for agent #{agent_record.name}"
-      else
-        action
-      end
     end
 
     def wrap_write_tools(tool_classes)

@@ -1,0 +1,6 @@
+module Orchestration
+  self.@prompt_resolver: _PromptResolverFactory | _PromptResolver
+
+  def self.prompt_resolver: () -> (_PromptResolverFactory | _PromptResolver)
+  def self.prompt_resolver=: (_PromptResolverFactory | _PromptResolver value) -> (_PromptResolverFactory | _PromptResolver)
+end

@@ -48,7 +48,7 @@ module Evaluation
 
     def runner_model
       meta = metadata || empty_object
-      agent = agent_name ? Orchestration::Agent.named(agent_name) : nil
+      agent = agent_name ? Orchestration::AgentCatalog.find(agent_name) : nil
       meta["pipeline_model"].presence || agent&.model.presence
     end
 

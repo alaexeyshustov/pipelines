@@ -2,9 +2,16 @@ module Orchestration
   class PipelineRunner
     include SteepHacks
 
-    def initialize(pipeline_run)
+    # `prompt_resolver:` accepts the PromptResolver port as a class/factory (the
+    # default) or an already-built instance. Resolver classes MUST be
+    # instance-based (respond to `.new`, and the instance to `#call`) rather than
+    # `.call`-class-singletons, because the resolver carries per-run cache state a
+    # stateless singleton could not hold -- this is why this seam intentionally
+    # deviates from the house `.call`-singleton service convention.
+    def initialize(pipeline_run, prompt_resolver: Orchestration.prompt_resolver)
       @pipeline_run = pipeline_run
-      @prompt_cache = Hash.new # : Hash[String?, String?]
+      @prompt_resolver = prompt_resolver.respond_to?(:new) ? prompt_resolver.new : prompt_resolver # steep:ignore
+      raise ArgumentError, "prompt_resolver must respond to #call" unless @prompt_resolver.respond_to?(:call) # steep:ignore
     end
 
     def run
@@ -85,7 +92,7 @@ module Orchestration
     end
 
     def execute_action(action_run)
-      ActionExecutor.new(action_run:, pipeline_run: @pipeline_run, prompt_cache: @prompt_cache).call
+      ActionExecutor.new(action_run:, pipeline_run: @pipeline_run, prompt_resolver: @prompt_resolver).call
     end
   end
 end

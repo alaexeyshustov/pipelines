@@ -16,11 +16,8 @@ module Evaluation
 
     private
 
-    def build_agent: (Orchestration::Action resolved_action, Orchestration::Agent agent_record) -> RubyLLM::Agent
+    def build_agent: () -> RubyLLM::Agent
     def persist_sample: (RubyLLM::Agent agent, RubyLLM::Message result) -> Sample
-    def find_agent_record: () -> Orchestration::Agent?
-    def find_action_for: (Orchestration::Agent agent_record) -> Orchestration::Action?
-    def find_action_for!: (Orchestration::Agent agent_record) -> Orchestration::Action
     def wrap_write_tools: (Array[singleton(RubyLLM::Tool)] tool_classes) -> Array[singleton(RubyLLM::Tool)]
     def block_write_tool: (singleton(RubyLLM::Tool) tool_class) -> singleton(RubyLLM::Tool)
     def capture_tool_calls: (RubyLLM::Agent agent) -> Array[tool_call]

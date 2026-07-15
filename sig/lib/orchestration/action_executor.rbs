@@ -4,10 +4,10 @@ module Orchestration
 
     @action_run: ActionRun
     @pipeline_run: PipelineRun
-    @prompt_cache: Hash[String?, String?]
+    @prompt_resolver: _PromptResolver
     @output_parser: ModelOutputParser
 
-    def initialize: (action_run: ActionRun, pipeline_run: PipelineRun, prompt_cache: Hash[String?, String?]) -> void
+    def initialize: (action_run: ActionRun, pipeline_run: PipelineRun, prompt_resolver: _PromptResolver) -> void
     def call: () -> void
 
     private

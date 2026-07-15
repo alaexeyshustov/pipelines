@@ -1,0 +1,16 @@
+module Orchestration
+  module AgentCatalog
+    class Metadata
+      attr_reader name: String
+      attr_reader model: String?
+      attr_reader prompt: String?
+      attr_reader output_schema: json_object?
+
+      def initialize: (name: String, model: String?, prompt: String?, output_schema: json_object?) -> void
+
+      def self.from: (Agent agent) -> Metadata
+    end
+
+    def self.find: (String name) -> Metadata?
+  end
+end

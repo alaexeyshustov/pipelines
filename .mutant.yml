@@ -37,9 +37,20 @@ matcher:
     - Interview*
     - EmailVector*
     - SqliteVecExtension*
+    - Evaluation::ActivePromptResolver*
   ignore:
     - ApplicationMailsSchema*
     - Pipeline*
+    # Value-object DTOs (Data.define) and the null-object resolver carry no
+    # branching logic to protect -- mutant only surfaces equivalent mutants
+    # here (e.g. flipping a field name in an accessor), so they're scoped out
+    # rather than chased with assertion-padding tests. The real logic in
+    # AgentCatalog.find's nil-guard, AgentRunsQuery's query predicates,
+    # SamplingGateway's tool_transform/error paths, and
+    # ActivePromptResolver's cache-hit/miss branch stays in scope.
+    - Orchestration::AgentCatalog::Metadata*
+    - Orchestration::AgentRunsQuery::Run*
+    - Orchestration::NullPromptResolver*
     # I/O-heavy adapter/auth classes: unit tests exist but network-boundary mutations produce noise, not signal.
     # GmailAdapter/YahooAdapter wrap Google::Apis/Net::IMAP calls; GmailAuth opens a raw TCPServer/HTTP OAuth callback listener.
     - Emails::Adapters::GmailAdapter*

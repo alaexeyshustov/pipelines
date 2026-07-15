@@ -8,6 +8,16 @@ interface _Callable
   def call: (*untyped args, **untyped kwargs) -> untyped
 end
 
+# Orchestration's PromptResolver port: resolves an agent name to its system prompt.
+interface _PromptResolver
+  def call: (String? agent_class) -> String?
+end
+
+# A class/factory that builds a per-run _PromptResolver instance.
+interface _PromptResolverFactory
+  def new: () -> _PromptResolver
+end
+
 interface _Relation[Model, PrimaryKey]
   include _ActiveRecord_Relation[Model, PrimaryKey]
 
