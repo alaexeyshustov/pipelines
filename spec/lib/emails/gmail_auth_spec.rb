@@ -7,7 +7,7 @@ RSpec.describe Emails::GmailAuth do
   let(:token_path) { "token.yaml" }
   let(:callback_uri) { "http://localhost:3000/settings/email_connectors/oauth_callback" }
   let(:output) { StringIO.new }
-  let(:auth) { described_class.new(credentials_path:, token_path:, scope: Emails::Adapters::GmailAdapter::SCOPE, output:) }
+  let(:auth) { described_class.new(credentials_path:, token_path:, scope: Emails::Adapters::GmailSession::SCOPE, output:) }
 
   let(:authorizer) { Google::Auth::UserAuthorizer.allocate }
 

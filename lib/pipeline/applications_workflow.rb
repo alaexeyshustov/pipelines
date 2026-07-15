@@ -1,21 +1,18 @@
 require "date"
-require "json"
-require "async"
-require "async/semaphore"
 
 module Pipeline
-  # rubocop:disable Metrics/ClassLength
   class ApplicationsWorkflow
     def initialize(model:, logger:, date: Time.zone.today)
       @model  = model
       @logger = logger
       @date   = date.is_a?(Date) ? date : Date.parse(date.to_s)
+      @agent_steps = AgentSteps.new(model: @model)
     end
 
     def run
       @logger.info "Running ApplicationsWorkflow with model: #{@model}"
 
-      all_emails = step1_fetch_emails
+      all_emails = EmailProviderFetcher.new(date: @date).call
       return { status: "no_emails_fetched" }  if all_emails.empty?
 
       filtered_emails = filter_emails(all_emails)
@@ -27,84 +24,6 @@ module Pipeline
       { status: "test_complete", model_used: @model, result: finalize(saved_emails) }
     end
 
-    def step1_fetch_emails
-      tmp_file = Rails.root.join("tmp", "emails_#{@date - 1}_#{@date}.json")
-      if File.exist?(tmp_file)
-        cached = JSON.parse(tmp_file.read)
-        return cached.filter_map { |email| email if email.is_a?(Hash) } if cached.is_a?(Array)
-      end
-
-      emails = fetch_from_providers
-      tmp_file.write(emails.to_json)
-      emails
-    end
-
-    def step2_classify_email(emails:)
-      input = { emails: emails.map { |email| email.slice("id", "subject") } }.to_json
-
-      Orchestration::Agents::EmailsClassifier.create.with_model(@model).ask(input).content
-    end
-
-    def step3_filter_emails(emails:, tags:)
-      tags_by_id = tags.index_by { |tag| tag["id"] }
-      # steep:ignore:start
-      input = {
-        topic: "job applications",
-        emails: emails.map { |email|
-          email["tags"] = tags_by_id[email["id"]]&.fetch("tags", []) || []
-          email
-        }
-      }.to_json
-      # steep:ignore:end
-
-      Orchestration::Agents::EmailsFilter.create.with_model(@model).ask(input).content
-    end
-
-    def step4_map_emails(emails:)
-      input = { emails: emails }.to_json
-      content = Orchestration::Agents::EmailsMapper.create
-        .with_model(@model)
-        .with_schema(ApplicationMailsSchema)
-        .ask(input)
-        .content
-
-      return content.transform_keys(&:to_s) if content.is_a?(Hash)
-
-      {}
-    end
-
-    def step5_store_mapped_emails(emails:)
-      input = { table: "application_mails", label: "applications", emails: emails }.to_json
-      content = Orchestration::Agents::RecordsStorer.create.with_model(@model).ask(input).content
-      return content.transform_keys(&:to_s) if content.is_a?(Hash)
-
-      {}
-    end
-
-    def step6_normalize_stored_emails(emails: [])
-      input = {
-        records_to_normalize: emails,
-        destination_table: "application_mails",
-        columns_to_normalize: [ "company", "job_title" ]
-      }.to_json
-
-      Orchestration::Agents::RecordsNormalizer.create.with_model(@model).ask(input).content
-    end
-
-    def step7_reconcile_emails_to_interviews(emails: [])
-      return {} if emails.empty?
-
-      input = {
-        emailsto_reconcile: emails,
-        destination_table: "interviews",
-        matching_columns: [ "company", "job_title" ],
-        matching_logic: "match on both company + job_title, there could be some duplicates and that's ok, just do your best to match and reconcile based on these columns",
-        statuses: [ "pending_reply", "having_interviews", "rejected", "offer_received" ],
-        initial_status: "pending_reply"
-      }.to_json
-      Orchestration::Agents::RecordsReconciler.create.with_model(@model).ask(input).content
-    end
-
     def step8_upload_csv_gist(gist_id:)
       @logger.info "Uploading gist #{gist_id}"
       result = Interviews::GistExportService.new(ids: nil, gist_id: gist_id).call
@@ -114,8 +33,8 @@ module Pipeline
     private
 
     def filter_emails(all_emails)
-      tags         = results_from(step2_classify_email(emails: all_emails))
-      filtered_ids = results_from(step3_filter_emails(emails: all_emails, tags: tags)).filter_map do |res|
+      tags         = results_from(@agent_steps.classify_email(emails: all_emails))
+      filtered_ids = results_from(@agent_steps.filter_emails(emails: all_emails, tags: tags)).filter_map do |res|
         id = res["id"]
         id if id.is_a?(String)
       end
@@ -136,57 +55,21 @@ module Pipeline
     end
 
     def map_and_store(filtered_emails)
-      mapped_value = step4_map_emails(emails: filtered_emails)["emails"]
+      mapped_value = @agent_steps.map_emails(emails: filtered_emails)["emails"]
       mapped_emails = mapped_value.is_a?(Array) ? mapped_value.filter_map { |email| email if email.is_a?(Hash) } : [] # : Array[json_object]
       return nil if mapped_emails.empty?
 
-      ids_value    = step5_store_mapped_emails(emails: mapped_emails)["ids"]
+      ids_value    = @agent_steps.store_mapped_emails(emails: mapped_emails)["ids"]
       email_ids    = ids_value.is_a?(Array) ? ids_value : [] # : Array[json_object_value]
       saved_emails = ApplicationMail.groupped.where(id: email_ids).map(&:attributes)
-      step6_normalize_stored_emails(emails: saved_emails)
+      @agent_steps.normalize_stored_emails(emails: saved_emails)
       saved_emails
     end
 
     def finalize(saved_emails)
-      result  = step7_reconcile_emails_to_interviews(emails: saved_emails)
+      result  = @agent_steps.reconcile_emails_to_interviews(emails: saved_emails)
       gist_id = ENV.fetch("GIST_ID", nil)
       gist_id ? step8_upload_csv_gist(gist_id: gist_id) : result
     end
-
-    def fetch_from_providers
-      Sync { run_provider_tasks }
-    end
-
-    def run_provider_tasks
-      # TODO: add a helper method with_semaphore
-      semaphore = Async::Semaphore.new(5)
-      tasks = [ "gmail", "yahoo" ].map do |provider|
-        semaphore.async do
-          result = step1(provider: provider, after: @date - 1, before: @date)
-          normalize_provider_result(result)
-        end
-      end
-      tasks.flat_map(&:wait)
-    end
-
-    def normalize_provider_result(result)
-      if result.is_a?(Array)
-        filter_hash_emails(result)
-      elsif result.is_a?(Hash)
-        normalize_hash_result(result)
-      else
-        []
-      end
-    end
-
-    def filter_hash_emails(emails)
-      emails.filter_map { |email| email if email.is_a?(Hash) }
-    end
-
-    def normalize_hash_result(result)
-      results = result["results"]
-      results.is_a?(Array) ? filter_hash_emails(results) : []
-    end
   end
-  # rubocop:enable Metrics/ClassLength
 end

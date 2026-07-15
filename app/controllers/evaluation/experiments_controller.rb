@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 module Evaluation
-  # rubocop:disable Metrics/ClassLength
   class ExperimentsController < ApplicationController
+    include Evaluation::ExperimentWizard
+
     before_action :set_experiment, only: [ :show, :improve, :compare, :activate, :status_frame, :metric_results, :destroy ]
 
     def index
@@ -13,7 +14,6 @@ module Evaluation
     def new
       @wizard_form = build_wizard_form(step_param: params[:step])
     end
-
 
     def create
       @wizard_form = build_wizard_form(step_param: params[:current_step])
@@ -91,17 +91,15 @@ module Evaluation
     end
 
     def improve
-      unless @experiment.prompt
-        return redirect_to evaluation_experiment_path(@experiment), alert: "This experiment has no associated prompt."
-      end
+      return redirect_to evaluation_experiment_path(@experiment), alert: "This experiment has no associated prompt." unless @experiment.prompt
 
       new_prompt = PromptImprover.call(experiment: @experiment)
       redirect_to evaluation_experiment_path(@experiment),
                   notice: "Prompt improvement triggered. Evaluating prompt v#{new_prompt.version}…"
     rescue PromptImprover::Error => e
-      log_and_redirect_improve_failure("PromptImprover failed", e)
+      redirect_after_improve_failure("PromptImprover failed", e)
     rescue ArgumentError => e
-      log_and_redirect_improve_failure("PromptImprover argument error", e)
+      redirect_after_improve_failure("PromptImprover argument error", e)
     end
 
     def compare
@@ -109,10 +107,7 @@ module Evaluation
         .sibling_for_prompt_name(@experiment.prompt&.name, excluding_id: @experiment.id)
         .find_by(id: params[:candidate_id])
 
-      unless @candidate
-        return redirect_to evaluation_experiment_path(@experiment), alert: "Candidate experiment not found."
-      end
-
+      return redirect_to evaluation_experiment_path(@experiment), alert: "Candidate experiment not found." unless @candidate
       return unless @candidate.completed?
 
       @result = Comparison.call(
@@ -123,9 +118,7 @@ module Evaluation
 
     def activate
       prompt = @experiment.prompt
-      unless prompt
-        return redirect_to evaluation_experiment_path(@experiment), alert: "This experiment has no associated prompt."
-      end
+      return redirect_to evaluation_experiment_path(@experiment), alert: "This experiment has no associated prompt." unless prompt
 
       meta = JSON.parse(prompt.metadata || "{}")
       prompt.update!(metadata: meta.merge("active" => true).to_json)
@@ -140,55 +133,9 @@ module Evaluation
       @experiment = Experiment.find(params[:id])
     end
 
-    def build_wizard_form(step_param: nil)
-      token = session[:wizard_token] ||= SecureRandom.hex(16)
-      WizardForm.new(wizard_token: token, step_param: step_param)
-    end
-
-    def fork_prompt_params
-      params.permit(:based_on_prompt_id, :system_prompt, :user_prompt, :output_schema)
-    end
-
-    def wizard_params
-      params.fetch(:wizard, {}).permit(:agent_name, :prompt_id, :experiment_name, :sample_model, :evaluation_model, :dataset_id).to_h
-    end
-
-    def complete_wizard_or_error
-      if @wizard_form.valid?
-        experiment = @wizard_form.complete!
-        session.delete(:wizard_token)
-        redirect_to evaluation_experiment_path(experiment), notice: "Experiment '#{experiment.name}' started."
-      else
-        render_wizard_error
-      end
-    end
-
-    def advance_wizard_or_error
-      if @wizard_form.advance!(@wizard_form.step, wizard_params)
-        redirect_to new_evaluation_experiment_path(step: @wizard_form.step + 1)
-      else
-        render_wizard_error
-      end
-    end
-
-    def fork_prompt_record(based_on)
-      Evaluation::Prompt.create!(
-        name: based_on.name,
-        system_prompt: fork_prompt_params[:system_prompt] || based_on.system_prompt,
-        user_prompt:   fork_prompt_params[:user_prompt]   || based_on.user_prompt,
-        output_schema: fork_prompt_params[:output_schema] || based_on.output_schema
-      )
-    end
-
-    def log_and_redirect_improve_failure(context, e)
-      logger.error("#{context} for experiment #{@experiment.id}: #{e.message}")
+    def redirect_after_improve_failure(context, e)
+      Evaluation::ImproveFailureLogger.call(context: context, experiment: @experiment, error: e)
       redirect_to evaluation_experiment_path(@experiment), alert: "Prompt improvement failed. Please try again later."
     end
-
-    def render_wizard_error
-      flash.now[:alert] = @wizard_form.errors.full_messages.to_sentence
-      render :new, status: :unprocessable_content
-    end
   end
-  # rubocop:enable Metrics/ClassLength
 end

@@ -1,0 +1,23 @@
+module Evaluation
+  module Evaluators
+    class JudgeResultWriter
+      @metric_results: Array[LLMJudgeEval::metric_result]
+      @experiment: Experiment
+      @dataset_sample: DatasetSample
+      @sample: Sample
+      @evaluator_class: String
+
+      def self.call: (metric_results: Array[LLMJudgeEval::metric_result], experiment: Experiment, dataset_sample: DatasetSample, sample: Sample, evaluator_class: String) -> Array[EvaluationResult]
+
+      def initialize: (metric_results: Array[LLMJudgeEval::metric_result], experiment: Experiment, dataset_sample: DatasetSample, sample: Sample, evaluator_class: String) -> void
+      def call: () -> Array[EvaluationResult]
+
+      private
+
+      def insert_results_transactionally: () -> Array[Integer]
+      def build_eval_results: () -> Array[{ experiment_id: Integer, dataset_sample_id: Integer, sample_id: Integer, score: Float, evaluator_class: String }]
+      def build_justifications: (Array[Integer] inserted_ids) -> Array[{ evaluation_result_id: Integer, metric_name: String, justification: String }]
+      def load_stored_results: (Array[Integer] inserted_ids) -> Array[EvaluationResult]
+    end
+  end
+end

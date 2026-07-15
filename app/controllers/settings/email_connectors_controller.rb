@@ -52,7 +52,7 @@ module Settings
       auth = Emails::GmailAuth.new(
         credentials_path: @email_connector.configuration["credentials_path"],
         token_path: @email_connector.configuration["token_path"],
-        scope: Emails::Adapters::GmailAdapter::SCOPE
+        scope: Emails::Adapters::GmailSession::SCOPE
       )
       session[:oauth_connector_id] = @email_connector.id
       redirect_to auth.authorization_url(callback_uri: oauth_callback_settings_email_connectors_url),
@@ -83,7 +83,7 @@ module Settings
       auth = Emails::GmailAuth.new(
         credentials_path: connector.configuration["credentials_path"],
         token_path:       connector.configuration["token_path"],
-        scope:            Emails::Adapters::GmailAdapter::SCOPE
+        scope:            Emails::Adapters::GmailSession::SCOPE
       )
       auth.exchange_code(code: params[:code], callback_uri:)
     end

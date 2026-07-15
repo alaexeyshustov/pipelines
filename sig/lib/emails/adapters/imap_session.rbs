@@ -1,0 +1,17 @@
+module Emails
+  module Adapters
+    class ImapSession
+      @imap_config: imap_config
+      @mutex: Mutex
+      @current_mailbox: String?
+      @imap: Net::IMAP?
+
+      def initialize: (host: String, port: Integer, username: String, password: String) -> void
+      def on_exit: () -> void
+      def imap: () -> Net::IMAP
+      def ensure_mailbox: (String mailbox) -> void
+      def with_lock: [T] () { () -> T } -> T
+      def fetch_raw_mail: (Integer uid, Array[String] fields) -> String?
+    end
+  end
+end

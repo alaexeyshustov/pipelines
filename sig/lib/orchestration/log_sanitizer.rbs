@@ -1,0 +1,14 @@
+module Orchestration
+  module LogSanitizer
+    MAX_EXCERPT_LENGTH: Integer
+    REDACTED_VALUE: String
+    REDACTED_EMAIL: String
+
+    def self.sanitize_value: (json_object_value value) -> json_object_value
+    def self.sanitize_hash: (json_object value) -> json_object
+    def self.sensitive_key?: (String | Symbol key) -> bool
+    def self.sanitize_string: (String value) -> String
+    def self.truncate: (String value) -> String
+    def self.stringify: (json_object_value value) -> String
+  end
+end

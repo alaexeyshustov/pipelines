@@ -1,0 +1,21 @@
+module Orchestration
+  class SchemaBuilder
+    class Serializer
+      include SteepHacks
+
+      @builder: SchemaBuilder
+
+      def initialize: (SchemaBuilder builder) -> void
+      def call: () -> json_object
+
+      private
+
+      def serialize: (SchemaBuilder builder) -> json_object
+      def apply_basic_fields!: (json_object schema, SchemaBuilder builder) -> void
+      def apply_format_field!: (json_object schema, SchemaBuilder builder) -> void
+      def apply_type_specific_fields!: (json_object schema, SchemaBuilder builder) -> void
+      def apply_object_fields!: (json_object schema, SchemaBuilder builder) -> void
+      def apply_numeric_bounds!: (json_object schema, SchemaBuilder builder) -> void
+    end
+  end
+end

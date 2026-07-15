@@ -1,5 +1,7 @@
 module Evaluation
   class ExperimentsController < ApplicationController
+    include Evaluation::ExperimentWizard
+
     @experiments: Experiment::relation
     @experiment: Experiment
     @candidate: Experiment?
@@ -26,13 +28,6 @@ module Evaluation
     private
 
     def set_experiment: () -> void
-    def build_wizard_form: (?step_param: Integer?) -> Evaluation::WizardForm
-    def fork_prompt_params: () -> ActionController::Parameters
-    def wizard_params: () -> ActionController::Parameters
-    def complete_wizard_or_error: () -> void
-    def advance_wizard_or_error: () -> void
-    def fork_prompt_record: (Evaluation::Prompt based_on) -> Evaluation::Prompt
-    def log_and_redirect_improve_failure: (String context, StandardError e) -> void
-    def render_wizard_error: () -> void
+    def redirect_after_improve_failure: (String context, StandardError e) -> void
   end
 end

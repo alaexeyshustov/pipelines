@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
 module Orchestration
-  # rubocop:disable Metrics/ClassLength
   class SchemaBuildersController < ApplicationController
     def build
       root = SchemaBuilder.from_schema(parse_json)
       if params[:builder].present?
-        root = apply_inline_params(root, parse_path, params[:builder])
+        root = root.with_mutation(parse_path) { |node| SchemaBuilderParamsForm.new(builder_params).apply(node) }
       end
       @builder = root
       @json = @builder.to_schema.to_json
@@ -73,91 +72,12 @@ module Orchestration
       []
     end
 
-    def apply_inline_params(root, path, builder_params)
-      root.with_mutation(path) do |node|
-        schema = node.to_schema
-        apply_all_params(schema, node, builder_params)
-        SchemaBuilder.from_schema(schema)
-      end
-    end
-
-    def apply_all_params(schema, node, builder_params)
-      apply_description(schema, builder_params)
-      apply_format(schema, builder_params)
-      apply_enum(schema, node, builder_params)
-      apply_minimum(schema, node, builder_params)
-      apply_maximum(schema, node, builder_params)
-      apply_required_toggle(schema, builder_params)
-      apply_additional_properties(schema, builder_params)
-    end
-
-    def apply_description(schema, builder_params)
-      return unless builder_params.key?(:description)
-
-      desc = builder_params[:description].to_s.strip
-      desc.present? ? schema["description"] = desc : schema.delete("description")
-    end
-
-    def apply_format(schema, builder_params)
-      return unless builder_params.key?(:format)
-
-      fmt = builder_params[:format].to_s.strip
-      fmt.present? ? schema["format"] = fmt : schema.delete("format")
-    end
-
-    def apply_enum(schema, node, builder_params)
-      return unless builder_params.key?(:enum_text)
-
-      values = builder_params[:enum_text].to_s.split("\n").map(&:strip).compact_blank
-      return schema.delete("enum") if values.empty?
-
-      schema["enum"] = coerce_enum_values(values, node.type)
-    end
-
-    def coerce_enum_values(values, type)
-      case type
-      when "integer" then values.map(&:to_i)
-      when "number"  then values.map(&:to_f)
-      else values
-      end
-    end
-
-    def apply_minimum(schema, node, builder_params)
-      return unless builder_params.key?(:minimum)
-
-      val = builder_params[:minimum].to_s.strip
-      if val.present?
-        schema["minimum"] = node.type == "integer" ? val.to_i : val.to_f
-      else
-        schema.delete("minimum")
-      end
-    end
-
-    def apply_maximum(schema, node, builder_params)
-      return unless builder_params.key?(:maximum)
-
-      val = builder_params[:maximum].to_s.strip
-      if val.present?
-        schema["maximum"] = node.type == "integer" ? val.to_i : val.to_f
-      else
-        schema.delete("maximum")
-      end
-    end
-
-    def apply_required_toggle(schema, builder_params)
-      return if builder_params[:required_toggle].blank?
-
-      prop = builder_params[:required_toggle]
-      req = Array(schema["required"])
-      req = builder_params[:required_checked] == "true" ? (req + [ prop ]).uniq : req - [ prop ]
-      req.any? ? schema["required"] = req : schema.delete("required")
-    end
-
-    def apply_additional_properties(schema, builder_params)
-      return unless builder_params[:additional_properties_toggle] == "true"
-
-      schema["additionalProperties"] = builder_params[:additional_properties] == "true"
+    def builder_params
+      params.fetch(:builder, {}).permit(
+        :description, :format, :enum_text, :minimum, :maximum,
+        :required_toggle, :required_checked,
+        :additional_properties_toggle, :additional_properties
+      )
     end
   end
-  # rubocop:enable Metrics/ClassLength
 end

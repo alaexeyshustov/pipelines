@@ -1,0 +1,15 @@
+module Evaluation
+  module ExperimentWizard
+    @wizard_form: WizardForm
+
+    private
+
+    def build_wizard_form: (?step_param: Integer?) -> Evaluation::WizardForm
+    def fork_prompt_params: () -> ActionController::Parameters
+    def wizard_params: () -> ActionController::Parameters
+    def complete_wizard_or_error: () -> void
+    def advance_wizard_or_error: () -> void
+    def fork_prompt_record: (Evaluation::Prompt based_on) -> Evaluation::Prompt
+    def render_wizard_error: () -> void
+  end
+end

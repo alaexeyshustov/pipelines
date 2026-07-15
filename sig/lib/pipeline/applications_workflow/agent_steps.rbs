@@ -1,0 +1,15 @@
+module Pipeline
+  class ApplicationsWorkflow
+    class AgentSteps
+      @model: String
+
+      def initialize: (model: String) -> void
+      def classify_email: (emails: Array[json_object]) -> json_object_value
+      def filter_emails: (emails: Array[json_object], tags: Array[json_object]) -> json_object_value
+      def map_emails: (emails: Array[json_object]) -> json_object
+      def store_mapped_emails: (emails: Array[json_object]) -> json_object
+      def normalize_stored_emails: (?emails: Array[json_object]) -> json_object_value
+      def reconcile_emails_to_interviews: (?emails: Array[json_object]) -> json_object_value
+    end
+  end
+end

@@ -1,0 +1,27 @@
+module Orchestration
+  class ActionExecutor
+    include SteepHacks
+
+    @action_run: ActionRun
+    @pipeline_run: PipelineRun
+    @prompt_cache: Hash[String?, String?]
+    @output_parser: ModelOutputParser
+
+    def initialize: (action_run: ActionRun, pipeline_run: PipelineRun, prompt_cache: Hash[String?, String?]) -> void
+    def call: () -> void
+
+    private
+
+    def validate_agent_output!: (Action action, { output: json_object?, raw_content: json_object_value? } execution, policy: AgentResolutionPolicy::Result?) -> void
+    def validate_input_schema!: () -> void
+    def run_agent: (?policy: AgentResolutionPolicy::Result?) -> { output: json_object?, raw_content: json_object_value? }
+    def run_as_agent: (json_object input, AgentResolutionPolicy::Result policy) -> { output: json_object?, raw_content: json_object_value? }
+    def build_agent_columns: (RubyLLM::Agent agent, AgentResolutionPolicy::Result policy) -> { chat_id: String?, agent_snapshot: { model: String?, prompt: String?, tools: Array[String], output_schema: json_object? } }
+    def normalize_agent_output: (json_object? output, RubyLLM::Message result, AgentResolutionPolicy::Result policy) -> json_object?
+    def run_as_service: (Action action, json_object input) -> { output: json_object?, raw_content: nil }
+    def resolve_policy: () -> AgentResolutionPolicy::Result
+    def handle_action_failure: (StandardError error, raw_content: json_object_value?) -> void
+    def log_action_failure: (NormalizeActionRunFailure::Result failure) -> void
+    def prompt_for: (String? agent_class) -> String?
+  end
+end

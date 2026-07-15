@@ -1,0 +1,45 @@
+module Orchestration
+  class SchemaBuilder
+    class Parser
+      extend SteepHacks
+
+      type scalar_init_kwargs = {
+        type: String?,
+        description: String?,
+        format: String?,
+        required: Array[json_value],
+        additional_properties: bool?,
+        enum: Array[json_value],
+        minimum: Numeric?,
+        maximum: Numeric?
+      }
+
+      type init_kwargs = {
+        type: String?,
+        description: String?,
+        format: String?,
+        required: Array[json_value],
+        additional_properties: bool?,
+        properties: Hash[String, SchemaBuilder],
+        items: SchemaBuilder?,
+        enum: Array[json_value],
+        minimum: Numeric?,
+        maximum: Numeric?
+      }
+
+      def self.from_schema: (json_object schema) -> SchemaBuilder
+      def self.from_params: (ActionController::Parameters | json_object params) -> SchemaBuilder
+
+      def self.build_from_schema: (json_object schema) -> init_kwargs
+      def self.parse_schema_children: (json_object schema) -> { properties: Hash[String, SchemaBuilder], items: SchemaBuilder? }
+      def self.parse_schema_scalars: (json_object schema) -> scalar_init_kwargs
+      def self.build_from_params: (json_object params) -> init_kwargs
+      def self.parse_params_children: (json_object params) -> { properties: Hash[String, SchemaBuilder], items: SchemaBuilder? }
+      def self.parse_params_scalars: (json_object params) -> scalar_init_kwargs
+      def self.parse_params_text_fields: (json_object params) -> { type: String?, description: String?, format: String? }
+      def self.parse_params_numeric_bounds: (json_object params) -> { minimum: Numeric?, maximum: Numeric? }
+      def self.coerce_number: (json_object_value value, String? type) -> Numeric?
+      def self.parse_additional_properties: (json_object params) -> bool?
+    end
+  end
+end

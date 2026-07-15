@@ -1,0 +1,16 @@
+module Orchestration
+  class SchemaPathValidator
+    @schema: json_object?
+
+    def self.valid?: (String path, json_object? schema) -> bool
+
+    def initialize: (json_object? schema) -> void
+    def valid?: (String path) -> bool
+
+    private
+
+    def advance_schema_node: (json_object current, String seg) -> (json_object_value | :invalid)
+    def advance_through_object: (json_object current, String seg) -> (json_object_value | :invalid)
+    def advance_through_array: (json_object current, String seg) -> (json_object? | :invalid)
+  end
+end
