@@ -84,5 +84,11 @@ RSpec.describe Orchestration::SamplingGateway do
 
       agent_without_action
     end
+
+    it "raises ArgumentError when tool_transform does not respond to #call" do
+      expect {
+        described_class.build(agent_name: "Emails::ClassifyAgent", pipeline_model: nil, tool_transform: :not_callable)
+      }.to raise_error(ArgumentError, /tool_transform must respond to #call/)
+    end
   end
 end

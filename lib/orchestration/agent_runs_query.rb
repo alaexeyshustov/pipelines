@@ -9,6 +9,7 @@ module Orchestration
     def self.completed_with_chat(agent_name:, limit:)
       Orchestration::ActionRun
         .joins(step_action: { action: :agent })
+        .includes(:chat)
         .where(status: "completed")
         .where.not(chat_id: nil)
         .where(orchestration_agents: { name: agent_name })
