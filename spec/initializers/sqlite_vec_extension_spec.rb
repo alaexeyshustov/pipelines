@@ -11,7 +11,7 @@ require "rails_helper"
 # criterion 9, and docs/claude/gotchas.md on db:schema:load bypassing this
 # hook entirely -- irrelevant here since we never touch the schema-loaded
 # email_vectors table, only the extension-provided vec_version() function).
-RSpec.describe "SqliteVecExtension" do # rubocop:disable RSpec/DescribeClass
+RSpec.describe "SqliteVecExtension" do
   it "loads the sqlite-vec extension on a freshly established connection" do
     config = ActiveRecord::Base.connection_db_config
     handler = ActiveRecord::ConnectionAdapters::ConnectionHandler.new

@@ -443,7 +443,7 @@ RSpec.describe Orchestration::PipelineRunner do
         expect(Rails.logger).to have_received(:error).with(include('"chat_id"'))
       end
 
-      it 'logs every failure field mapped to the correct value' do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
+      it 'logs every failure field mapped to the correct value' do # rubocop:disable RSpec/ExampleLength
         logged = nil
         allow(Rails.logger).to receive(:error) { |payload| logged = payload }
 
@@ -636,7 +636,7 @@ RSpec.describe Orchestration::PipelineRunner do
         allow(stub_agent).to receive_messages(with_schema: stub_agent, ask: build_message("[1,2,3]"))
       end
 
-      it 'rejects the non-object JSON with invalid model output diagnostics' do # rubocop:disable RSpec/MultipleExpectations
+      it 'rejects the non-object JSON with invalid model output diagnostics' do
         described_class.new(pipeline_run).run
         action_run = Orchestration::ActionRun.last
         expect(action_run.status).to eq("failed")
