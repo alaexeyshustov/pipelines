@@ -1,0 +1,103 @@
+# Anti-tamper gate for docs/mutant_baseline.json (see .omc/plans/fix-mutation-testing-ci.md,
+# acceptance criterion 3b). Keeps the nightly mutation regression gate honest: the
+# committed baseline may move UP freely, but a decrease (or deletion) of the score
+# requires an explicit, reviewable RATCHET-DOWN-APPROVED token.
+#
+# This only has teeth once it is configured as a REQUIRED status check on the
+# default branch's protection rule, under this exact name (mutant_baseline_guard).
+# A failing non-required check does not block a merge. See criterion 3c.
+name: mutant_baseline_guard
+
+# No paths: filter on purpose. A paths-filtered run that never executes leaves a
+# *required* check permanently "Expected/pending", blocking every unrelated PR.
+# Instead this always runs and early-exits fast when the baseline is untouched.
+# `edited` re-triggers when the approval token is added to an already-open PR body.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  # Job id and name: MUST both be exactly mutant_baseline_guard -- GitHub matches
+  # required status checks by job name, not workflow filename.
+  mutant_baseline_guard:
+    name: mutant_baseline_guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so base.sha and the PR's whole commit range are available.
+          fetch-depth: 0
+
+      - name: Guard docs/mutant_baseline.json against un-approved ratchet-down
+        # The step always runs (no job-level if:, which would report "skipped" and
+        # not reliably satisfy a required check). Untrusted PR-controlled values are
+        # passed via env, never interpolated into the script.
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          file="docs/mutant_baseline.json"
+
+          # Fast pass for the overwhelming majority of PRs: baseline byte-identical
+          # between the PR's base tip and head.
+          if git diff --quiet "$BASE_SHA" HEAD -- "$file"; then
+            echo "Baseline unchanged between $BASE_SHA and HEAD; nothing to guard."
+            exit 0
+          fi
+
+          existed_at_base=false
+          if git cat-file -e "$BASE_SHA:$file" 2>/dev/null; then
+            existed_at_base=true
+          fi
+          exists_at_head=false
+          if git cat-file -e "HEAD:$file" 2>/dev/null; then
+            exists_at_head=true
+          fi
+
+          # Bootstrap: the PR that first introduces the file. Nothing to ratchet
+          # against -> allow. (Distinct from deletion, handled below.)
+          if [ "$existed_at_base" = false ]; then
+            echo "Baseline file absent at base ($BASE_SHA); bootstrap case, allowed."
+            exit 0
+          fi
+
+          has_token() {
+            # Explicit human sign-off in the PR body OR any commit message in this
+            # PR's own range. Checked pre-merge, so independent of squash behavior.
+            # ${PR_BODY:-} tolerates a null/empty body without erroring under -u.
+            if printf '%s' "${PR_BODY:-}" | grep -q 'RATCHET-DOWN-APPROVED:'; then
+              return 0
+            fi
+            if git log --format='%B' "$BASE_SHA"..HEAD | grep -q 'RATCHET-DOWN-APPROVED:'; then
+              return 0
+            fi
+            return 1
+          }
+
+          # Deletion: present at base, absent at head. Strongest ratchet-down; must
+          # not be silently treated as bootstrap.
+          if [ "$exists_at_head" = false ]; then
+            if has_token; then
+              echo "Baseline deleted with RATCHET-DOWN-APPROVED token; allowed."
+              exit 0
+            fi
+            echo "::error::docs/mutant_baseline.json was deleted without a 'RATCHET-DOWN-APPROVED: <reason>' token in the PR body or a commit message."
+            exit 1
+          fi
+
+          old_score=$(git show "$BASE_SHA:$file" | jq -er '.score')
+          new_score=$(jq -er '.score' "$file")
+
+          # Only a decrease needs approval; equal or higher always passes. No numeric
+          # comparison is ever attempted against an absent score (handled above).
+          if awk -v n="$new_score" -v o="$old_score" 'BEGIN { exit !(n+0 < o+0) }'; then
+            if has_token; then
+              echo "Baseline lowered ${old_score} -> ${new_score} with RATCHET-DOWN-APPROVED token; allowed."
+              exit 0
+            fi
+            echo "::error::docs/mutant_baseline.json score lowered from ${old_score} to ${new_score} without a 'RATCHET-DOWN-APPROVED: <reason>' token in the PR body or a commit message."
+            exit 1
+          fi
+
+          echo "Baseline score ${old_score} -> ${new_score} (not a decrease); allowed."

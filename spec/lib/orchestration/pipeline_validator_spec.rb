@@ -240,5 +240,124 @@ RSpec.describe Orchestration::PipelineValidator do
         expect(results.first.errors.none? { |e| e.code == :unknown_from }).to be true
       end
     end
+
+    context 'when a mapping entry is a literal value (not a from-reference)' do
+      before do
+        create(:orchestration_step_action,
+               step: step, position: 1, output_key: "fetch",
+               input_mapping: { "key" => { "value" => "literal", "from" => "nonexistent_key" } })
+      end
+
+      it 'short-circuits before from/path validation, ignoring an otherwise-invalid from' do
+        errors = validator.validate.first.errors
+        expect(errors.none? { |e| e.code == :unknown_from }).to be true
+        expect(errors.none? { |e| e.code == :invalid_path }).to be true
+      end
+    end
+
+    context 'when validating a path through an array node whose items is a Hash schema' do
+      let(:step2) { create(:orchestration_step, pipeline: pipeline, position: 2) }
+      let(:upstream_action) { create(:orchestration_action, agent: upstream_agent) }
+      let(:upstream_agent) do
+        create(:orchestration_agent,
+               output_schema: {
+                 "type" => "object",
+                 "properties" => {
+                   "emails" => {
+                     "type" => "array",
+                     "items" => {
+                       "type" => "object",
+                       "properties" => { "subject" => { "type" => "string" } }
+                     }
+                   }
+                 }
+               })
+      end
+
+      def classify_errors(path)
+        create(:orchestration_step_action,
+               step: step, position: 1, output_key: "fetch",
+               action: upstream_action, input_mapping: nil)
+        create(:orchestration_step_action,
+               step: step2, position: 1, output_key: "classify",
+               input_mapping: { "data" => { "from" => "fetch", "path" => path } })
+        validator.validate.find { |r| r.output_key == "classify" }.errors
+      end
+
+      it 'resolves a numeric index into the items schema with no invalid_path error' do
+        expect(classify_errors("emails.10.subject").none? { |e| e.code == :invalid_path }).to be true
+      end
+
+      it 'flags a non-numeric segment against the array node as invalid_path' do
+        invalid = classify_errors("emails.foo").find { |e| e.code == :invalid_path }
+        expect(invalid).not_to be_nil
+        expect(invalid.path).to eq("emails.foo")
+      end
+    end
+
+    context 'when validating a path through an array node whose items is absent' do
+      let(:step2) { create(:orchestration_step, pipeline: pipeline, position: 2) }
+      let(:upstream_action) { create(:orchestration_action, agent: upstream_agent) }
+      let(:upstream_agent) do
+        create(:orchestration_agent,
+               output_schema: {
+                 "type" => "object",
+                 "properties" => { "emails" => { "type" => "array" } }
+               })
+      end
+
+      def classify_errors(path)
+        create(:orchestration_step_action,
+               step: step, position: 1, output_key: "fetch",
+               action: upstream_action, input_mapping: nil)
+        create(:orchestration_step_action,
+               step: step2, position: 1, output_key: "classify",
+               input_mapping: { "data" => { "from" => "fetch", "path" => path } })
+        validator.validate.find { |r| r.output_key == "classify" }.errors
+      end
+
+      it 'flags a trailing numeric index against an itemless array as invalid_path' do
+        invalid = classify_errors("emails.10").find { |e| e.code == :invalid_path }
+        expect(invalid).not_to be_nil
+        expect(invalid.path).to eq("emails.10")
+      end
+
+      it 'flags a deeper segment after the itemless index as invalid_path' do
+        invalid = classify_errors("emails.10.subject").find { |e| e.code == :invalid_path }
+        expect(invalid).not_to be_nil
+        expect(invalid.path).to eq("emails.10.subject")
+      end
+    end
+
+    context 'when validating a path through nested object properties' do
+      let(:step2) { create(:orchestration_step, pipeline: pipeline, position: 2) }
+      let(:upstream_action) { create(:orchestration_action, agent: upstream_agent) }
+      let(:upstream_agent) do
+        create(:orchestration_agent,
+               output_schema: {
+                 "type" => "object",
+                 "properties" => {
+                   "result" => {
+                     "type" => "object",
+                     "properties" => { "nested_field" => { "type" => "string" } }
+                   }
+                 }
+               })
+      end
+
+      def classify_errors(path)
+        create(:orchestration_step_action,
+               step: step, position: 1, output_key: "fetch",
+               action: upstream_action, input_mapping: nil)
+        create(:orchestration_step_action,
+               step: step2, position: 1, output_key: "classify",
+               input_mapping: { "data" => { "from" => "fetch", "path" => path } })
+        validator.validate.find { |r| r.output_key == "classify" }.errors
+      end
+
+      it 'resolves a multi-level object path with no invalid_path error' do
+        expect(classify_errors("result.nested_field").none? { |e| e.code == :invalid_path }).to be true
+      end
+    end
   end
 end

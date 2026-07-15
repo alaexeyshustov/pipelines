@@ -5,8 +5,15 @@ on:
     - cron: '0 3 * * *'
   workflow_dispatch:
 
+# North-Star target reported (non-blocking) in the job summary. The gate itself
+# is a regression check against docs/mutant_baseline.json, not this number.
 env:
-  MUTATION_SCORE_THRESHOLD: "90.0"
+  MUTATION_SCORE_TARGET: "90.0"
+  # Fail only if the fresh score drops more than this many percentage points
+  # below the committed baseline. Sized just above the observed ~2.8-point
+  # run-to-run swing so ordinary noise does not flip the gate (see the plan's
+  # Risks section and docs/mutant_baseline.json).
+  MUTATION_REGRESSION_MARGIN: "3.0"
 
 jobs:
   mutation:
@@ -44,6 +51,16 @@ jobs:
         run: |
           bundle exec mutant run --jobs 4 2>&1 | tee mutant_output.txt || true
 
+      - name: Upload mutant output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutant-output
+          path: mutant_output.txt
+          if-no-files-found: warn
+
+      - name: Check mutation score against baseline
+        run: |
           # Harden score parsing: fail loudly on format drift or ambiguous
           # matches instead of silently mis-scoring (see docs/claude/gotchas.md).
           coverage_lines=$(grep "Coverage:" mutant_output.txt | grep -v "Line Coverage" || true)
@@ -71,6 +88,31 @@ jobs:
           score=$(printf '%s' "$score_matches" | tr -d '%')
           echo "Mutation score: ${score}%"
 
-          awk -v s="$score" -v t="$MUTATION_SCORE_THRESHOLD" \
-            'BEGIN { if (s+0 < t+0) { print "::error::Mutation score " s "% is below the " t "% minimum threshold"; exit 1 } }' \
+          # Regression gate: compare against the committed baseline rather than a
+          # fixed aspirational threshold. The baseline only moves via an explicit,
+          # reviewed PR guarded by mutant_baseline_guard.yml -- it is never written
+          # back automatically from a run. Read at HEAD under the default checkout;
+          # no git history is required here.
+          if [ ! -f docs/mutant_baseline.json ]; then
+            echo "::error::docs/mutant_baseline.json is missing; cannot evaluate the regression gate"
+            exit 1
+          fi
+
+          baseline=$(jq -er '.score' docs/mutant_baseline.json) || {
+            echo "::error::Could not read .score from docs/mutant_baseline.json"
+            exit 1
+          }
+
+          floor=$(awk -v b="$baseline" -v m="$MUTATION_REGRESSION_MARGIN" 'BEGIN { printf "%.2f", b - m }')
+
+          {
+            echo "### Mutation testing"
+            echo ""
+            echo "score: ${score}% (baseline ${baseline}%, target ${MUTATION_SCORE_TARGET}%)"
+            echo ""
+            echo "Regression gate floor: ${floor}% (baseline − ${MUTATION_REGRESSION_MARGIN} pt margin)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          awk -v s="$score" -v f="$floor" \
+            'BEGIN { if (s+0 < f+0) { print "::error::Mutation score " s "% regressed below the " f "% floor (baseline minus margin)"; exit 1 } }' \
             || exit 1

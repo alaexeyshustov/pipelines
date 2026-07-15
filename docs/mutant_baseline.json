@@ -1,0 +1,6 @@
+{
+  "score": 81.84,
+  "date": "2026-07-13",
+  "commit": "e062e85",
+  "_note": "Mutation score baseline for the nightly regression gate (.github/workflows/mutation.yml). This value is carried over from the pre-existing investigation (CI run 29223533162 on current main@e062e85); it is NOT yet the product of a fresh run against the new gate logic. Re-measure by triggering one full mutation run after this change lands and update score/date/commit accordingly. The gate fails a nightly run only if its fresh score drops more than MUTATION_REGRESSION_MARGIN (3.0) points below this value. This file may only be moved by an explicit, reviewed PR: mutant_baseline_guard.yml blocks a score decrease unless a RATCHET-DOWN-APPROVED token is present. See docs/mutant_backlog.md for the path back up toward the 90% North Star."
+}

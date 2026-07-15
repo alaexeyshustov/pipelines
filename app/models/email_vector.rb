@@ -19,6 +19,8 @@ class EmailVector < ApplicationRecord
       "SELECT email_id, distance FROM email_vectors WHERE embedding MATCH ? ORDER BY distance LIMIT ?",
       [ serialize(embedding), limit ]
     )
+    # Equivalent mutant: `row[0]`->`row.at(0)` is undetectable here. For a literal
+    # non-negative index and plain Array rows, Array#[] and Array#at are identical.
     rows.map { |row| { email_id: row[0], distance: row[1] } }
   end
 

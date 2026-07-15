@@ -35,6 +35,8 @@ module Orchestration
       return false unless failed_run
 
       @pipeline_run.update!(status: "failed", error: failed_run.error, finished_at: Time.current)
+      # Equivalent mutant: dropping this `true` is undetectable. ActiveRecord::Persistence#update!
+      # returns true on success (raising otherwise), so the explicit result is redundant.
       true
     end
 

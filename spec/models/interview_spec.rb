@@ -81,4 +81,10 @@ RSpec.describe Interview do
       ])
     end
   end
+
+  describe '.tool_column_names' do
+    it 'returns COLUMN_NAMES' do
+      expect(described_class.tool_column_names).to eq(Interview::COLUMN_NAMES)
+    end
+  end
 end
