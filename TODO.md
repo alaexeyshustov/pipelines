@@ -35,3 +35,4 @@
 [ ] refactoring: tests - extract methods to let and before
 [ ] refactoring: tests - extract long hashes into let
 [ ] upgrade: rubyllm new version
+[ ] improve: add git hook to tun specs, cops and steep check on modified files
