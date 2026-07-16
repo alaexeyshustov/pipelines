@@ -57,21 +57,26 @@ RSpec.describe Orchestration::AgentRunsQuery do
       expect(runs).to be_empty
     end
 
-    it "excludes action runs belonging to a different agent" do # rubocop:disable RSpec/ExampleLength
-      other_agent = create(:orchestration_agent, name: "Emails::FilterAgent")
-      other_action = create(:orchestration_action, kind: :agent, agent: other_agent)
-      other_step_action = create(:orchestration_step_action, action: other_action)
-      other_pipeline_run = create(:orchestration_pipeline_run, pipeline: other_step_action.step.pipeline)
-      create(:orchestration_action_run,
-             step_action: other_step_action,
-             pipeline_run: other_pipeline_run,
-             status: "completed",
-             chat: create(:chat),
-             input: { "other" => true })
+    context "with an action run belonging to a different agent" do
+      let(:other_agent) { create(:orchestration_agent, name: "Emails::FilterAgent") }
+      let(:other_action) { create(:orchestration_action, kind: :agent, agent: other_agent) }
+      let(:other_step_action) { create(:orchestration_step_action, action: other_action) }
+      let(:other_pipeline_run) { create(:orchestration_pipeline_run, pipeline: other_step_action.step.pipeline) }
 
-      runs = described_class.completed_with_chat(agent_name: agent_name, limit: 10)
+      before do
+        create(:orchestration_action_run,
+               step_action: other_step_action,
+               pipeline_run: other_pipeline_run,
+               status: "completed",
+               chat: create(:chat),
+               input: { "other" => true })
+      end
 
-      expect(runs).to be_empty
+      it "excludes action runs belonging to a different agent" do
+        runs = described_class.completed_with_chat(agent_name: agent_name, limit: 10)
+
+        expect(runs).to be_empty
+      end
     end
 
     it "respects the limit" do
