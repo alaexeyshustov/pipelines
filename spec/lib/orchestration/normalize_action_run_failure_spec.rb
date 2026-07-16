@@ -30,7 +30,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
       let(:error) { RubyLLM::RateLimitError.new(response, "An unknown error occurred") }
       let(:result) { described_class.new(error:, action_run:, raw_content: nil).normalize }
 
-      it "extracts a concise summary and structured details" do # rubocop:disable RSpec/MultipleExpectations
+      it "extracts a concise summary and structured details" do # rubocop:disable RSpec/MultipleExpectations,RSpec/ExampleLength
         expect(result.summary).to eq("openai API error (429): Rate limit exceeded")
         expect(result.details).to include(
           "category" => "provider_http_error",

@@ -44,19 +44,22 @@ RSpec.describe "Orchestration::StepActions" do
 
     context "when a unique-key collision occurs (race condition)" do
       let(:key_deriver) { Orchestration::OutputKeyDeriver.new(action_name: action.name, step: step) }
-      let(:step_action) { create(:orchestration_step_action, step: step, action: action, output_key: "classify_emails") }
 
       before do
         allow(Orchestration::OutputKeyDeriver).to receive(:new).and_return(key_deriver)
         allow(key_deriver).to receive(:derive).and_return("classify_emails")
 
         first_call = true
-        allow(step_action).to receive(:save).and_wrap_original do |m, **opts|
-          if first_call
-            first_call = false
-            raise ActiveRecord::RecordNotUnique, "UNIQUE constraint failed"
+        allow(Orchestration::StepAction).to receive(:new).and_wrap_original do |m, *args, **kwargs|
+          instance = m.call(*args, **kwargs)
+          allow(instance).to receive(:save).and_wrap_original do |m2, *save_args|
+            if first_call
+              first_call = false
+              raise ActiveRecord::RecordNotUnique, "UNIQUE constraint failed"
+            end
+            m2.call(*save_args)
           end
-          m.call(**opts)
+          instance
         end
       end
 

@@ -60,16 +60,15 @@ RSpec.describe Orchestration::Pipeline do
   end
 
   describe '#validate_steps' do
-    let(:validator) { Orchestration::PipelineValidator.new }
+    let(:fake_results) { [] }
+    let(:validator) { Struct.new(:validate).new(fake_results) }
 
     before do
       allow(Orchestration::PipelineValidator).to receive(:new).and_return(validator)
-      allow(validator).to receive(:validate).and_return(fake_results)
     end
 
     it 'delegates to PipelineValidator#validate' do
       pipeline = build(:orchestration_pipeline)
-      fake_results = []
 
       expect(pipeline.validate_steps).to eq(fake_results)
     end

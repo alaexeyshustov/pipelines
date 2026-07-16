@@ -417,7 +417,7 @@ RSpec.describe Orchestration::PipelineRunner do
         described_class.new(pipeline_run).run
       end
 
-      it "persists structured provider diagnostics and logs them" do # rubocop:disable RSpec/MultipleExpectations
+      it "persists structured provider diagnostics and logs them" do # rubocop:disable RSpec/MultipleExpectations,RSpec/ExampleLength
         expect(action_run.status).to eq("failed")
         expect(action_run.error).to eq("openai API error (429): Rate limit exceeded")
         expect(action_run.error_details).to include(

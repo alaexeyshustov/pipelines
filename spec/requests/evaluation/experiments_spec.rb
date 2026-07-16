@@ -44,7 +44,7 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     context "when metrics exist for the agent" do
-      let!(:metric) do
+      before do
         create(:evaluation_metric, agent_name: experiment.prompt.name, name: "Accuracy", description: "Correct output")
       end
 
@@ -341,7 +341,8 @@ RSpec.describe "Evaluation::Experiments" do
           sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 3.5
         )
       end
-      let!(:justification) do
+
+      before do
         Evaluation::Justification.create!(
           evaluation_result: eval_result, metric_name: metric_name,
           justification: "Partially correct response."
