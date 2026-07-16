@@ -2,10 +2,10 @@ module Orchestration
   class ActionExecutor
     include SteepHacks
 
-    def initialize(action_run:, pipeline_run:, prompt_cache:)
+    def initialize(action_run:, pipeline_run:, prompt_resolver:)
       @action_run = action_run
       @pipeline_run = pipeline_run
-      @prompt_cache = prompt_cache
+      @prompt_resolver = prompt_resolver
       @output_parser = ModelOutputParser.new
     end
 
@@ -124,9 +124,7 @@ module Orchestration
     end
 
     def prompt_for(agent_class)
-      return @prompt_cache[agent_class] if @prompt_cache.key?(agent_class)
-
-      @prompt_cache[agent_class] = Evaluation::Prompt.last_for_agent(agent_class)&.system_prompt
+      @prompt_resolver.call(agent_class)
     end
   end
 end

@@ -1,0 +1,20 @@
+module Orchestration
+  class AgentNotFound < ArgumentError
+  end
+
+  class ActionNotFound < ArgumentError
+  end
+
+  module SamplingGateway
+    def self.build: (
+      agent_name: String?,
+      pipeline_model: String?,
+      ?prompt_override: String?,
+      ?tool_transform: (^(Array[singleton(RubyLLM::Tool)]) -> Array[singleton(RubyLLM::Tool)])?
+    ) -> RubyLLM::Agent
+
+    def self.validate_tool_transform!: ((^(Array[singleton(RubyLLM::Tool)]) -> Array[singleton(RubyLLM::Tool)])? tool_transform) -> void
+    def self.find_agent!: (String? agent_name) -> Orchestration::Agent
+    def self.find_action!: (Orchestration::Agent agent_record, String? agent_name) -> Orchestration::Action
+  end
+end

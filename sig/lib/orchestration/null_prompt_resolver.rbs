@@ -1,0 +1,5 @@
+module Orchestration
+  class NullPromptResolver
+    def call: (String? agent_class) -> nil
+  end
+end

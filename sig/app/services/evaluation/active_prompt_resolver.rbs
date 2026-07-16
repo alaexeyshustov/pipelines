@@ -1,0 +1,8 @@
+module Evaluation
+  class ActivePromptResolver
+    @cache: Hash[String?, String?]
+
+    def initialize: () -> void
+    def call: (String? agent_class) -> String?
+  end
+end

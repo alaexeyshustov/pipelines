@@ -1,0 +1,13 @@
+module Orchestration
+  module AgentRunsQuery
+    class Run < Data
+      attr_reader id: Integer
+      attr_reader input: json_object?
+      attr_reader chat: Chat
+
+      def self.new: (id: Integer, input: json_object?, chat: Chat) -> Run
+    end
+
+    def self.completed_with_chat: (agent_name: String, limit: Integer) -> Array[Run]
+  end
+end

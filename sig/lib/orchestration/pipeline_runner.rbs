@@ -3,9 +3,9 @@ module Orchestration
     include SteepHacks
 
     @pipeline_run: PipelineRun
-    @prompt_cache: Hash[String?, String?]
+    @prompt_resolver: _PromptResolver
 
-    def initialize: (PipelineRun pipeline_run) -> void
+    def initialize: (PipelineRun pipeline_run, ?prompt_resolver: _PromptResolverFactory | _PromptResolver) -> void
     def run: () -> void
 
     private

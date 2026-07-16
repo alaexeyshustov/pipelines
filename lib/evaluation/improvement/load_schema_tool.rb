@@ -8,16 +8,7 @@ module Evaluation
       def name = "load_schema"
 
       def execute(prompt_name)
-        schema = schema_for(prompt_name)
-        return unless schema
-
-        schema.output_schema
-      end
-
-      private
-
-      def schema_for(prompt_name)
-        ::Orchestration::Agent.named(prompt_name)
+        ::Orchestration::AgentCatalog.find(prompt_name)&.output_schema
       end
     end
   end

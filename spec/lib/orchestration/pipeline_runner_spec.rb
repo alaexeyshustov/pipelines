@@ -1251,4 +1251,65 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
   end
+
+  describe 'prompt resolver injection' do
+    let(:agent_name) { "Orchestration::Agents::EmailsClassifier" }
+
+    before { create(:orchestration_step_action, step: step1, action: action, position: 1) }
+
+    # Captures every prompt_override handed to AgentResolutionPolicy during a run,
+    # so we can assert which resolved system_prompt reached the policy.
+    def capture_prompt_overrides
+      captured = []
+      allow(Orchestration::AgentResolutionPolicy).to receive(:new).and_wrap_original do |orig, **kwargs|
+        captured << kwargs[:prompt_override]
+        orig.call(**kwargs)
+      end
+      captured
+    end
+
+    context 'when separate runs resolve against updated prompt versions' do
+      let(:second_run) { create(:orchestration_pipeline_run, pipeline: pipeline, status: "pending") }
+
+      it 'resolves the newest system_prompt on a fresh run without stale caching' do
+        create(:orchestration_prompt, name: agent_name, system_prompt: "prompt v1", version: 1)
+        first = capture_prompt_overrides
+        described_class.new(pipeline_run, prompt_resolver: Evaluation::ActivePromptResolver).run
+        expect(first).to include("prompt v1")
+
+        create(:orchestration_prompt, name: agent_name, system_prompt: "prompt v2", version: 2)
+        second = capture_prompt_overrides
+        described_class.new(second_run, prompt_resolver: Evaluation::ActivePromptResolver).run
+        expect(second).to include("prompt v2")
+      end
+    end
+
+    context 'when a resolver instance is injected via the kwarg' do
+      let(:recording_resolver_class) do
+        Class.new do
+          attr_reader :received
+
+          def initialize = @received = []
+          def call(agent_class) = @received.push(agent_class) && "injected prompt"
+        end
+      end
+
+      it 'uses the injected resolver and never reads the global port' do
+        fake_resolver = stub_const("RecordingPromptResolver", recording_resolver_class).new
+        allow(Orchestration).to receive(:prompt_resolver).and_call_original
+
+        described_class.new(pipeline_run, prompt_resolver: fake_resolver).run
+
+        expect(fake_resolver.received).to include(agent_name)
+        expect(Orchestration).not_to have_received(:prompt_resolver)
+      end
+    end
+
+    context 'when the injected resolver does not respond to #call' do
+      it 'raises ArgumentError' do
+        expect { described_class.new(pipeline_run, prompt_resolver: Object.new) }
+          .to raise_error(ArgumentError, /prompt_resolver must respond to #call/)
+      end
+    end
+  end
 end

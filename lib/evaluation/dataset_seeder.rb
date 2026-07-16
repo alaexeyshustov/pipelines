@@ -42,13 +42,7 @@ module Evaluation
     end
 
     def candidate_runs
-      Orchestration::ActionRun
-        .joins(step_action: { action: :agent })
-        .where(status: "completed") # : Orchestration::ActionRun::relation
-        .where.not(chat_id: nil) # : Orchestration::ActionRun::relation
-        .where(orchestration_agents: { name: @agent_name })
-        .order(id: :desc)
-        .limit(@sample_size).to_a
+      Orchestration::AgentRunsQuery.completed_with_chat(agent_name: @agent_name, limit: @sample_size)
     end
   end
 end

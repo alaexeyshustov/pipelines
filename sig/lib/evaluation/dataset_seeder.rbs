@@ -19,9 +19,9 @@ module Evaluation
 
     private
 
-    def process_run: (Orchestration::ActionRun run, Hash[Symbol, Integer] acc) -> void
-    def candidate_runs: () -> Array[Orchestration::ActionRun]
+    def process_run: (Orchestration::AgentRunsQuery::Run run, Hash[Symbol, Integer] acc) -> void
+    def candidate_runs: () -> Array[Orchestration::AgentRunsQuery::Run]
     def dataset: () -> Dataset
-    def sample_for: (Orchestration::ActionRun) -> DatasetSample
+    def sample_for: (Orchestration::AgentRunsQuery::Run) -> DatasetSample
   end
 end
