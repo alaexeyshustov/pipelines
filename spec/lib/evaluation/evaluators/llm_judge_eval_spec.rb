@@ -5,7 +5,7 @@ RSpec.describe Evaluation::Evaluators::LLMJudgeEval do
 
   let(:agent_name) { "Emails::ClassifyAgent" }
 
-  def default_scores
+  let(:default_scores) do
     [
       { "metric_name" => "tool_call_accuracy", "score" => 4, "justification" => "Correct tool called." },
       { "metric_name" => "output_quality",      "score" => 5, "justification" => "Clear output." }

@@ -32,7 +32,6 @@ module Records
         .sort_by { |match| match[:value] } #: Array[Hash[Symbol, String | Array[Integer]]]
     end
 
-    # SQL: stored value contains query OR query contains stored value.
     def fetch_substring_matches(model, column, value)
       conn   = model.connection
       quoted = conn.quote_column_name(column)
@@ -60,7 +59,6 @@ module Records
       { value: match_value, ids: row["ids"].to_s.split(",").map(&:to_i) }
     end
 
-    # Ruby-side: word-level Levenshtein — catches typos like "Softwear" → "Software".
     def fetch_fuzzy_matches(model, column, value)
       matcher = FuzzyMatcher.new(value)
       quoted_column = model.connection.quote_column_name(column)

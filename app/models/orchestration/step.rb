@@ -10,17 +10,10 @@ module Orchestration
     validates :position, presence: true, uniqueness: { scope: :pipeline_id }
 
     def previous_sibling
-      # Equivalent mutant: dropping `order(position: :desc)` is undetectable. The
-      # `steps` association's default `order(:position)` (ASC) composes first, and
-      # position uniqueness (scope: :pipeline_id) means there are never ties for the
-      # DESC key to break — so the SQL is behaviorally identical with or without it.
       pipeline.steps.where("position < ?", position).order(position: :desc).first
     end
 
     def next_sibling
-      # Equivalent mutant: dropping `order(position: :asc)` is undetectable. The
-      # `steps` association's default `order(:position)` (ASC) already fully determines
-      # row order here, so the explicit clause is redundant.
       pipeline.steps.where("position > ?", position).order(position: :asc).first
     end
 
