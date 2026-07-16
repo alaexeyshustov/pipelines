@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 require "rails_helper"
 
@@ -12,21 +11,21 @@ RSpec.describe Evaluation::Improvement::GetExperimentJustificationsTool do
       expect(tool.execute(experiment_id: experiment.id)).to eq([])
     end
 
-    it "returns justification tuples with metric_name, score, and justification" do # rubocop:disable RSpec/ExampleLength
-      result = create(:evaluation_evaluation_result, experiment: experiment, score: 4.0)
-      create(:evaluation_justification,
-             evaluation_result: result,
-             metric_name: "accuracy",
-             justification: "Correct tool called")
+    context "with one justification" do
+      let(:eval_result) { create(:evaluation_evaluation_result, experiment: experiment, score: 4.0) }
 
-      output = tool.execute(experiment_id: experiment.id)
+      before do
+        create(:evaluation_justification,
+               evaluation_result: eval_result,
+               metric_name: "accuracy",
+               justification: "Correct tool called")
+      end
 
-      expect(output.size).to eq(1)
-      expect(output.first).to eq(
-        metric_name: "accuracy",
-        score: 4.0,
-        justification: "Correct tool called"
-      )
+      it "returns justification tuples with metric_name, score, and justification" do
+        output = tool.execute(experiment_id: experiment.id)
+        expect(output.size).to eq(1)
+        expect(output.first).to eq(metric_name: "accuracy", score: 4.0, justification: "Correct tool called")
+      end
     end
 
     it "returns all justifications across multiple results and metrics" do

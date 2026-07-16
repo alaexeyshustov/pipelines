@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 class MoveStoreEmailsOutputSchemaToAgent < ActiveRecord::Migration[8.1]
   # output_schema was on the Action, not the Agent record.

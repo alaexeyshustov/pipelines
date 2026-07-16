@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 require "rails_helper"
 
@@ -45,7 +44,7 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     context "when metrics exist for the agent" do
-      let!(:metric) do # rubocop:disable RSpec/LetSetup
+      let!(:metric) do
         create(:evaluation_metric, agent_name: experiment.prompt.name, name: "Accuracy", description: "Correct output")
       end
 
@@ -59,31 +58,31 @@ RSpec.describe "Evaluation::Experiments" do
         expect(response.body).to include("no results")
       end
 
-        it "shows the average metric score" do
-          dataset_sample = create(:evaluation_dataset_sample, dataset: experiment.dataset)
-          sample = create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_sample)
-          eval_result = Evaluation::EvaluationResult.create!(
-            experiment: experiment, dataset_sample: dataset_sample,
-            sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
-          )
-          Evaluation::Justification.create!(evaluation_result: eval_result, metric_name: "Accuracy", justification: "Good")
-          get evaluation_experiment_path(experiment)
-          expect(response.body).to include("4.00")
-        end
+      it "shows the average metric score" do
+        dataset_sample = create(:evaluation_dataset_sample, dataset: experiment.dataset)
+        sample = create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_sample)
+        eval_result = Evaluation::EvaluationResult.create!(
+          experiment: experiment, dataset_sample: dataset_sample,
+          sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
+        )
+        Evaluation::Justification.create!(evaluation_result: eval_result, metric_name: "Accuracy", justification: "Good")
+        get evaluation_experiment_path(experiment)
+        expect(response.body).to include("4.00")
+      end
 
-        it "shows overall average" do
-          dataset_sample = create(:evaluation_dataset_sample, dataset: experiment.dataset)
-          sample = create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_sample)
-          eval_result = Evaluation::EvaluationResult.create!(
-            experiment: experiment, dataset_sample: dataset_sample,
-            sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
-          )
-          Evaluation::Justification.create!(evaluation_result: eval_result, metric_name: "Accuracy", justification: "Good")
-          get evaluation_experiment_path(experiment)
-          expect(response.body).to include("Overall average")
-        end
+      it "shows overall average" do
+        dataset_sample = create(:evaluation_dataset_sample, dataset: experiment.dataset)
+        sample = create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_sample)
+        eval_result = Evaluation::EvaluationResult.create!(
+          experiment: experiment, dataset_sample: dataset_sample,
+          sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
+        )
+        Evaluation::Justification.create!(evaluation_result: eval_result, metric_name: "Accuracy", justification: "Good")
+        get evaluation_experiment_path(experiment)
+        expect(response.body).to include("Overall average")
       end
     end
+  end
 
   describe "POST /evaluation/experiments/:id/improve" do
     let(:experiment) { create(:evaluation_experiment) }
@@ -342,7 +341,7 @@ RSpec.describe "Evaluation::Experiments" do
           sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 3.5
         )
       end
-      let!(:justification) do # rubocop:disable RSpec/LetSetup
+      let!(:justification) do
         Evaluation::Justification.create!(
           evaluation_result: eval_result, metric_name: metric_name,
           justification: "Partially correct response."

@@ -1,10 +1,6 @@
-# frozen_string_literal: true
 
 module Orchestration
   class SchemaBuilder
-    # Builds a SchemaBuilder tree from a JSON-schema hash or from form params.
-    # Recurses through children via self.from_schema/self.from_params so nested
-    # parsing stays inside the Parser rather than bouncing through the model.
     class Parser
       class << self
         include SteepHacks

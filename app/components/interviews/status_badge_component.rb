@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Interviews
   class StatusBadgeComponent < UI::StatusBadgeComponent
     STATUS_VARIANTS = {

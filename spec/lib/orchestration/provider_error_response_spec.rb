@@ -19,19 +19,23 @@ RSpec.describe Orchestration::ProviderErrorResponse do
   end
 
   describe "#status, #body, #parsed_error, #message" do
-    it "extracts status, body, parsed error, and a sanitized top-level message" do # rubocop:disable RSpec/ExampleLength
-      response = Data.define(:status, :body).new(
-        status: 429,
-        body: { "error" => { "message" => "Rate limit exceeded" } }.to_json
-      )
-      error = RubyLLM::RateLimitError.new(response, "An unknown error occurred")
-      subject = described_class.new(error: error)
+    context "with a rate limit error response" do
+      let(:response) do
+        Data.define(:status, :body).new(
+          status: 429,
+          body: { "error" => { "message" => "Rate limit exceeded" } }.to_json
+        )
+      end
+      let(:error) { RubyLLM::RateLimitError.new(response, "An unknown error occurred") }
+      let(:provider_response) { described_class.new(error: error) }
 
-      aggregate_failures do
-        expect(subject.status).to eq(429)
-        expect(subject.body).to eq(response.body)
-        expect(subject.parsed_error).to eq("message" => "Rate limit exceeded")
-        expect(subject.message).to eq("Rate limit exceeded")
+      it "extracts status, body, parsed error, and a sanitized top-level message" do
+        aggregate_failures do
+          expect(provider_response.status).to eq(429)
+          expect(provider_response.body).to eq(response.body)
+          expect(provider_response.parsed_error).to eq("message" => "Rate limit exceeded")
+          expect(provider_response.message).to eq("Rate limit exceeded")
+        end
       end
     end
 

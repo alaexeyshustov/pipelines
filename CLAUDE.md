@@ -3,6 +3,7 @@ Rails 8.1 / Ruby 4.0 application which runs pipelines for emails and dcoument au
 ## Essentials
 
 - Be brief.
+- Never comment WHAT, comment only WHY.
 - Prefer TDD cycle for development.
 - Use `bundle exec` for all commands.
 - Type-signature commands: `bundle exec rbs -r optparse validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**/**/*.rbs`, `bundle exec steep check`.

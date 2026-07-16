@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   class ExperimentDetailComponent < ViewComponent::Base
     renders_one :header, UI::PageHeaderComponent

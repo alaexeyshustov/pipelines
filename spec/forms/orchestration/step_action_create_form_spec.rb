@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 require "rails_helper"
 
@@ -66,7 +65,7 @@ RSpec.describe Orchestration::StepActionCreateForm do
         allow_any_instance_of(Orchestration::OutputKeyDeriver).to receive(:derive).and_return("classify_emails") # rubocop:disable RSpec/AnyInstance
 
         first_call = true
-        # rubocop:disable RSpec/AnyInstance
+
         allow_any_instance_of(Orchestration::StepAction).to receive(:save).and_wrap_original do |m, **opts|
           if first_call
             first_call = false
@@ -74,7 +73,6 @@ RSpec.describe Orchestration::StepActionCreateForm do
           end
           m.call(**opts)
         end
-        # rubocop:enable RSpec/AnyInstance
       end
 
       it "saves with a hex-suffixed key" do

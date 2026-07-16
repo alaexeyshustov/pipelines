@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 class AddRequiredToStoreEmailsResultSchema < ActiveRecord::Migration[8.1]
   # Mistral requires every object with "properties" to also declare a "required"

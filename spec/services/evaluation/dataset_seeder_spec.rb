@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 require "rails_helper"
 
@@ -69,36 +68,44 @@ RSpec.describe Evaluation::DatasetSeeder do
       expect(dataset.dataset_samples.count).to eq(0)
     end
 
-    it "skips action runs with service-kind step actions" do # rubocop:disable RSpec/ExampleLength
-      service_action = create(:orchestration_action, kind: :service, agent: nil, agent_class: "Orchestration::Executors::Query")
-      service_step_action = create(:orchestration_step_action, action: service_action)
-      service_pipeline_run = create(:orchestration_pipeline_run, pipeline: service_step_action.step.pipeline)
-      create(:orchestration_action_run,
-             step_action: service_step_action,
-             pipeline_run: service_pipeline_run,
-             status: "completed",
-             chat: chat)
+    context "with a service-kind action run" do
+      let(:service_action) { create(:orchestration_action, kind: :service, agent: nil, agent_class: "Orchestration::Executors::Query") }
+      let(:service_step_action) { create(:orchestration_step_action, action: service_action) }
+      let(:service_pipeline_run) { create(:orchestration_pipeline_run, pipeline: service_step_action.step.pipeline) }
 
-      described_class.call(agent_name: agent_name, sample_size: 10)
+      before do
+        create(:orchestration_action_run,
+               step_action: service_step_action,
+               pipeline_run: service_pipeline_run,
+               status: "completed",
+               chat: chat)
+      end
 
-      dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_samples.count).to eq(0)
+      it "skips action runs with service-kind step actions" do
+        described_class.call(agent_name: agent_name, sample_size: 10)
+        dataset = Evaluation::Dataset.find_by!(name: agent_name)
+        expect(dataset.dataset_samples.count).to eq(0)
+      end
     end
 
-    it "skips action runs for a different agent name" do # rubocop:disable RSpec/ExampleLength
-      other_agent = create(:orchestration_agent, name: "Emails::FilterAgent")
-      other_action = create(:orchestration_action, kind: :agent, agent: other_agent)
-      other_step_action = create(:orchestration_step_action, action: other_action)
-      create(:orchestration_action_run,
-             step_action: other_step_action,
-             pipeline_run: create(:orchestration_pipeline_run, pipeline: other_step_action.step.pipeline),
-             status: "completed",
-             chat: chat)
+    context "with an action run for a different agent" do
+      let(:other_agent) { create(:orchestration_agent, name: "Emails::FilterAgent") }
+      let(:other_action) { create(:orchestration_action, kind: :agent, agent: other_agent) }
+      let(:other_step_action) { create(:orchestration_step_action, action: other_action) }
 
-      described_class.call(agent_name: agent_name, sample_size: 10)
+      before do
+        create(:orchestration_action_run,
+               step_action: other_step_action,
+               pipeline_run: create(:orchestration_pipeline_run, pipeline: other_step_action.step.pipeline),
+               status: "completed",
+               chat: chat)
+      end
 
-      dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_samples.count).to eq(0)
+      it "skips action runs for a different agent name" do
+        described_class.call(agent_name: agent_name, sample_size: 10)
+        dataset = Evaluation::Dataset.find_by!(name: agent_name)
+        expect(dataset.dataset_samples.count).to eq(0)
+      end
     end
 
     it "respects sample_size limit" do

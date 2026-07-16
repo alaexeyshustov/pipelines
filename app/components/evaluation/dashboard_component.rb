@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   class DashboardComponent < ViewComponent::Base
     def initialize(summary:)

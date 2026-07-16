@@ -1,6 +1,5 @@
 FactoryBot.define do
-  # rubocop:disable Lint/EmptyBlock
   factory :chat do
+    model_id { create(:model)&.id }
   end
-  # rubocop:enable Lint/EmptyBlock
 end

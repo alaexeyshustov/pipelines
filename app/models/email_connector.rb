@@ -39,8 +39,6 @@ class EmailConnector < ApplicationRecord
   end
 
   def connect_gmail_adapter(adapter_class)
-    # GmailAdapter.test_connection currently prints to stdout and doesn't return value
-    # We might need to refactor it or capture output
     adapter = adapter_class.from_env(
       credentials_path: configuration[:credentials_path],
       token_path: configuration[:token_path]

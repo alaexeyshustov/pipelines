@@ -1,9 +1,9 @@
-# frozen_string_literal: true
+# rubocop:disable RSpec/DescribeClass
 
 require "rails_helper"
 require "rake"
 
-RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClass
+RSpec.describe "evaluation:seed_dataset" do
   let(:task) { Rake::Task["evaluation:seed_dataset"] }
   let(:agent_name) { "Emails::ClassifyAgent" }
   let(:orchestration_agent) { create(:orchestration_agent, name: agent_name) }
@@ -97,3 +97,5 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
     end
   end
 end
+# rubocop:enable RSpec/DescribeClass
+ 

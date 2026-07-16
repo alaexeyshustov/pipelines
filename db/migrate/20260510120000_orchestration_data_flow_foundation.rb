@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 # Foundation slice for the orchestration data-flow refactor (PRD #77, issue #78).
 #

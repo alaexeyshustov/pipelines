@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 # Backfills input_mapping (and params where needed) for the Applications Workflow
 # step_actions that were created before explicit input_mapping was required.

@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 # Central registry for LLM model names. Resolution order per accessor:
 #   1. Setting table (writable at runtime via the settings UI)

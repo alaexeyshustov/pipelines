@@ -96,6 +96,24 @@ RSpec.describe Orchestration::PipelineRunner do
     end
 
     context 'with a serialized orchestration agent configuration' do
+      let(:output_schema) do
+        {
+          "type" => "object",
+          "required" => [ "result" ],
+          "properties" => {
+            "result" => {
+              "type" => "array",
+              "items" => {
+                "type" => "object",
+                "required" => [ "id" ],
+                "properties" => {
+                  "id" => { "type" => "string" }
+                }
+              }
+            }
+          }
+        }
+      end
       let(:serialized_chat) { create(:chat) }
       let(:serialized_agent) do
         ag = RubyLLM::Agent.allocate
@@ -109,22 +127,7 @@ RSpec.describe Orchestration::PipelineRunner do
           model: "mistral-small",
           tools: [ "Records::TempFileTool" ],
           prompt: "Classify incoming emails",
-          output_schema: {
-            "type" => "object",
-            "required" => [ "result" ],
-            "properties" => {
-              "result" => {
-                "type" => "array",
-                "items" => {
-                  "type" => "object",
-                  "required" => [ "id" ],
-                  "properties" => {
-                    "id" => { "type" => "string" }
-                  }
-                }
-              }
-            }
-          }
+          output_schema: output_schema
         )
         create(:orchestration_step_action, step: step1, action: action, position: 1)
         allow(RubyLLM::Agent).to receive(:new).and_return(serialized_agent)
@@ -153,25 +156,9 @@ RSpec.describe Orchestration::PipelineRunner do
           .with(satisfy { |json| JSON.parse(json) == {} })
       end
 
-      it 'uses the database output schema for structured output requests' do # rubocop:disable RSpec/ExampleLength
+      it 'uses the database output schema for structured output requests' do
         described_class.new(pipeline_run).run
-
-        expect(serialized_agent).to have_received(:with_schema).with(
-          "type" => "object",
-          "required" => [ "result" ],
-          "properties" => {
-            "result" => {
-              "type" => "array",
-              "items" => {
-                "type" => "object",
-                "required" => [ "id" ],
-                "properties" => {
-                  "id" => { "type" => "string" }
-                }
-              }
-            }
-          }
-        )
+        expect(serialized_agent).to have_received(:with_schema).with(output_schema)
       end
     end
 
@@ -405,19 +392,32 @@ RSpec.describe Orchestration::PipelineRunner do
           }.to_json
         )
       end
+      let(:log_capture) { [] }
+      let(:action_run) { Orchestration::ActionRun.last }
+      let(:expected_log_payload) do
+        {
+          "event"           => "orchestration.action_run_failed",
+          "category"        => "provider_http_error",
+          "provider"        => "openai",
+          "model"           => "gpt-4.1-mini",
+          "status_code"     => 429,
+          "action_run_id"   => action_run.id,
+          "pipeline_run_id" => pipeline_run.id,
+          "chat_id"         => action_run.chat_id,
+          "summary"         => "openai API error (429): Rate limit exceeded"
+        }
+      end
 
       before do
         action.agent.update!(model: "gpt-4.1-mini")
         create(:orchestration_step_action, step: step1, action: action, position: 1)
-        allow(Rails.logger).to receive(:error)
+        allow(Rails.logger).to receive(:error) { |payload| log_capture << payload }
         allow(stub_agent).to receive(:with_model).and_return(stub_agent)
         allow(stub_agent).to receive(:ask).and_raise(RubyLLM::Error.new(response, "An unknown error occurred"))
+        described_class.new(pipeline_run).run
       end
 
-      it "persists structured provider diagnostics and logs them" do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-        described_class.new(pipeline_run).run
-
-        action_run = Orchestration::ActionRun.last
+      it "persists structured provider diagnostics and logs them" do # rubocop:disable RSpec/MultipleExpectations
         expect(action_run.status).to eq("failed")
         expect(action_run.error).to eq("openai API error (429): Rate limit exceeded")
         expect(action_run.error_details).to include(
@@ -432,35 +432,17 @@ RSpec.describe Orchestration::PipelineRunner do
       end
 
       it 'includes the failure summary in the logged JSON' do
-        described_class.new(pipeline_run).run
         expect(Rails.logger).to have_received(:error).with(
           include('"summary":"openai API error (429): Rate limit exceeded"')
         )
       end
 
       it 'includes chat_id in the logged JSON' do
-        described_class.new(pipeline_run).run
         expect(Rails.logger).to have_received(:error).with(include('"chat_id"'))
       end
 
-      it 'logs every failure field mapped to the correct value' do # rubocop:disable RSpec/ExampleLength
-        logged = nil
-        allow(Rails.logger).to receive(:error) { |payload| logged = payload }
-
-        described_class.new(pipeline_run).run
-        action_run = Orchestration::ActionRun.last
-
-        expect(JSON.parse(logged)).to eq(
-          "event"           => "orchestration.action_run_failed",
-          "category"        => "provider_http_error",
-          "provider"        => "openai",
-          "model"           => "gpt-4.1-mini",
-          "status_code"     => 429,
-          "action_run_id"   => action_run.id,
-          "pipeline_run_id" => pipeline_run.id,
-          "chat_id"         => action_run.chat_id,
-          "summary"         => "openai API error (429): Rate limit exceeded"
-        )
+      it 'logs every failure field mapped to the correct value' do
+        expect(JSON.parse(log_capture.first)).to eq(expected_log_payload)
       end
     end
 
@@ -527,9 +509,6 @@ RSpec.describe Orchestration::PipelineRunner do
       let(:step_b) { create(:orchestration_step, pipeline: pipeline, name: "step_b", position: 2) }
 
       before do
-        # step_b (position 2) is inserted into DB before step1 (position 1).
-        # Without ORDER BY position the query would return step_b first, causing an
-        # UnknownOutputKey failure because "extract_out" has not been accumulated yet.
         create(:orchestration_step_action, step: step_b, action: action, position: 1,
                input_mapping: { "x" => { "from" => "extract_out" } })
         create(:orchestration_step_action, step: step1, action: action, position: 1,

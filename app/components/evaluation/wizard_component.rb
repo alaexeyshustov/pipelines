@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   class WizardComponent < ViewComponent::Base
     renders_one :step_nav,    -> { Evaluation::Wizard::StepNavComponent.new(current_step: @current_step) }

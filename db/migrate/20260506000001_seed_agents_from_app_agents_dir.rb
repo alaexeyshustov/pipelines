@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 class SeedAgentsFromAppAgentsDir < ActiveRecord::Migration[8.1]
   # One entry per file under app/agents/.

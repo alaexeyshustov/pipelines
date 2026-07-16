@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class StepActionEditorComponent < ViewComponent::Base
     with_collection_parameter :step_action

@@ -19,6 +19,8 @@ Tests verify behavior through public interfaces. Prefer realistic data, clear fa
 7. **Do not use `double()`** – Stub external boundaries, not the behavior you are trying to verify. Use real objects or test doubles that mimic real behavior (e.g., `instance_double` with verified methods).
 8. **Use `stub_const` for anonymous/dynamic classes in tests** - never inline anonymous classes that need deserialization
 9. **When setting up specs with doubles/spies, verify keyword arguments match the actual method signatures**
+10. **Presetup all the factoris, stubs and mocks** in `let` or `before` blocks. Use `it` block only for object manipullation and assertion.
+11. **Do not framework** write only tests for the code in the project.
 
 ## Spec Types
 
@@ -43,6 +45,7 @@ Tests verify behavior through public interfaces. Prefer realistic data, clear fa
 2. **`sleep` in system specs** – Use Capybara's waiting behavior.
 3. **Deleting or sidelining failing tests** - Fix the root cause.
 4. **Bypassing UI behavior in system specs** – If the test claims to cover the UI, drive the key interaction through the browser.
+5. **Stubbing with `allow_any_instance_of`** - Use instead `allow(Clas).to receive(:new).and_return(instance); allow(instance).to `
 
 ## System Specs (Non-Negotiable)
 

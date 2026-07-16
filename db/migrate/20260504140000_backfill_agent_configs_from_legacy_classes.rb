@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 class BackfillAgentConfigsFromLegacyClasses < ActiveRecord::Migration[8.1]
   # Backfills model, tools, and prompt for agents that previously relied on hardcoded Ruby subclasses.
