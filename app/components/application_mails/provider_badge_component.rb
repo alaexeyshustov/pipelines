@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module ApplicationMails
   class ProviderBadgeComponent < UI::StatusBadgeComponent
     PROVIDER_VARIANTS = {

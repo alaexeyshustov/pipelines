@@ -1,10 +1,6 @@
-# frozen_string_literal: true
 
 module Orchestration
   class SchemaBuilder
-    # Serializes a SchemaBuilder tree into a JSON-schema hash. Recurses through
-    # child builders via the private #serialize so nested serialization never
-    # bounces back out through SchemaBuilder#to_schema.
     class Serializer
       include SteepHacks
 

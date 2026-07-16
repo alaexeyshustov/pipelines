@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 require "rails_helper"
 
@@ -8,9 +7,7 @@ RSpec.describe "Orchestration::StepActions" do
   let(:action)   { create(:orchestration_action, name: "Classify Emails") }
 
   describe "POST /orchestration/pipelines/:pipeline_id/steps/:step_id/step_actions" do
-    def create_path
-      orchestration_pipeline_step_step_actions_path(pipeline, step)
-    end
+    let(:create_path) { orchestration_pipeline_step_step_actions_path(pipeline, step) }
 
     def post_create(action_id: action.id)
       post create_path, params: {
@@ -46,21 +43,24 @@ RSpec.describe "Orchestration::StepActions" do
     end
 
     context "when a unique-key collision occurs (race condition)" do
-      before do
-        allow_any_instance_of(Orchestration::OutputKeyDeriver).to receive(:derive).and_return("classify_emails") # rubocop:disable RSpec/AnyInstance
+      let(:key_deriver) { Orchestration::OutputKeyDeriver.new(action_name: action.name, step: step) }
 
-        # AR uniqueness validation passes before the INSERT; the collision arrives from a
-        # concurrent commit that can only be simulated by stubbing save on the instance.
+      before do
+        allow(Orchestration::OutputKeyDeriver).to receive(:new).and_return(key_deriver)
+        allow(key_deriver).to receive(:derive).and_return("classify_emails")
+
         first_call = true
-        # rubocop:disable RSpec/AnyInstance
-        allow_any_instance_of(Orchestration::StepAction).to receive(:save).and_wrap_original do |m, **opts|
-          if first_call
-            first_call = false
-            raise ActiveRecord::RecordNotUnique, "UNIQUE constraint failed"
+        allow(Orchestration::StepAction).to receive(:new).and_wrap_original do |m, *args, **kwargs|
+          instance = m.call(*args, **kwargs)
+          allow(instance).to receive(:save).and_wrap_original do |m2, *save_args|
+            if first_call
+              first_call = false
+              raise ActiveRecord::RecordNotUnique, "UNIQUE constraint failed"
+            end
+            m2.call(*save_args)
           end
-          m.call(**opts)
+          instance
         end
-        # rubocop:enable RSpec/AnyInstance
       end
 
       it "saves with a hex-suffixed key instead of raising" do
@@ -71,11 +71,8 @@ RSpec.describe "Orchestration::StepActions" do
   end
 
   describe "PATCH /orchestration/pipelines/:pipeline_id/steps/:step_id/step_actions/:id" do
-    let(:step_action) { create(:orchestration_step_action, step: step, action: action, output_key: "classify_emails") }
-
-    def update_path
-      orchestration_pipeline_step_step_action_path(pipeline, step, step_action)
-    end
+    let(:step_action) { create(:orchestration_step_action, step: step, action: action) }
+    let(:update_path) { orchestration_pipeline_step_step_action_path(pipeline, step, step_action) }
 
     def patch_update(input_mapping: {}, new_key: nil, new_from: nil, new_path: nil)
       params = { orchestration_step_action: { input_mapping: input_mapping } }

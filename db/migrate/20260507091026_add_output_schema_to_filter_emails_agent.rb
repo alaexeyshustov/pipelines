@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 class AddOutputSchemaToFilterEmailsAgent < ActiveRecord::Migration[8.1]
   # Without output_schema the runtime agent builder never calls with_schema(),

@@ -1,10 +1,9 @@
-<%# Sync target: Stimulus reads this to update the hidden output_schema field %>
+
 <% if root? %>
   <input type="hidden" data-schema-builder-target="schemaData" value="<%= html_escape(json) %>">
 <% end %>
 
 <div class="schema-builder-node border border-gray-200 rounded-lg p-3 space-y-2">
-  <%# Type + description row %>
   <div class="flex items-start gap-3">
     <div class="flex-shrink-0">
       <label class="block text-xs font-medium text-gray-500 mb-1">Type</label>
@@ -41,7 +40,6 @@
     </div>
   </div>
 
-  <%# format %>
   <% if builder.type.present? %>
     <div>
       <label class="block text-xs font-medium text-gray-500 mb-1">Format</label>
@@ -62,7 +60,6 @@
     </div>
   <% end %>
 
-  <%# enum (string / integer / number) %>
   <% if Orchestration::SchemaBuilder::ENUM_TYPES.include?(builder.type) %>
     <div>
       <label class="block text-xs font-medium text-gray-500 mb-1">Enum values (one per line)</label>
@@ -79,7 +76,6 @@
     </div>
   <% end %>
 
-  <%# minimum / maximum (integer / number) %>
   <% if Orchestration::SchemaBuilder::NUMERIC_TYPES.include?(builder.type) %>
     <div class="flex gap-3">
       <div class="flex-1">
@@ -113,7 +109,6 @@
     </div>
   <% end %>
 
-  <%# items (array) %>
   <% if builder.type == "array" %>
     <div class="ml-4 border-l-2 border-indigo-200 pl-3">
       <p class="text-xs font-medium text-gray-500 mb-1">Items schema</p>
@@ -125,7 +120,6 @@
     </div>
   <% end %>
 
-  <%# properties (object) %>
   <% if builder.type == "object" %>
     <div class="space-y-2">
       <% if builder.properties.any? %>
@@ -171,7 +165,6 @@
         <% end %>
       <% end %>
 
-      <%# Add property form %>
       <form action="<%= add_property_url %>" method="post" data-turbo-frame="schema_builder" class="flex gap-2 items-center mt-2">
         <%= hidden_field_tag :authenticity_token, helpers.form_authenticity_token %>
         <input type="hidden" name="json" value="<%= html_escape(json) %>">
@@ -191,7 +184,6 @@
     </div>
   <% end %>
 
-  <%# additionalProperties (object) %>
   <% if builder.type == "object" %>
     <div class="flex items-center gap-2">
       <form action="<%= helpers.build_orchestration_schema_builders_path %>" method="post" data-turbo-frame="schema_builder" class="inline">

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class RunDetailCardComponent < ViewComponent::Base
     include ActionView::Helpers::DateHelper

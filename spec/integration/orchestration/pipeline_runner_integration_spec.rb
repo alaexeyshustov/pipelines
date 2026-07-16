@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 # Layer B integration spec: proves PipelineRunner <-> RubyLLM::Agent <-> Mistral HTTP
 # integration works for a single classify-only call.

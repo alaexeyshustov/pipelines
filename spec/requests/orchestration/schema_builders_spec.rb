@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 require "rails_helper"
 
@@ -86,6 +85,15 @@ RSpec.describe "Orchestration::SchemaBuilders" do
   end
 
   describe "POST /orchestration/schema_builders/add_property" do
+    let(:nested_address_schema_json) do
+      {
+        "type" => "object",
+        "properties" => {
+          "address" => { "type" => "object", "properties" => {} }
+        }
+      }.to_json
+    end
+
     it "returns 200 and includes the new property name in the response" do
       post add_property_orchestration_schema_builders_path, params: {
         json: simple_object_json,
@@ -96,15 +104,9 @@ RSpec.describe "Orchestration::SchemaBuilders" do
       expect(response.body).to include("email")
     end
 
-    it "adds property at nested path" do # rubocop:disable RSpec/ExampleLength
-      schema = {
-        "type" => "object",
-        "properties" => {
-          "address" => { "type" => "object", "properties" => {} }
-        }
-      }.to_json
+    it "adds property at nested path" do
       post add_property_orchestration_schema_builders_path, params: {
-        json: schema,
+        json: nested_address_schema_json,
         path: '["properties","address"]',
         property_name: "street"
       }

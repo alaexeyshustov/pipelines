@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 # Shared example for domain-specific status badge components.
 # Caller provides a mapping of { status_value => { label: String, classes: Array<String> } }

@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 require "rails_helper"
 
@@ -6,6 +5,16 @@ RSpec.describe Orchestration::SchemaBuilder do
   # --- from_schema ---
 
   describe ".from_schema" do
+    let(:nested_object_schema) do
+      {
+        "type" => "object",
+        "properties" => {
+          "name" => { "type" => "string" },
+          "age" => { "type" => "integer", "minimum" => 0, "maximum" => 150 }
+        }
+      }
+    end
+
     it "returns an empty builder for nil" do
       builder = described_class.from_schema(nil)
       expect(builder.type).to be_nil
@@ -38,15 +47,8 @@ RSpec.describe Orchestration::SchemaBuilder do
       expect(builder.additional_properties).to be false
     end
 
-    it "parses properties as nested SchemaBuilders" do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-      schema = {
-        "type" => "object",
-        "properties" => {
-          "name" => { "type" => "string" },
-          "age" => { "type" => "integer", "minimum" => 0, "maximum" => 150 }
-        }
-      }
-      builder = described_class.from_schema(schema)
+    it "parses properties as nested SchemaBuilders" do # rubocop:disable RSpec/MultipleExpectations
+      builder = described_class.from_schema(nested_object_schema)
       expect(builder.properties["name"]).to be_a(described_class)
       expect(builder.properties["name"].type).to eq("string")
       expect(builder.properties["age"].minimum).to eq(0)

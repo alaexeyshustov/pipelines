@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 module Evaluation
   class WizardDraft < ApplicationRecord
@@ -17,13 +16,11 @@ module Evaluation
       where(updated_at: ...24.hours.ago).delete_all
     end
 
-    # Merges updates into payload and advances the step.
     def advance!(new_step, payload_updates = empty_object)
       merged = (payload || empty_object).merge(payload_updates.stringify_keys)
       update!(step: new_step, payload: merged)
     end
 
-    # Merges updates into payload without changing the current step.
     def merge_payload!(updates)
       merged = (payload || empty_object).merge(updates.stringify_keys)
       update!(payload: merged)

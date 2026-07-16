@@ -28,7 +28,11 @@
 [x] refactoring: save repeated queries to models
 [x] refactoring: extract all pure function to lib/{domain} (json, jsonschema etc.)
 [ ] refactoring: move all orchestration agents and services to lib/orchestration
-[ ] refactoring: long classes - find pure functions and extract to helpers
+[x] refactoring: long classes - find pure functions and extract to helpers
 [ ] refactoring: decouple orchestration from evaluation, move orchestration to lib/
 [ ] refactoring: deduplicate tests
+[ ] refactoring: tests - extract factories, stubbs and mocks in let and before
+[ ] refactoring: tests - extract methods to let and before
+[ ] refactoring: tests - extract long hashes into let
 [ ] upgrade: rubyllm new version
+[ ] improve: add git hook to tun specs, cops and steep check on modified files

@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 # Shared example for Records::*Job specs.
 # Requires `captured_inputs` to be defined as a let in the outer context (an Array

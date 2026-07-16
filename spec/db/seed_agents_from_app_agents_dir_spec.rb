@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 require "rails_helper"
 require Rails.root.join("db/migrate/20260506000001_seed_agents_from_app_agents_dir")

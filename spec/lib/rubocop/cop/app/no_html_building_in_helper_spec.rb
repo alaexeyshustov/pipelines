@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 require "support/rubocop_support"
 require "rubocop/cop/app_cops"

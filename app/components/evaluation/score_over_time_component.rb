@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   class ScoreOverTimeComponent < ViewComponent::Base
     def initialize(agent_name:, data:)

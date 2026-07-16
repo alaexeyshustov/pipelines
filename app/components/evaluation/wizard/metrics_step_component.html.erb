@@ -1,5 +1,4 @@
 <div class="space-y-6">
-  <%# Existing metrics list %>
   <div>
     <h3 class="text-sm font-semibold text-gray-700 mb-3">Metrics for <%= agent_name %></h3>
     <div id="<%= metrics_list_id %>" class="space-y-2">
@@ -24,7 +23,6 @@
     </div>
   </div>
 
-  <%# AI generation section %>
   <turbo-frame id="metric-suggestions">
     <%= form_with url: generate_evaluation_metrics_path, method: :post, class: "flex items-center gap-3" do |f| %>
       <%= f.hidden_field :agent_name, value: agent_name %>
@@ -34,7 +32,6 @@
     <% end %>
   </turbo-frame>
 
-  <%# Inline add form %>
   <div id="metric-form" data-controller="disclosure">
     <button type="button" data-action="disclosure#toggle" class="text-sm text-gray-600 hover:text-gray-900 font-medium">
       + Add metric manually
@@ -64,7 +61,6 @@
     </div>
   </div>
 
-  <%# Advance wizard %>
   <%= form_with url: evaluation_experiments_path, method: :post do |f| %>
     <%= f.hidden_field :current_step, value: 2 %>
     <div class="flex justify-end pt-2 border-t border-gray-100">

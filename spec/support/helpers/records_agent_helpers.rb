@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 module RecordsAgentHelpers
   OPENAI_COMPLETIONS_URL  = 'https://api.openai.com/v1/chat/completions'

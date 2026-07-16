@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 class RenameOrchestrationAgentAndExecutorClasses < ActiveRecord::Migration[8.1]
   AGENT_RENAMES = {

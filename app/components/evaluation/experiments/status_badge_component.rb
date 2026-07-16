@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   module Experiments
     class StatusBadgeComponent < ViewComponent::Base

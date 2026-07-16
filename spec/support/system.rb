@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 # Rails 8.1 handles transactional fixture sharing between the test thread
 # and the WEBrick server thread automatically — DatabaseCleaner is not needed.

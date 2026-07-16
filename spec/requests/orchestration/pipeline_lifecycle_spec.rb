@@ -1,12 +1,6 @@
-# frozen_string_literal: true
 
 require "rails_helper"
 
-# Integration test covering the full pipeline lifecycle:
-# 1. Setup – create actions, pipeline, steps, and step_action attachments via HTTP
-# 2. Run – execute PipelineRunner with a service-object step (QueryExecutor, no HTTP)
-#              and an agentic step (ClassifyAgent, Mistral API stubbed via VCR cassette)
-# 3. Edit    – update pipeline metadata, reorder/add/remove steps, swap action attachments
 RSpec.describe "Orchestration::Pipeline lifecycle" do
   describe "setup: creating a pipeline with steps and actions via HTTP" do
     # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength

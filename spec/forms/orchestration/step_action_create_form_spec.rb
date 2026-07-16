@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 require "rails_helper"
 
@@ -62,19 +61,21 @@ RSpec.describe Orchestration::StepActionCreateForm do
     end
 
     context "when a unique-key collision occurs (race condition)" do
+      let(:deriver) { Struct.new(:derive).new("classify_emails") }
+      let(:step_action) { step.step_actions.build(action_id: action.id, position: 1, output_key: "classify_emails") }
+
       before do
-        allow_any_instance_of(Orchestration::OutputKeyDeriver).to receive(:derive).and_return("classify_emails") # rubocop:disable RSpec/AnyInstance
+        allow(Orchestration::OutputKeyDeriver).to receive(:new).and_return(deriver)
+        allow(step.step_actions).to receive(:build).and_return(step_action)
 
         first_call = true
-        # rubocop:disable RSpec/AnyInstance
-        allow_any_instance_of(Orchestration::StepAction).to receive(:save).and_wrap_original do |m, **opts|
+        allow(step_action).to receive(:save).and_wrap_original do |m, *args|
           if first_call
             first_call = false
             raise ActiveRecord::RecordNotUnique, "UNIQUE constraint failed"
           end
-          m.call(**opts)
+          m.call(*args)
         end
-        # rubocop:enable RSpec/AnyInstance
       end
 
       it "saves with a hex-suffixed key" do

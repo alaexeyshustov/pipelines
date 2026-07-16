@@ -1,4 +1,3 @@
-# frozen_string_literal: true
 
 module RakeTaskHelpers
   def load_rake_task(task_name)
