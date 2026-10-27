@@ -35,13 +35,18 @@ The system follows a pipeline-based architecture where data flows through severa
 - **ViewComponent + Tailwind + Turbo**: For the Web UI.
 
 ### Directory Structure
-- `app/agents/`: specialized AI agent implementations.
+- `lib/orchestration/agents/`: specialized AI agent implementations (`lib/orchestration/executors/` holds executable steps).
 - `app/models/orchestration/`: models for managing the pipeline workflow.
-- `app/evals/`: evaluation logic to ensure agent quality.
+- `app/models/evaluation/`, `app/services/evaluation/`, `lib/evaluation/`: evaluation logic to ensure agent quality. See [evals.md](evals.md).
+- `lib/pipeline/`: pipeline workflow steps.
+- `app/tools/`: LLM tools exposed to agents.
 - `lib/emails/`: provider-specific email fetching logic. See [connectors.md](docs/connectors.md) for details.
 
+## Dependency rules
+Layer order and subsystem boundaries are declared in [Archspec.rb](../Archspec.rb) and enforced by `bundle exec archspec check` (CI and pre-commit). Layers, top to bottom: interface, application, tools, domain, infra; orchestration must not use evaluation. Known violations are baselined in `archspec_todo.yml` (shrink it, never grow it). See [ADR 0011](adr/0011-archspec-layers.md).
+
 ## AI Agents
-Agents are first-class citizens, defined in `app/agents/`. They utilize `orchestration_prompts` for versioned system instructions and `orchestration_agents` for tool access configuration.
+Agents are first-class citizens, defined in `lib/orchestration/agents/`. They utilize `orchestration_prompts` for versioned system instructions and `orchestration_agents` for tool access configuration.
 
 ## Persistence & Vectors
 The project uses `sqlite-vec` for vector operations. `EmailVector` provides a wrapper for storing and querying embeddings of email content.

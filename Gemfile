@@ -50,6 +50,7 @@ group :development, :test do
   gem "reline"
   gem "pry"
   gem "pry-nav"
+  gem "archspec", "~> 1.1", require: false
 end
 
 group :development do
