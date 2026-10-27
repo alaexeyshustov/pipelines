@@ -48,6 +48,12 @@ ruby .sandbox/test/db_helper_test.rb
   lives on a per-container volume.
 - `CLAUDE_CONFIG_DIR=/root/.claude` keeps `.claude.json` on the profile's
   home volume, so onboarding and session history survive container rebuilds.
+- **Containers run as `linux/amd64`** (Rosetta on Apple Silicon). sqlite-vec
+  publishes its Linux ARM gem as `arm64-linux`, which Linux Ruby
+  (`aarch64-linux`) never selects, so the app cannot `bundle install` on
+  native arm64. The architecture is part of the image tag and of the
+  bundle/node_modules volume names so nothing built for another architecture
+  is reused. Revisit if sqlite-vec starts publishing `aarch64-linux` gems.
 - **rtk** is installed from its pinned release (checksums pinned in the
   Containerfiles), and every session runs `rtk init -g --auto-patch`, giving
   the container the same Bash hook, `RTK.md` and `@RTK.md` import as the host.

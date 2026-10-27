@@ -106,8 +106,11 @@ container_name="pipelines-${profile}-${worktree_name}"
 [[ "$container_name" =~ ^pipelines-[a-z0-9-]+$ ]] \
   || fail "Invalid computed sandbox container name: $container_name"
 
-bundle_volume="${container_name}-bundle"
-node_modules_volume="${container_name}-node-modules"
+# Must match attach-worktree.
+sandbox_arch="amd64"
+sandbox_platform="linux/$sandbox_arch"
+bundle_volume="${container_name}-bundle-${sandbox_arch}"
+node_modules_volume="${container_name}-node-modules-${sandbox_arch}"
 
 # shellcheck disable=SC1090
 source "$profile_env"
@@ -123,7 +126,7 @@ directory_fingerprint() {
   done | LC_ALL=C sort | sha256sum | awk '{print $1}'
 }
 
-image_repository="pipelines-${profile}-agent"
+image_repository="pipelines-${profile}-agent-${sandbox_arch}"
 image_tag="${image_repository}:$(directory_fingerprint "$profile_dir" "$lib_dir")"
 
 run() {
@@ -206,7 +209,7 @@ if [[ "$keep_image" == true ]]; then
 else
   remove_unused_profile_images
   printf 'Rebuilding %s agent image without the layer cache: %s\n' "$profile" "$image_tag"
-  run podman build --no-cache --tag "$image_tag" \
+  run podman build --no-cache --platform "$sandbox_platform" --tag "$image_tag" \
     --file "$profile_dir/Containerfile" \
     --build-context "lib=$lib_dir" \
     "$profile_dir"

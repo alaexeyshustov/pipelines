@@ -4,10 +4,14 @@
 
 set -euo pipefail
 
+# Missing files are skipped. Written with `continue` rather than
+# `[[ -f ]] && ...`: a false test as the loop's last command would fail the
+# pipeline under pipefail and silently abort the session under set -e.
 dependency_fingerprint() {
   local file
   for file in "$@"; do
-    [[ -f "$file" ]] && sha256sum "$file"
+    [[ -f "$file" ]] || continue
+    sha256sum "$file"
   done | sha256sum | awk '{print $1}'
 }
 

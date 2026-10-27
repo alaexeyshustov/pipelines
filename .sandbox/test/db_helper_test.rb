@@ -134,6 +134,25 @@ class DbHelperTest < Minitest::Test
     assert_success status, "active\n"
   end
 
+# sqlite-vec publishes no gem Linux Ruby on arm64 can select, so sandboxes
+# run as amd64 (Rosetta on Apple Silicon) with per-arch images and volumes.
+def test_attach_builds_and_runs_the_sandbox_as_amd64
+  run_helper("register_worktree", "GH-132", File.expand_path("../..", __dir__), "--ticket=GH-132")
+  log = File.join(@temporary_directory, "podman.log")
+
+  attached = run_attach("GH-132", "STUB_PODMAN_LOG" => log, "STUB_PODMAN_IMAGE_MISSING" => "true")
+  calls = File.readlines(log, chomp: true)
+  build = calls.find { _1.start_with?("build ") }
+  run = calls.find { _1.start_with?("run ") }
+
+  assert attached.fetch(2).success?, attached.fetch(1)
+  assert_includes build, "--platform linux/amd64"
+  assert_match %r{--tag pipelines-claude-matt-agent-amd64:\h{64}}, build
+  assert_includes run, "--platform linux/amd64"
+  assert_match %r{src=pipelines-claude-matt-[a-z0-9-]+-bundle-amd64,dst=/bundle}, run
+  assert_match %r{src=pipelines-claude-matt-[a-z0-9-]+-node-modules-amd64,dst=/workspace/node_modules}, run
+end
+
   def test_cleanup_finished_removes_the_container_worktree_and_mapping
     worktree_path = File.join(@temporary_directory, ".sandbox", "worktrees", "gh-126")
     FileUtils.mkdir_p(worktree_path)
@@ -306,12 +325,13 @@ class DbHelperTest < Minitest::Test
   end
 
   def run_attach(*arguments)
+    environment = arguments.last.is_a?(Hash) ? arguments.pop : {}
     Open3.capture3(
       {
         "DB_HELPER_DATABASE_PATH" => @database_path,
         "HOME" => @home_directory,
         "PATH" => "#{STUB_BIN}:#{ENV.fetch("PATH")}"
-      },
+      }.merge(environment),
       ATTACH_WORKTREE,
       *arguments
     )

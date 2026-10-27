@@ -112,8 +112,16 @@ source "$profile_env"
 # Always build from the primary copy so fixes apply to every existing
 # worktree on its next attach.
 lib_dir="$profiles_root/lib"
-bundle_volume="${container_name}-bundle"
-node_modules_volume="${container_name}-node-modules"
+
+# Sandboxes run as amd64, under Rosetta on Apple Silicon. sqlite-vec ships its
+# Linux ARM gem tagged arm64-linux, which Linux Ruby (aarch64-linux) never
+# selects, so the app cannot bundle on native arm64. The architecture is part
+# of the image tag and of the dependency volume names, so images and installed
+# gems/node_modules from another architecture are never reused.
+sandbox_arch="amd64"
+sandbox_platform="linux/$sandbox_arch"
+bundle_volume="${container_name}-bundle-${sandbox_arch}"
+node_modules_volume="${container_name}-node-modules-${sandbox_arch}"
 pnpm_store_volume="pipelines-sandbox-pnpm-store"
 
 [[ -f "$profile_dir/Containerfile" ]] || fail "Profile image definition not found: $profile_dir/Containerfile"
@@ -145,12 +153,12 @@ directory_fingerprint() {
   done | LC_ALL=C sort | sha256sum | awk '{print $1}'
 }
 
-image_tag="pipelines-${profile}-agent:$(directory_fingerprint "$profile_dir" "$lib_dir")"
+image_tag="pipelines-${profile}-agent-${sandbox_arch}:$(directory_fingerprint "$profile_dir" "$lib_dir")"
 launch_config_tag="$(cksum "${BASH_SOURCE[0]}" | awk '{print $1 "-" $2}')"
 
 if ! podman image exists "$image_tag"; then
   printf 'Building %s agent image: %s\n' "$profile" "$image_tag"
-  podman build --tag "$image_tag" \
+  podman build --platform "$sandbox_platform" --tag "$image_tag" \
     --file "$profile_dir/Containerfile" \
     --build-context "lib=$lib_dir" \
     "$profile_dir"
@@ -232,6 +240,7 @@ case "$container_status" in
   '')
     printf 'Launching sandbox container: %s\n' "$container_name"
     run_agent_container podman run --interactive --tty \
+      --platform "$sandbox_platform" \
       --name "$container_name" \
       --label "io.pipelines.sandbox.agent-image=$image_tag" \
       --label "io.pipelines.sandbox.launch-config=$launch_config_tag" \

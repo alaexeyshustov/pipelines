@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 
+# STUB_PODMAN_LOG: append each invocation's arguments (one line per call).
+# STUB_PODMAN_IMAGE_MISSING=true: `podman image exists` fails, forcing a build.
+[[ -z "${STUB_PODMAN_LOG:-}" ]] || printf '%s\n' "$*" >> "$STUB_PODMAN_LOG"
+
 case "$1" in
   image)
+    [[ "$2" == exists && "${STUB_PODMAN_IMAGE_MISSING:-}" == true ]] && exit 1
+    exit 0
+    ;;
+  build)
     exit 0
     ;;
   container)
