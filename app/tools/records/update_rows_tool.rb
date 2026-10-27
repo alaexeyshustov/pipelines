@@ -8,9 +8,9 @@ module Records
 
     description "Update rows in a database table. Duplicate or invalid rows are skipped."
 
-    param :table, type: :string, desc: "Table name: application_mails or interviews", required: true
-    param :id,    type: :string, desc: "Row ID", required: true
-    param :data,  type: :string, desc: "JSON-encoded object of row attributes to update", required: true
+    parameter :table, type: :string, description: "Table name: application_mails or interviews", required: true
+    parameter :id,    type: :string, description: "Row ID", required: true
+    parameter :data,  type: :string, description: "JSON-encoded object of row attributes to update", required: true
 
     def name = "update_rows"
 

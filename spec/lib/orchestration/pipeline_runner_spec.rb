@@ -411,7 +411,7 @@ RSpec.describe Orchestration::PipelineRunner do
         create(:orchestration_step_action, step: step1, action: action, position: 1)
         allow(Rails.logger).to receive(:error)
         allow(stub_agent).to receive(:with_model).and_return(stub_agent)
-        allow(stub_agent).to receive(:ask).and_raise(RubyLLM::Error.new(response, "An unknown error occurred"))
+        allow(stub_agent).to receive(:ask).and_raise(RubyLLM::Error.new("An unknown error occurred", response: response))
       end
 
       it "persists structured provider diagnostics and logs them" do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations

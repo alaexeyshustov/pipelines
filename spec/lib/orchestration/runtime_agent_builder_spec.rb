@@ -34,7 +34,8 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
     it 'applies the policy tools to the agent' do
       allow(chat).to receive(:with_tools).and_return(chat)
       builder.build
-      expect(chat).to have_received(:with_tools).with(Records::TempFileTool, replace: true)
+      expect(chat).to have_received(:with_tools).with(nil).ordered
+      expect(chat).to have_received(:with_tools).with(Records::TempFileTool).ordered
     end
 
     it 'applies the policy output schema to the agent' do

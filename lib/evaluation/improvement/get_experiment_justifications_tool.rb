@@ -5,7 +5,7 @@ module Evaluation
     class GetExperimentJustificationsTool < ::RubyLLM::Tool
       description "Fetch all justifications for a specific experiment. Returns the judge's reasoning for every metric on every sample — use this to understand why an experiment scored the way it did."
 
-      param :experiment_id, type: :integer, desc: "ID of the experiment to fetch justifications from.", required: true
+      parameter :experiment_id, type: :integer, description: "ID of the experiment to fetch justifications from.", required: true
 
       def name = "get_experiment_justifications"
 

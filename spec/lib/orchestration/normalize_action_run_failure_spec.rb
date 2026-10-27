@@ -27,7 +27,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
           }.to_json
         )
       end
-      let(:error) { RubyLLM::RateLimitError.new(response, "An unknown error occurred") }
+      let(:error) { RubyLLM::RateLimitError.new("An unknown error occurred", response: response) }
 
       it "extracts a concise summary and structured details" do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
         result = described_class.new(error:, action_run:, raw_content: nil).normalize
@@ -59,7 +59,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
           body: { "error" => { "code" => "invalid_input", "error" => { "message" => "Nested detail" } } }.to_json
         )
       end
-      let(:error) { RubyLLM::BadRequestError.new(response, "An unknown error occurred") }
+      let(:error) { RubyLLM::BadRequestError.new("An unknown error occurred", response: response) }
 
       it "digs into the nested error.message" do
         result = described_class.new(error:, action_run:, raw_content: nil).normalize
@@ -69,7 +69,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
 
     context "when the provider HTTP response body is not valid JSON" do
       let(:response) { Data.define(:status, :body).new(status: 503, body: "Service Unavailable") }
-      let(:error) { RubyLLM::ServiceUnavailableError.new(response, "unavailable") }
+      let(:error) { RubyLLM::ServiceUnavailableError.new("unavailable", response: response) }
 
       it "returns nil parsed_error and falls back to the error message" do
         result = described_class.new(error:, action_run:, raw_content: nil).normalize
@@ -80,7 +80,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
 
     context "when the provider HTTP response body is a JSON array" do
       let(:response) { Data.define(:status, :body).new(status: 400, body: '["err1","err2"]') }
-      let(:error) { RubyLLM::BadRequestError.new(response, "array errors") }
+      let(:error) { RubyLLM::BadRequestError.new("array errors", response: response) }
 
       it "preserves the array as parsed_error" do
         result = described_class.new(error:, action_run:, raw_content: nil).normalize
@@ -90,7 +90,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
 
     context "when the provider HTTP response has no message or error keys" do
       let(:response) { Data.define(:status, :body).new(status: 429, body: '{"code":42}') }
-      let(:error) { RubyLLM::RateLimitError.new(response, "rate limited fallback") }
+      let(:error) { RubyLLM::RateLimitError.new("rate limited fallback", response: response) }
 
       it "falls back to the error message" do
         result = described_class.new(error:, action_run:, raw_content: nil).normalize
@@ -100,7 +100,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
 
     context "when the parsed message is 'An unknown error occurred'" do
       let(:response) { Data.define(:status, :body).new(status: 500, body: '{"message":"An unknown error occurred"}') }
-      let(:error) { RubyLLM::ServerError.new(response, "real server error") }
+      let(:error) { RubyLLM::ServerError.new("real server error", response: response) }
 
       it "skips the sentinel and falls back to the error message" do
         result = described_class.new(error:, action_run:, raw_content: nil).normalize
@@ -117,7 +117,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
         )
       end
       let(:response) { Data.define(:status, :body).new(status: 429, body: '{"message":"Rate limit"}') }
-      let(:error) { RubyLLM::RateLimitError.new(response, "Rate limit exceeded") }
+      let(:error) { RubyLLM::RateLimitError.new("Rate limit exceeded", response: response) }
 
       it "redacts sensitive keys in request_context.agent_snapshot" do
         result = described_class.new(error:, action_run:, raw_content: nil).normalize
@@ -131,7 +131,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
     context "when the agent_snapshot is blank" do
       let(:action_run) { create(:orchestration_action_run, chat: create(:chat), agent_snapshot: nil) }
       let(:response) { Data.define(:status, :body).new(status: 429, body: '{"message":"Rate limit"}') }
-      let(:error) { RubyLLM::RateLimitError.new(response, "Rate limit exceeded") }
+      let(:error) { RubyLLM::RateLimitError.new("Rate limit exceeded", response: response) }
 
       it "returns nil request_context" do
         result = described_class.new(error:, action_run:, raw_content: nil).normalize
@@ -179,7 +179,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
     end
 
     context "when the failure is invalid model output" do
-      let(:model) { "claude-3-5-haiku-latest" }
+      let(:model) { "claude-haiku-4-5" }
       let(:error) do
         Orchestration::InvalidModelOutputError.new(
           "Invalid model output: data.result must be an array",
@@ -194,7 +194,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
         expect(result.details).to include(
           "category" => "invalid_model_output",
           "provider" => "anthropic",
-          "model" => "claude-3-5-haiku-latest",
+          "model" => "claude-haiku-4-5",
           "message" => "Invalid model output: data.result must be an array"
         )
         expect(result.details["raw_response_excerpt"]).to include("[REDACTED_EMAIL]")
@@ -203,7 +203,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
     end
 
     context "when invalid model output has a Hash as raw content (stringify path)" do
-      let(:model) { "claude-3-5-haiku-latest" }
+      let(:model) { "claude-haiku-4-5" }
       let(:error) do
         Orchestration::InvalidModelOutputError.new(
           "Schema mismatch",

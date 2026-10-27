@@ -8,8 +8,8 @@ module Records
 
     description "Insert rows into a database table. Duplicate or invalid rows are skipped."
 
-    param :table, type: :string, desc: "Table name: application_mails or interviews", required: true
-    param :data,  type: :string, desc: "JSON-encoded array of row objects to insert", required: true
+    parameter :table, type: :string, description: "Table name: application_mails or interviews", required: true
+    parameter :data,  type: :string, description: "JSON-encoded array of row objects to insert", required: true
 
     def name = "insert_rows"
 

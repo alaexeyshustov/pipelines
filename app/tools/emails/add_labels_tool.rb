@@ -7,10 +7,10 @@ module Emails
                 'Yahoo: use folder names to label messages (e.g. "applications"); ' \
                 'IMAP flags like "\\Flagged" or "\\Seen" are only for starred/read state.'
 
-    param :provider,   type: :string, desc: 'Email provider: "gmail" or "yahoo"', required: true
-    param :message_id, type: :string, desc: "The message ID (Gmail string ID or Yahoo IMAP UID as string).", required: true
-    param :label_ids,  type: :array,  desc: 'Array of label IDs or Yahoo folder names to add (e.g. ["STARRED"] or ["applications"]). Yahoo flags like ["\\\\Flagged"] only change message state.', required: true
-    param :mailbox,    type: :string, desc: "Yahoo: source mailbox/folder containing the message, usually 'Inbox'. Do not pass the destination label here. Defaults to INBOX.", required: false
+    parameter :provider,   type: :string, description: 'Email provider: "gmail" or "yahoo"', required: true
+    parameter :message_id, type: :string, description: "The message ID (Gmail string ID or Yahoo IMAP UID as string).", required: true
+    parameter :label_ids,  type: :array,  description: 'Array of label IDs or Yahoo folder names to add (e.g. ["STARRED"] or ["applications"]). Yahoo flags like ["\\\\Flagged"] only change message state.', required: true
+    parameter :mailbox,    type: :string, description: "Yahoo: source mailbox/folder containing the message, usually 'Inbox'. Do not pass the destination label here. Defaults to INBOX.", required: false
 
     def name = "add_labels"
 

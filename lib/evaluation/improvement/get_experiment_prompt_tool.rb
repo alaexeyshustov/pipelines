@@ -5,7 +5,7 @@ module Evaluation
     class GetExperimentPromptTool < ::RubyLLM::Tool
       description "Fetch the prompt text used in a specific experiment. Use this to understand what instructions produced a given set of scores."
 
-      param :experiment_id, type: :integer, desc: "ID of the experiment to fetch the prompt from.", required: true
+      parameter :experiment_id, type: :integer, description: "ID of the experiment to fetch the prompt from.", required: true
 
       def name = "get_experiment_prompt"
 

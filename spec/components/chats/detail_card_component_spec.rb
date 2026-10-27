@@ -5,16 +5,15 @@ require "rails_helper"
 RSpec.describe Chats::DetailCardComponent, type: :component do
   subject(:rendered) { render_inline(component) }
 
-  let(:ai_model) { build_stubbed(:model, name: "mistral-large") }
+  let(:ai_model) { RubyLLM::ActiveRecord::Model.new(model_id: "mistral-large", name: "mistral-large", provider: "mistral") }
   let(:chat) do
     build_stubbed(:chat,
-                  model: ai_model,
                   created_at: Time.zone.parse("2026-04-08 10:00:00"),
                   updated_at: Time.zone.parse("2026-04-08 11:30:00"))
   end
   let(:component) { described_class.new(chat: chat) }
 
-  before { allow(chat).to receive(:messages).and_return([ 1, 2, 3 ]) }
+  before { allow(chat).to receive_messages(messages: [ 1, 2, 3 ], model: ai_model) }
 
   it "renders the detail card wrapper" do
     expect(rendered.css("[data-testid='chat-detail-card']")).to be_present
@@ -37,9 +36,9 @@ RSpec.describe Chats::DetailCardComponent, type: :component do
   end
 
   context "when model is nil" do
+    let(:ai_model) { nil }
     let(:chat) do
       build_stubbed(:chat,
-                    model: nil,
                     created_at: Time.zone.parse("2026-04-08 10:00:00"),
                     updated_at: Time.zone.parse("2026-04-08 10:00:00"))
     end

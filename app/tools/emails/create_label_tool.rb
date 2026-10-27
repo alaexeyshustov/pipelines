@@ -4,8 +4,8 @@ module Emails
 
     description "Create a new label (Gmail) or folder (Yahoo) in the mail provider."
 
-    param :provider, type: :string, desc: 'Email provider: "gmail" or "yahoo"', required: true
-    param :name,     type: :string, desc: "Name of the label or folder to create",  required: true
+    parameter :provider, type: :string, description: 'Email provider: "gmail" or "yahoo"', required: true
+    parameter :name,     type: :string, description: "Name of the label or folder to create",  required: true
 
     def name = "create_label"
 

@@ -5,8 +5,8 @@ module Evaluation
     class ListExperimentsTool < ::RubyLLM::Tool
       description "List all completed experiments for an agent ordered by date. Use this to understand the direction of past improvement attempts before generating a revision."
 
-      param :prompt_name, type: :string, desc: "Name of the agent whose experiment history to list.", required: true
-      param :current_experiment_id, type: :integer, desc: "ID of the current experiment to exclude from results.", required: true
+      parameter :prompt_name, type: :string, description: "Name of the agent whose experiment history to list.", required: true
+      parameter :current_experiment_id, type: :integer, description: "ID of the current experiment to exclude from results.", required: true
 
       def name = "list_experiments"
 

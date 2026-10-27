@@ -5,20 +5,20 @@ require "rails_helper"
 RSpec.describe Chats::MessageComponent, type: :component do
   subject(:rendered) { render_inline(component) }
 
-  let(:tool_calls) { [] }
+  let(:tool_calls) { {} }
+  let(:tokens) { RubyLLM::Tokens.new(input: 0, output: 0, cache_read: 0) }
   let(:message) do
     build_stubbed(:message,
                   role: "user",
                   content: "Hello, world!",
                   thinking_text: nil,
-                  input_tokens: 0,
-                  output_tokens: 0,
-                  cached_tokens: 0,
                   created_at: Time.zone.parse("2026-04-08 10:00:00"))
   end
   let(:component) { described_class.new(message: message) }
 
-  before { allow(message).to receive(:tool_calls).and_return(tool_calls) }
+  before do
+    allow(message).to receive_messages(tool_calls: tool_calls, tokens: tokens)
+  end
 
   it "renders the message wrapper" do
     expect(rendered.css("[data-testid='chat-message']")).to be_present
@@ -56,9 +56,6 @@ RSpec.describe Chats::MessageComponent, type: :component do
                     role: "tool",
                     content: nil,
                     thinking_text: nil,
-                    input_tokens: 0,
-                    output_tokens: 0,
-                    cached_tokens: 0,
                     created_at: Time.zone.parse("2026-04-08 10:00:00"))
     end
 
@@ -73,9 +70,6 @@ RSpec.describe Chats::MessageComponent, type: :component do
                     role: "assistant",
                     content: "Answer",
                     thinking_text: "I am thinking...",
-                    input_tokens: 0,
-                    output_tokens: 0,
-                    cached_tokens: 0,
                     created_at: Time.zone.parse("2026-04-08 10:00:00"))
     end
 
@@ -90,14 +84,12 @@ RSpec.describe Chats::MessageComponent, type: :component do
   end
 
   context "when token counts are present" do
+    let(:tokens) { RubyLLM::Tokens.new(input: 100, output: 50, cache_read: 20) }
     let(:message) do
       build_stubbed(:message,
                     role: "assistant",
                     content: "Hi",
                     thinking_text: nil,
-                    input_tokens: 100,
-                    output_tokens: 50,
-                    cached_tokens: 20,
                     created_at: Time.zone.parse("2026-04-08 10:00:00"))
     end
 
@@ -116,12 +108,9 @@ RSpec.describe Chats::MessageComponent, type: :component do
 
   context "when tool calls are present" do
     let(:tool_call) do
-      build_stubbed(:tool_call,
-                    name: "list_emails",
-                    tool_call_id: "call_abc123",
-                    arguments: { "limit" => 10 })
+      RubyLLM::ToolCall.new(id: "call_abc123", name: "list_emails", arguments: { "limit" => 10 })
     end
-    let(:tool_calls) { [ tool_call ] }
+    let(:tool_calls) { { tool_call.id => tool_call } }
 
     it "renders the tool calls section header" do
       expect(rendered.text).to include("Tool Calls")
@@ -147,9 +136,9 @@ RSpec.describe Chats::MessageComponent, type: :component do
     end
 
     context "with assistant role" do
-      let(:message) { build_stubbed(:message, role: "assistant", content: nil, thinking_text: nil, input_tokens: 0, output_tokens: 0, cached_tokens: 0, created_at: Time.zone.now) }
+      let(:message) { build_stubbed(:message, role: "assistant", content: nil, thinking_text: nil, created_at: Time.zone.now) }
 
-      before { allow(message).to receive(:tool_calls).and_return([]) }
+      before { allow(message).to receive_messages(tool_calls: {}, tokens: tokens) }
 
       it "returns white/gray classes" do
         expect(component.role_container_classes).to eq("bg-white border-gray-200")
@@ -157,9 +146,9 @@ RSpec.describe Chats::MessageComponent, type: :component do
     end
 
     context "with unknown role" do
-      let(:message) { build_stubbed(:message, role: "system", content: nil, thinking_text: nil, input_tokens: 0, output_tokens: 0, cached_tokens: 0, created_at: Time.zone.now) }
+      let(:message) { build_stubbed(:message, role: "system", content: nil, thinking_text: nil, created_at: Time.zone.now) }
 
-      before { allow(message).to receive(:tool_calls).and_return([]) }
+      before { allow(message).to receive_messages(tool_calls: {}, tokens: tokens) }
 
       it "returns the default classes" do
         expect(component.role_container_classes).to eq("bg-gray-50 border-gray-200")

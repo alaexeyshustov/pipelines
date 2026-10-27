@@ -1,4 +1,4 @@
-class ApplicationMailsSchema < RubyLLM::Schema
+class ApplicationMailsSchema < Schematist::Schema
   array :emails do
     object do
       string :email_id, description: "The unique ID of the email message from the provider."

@@ -4,9 +4,9 @@ module Emails
 
     description "Classify a batch of emails and return tags for each one."
 
-    param :emails,
+    parameter :emails,
           type: :array,
-          desc: "List of emails to classify. Each item must have 'id' and 'subject' fields."
+          description: "List of emails to classify. Each item must have 'id' and 'subject' fields."
 
     def name = "classify_emails"
 
@@ -26,7 +26,7 @@ module Emails
       end
 
       input = { emails: emails }.to_json
-      Orchestration::Agents::EmailsClassifier.create.ask(input).content
+      Orchestration::Agents::EmailsClassifier.create.ask(input).parsed
     end
   end
 end

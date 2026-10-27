@@ -51,10 +51,11 @@ namespace :evaluation do
 
     agent_classes.each do |agent_class|
       klass = agent_class.constantize
-      raise "#{agent_class} has no instructions" if klass.instructions.blank?
+      instructions = klass.instructions.map { |declaration| declaration[:value] }.grep(String).join("\n")
+      raise "#{agent_class} has no instructions" if instructions.blank?
 
       Evaluation::Prompt.find_or_initialize_by(name: agent_class).tap do |prompt|
-        prompt.system_prompt = klass.instructions
+        prompt.system_prompt = instructions
         # user_prompt is intentionally preserved on re-runs to avoid clobbering manual edits
         prompt.user_prompt = prompt.user_prompt.presence || "{{input}}"
         prompt.save!

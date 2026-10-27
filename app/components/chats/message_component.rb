@@ -36,15 +36,15 @@ module Chats
     end
 
     def show_input_tokens?
-      @message.input_tokens.to_i > 0
+      (@message.tokens&.input).to_i > 0
     end
 
     def show_output_tokens?
-      @message.output_tokens.to_i > 0
+      (@message.tokens&.output).to_i > 0
     end
 
     def show_cached_tokens?
-      @message.cached_tokens.to_i > 0
+      (@message.tokens&.cache_read).to_i > 0
     end
   end
 end
