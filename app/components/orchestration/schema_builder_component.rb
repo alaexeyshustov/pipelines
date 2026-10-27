@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class SchemaBuilderComponent < ViewComponent::Base
     attr_reader :builder, :path, :json

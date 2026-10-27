@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "rails_helper"
 
 RSpec.describe "Seeds: pipeline 2 step input_mapping" do # rubocop:disable RSpec/DescribeClass

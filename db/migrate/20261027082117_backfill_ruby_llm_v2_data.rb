@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require 'generators/ruby_llm/upgrade/legacy_content_sql'
 
 class BackfillRubyLLMV2Data < ActiveRecord::Migration[8.1]

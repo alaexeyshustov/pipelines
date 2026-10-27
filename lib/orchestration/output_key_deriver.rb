@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class OutputKeyDeriver
     def initialize(action_name:, step:)

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "rails_helper"
 
 RSpec.describe Evaluation::WizardForm do
@@ -98,7 +96,6 @@ create(:evaluation_wizard_draft,
              payload: { "agent_name" => prompt.name, "experiment_name" => "Final", "prompt_id" => prompt.id.to_s, "dataset_id" => dataset.id.to_s })
       allow(Evaluation::ExperimentJob).to receive(:perform_later)
      }
-
 
     it "creates and returns an experiment" do
       experiment = form.complete!

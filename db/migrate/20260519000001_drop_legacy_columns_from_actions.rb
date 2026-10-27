@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 class DropLegacyColumnsFromActions < ActiveRecord::Migration[8.1]
   def up
     remove_column :actions, :prompt

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Chats
   class BatchService
     Result = Data.define(:ok, :message)

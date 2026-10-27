@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class PaginationComponentPreview < ViewComponent::Preview
     # @param count number

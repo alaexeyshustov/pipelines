@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   class PromptDiffer
     Line = Data.define(:text, :type)

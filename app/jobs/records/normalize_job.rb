@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Records
   class NormalizeJob < ApplicationJob
     def perform(ids)

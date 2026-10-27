@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class TableComponent
     class ActionColumnComponentPreview < ViewComponent::Preview

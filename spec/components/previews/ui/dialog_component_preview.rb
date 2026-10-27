@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class DialogComponentPreview < ViewComponent::Preview
     def danger

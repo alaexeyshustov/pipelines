@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class StepsListComponent < ViewComponent::Base
     def initialize(pipeline:, steps:, actions:)

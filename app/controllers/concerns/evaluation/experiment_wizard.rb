@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   module ExperimentWizard
     extend ActiveSupport::Concern

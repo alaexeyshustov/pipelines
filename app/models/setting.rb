@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 class Setting < ApplicationRecord
   KEYS = %w[emails_agent_model records_agent_model evaluation_llm_model judge_llm_model].freeze
 

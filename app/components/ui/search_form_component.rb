@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class SearchFormComponent < ViewComponent::Base
     def initialize(url:, query:, clear_url:, placeholder: "Search…")

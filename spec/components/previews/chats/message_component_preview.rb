@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Chats
   class MessageComponentPreview < ViewComponent::Preview
     def user_message

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   class ComparisonComponent < ViewComponent::Base
     def initialize(result:, baseline_experiment:, candidate_experiment:)

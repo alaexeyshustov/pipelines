@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 class InterviewsController < ApplicationController
   include Paginable
   paginable sortable: %w[company job_title status applied_at],
@@ -31,7 +29,6 @@ class InterviewsController < ApplicationController
       render :new, status: :unprocessable_content
     end
   end
-
 
   def update
     if @interview.update(interview_params)

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class DialogComponent < ViewComponent::Base
     renders_one :confirm_action

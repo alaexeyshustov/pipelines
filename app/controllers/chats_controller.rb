@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 class ChatsController < ApplicationController
   def index
     @pagy, @chats = pagy(:offset, Chat.includes(:model).order(created_at: :desc))

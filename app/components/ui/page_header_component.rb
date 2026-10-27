@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class PageHeaderComponent < ViewComponent::Base
     renders_one  :badge, UI::StatusBadgeComponent

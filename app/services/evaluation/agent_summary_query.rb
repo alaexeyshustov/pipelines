@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   class AgentSummaryQuery
     AgentSummary = Data.define(:agent_name, :latest_experiment, :latest_score, :active_prompt_version, :sample_count, :score_history)

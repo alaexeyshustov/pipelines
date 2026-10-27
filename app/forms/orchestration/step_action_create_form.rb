@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class StepActionCreateForm < ::BaseForm
     attr_reader :step_action

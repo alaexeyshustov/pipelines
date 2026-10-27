@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class SchemaBuilder
     # Serializes a SchemaBuilder tree into a JSON-schema hash. Recurses through

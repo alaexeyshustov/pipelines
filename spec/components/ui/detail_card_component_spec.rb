@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "rails_helper"
 
 RSpec.describe UI::DetailCardComponent, type: :component do
@@ -17,10 +15,6 @@ RSpec.describe UI::DetailCardComponent, type: :component do
     ]
   end
   let(:component) { described_class.new(entity: entity, attributes: attributes) }
-
-
-
-
 
   # Tracer bullet: renders the card wrapper
   it "renders the detail-card wrapper" do

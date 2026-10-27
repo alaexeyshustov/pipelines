@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class StatusBadgeComponentPreview < ViewComponent::Preview
     # @param label text

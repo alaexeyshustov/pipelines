@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class DetailCardComponent < ViewComponent::Base
     renders_one :status_badge, "UI::StatusBadgeComponent"

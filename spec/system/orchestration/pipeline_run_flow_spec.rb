@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # Layer A system spec: proves the full UI → controller → job → runner wiring.
 # Mistral is stubbed at the WebMock level with a canned JSON response —
 # VCR is NOT used here, removing the "VCR cassette state inside a fiber" risk.

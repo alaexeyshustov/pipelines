@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class DetailCardComponentPreview < ViewComponent::Preview
     Record = Data.define(:name, :status, :created_at)

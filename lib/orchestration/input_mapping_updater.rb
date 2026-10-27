@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class InputMappingUpdater
     Result = Data.define(:saved, :errors, :warnings)

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Records
   class ReconcileJob < ApplicationJob
     def perform(ids)

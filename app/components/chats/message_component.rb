@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Chats
   class MessageComponent < ViewComponent::Base
     with_collection_parameter :message

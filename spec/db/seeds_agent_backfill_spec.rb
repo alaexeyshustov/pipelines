@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "rails_helper"
 
 RSpec.describe "Seeds: agent config backfill" do # rubocop:disable RSpec/DescribeClass

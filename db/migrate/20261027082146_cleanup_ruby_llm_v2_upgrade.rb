@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 class CleanupRubyLLMV2Upgrade < ActiveRecord::Migration[8.1]
   disable_ddl_transaction!
 

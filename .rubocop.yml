@@ -100,3 +100,6 @@ RSpec/ExampleLength:
   Max: 10
 RSpec/MultipleMemoizedHelpers:
   Enabled: false
+Style/FrozenStringLiteralComment:
+  Enabled: true
+  EnforcedStyle: never

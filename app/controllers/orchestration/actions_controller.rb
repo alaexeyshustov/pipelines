@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class ActionsController < ApplicationController
     before_action :set_action, only: [ :edit, :update, :destroy ]
@@ -23,7 +21,6 @@ module Orchestration
         render :new, status: :unprocessable_content
       end
     end
-
 
     def update
       if @action.update(action_params)

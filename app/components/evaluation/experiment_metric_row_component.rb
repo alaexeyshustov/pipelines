@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   class ExperimentMetricRowComponent < ViewComponent::Base
     def initialize(metric:, avg:, experiment:)

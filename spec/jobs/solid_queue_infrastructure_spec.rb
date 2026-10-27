@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "rails_helper"
 
 RSpec.describe "Solid Queue infrastructure" do # rubocop:disable RSpec/DescribeClass

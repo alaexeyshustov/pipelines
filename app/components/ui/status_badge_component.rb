@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class StatusBadgeComponent < ViewComponent::Base
     VARIANT_CLASSES = {
