@@ -1,6 +1,6 @@
 FROM node:24-bookworm-slim AS node
 
-# Ahead of the application's .ruby-version (4.0.1) until #191 upgrades it.
+# Matches the application's .ruby-version.
 FROM ruby:4.0.9-trixie
 
 ARG CLAUDE_CODE_VERSION=2.1.303
