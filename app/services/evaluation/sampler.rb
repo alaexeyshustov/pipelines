@@ -65,7 +65,7 @@ module Evaluation
 
     def capture_tool_calls(agent)
       agent_messages(agent).filter_map do |msg|
-        tc = msg.parent_tool_call # : ToolCall?
+        tc = msg.parent_tool_call # : RubyLLM::ToolCall?
         next unless tc
 
         {
@@ -77,7 +77,7 @@ module Evaluation
     end
 
     def agent_messages(agent)
-      agent.messages.where(role: "tool").order(:id).includes(:parent_tool_call).to_a
+      agent.messages.where(role: "tool").order(:id).includes(:ruby_llm_parent_tool_call).to_a
     end
   end
 end

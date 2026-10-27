@@ -1,2 +1,2 @@
-class ApplicationMailsSchema < RubyLLM::Schema
+class ApplicationMailsSchema < Schematist::Schema
 end

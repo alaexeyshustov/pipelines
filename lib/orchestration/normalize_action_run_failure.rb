@@ -116,7 +116,8 @@ module Orchestration
 
     def provider_name
       @provider_name ||= begin
-        RubyLLM::Provider.for(model_name)&.slug if model_name.present?
+        name = model_name
+        RubyLLM.models.find(name).provider if name.present?
       rescue StandardError
         nil
       end

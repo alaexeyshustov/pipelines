@@ -13,7 +13,6 @@ target :app do
   library "uri"
   library "monitor"
   library "singleton"
-  library "net-http"
   library "socket"
   library "fileutils"
 end

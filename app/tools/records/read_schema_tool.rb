@@ -6,8 +6,8 @@ module Records
 
     description "Return the column names for a database table."
 
-    param :table, type: :string,
-                  desc: "Table name: application_mails or interviews",
+    parameter :table, type: :string,
+                  description: "Table name: application_mails or interviews",
                   required: true
 
     def name = "read_schema"

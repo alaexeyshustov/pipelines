@@ -1,23 +1,23 @@
 module RubyLLM
-  interface _Provider
-    def slug: () -> String
-  end
-
-  module Provider
-    def self.for: (String? model) -> _Provider?
-  end
-
   class Error < StandardError
     def response: () -> (String | _ToS)
   end
 
   class Message
-    def content: () -> json_object_value
+    def content: () -> String?
+    def parsed: () -> json_object_value
+    def tokens: () -> Tokens?
+  end
+
+  class Tokens
+    def input: () -> Integer?
+    def output: () -> Integer?
+    def cache_read: () -> Integer?
   end
 
   class Chat
     def with_instructions: (String instructions) -> self
-    def with_schema: (singleton(Schema) | Schema schema) -> self
+    def with_schema: (singleton(::Schematist::Schema) | ::Schematist::Schema schema) -> self
     def with_temperature: (Numeric temperature) -> self
     def ask: (String prompt) -> Message
     def id: () -> String?
@@ -29,13 +29,13 @@ module RubyLLM
     def self.chat_model: (singleton(::Chat) chat_class) -> void
     def self.model: (String model_id) -> void
     def self.tools: (*singleton(Tool) tools) -> void
-    def self.schema: () { () [self: SchemaBuilder] -> void } -> void
+    def self.schema: () { () [self: ::Schematist::SchemaBuilder] -> void } -> void
     def self.instructions: (String text) -> void
     def self.string: (Symbol name, ?required: bool, ?description: String) -> void
 
     def with_model: (String model) -> self
-    def with_schema: (singleton(Schema) | json_object schema) -> self
-    def with_tools: (*singleton(Tool) tools, ?replace: bool) -> self
+    def with_schema: (singleton(::Schematist::Schema) | json_object schema) -> self
+    def with_tools: (*singleton(Tool)? tools) -> self
     def chat: () -> Chat
     def id: () -> String?
     def ask: (String prompt) -> Message
@@ -44,9 +44,27 @@ module RubyLLM
 
   class Tool
     def self.description: (String desc) -> void
-    def self.param: (Symbol name, ?type: Symbol, ?desc: String, ?required: bool) -> void
+    def self.parameter: (Symbol name, ?type: Symbol, ?description: String, ?required: bool) -> void
   end
 
+  class Models
+    type model = { id: String, temperature: Numeric, name: String?, provider: String? }
+
+    class ModelInfo
+      def provider: () -> String
+    end
+
+    @models: Array[model]
+
+    def all: () -> Array[model]
+    def find: (String model_id, ?provider: String?) -> ModelInfo
+  end
+
+  def self.models: () -> Models
+  def self.chat: (?model: String?) -> Chat
+end
+
+module Schematist
   class Schema
     def self.string: (Symbol name, ?required: bool, ?description: String) -> void
     def self.integer: (Symbol name, ?required: bool, ?description: String) -> void
@@ -63,15 +81,4 @@ module RubyLLM
              | (Symbol name) { () [self: SchemaBuilder] -> void } -> void
     def object: () { () [self: SchemaBuilder] -> void } -> void
   end
-
-  class Models
-    type model = { id: String, temperature: Numeric, display_name: String?, provider: String? }
-
-    @models: Array[model]
-
-    def all: () -> Array[model]
-  end
-
-  def self.models: () -> Models
-  def self.chat: (?model: String?) -> Chat
 end

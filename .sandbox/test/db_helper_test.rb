@@ -153,6 +153,20 @@ def test_attach_builds_and_runs_the_sandbox_as_amd64
   assert_match %r{src=pipelines-claude-matt-[a-z0-9-]+-node-modules-amd64,dst=/workspace/node_modules}, run
 end
 
+  # A cgroup cap keeps an overrun (e.g. steep workers) inside one sandbox
+  # instead of triggering a VM-wide OOM that kills other sessions' agents.
+  def test_attach_caps_the_container_memory
+    run_helper("register_worktree", "GH-132", File.expand_path("../..", __dir__), "--ticket=GH-132")
+    log = File.join(@temporary_directory, "podman.log")
+
+    run_attach("GH-132", "STUB_PODMAN_LOG" => log)
+    run_attach("GH-132", "STUB_PODMAN_LOG" => log, "SANDBOX_MEMORY" => "5g")
+    default_run, overridden_run = File.readlines(log, chomp: true).select { _1.start_with?("run ") }
+
+    assert_includes default_run, "--memory 3g"
+    assert_includes overridden_run, "--memory 5g"
+  end
+
   def test_cleanup_finished_removes_the_container_worktree_and_mapping
     worktree_path = File.join(@temporary_directory, ".sandbox", "worktrees", "gh-126")
     FileUtils.mkdir_p(worktree_path)

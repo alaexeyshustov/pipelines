@@ -6,9 +6,9 @@ module Emails
 
     description "Get the full content of a specific email by its message ID or IMAP UID."
 
-    param :provider,   type: :string, desc: 'Email provider: "gmail" or "yahoo"', required: true
-    param :message_id, type: :string, desc: "The message ID (Gmail string ID or Yahoo IMAP UID as string).", required: true
-    param :label,    type: :string, desc: "Yahoo: mailbox/folder containing the message. Defaults to INBOX. Gmail: label name to filter by (e.g. 'INBOX', 'UNREAD')", required: false
+    parameter :provider,   type: :string, description: 'Email provider: "gmail" or "yahoo"', required: true
+    parameter :message_id, type: :string, description: "The message ID (Gmail string ID or Yahoo IMAP UID as string).", required: true
+    parameter :label,    type: :string, description: "Yahoo: mailbox/folder containing the message. Defaults to INBOX. Gmail: label name to filter by (e.g. 'INBOX', 'UNREAD')", required: false
 
     def name = "get_email"
 

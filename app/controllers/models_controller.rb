@@ -12,7 +12,7 @@ class ModelsController < ApplicationController
   end
 
   def sync
-    RubyLLM::Models.instance.refresh!
+    RubyLLM.models.refresh
     redirect_to models_path, notice: "Models synced successfully."
   end
 
@@ -21,7 +21,7 @@ class ModelsController < ApplicationController
   def model_matches?(model, query)
     q = query.downcase
     model.id.to_s.downcase.include?(q) ||
-      model.display_name.to_s.downcase.include?(q) ||
+      model.name.to_s.downcase.include?(q) ||
       model.provider.to_s.downcase.include?(q)
   end
 end

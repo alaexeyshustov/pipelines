@@ -8,7 +8,7 @@ module Pipeline
       def classify_email(emails:)
         input = { emails: emails.map { |email| email.slice("id", "subject") } }.to_json
 
-        Orchestration::Agents::EmailsClassifier.create.with_model(@model).ask(input).content
+        Orchestration::Agents::EmailsClassifier.create.with_model(@model).ask(input).parsed
       end
 
       def filter_emails(emails:, tags:)
@@ -23,7 +23,7 @@ module Pipeline
         }.to_json
         # steep:ignore:end
 
-        Orchestration::Agents::EmailsFilter.create.with_model(@model).ask(input).content
+        Orchestration::Agents::EmailsFilter.create.with_model(@model).ask(input).parsed
       end
 
       def map_emails(emails:)
@@ -32,7 +32,7 @@ module Pipeline
           .with_model(@model)
           .with_schema(ApplicationMailsSchema)
           .ask(input)
-          .content
+          .parsed
 
         return content.transform_keys(&:to_s) if content.is_a?(Hash)
 
@@ -41,7 +41,7 @@ module Pipeline
 
       def store_mapped_emails(emails:)
         input = { table: "application_mails", label: "applications", emails: emails }.to_json
-        content = Orchestration::Agents::RecordsStorer.create.with_model(@model).ask(input).content
+        content = Orchestration::Agents::RecordsStorer.create.with_model(@model).ask(input).parsed
         return content.transform_keys(&:to_s) if content.is_a?(Hash)
 
         {}
@@ -54,7 +54,7 @@ module Pipeline
           columns_to_normalize: [ "company", "job_title" ]
         }.to_json
 
-        Orchestration::Agents::RecordsNormalizer.create.with_model(@model).ask(input).content
+        Orchestration::Agents::RecordsNormalizer.create.with_model(@model).ask(input).parsed
       end
 
       def reconcile_emails_to_interviews(emails: [])
@@ -68,7 +68,7 @@ module Pipeline
           statuses: [ "pending_reply", "having_interviews", "rejected", "offer_received" ],
           initial_status: "pending_reply"
         }.to_json
-        Orchestration::Agents::RecordsReconciler.create.with_model(@model).ask(input).content
+        Orchestration::Agents::RecordsReconciler.create.with_model(@model).ask(input).parsed
       end
     end
   end

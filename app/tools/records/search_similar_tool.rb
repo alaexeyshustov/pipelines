@@ -8,9 +8,9 @@ module Records
                 "Matches on substrings in both directions and word-level edit distance. " \
                 "Useful for finding variant spellings of company names or job titles before normalizing."
 
-    param :table,  type: :string, desc: "Table name: application_mails or interviews", required: true
-    param :column, type: :string, desc: "Column to search (e.g. 'company', 'job_title')",  required: true
-    param :value,  type: :string, desc: "Value to find similar matches for", required: true
+    parameter :table,  type: :string, description: "Table name: application_mails or interviews", required: true
+    parameter :column, type: :string, description: "Column to search (e.g. 'company', 'job_title')",  required: true
+    parameter :value,  type: :string, description: "Value to find similar matches for", required: true
 
     def name = "search_similar"
 

@@ -4,12 +4,12 @@ module Emails
 
     description "List recent emails from Gmail or Yahoo Mail inbox."
 
-    param :provider,     type: :string,  desc: 'Email provider: "gmail" or "yahoo"', required: true
-    param :max_results,  type: :integer, desc: "Number of emails to return (1-100). Defaults to 10.", required: false
-    param :after_date,   type: :string,  desc: "Return emails after this date (YYYY-MM-DD format).", required: false
-    param :before_date,  type: :string,  desc: "Return emails before this date (YYYY-MM-DD format).", required: false
-    param :offset,       type: :integer, desc: "Number of emails to skip (for pagination). Defaults to 0.", required: false
-    param :label,        type: :string,  desc: 'Gmail: filter by label name (e.g. "INBOX", "UNREAD"). Yahoo: mailbox/folder name (e.g. "INBOX", "Sent"). Defaults to INBOX.', required: false
+    parameter :provider,     type: :string,  description: 'Email provider: "gmail" or "yahoo"', required: true
+    parameter :max_results,  type: :integer, description: "Number of emails to return (1-100). Defaults to 10.", required: false
+    parameter :after_date,   type: :string,  description: "Return emails after this date (YYYY-MM-DD format).", required: false
+    parameter :before_date,  type: :string,  description: "Return emails before this date (YYYY-MM-DD format).", required: false
+    parameter :offset,       type: :integer, description: "Number of emails to skip (for pagination). Defaults to 0.", required: false
+    parameter :label,        type: :string,  description: 'Gmail: filter by label name (e.g. "INBOX", "UNREAD"). Yahoo: mailbox/folder name (e.g. "INBOX", "Sent"). Defaults to INBOX.', required: false
 
     def name = "list_emails"
 

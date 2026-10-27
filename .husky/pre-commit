@@ -6,3 +6,16 @@ bundle exec rails tailwindcss:build
 
 echo "#check signatures are up to date"
 bundle exec sentinel check
+
+echo "Running rubocop..."
+bundle exec rubocop
+
+echo "Running steep type check..."
+# Each worker loads the full RBS env (~250MB); default is one per CPU.
+bundle exec steep check --jobs 2
+
+echo "Running brakeman..."
+bundle exec brakeman --no-pager
+
+echo "Running rspec (unit; headless-Chrome :js specs run in CI only)..."
+bundle exec rspec --tag '~js'

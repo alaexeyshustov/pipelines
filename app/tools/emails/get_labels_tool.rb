@@ -5,7 +5,7 @@ module Emails
     description "List all available labels for a mail provider. " \
                 "Gmail returns label IDs and names. Yahoo returns folder names."
 
-    param :provider, type: :string, desc: 'Email provider: "gmail" or "yahoo"', required: true
+    parameter :provider, type: :string, description: 'Email provider: "gmail" or "yahoo"', required: true
 
     def name = "get_labels"
 

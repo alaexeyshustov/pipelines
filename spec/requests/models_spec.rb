@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Models" do
   def build_model(id:, display_name:, provider:)
-    RubyLLM::Model::Info.new(
+    RubyLLM::Model.new(
       id: id,
       name: display_name,
       provider: provider,
@@ -76,13 +76,13 @@ RSpec.describe "Models" do
 
   describe "POST /models/sync" do
     it "redirects to /models" do
-      allow(RubyLLM::Models.instance).to receive(:refresh!)
+      allow(RubyLLM.models).to receive(:refresh)
       post sync_models_path
       expect(response).to redirect_to(models_path)
     end
 
     it "sets a flash notice" do
-      allow(RubyLLM::Models.instance).to receive(:refresh!)
+      allow(RubyLLM.models).to receive(:refresh)
       post sync_models_path
       follow_redirect!
       expect(response.body).to include("Models synced successfully")

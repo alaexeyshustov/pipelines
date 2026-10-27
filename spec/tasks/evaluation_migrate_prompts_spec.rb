@@ -31,12 +31,16 @@ RSpec.describe "evaluation:migrate_prompts rake task" do # rubocop:disable RSpec
     expect(created_names).to match_array(agent_classes)
   end
 
+  def instructions_for(klass)
+    klass.instructions.pluck(:value).grep(String).join("\n")
+  end
+
   it "sets system_prompt from the agent's inline instructions" do
     Rake::Task[task_name].invoke
     aggregate_failures do
       agent_classes.each do |agent_class|
         prompt = Evaluation::Prompt.find_by!(name: agent_class)
-        expected = agent_class.constantize.instructions
+        expected = instructions_for(agent_class.constantize)
         expect(prompt.system_prompt).to eq(expected)
       end
     end
@@ -57,6 +61,6 @@ RSpec.describe "evaluation:migrate_prompts rake task" do # rubocop:disable RSpec
     Rake::Task[task_name].reenable
     Rake::Task[task_name].invoke
 
-    expect(original.reload.system_prompt).to eq(Orchestration::Agents::EmailsClassifier.instructions)
+    expect(original.reload.system_prompt).to eq(instructions_for(Orchestration::Agents::EmailsClassifier))
   end
 end

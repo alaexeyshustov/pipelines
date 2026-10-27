@@ -4,11 +4,11 @@ module Emails
 
     description "Search Gmail or Yahoo Mail using a query string and return matching emails."
 
-    param :provider,    type: :string,  desc: 'Email provider: "gmail" or "yahoo"', required: true
-    param :query,       type: :string,  desc: "Search query (e.g. 'from:boss@example.com', 'subject:invoice', 'is:unread')", required: true
-    param :max_results, type: :integer, desc: "Maximum number of results to return (1-100). Defaults to 10.", required: false
-    param :offset,      type: :integer, desc: "Number of results to skip (for pagination). Defaults to 0.", required: false
-    param :label,       type: :string,  desc: "Yahoo: mailbox/folder to search. Defaults to INBOX. Gmail: label name to search. Defaults - any", required: false
+    parameter :provider,    type: :string,  description: 'Email provider: "gmail" or "yahoo"', required: true
+    parameter :query,       type: :string,  description: "Search query (e.g. 'from:boss@example.com', 'subject:invoice', 'is:unread')", required: true
+    parameter :max_results, type: :integer, description: "Maximum number of results to return (1-100). Defaults to 10.", required: false
+    parameter :offset,      type: :integer, description: "Number of results to skip (for pagination). Defaults to 0.", required: false
+    parameter :label,       type: :string,  description: "Yahoo: mailbox/folder to search. Defaults to INBOX. Gmail: label name to search. Defaults - any", required: false
 
     def name = "search_emails"
 

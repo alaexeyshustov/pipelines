@@ -119,8 +119,42 @@ jobs:
       - name: Build assets
         run: pnpm run build && bundle exec rails tailwindcss:build
 
-      - name: Run RSpec
-        run: bundle exec rspec
+      - name: Run RSpec (unit)
+        run: bundle exec rspec --tag '~js'
+
+  e2e:
+    name: E2E (headless Chrome)
+    runs-on: ubuntu-latest
+    env:
+      RAILS_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: sudo apt-get install -y libsqlite3-dev
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Set up database
+        run: bundle exec rails db:schema:load
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install JS dependencies
+        run: corepack enable pnpm && pnpm install
+
+      - name: Build assets
+        run: pnpm run build && bundle exec rails tailwindcss:build
+
+      - name: Run RSpec (:js system specs)
+        run: bundle exec rspec --tag js
 
   rubycritic:
     name: RubyCritic

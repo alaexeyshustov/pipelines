@@ -3,8 +3,8 @@ module Evaluation
     class LoadSamplesTool < ::RubyLLM::Tool
       description "Fetch random samples from the experiment"
 
-      param :experiment_id, type: :integer, desc: "ID of the experiment to get evaluation samples from.", required: true
-      param :number_of_samples, type: :integer, desc: "Number of samples in the output", required: false
+      parameter :experiment_id, type: :integer, description: "ID of the experiment to get evaluation samples from.", required: true
+      parameter :number_of_samples, type: :integer, description: "Number of samples in the output", required: false
 
       def name = "load_samples"
 

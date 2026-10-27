@@ -6,9 +6,9 @@ module Records
 
     description "Query rows from a database table filtering by a column value. For example by id, email, or company name."
 
-    param :table,        type: :string, desc: "Table name: application_mails or interviews", required: true
-    param :column_name,  type: :string, desc: "Column name to filter on"
-    param :column_value, type: :string, desc: "Column value to match"
+    parameter :table,        type: :string, description: "Table name: application_mails or interviews", required: true
+    parameter :column_name,  type: :string, description: "Column name to filter on"
+    parameter :column_value, type: :string, description: "Column value to match"
 
     def name = "read_rows"
 

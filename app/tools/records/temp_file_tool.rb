@@ -5,10 +5,10 @@ module Records
     description "Read and write temporary files in the /tmp directory. " \
                 "Supports actions: 'read' (read file content), 'write' (write content to file), 'delete' (delete a file)."
 
-    param :action,   type: :string, desc: "Action: read, write, or delete", required: true
-    param :filename, type: :string, desc: "Filename (without path) to
+    parameter :action,   type: :string, description: "Action: read, write, or delete", required: true
+    parameter :filename, type: :string, description: "Filename (without path) to
         read from or write to in the /tmp directory. Example: 'output.txt'", required: true
-    param :content,  type: :string, desc: "Content to write to the file (required for write action)", required: false
+    parameter :content,  type: :string, description: "Content to write to the file (required for write action)", required: false
 
     def name = "temp_file"
 

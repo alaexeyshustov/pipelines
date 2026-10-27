@@ -3,7 +3,7 @@ module Evaluation
     class LoadSchemaTool < ::RubyLLM::Tool
       description "Fetch output schema for the experiment"
 
-      param :prompt_name, type: :string, desc: "Name of the prompt being to load schmea from.", required: true
+      parameter :prompt_name, type: :string, description: "Name of the prompt being to load schmea from.", required: true
 
       def name = "load_schema"
 

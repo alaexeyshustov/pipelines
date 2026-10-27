@@ -11,8 +11,8 @@ gem "view_component", "~> 4.6"
 gem "liquid"
 
 # LLM
-gem "ruby_llm", github: "crmne/ruby_llm", branch: "main"
-gem "ruby_llm-schema"
+gem "ruby_llm", "~> 2.1.1"
+gem "schematist"
 gem "ruby_llm-monitoring"
 
 # Email providers

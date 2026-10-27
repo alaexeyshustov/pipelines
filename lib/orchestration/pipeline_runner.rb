@@ -63,11 +63,11 @@ module Orchestration
     end
 
     def prepare_action_runs(step, previous_outputs)
-      step.step_actions.to_a.map do |step_action| # : Array[StepAction]
+      step.step_actions.to_a.map do |step_action|
         action_run = create_action_run(step_action)
         resolve_action_input(action_run, step_action, previous_outputs)
         action_run
-      end
+      end # : Array[ActionRun]
     end
 
     def create_action_run(step_action)
