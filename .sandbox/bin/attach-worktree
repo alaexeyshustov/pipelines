@@ -246,6 +246,7 @@ case "$container_status" in
       --label "io.pipelines.sandbox.launch-config=$launch_config_tag" \
       --label "io.pipelines.sandbox.profile=$profile" \
       --hostname "${container_name:0:63}" \
+      --memory "${SANDBOX_MEMORY:-3g}" \
       --workdir /workspace \
       --env "SANDBOX_WORKTREE_NAME=$worktree_name" \
       --env "SANDBOX_HOST_PORT=$host_port" \
