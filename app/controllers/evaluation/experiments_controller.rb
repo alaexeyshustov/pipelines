@@ -35,7 +35,7 @@ module Evaluation
         return
       end
 
-      prompt = Evaluation::Prompt.create!(
+      prompt = Evaluation::PromptCreator.call(
         name: agent.name,
         system_prompt: agent.prompt,
         user_prompt: "{{input}}",

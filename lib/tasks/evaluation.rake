@@ -54,11 +54,12 @@ namespace :evaluation do
       instructions = klass.instructions.map { |declaration| declaration[:value] }.grep(String).join("\n")
       raise "#{agent_class} has no instructions" if instructions.blank?
 
-      Evaluation::Prompt.find_or_initialize_by(name: agent_class).tap do |prompt|
-        prompt.system_prompt = instructions
+      existing = Evaluation::Prompt.find_by(name: agent_class)
+      if existing
         # user_prompt is intentionally preserved on re-runs to avoid clobbering manual edits
-        prompt.user_prompt = prompt.user_prompt.presence || "{{input}}"
-        prompt.save!
+        existing.update!(system_prompt: instructions, user_prompt: existing.user_prompt.presence || "{{input}}")
+      else
+        Evaluation::PromptCreator.call(name: agent_class, system_prompt: instructions, user_prompt: "{{input}}")
       end
     end
     Rails.logger.info "Migrated #{agent_classes.size} agent prompts to Evaluation::Prompt."

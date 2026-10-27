@@ -1,0 +1,10 @@
+module Evaluation
+  class PromptCreator
+    @attributes: Hash[Symbol, String | json_object | nil]
+
+    def self.call: (name: String?, system_prompt: String?, user_prompt: String?, ?output_schema: json_object?) -> Prompt
+
+    def initialize: (name: String?, system_prompt: String?, user_prompt: String?, ?output_schema: json_object?) -> void
+    def call: () -> Prompt
+  end
+end

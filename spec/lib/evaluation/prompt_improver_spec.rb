@@ -25,6 +25,13 @@ RSpec.describe Evaluation::PromptImprover do
         .to raise_error(ArgumentError, /no associated prompt/)
     end
 
+    it "enqueues PromptAutoEvalJob for the improved prompt" do
+      stub_improvement_agent(system_prompt: "Better instructions")
+      new_prompt = described_class.call(experiment: experiment)
+
+      expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: new_prompt.id)
+    end
+
     it "creates a new Prompt with the improved system prompt" do
       stub_improvement_agent(system_prompt: "Better instructions")
       expect { described_class.call(experiment: experiment) }

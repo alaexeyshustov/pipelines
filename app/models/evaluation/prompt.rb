@@ -2,8 +2,6 @@ module Evaluation
   class Prompt < ApplicationRecord
     self.table_name = "evaluation_prompts"
 
-    include Evaluation::AutoEvalTriggerable
-
     has_many :experiments, class_name: "Evaluation::Experiment", dependent: :nullify
     has_many :samples, class_name: "Evaluation::Sample", dependent: :nullify
 

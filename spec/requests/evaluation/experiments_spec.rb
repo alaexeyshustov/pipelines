@@ -407,6 +407,15 @@ RSpec.describe "Evaluation::Experiments" do
       }.to change(Evaluation::Prompt, :count).by(1)
     end
 
+    it "enqueues PromptAutoEvalJob for the forked prompt" do
+      post fork_prompt_evaluation_experiments_path,
+           params: { based_on_prompt_id: based_on.id,
+                     system_prompt: "Updated.", user_prompt: "{{input}}" },
+           as: :json
+
+      expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: Evaluation::Prompt.last.id)
+    end
+
     it "returns the new prompt id and version" do
       post fork_prompt_evaluation_experiments_path,
            params: { based_on_prompt_id: based_on.id,
@@ -547,6 +556,14 @@ RSpec.describe "Evaluation::Experiments" do
     let(:agent) { create(:orchestration_agent, name: "Emails::ClassifyAgent", prompt: "You are a classifier.") }
 
     before { agent }
+
+    it "enqueues PromptAutoEvalJob for the snapshot prompt" do
+      post snapshot_agent_prompt_evaluation_experiments_path,
+           params: { agent_name: "Emails::ClassifyAgent" },
+           as: :json
+
+      expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: Evaluation::Prompt.last.id)
+    end
 
     it "creates a new evaluation prompt" do
       expect {
