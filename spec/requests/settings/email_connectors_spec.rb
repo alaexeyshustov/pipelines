@@ -116,14 +116,23 @@ RSpec.describe "Settings::EmailConnectors" do
     let(:adapter_spy) { instance_spy(Emails::Adapters::YahooAdapter) }
 
     before do
-      allow(Emails::Adapters::YahooAdapter).to receive(:new).and_return(adapter_spy)
+      allow(Emails::Adapters::YahooAdapter).to receive(:from_env).and_return(adapter_spy)
       allow(adapter_spy).to receive(:list_messages).with(max_results: 1).and_return([])
     end
 
-    it "calls the adapter to test the connection" do
+    it "calls the adapter to test the connection and records the status" do
       post test_settings_email_connector_path(connector)
-      expect(Emails::Adapters::YahooAdapter).to have_received(:new)
+      expect(Emails::Adapters::YahooAdapter).to have_received(:from_env)
       expect(adapter_spy).to have_received(:list_messages).with(max_results: 1)
+      expect(connector.reload.status).to eq("connected")
+    end
+
+    it "redirects with an alert and marks failed when the probe raises" do
+      allow(adapter_spy).to receive(:list_messages).and_raise(StandardError, "boom")
+      post test_settings_email_connector_path(connector)
+      expect(response).to redirect_to(settings_email_connectors_path)
+      expect(flash[:alert]).to eq("Connection failed: boom")
+      expect(connector.reload.status).to eq("failed")
     end
 
     it "redirects with a success message" do

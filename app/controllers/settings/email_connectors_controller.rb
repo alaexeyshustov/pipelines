@@ -40,7 +40,7 @@ module Settings
     end
 
     def test
-      result = @email_connector.test_connection
+      result = Emails::TestConnectionService.call(connector: @email_connector)
       if result[:success]
         redirect_to settings_email_connectors_path, notice: "Connection successful!"
       else

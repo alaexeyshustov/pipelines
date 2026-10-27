@@ -1,0 +1,21 @@
+module Emails
+  class ConnectionTester
+    type provider_class = singleton(Emails::Adapters::BaseAdapter)
+    type outcome = { success: bool, ?error: String? }
+
+    UNKNOWN_PROVIDER: String
+
+    @provider: String
+    @configuration: ActiveSupport::HashWithIndifferentAccess[String, json_object_value]
+    @providers: Hash[String, provider_class]
+
+    def initialize: (provider: String, configuration: Hash[String, json_object_value], ?providers: Hash[String, provider_class]) -> void
+    def call: () -> outcome
+
+    private
+
+    def run_provider_check: (provider_class adapter_class) -> void
+    def connect_gmail_adapter: (provider_class adapter_class) -> void
+    def connect_yahoo_adapter: (provider_class adapter_class) -> void
+  end
+end
