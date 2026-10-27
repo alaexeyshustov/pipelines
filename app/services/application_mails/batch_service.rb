@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module ApplicationMails
   class BatchService
     Result = Data.define(:ok, :message)

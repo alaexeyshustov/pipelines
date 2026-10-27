@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "rails_helper"
 
 RSpec.describe Evaluation::Wizard::Step1Form do
@@ -14,7 +12,6 @@ RSpec.describe Evaluation::Wizard::Step1Form do
       "evaluation_model" => "mistral-large"
     }
   end
-
 
   describe "#agent_name" do
     it "returns the agent_name from payload" do

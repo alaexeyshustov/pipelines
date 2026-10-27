@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module JSON
   module Helpers
     def self.parse_maybe(value)

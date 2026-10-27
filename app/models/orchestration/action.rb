@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class Action < ApplicationRecord
     self.table_name = "orchestration_actions"

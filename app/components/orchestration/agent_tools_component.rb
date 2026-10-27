@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class AgentToolsComponent < ViewComponent::Base
     def initialize(available_tools:, selected:, errors: [])

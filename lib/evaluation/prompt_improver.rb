@@ -40,7 +40,6 @@ module Evaluation
       Metric.active_for_agent(current_prompt.name.to_s).to_a
     end
 
-
     def build_improvement_message(current_prompt:, evaluation_data:, metrics:)
       message = build_message_data(current_prompt, evaluation_data, metrics).to_json
       append_output_schema(message, current_prompt.name.to_s)

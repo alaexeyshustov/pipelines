@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class PipelinesController < ApplicationController
     include JsonParamsParsing
@@ -30,7 +28,6 @@ module Orchestration
       end
     end
 
-
     def run
       form = Orchestration::PipelineRunForm.new(pipeline: @pipeline, initial_input_params: params[:initial_input])
       path = orchestration_pipeline_path(@pipeline)
@@ -48,7 +45,6 @@ module Orchestration
       redirect_to request.referer || orchestration_pipeline_path(@pipeline),
                   notice: "Pipeline #{@pipeline.enabled? ? 'enabled' : 'disabled'}."
     end
-
 
     def update
       if @pipeline.update(pipeline_params)

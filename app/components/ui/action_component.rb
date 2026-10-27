@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class ActionComponent < ViewComponent::Base
     TYPES = %i[link button delete dialog raw].freeze

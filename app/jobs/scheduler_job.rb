@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 class SchedulerJob < ApplicationJob
   def perform
     running_ids      = Orchestration::PipelineRun.where(status: "running").select(:pipeline_id)

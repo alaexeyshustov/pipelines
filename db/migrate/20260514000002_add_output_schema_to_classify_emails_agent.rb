@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # ClassifyAgent now runs with structured output so Mistral reliably returns all
 # email IDs as strings (including Yahoo integer UIDs, which were silently lost
 # in pipeline run #92). Adding output_schema has two consequences:

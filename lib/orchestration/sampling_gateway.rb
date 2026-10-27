@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class AgentNotFound < ArgumentError; end
   class ActionNotFound < ArgumentError; end

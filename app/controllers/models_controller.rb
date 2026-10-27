@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 class ModelsController < ApplicationController
   include Paginable
   paginable per_page: [ 20, 50, 100 ]

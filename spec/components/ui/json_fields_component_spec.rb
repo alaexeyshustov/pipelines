@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "rails_helper"
 
 RSpec.describe UI::JsonFieldsComponent, type: :component do
@@ -23,7 +21,6 @@ RSpec.describe UI::JsonFieldsComponent, type: :component do
       "required" => %w[name start_date]
     }
   end
-
 
   describe "text input" do
     it "renders a text input for a plain string field" do

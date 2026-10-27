@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   class EvaluationJob < ApplicationJob
     queue_as :default

@@ -28,7 +28,6 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     allow(imap).to receive(:login)
   end
 
-
   describe '#list_messages' do
     before do
       allow(imap).to receive(:select)

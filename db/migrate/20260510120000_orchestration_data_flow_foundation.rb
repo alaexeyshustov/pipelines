@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # Foundation slice for the orchestration data-flow refactor (PRD #77, issue #78).
 #
 # Moves `input_mapping` from `steps` to `step_actions`, introduces a stable

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 class AddExperimentPhasesToEvaluationExperiments < ActiveRecord::Migration[8.1]
   def up
     add_column :evaluation_experiments, :status_str, :string, default: "pending", null: false

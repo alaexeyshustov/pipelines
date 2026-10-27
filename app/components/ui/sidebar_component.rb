@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class SidebarComponent < ViewComponent::Base
     NavItem = Data.define(:label, :path)

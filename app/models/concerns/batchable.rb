@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Batchable
   extend ActiveSupport::Concern
 

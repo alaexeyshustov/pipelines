@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   class Sampler
     WRITE_BLOCKED_SENTINEL = "[write tool blocked during sampling]"

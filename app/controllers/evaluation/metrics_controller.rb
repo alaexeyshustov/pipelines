@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   class MetricsController < ApplicationController
     before_action :set_metric, only: [ :edit, :update, :destroy ]
@@ -22,7 +20,6 @@ module Evaluation
         render :edit, status: :unprocessable_content
       end
     end
-
 
     def destroy
       @metric.destroy

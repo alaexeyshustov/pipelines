@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 # This migration comes from leva (originally 20241204000001)
 class CreateLevaOptimizationRuns < ActiveRecord::Migration[7.2]
   def change

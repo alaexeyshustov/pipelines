@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class RunDetailCardComponentPreview < ViewComponent::Preview
     def completed

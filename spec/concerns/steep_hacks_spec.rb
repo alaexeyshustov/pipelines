@@ -5,7 +5,6 @@ RSpec.describe SteepHacks do
 
   let(:host_class) { Class.new { include SteepHacks } }
 
-
   describe '#empty_object' do
     it 'returns an empty hash' do
       expect(instance.empty_object).to eq({})

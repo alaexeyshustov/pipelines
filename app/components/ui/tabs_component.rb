@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class TabsComponent < ViewComponent::Base
     renders_many :tabs, "UI::TabsComponent::TabComponent"

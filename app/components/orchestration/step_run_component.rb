@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class StepRunComponent < ViewComponent::Base
     with_collection_parameter :entry

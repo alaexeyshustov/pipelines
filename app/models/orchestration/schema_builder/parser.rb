@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class SchemaBuilder
     # Builds a SchemaBuilder tree from a JSON-schema hash or from form params.

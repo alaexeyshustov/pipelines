@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   class DashboardController < ApplicationController
     def show

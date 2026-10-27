@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class TableComponentPreview < ViewComponent::Preview
     Person = Data.define(:name, :status, :id)

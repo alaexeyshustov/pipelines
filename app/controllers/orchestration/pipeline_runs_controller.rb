@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class PipelineRunsController < ApplicationController
     before_action :set_pipeline

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Interviews
   class BatchService
     Result = Data.define(:ok, :message, :csv)

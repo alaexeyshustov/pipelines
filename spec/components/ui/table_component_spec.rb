@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "rails_helper"
 
 RSpec.describe UI::TableComponent, type: :component do
@@ -12,9 +10,6 @@ RSpec.describe UI::TableComponent, type: :component do
       record_class.new(id: 2, name: "Globex", status: "Pending")
     ]
   end
-
-
-
 
   context "with collection and columns" do
     let(:component) do

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module ApplicationMails
   class ProviderBadgeComponentPreview < ViewComponent::Preview
     def gmail

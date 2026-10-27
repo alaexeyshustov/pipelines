@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   class PromptDiffComponent < ViewComponent::Base
     def initialize(prompt_a:, prompt_b:)

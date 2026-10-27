@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class AgentsController < ApplicationController
     include JsonParamsParsing
@@ -28,7 +26,6 @@ module Orchestration
         render :new, status: :unprocessable_content
       end
     end
-
 
     def update
       if @agent.update(agent_params)

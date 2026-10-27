@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "rails_helper"
 
 RSpec.describe Evaluation::SyntheticDatasetJob do
@@ -160,7 +158,6 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
       let!(:existing_dataset) { create(:evaluation_dataset, name: "Existing", agent_name: agent_name) }
       let!(:old_sample) { create(:evaluation_dataset_sample, dataset: existing_dataset) }
       let(:resync_params) { { draft_token: draft_token, agent_name: agent_name, dataset_id: existing_dataset.id, count: 3 } }
-
 
       it "does not create a new dataset" do
         expect { described_class.perform_now(**resync_params) }.not_to change(Evaluation::Dataset, :count)

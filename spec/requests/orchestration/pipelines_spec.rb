@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "rails_helper"
 
 RSpec.describe "Orchestration::Pipelines" do
@@ -82,7 +80,6 @@ RSpec.describe "Orchestration::Pipelines" do
       expect(response.body).to include("Second Step")
       expect(response.body).to include("My Action")
     end
-
 
     it "displays latest run status when a run exists" do
       pipeline = create(:orchestration_pipeline, name: "Show Pipeline")

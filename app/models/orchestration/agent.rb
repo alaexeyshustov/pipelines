@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Orchestration
   class Agent < ApplicationRecord
     ALLOWED_TOOL_NAMESPACES = %w[Records Emails].freeze

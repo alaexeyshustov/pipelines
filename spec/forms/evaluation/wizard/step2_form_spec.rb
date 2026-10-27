@@ -1,12 +1,9 @@
-# frozen_string_literal: true
-
 require "rails_helper"
 
 RSpec.describe Evaluation::Wizard::Step2Form do
   subject(:form) { described_class.new(draft_payload: payload) }
 
   let(:payload) { { "agent_name" => "Emails::ClassifyAgent" } }
-
 
   describe "#agent_name" do
     it "returns the agent_name from payload" do

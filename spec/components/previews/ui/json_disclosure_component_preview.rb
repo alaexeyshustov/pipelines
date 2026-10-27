@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module UI
   class JsonDisclosureComponentPreview < ViewComponent::Preview
     def default

@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require "rails_helper"
 
 RSpec.describe Evaluation::Wizard::Step3Form do
@@ -7,7 +5,6 @@ RSpec.describe Evaluation::Wizard::Step3Form do
 
   let(:payload)     { { "agent_name" => "Emails::ClassifyAgent", "dataset_id" => "7" } }
   let(:draft_token) { "tok_abc123" }
-
 
   describe "#agent_name" do
     it "returns the agent_name from payload" do

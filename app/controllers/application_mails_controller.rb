@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 class ApplicationMailsController < ApplicationController
   include Paginable
   paginable sortable: %w[date provider company job_title action],
@@ -30,7 +28,6 @@ class ApplicationMailsController < ApplicationController
       render :new, status: :unprocessable_content
     end
   end
-
 
   def update
     if @mail.update(mail_params)

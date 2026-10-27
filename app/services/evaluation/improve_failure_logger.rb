@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 module Evaluation
   class ImproveFailureLogger
     def self.call(context:, experiment:, error:)
