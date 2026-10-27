@@ -45,7 +45,6 @@
     <% end %>
   <% end %>
 
-  <%# Tab 2: Schema Builder (hidden server-side — no flash on load) %>
   <% t.with_panel(id: "pipeline-panel-schema", tab_id: "pipeline-tab-schema") do %>
     <div class="flex items-center justify-between mb-2">
       <label class="block text-sm font-medium text-gray-700">Initial input schema</label>
@@ -93,7 +92,6 @@
   <% end %>
 <% end %>
 
-<%# Submit bar — always visible, targets the main form via form= attribute %>
 <div class="flex items-center gap-3 pt-4 mt-6 border-t border-gray-200">
   <button type="submit"
           form="pipeline-form"

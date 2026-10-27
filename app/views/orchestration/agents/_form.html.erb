@@ -1,10 +1,8 @@
-<%# schema-builder controller wraps the Turbo Frame AND the agent form so Stimulus can bridge them %>
 <%= render UI::TabsComponent.new(extra_controllers: ["schema-builder"]) do |t| %>
   <% t.with_tab(id: "agent-tab-general", label: "General", controls: "agent-panel-general", active: true) %>
   <% t.with_tab(id: "agent-tab-schema", label: "Schema Builder", controls: "agent-panel-schema") %>
 
   <% t.with_panel(id: "agent-panel-general", tab_id: "agent-tab-general", active: true) do %>
-    <%# Agent form (contains the hidden field Stimulus keeps in sync) %>
     <%= form_with model: agent,
           url: agent.new_record? ? orchestration_agents_path : orchestration_agent_path(agent),
           id: "agent-form",
@@ -49,14 +47,12 @@
         <%= f.text_area :prompt, rows: 4, class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
       </div>
 
-      <%# Hidden field — Stimulus (schema-builder controller) keeps this in sync with the builder %>
       <%= f.hidden_field :output_schema,
             value: agent.output_schema.present? ? agent.output_schema.to_json : "{}",
             data: { schema_builder_target: "json" } %>
     <% end %>
   <% end %>
 
-  <%# Tab 2: Schema Builder (hidden server-side — no flash on load) %>
   <% t.with_panel(id: "agent-panel-schema", tab_id: "agent-tab-schema") do %>
     <div class="flex items-center justify-between mb-2">
       <label class="block text-sm font-medium text-gray-700">Output schema builder</label>
@@ -68,7 +64,6 @@
       </button>
     </div>
 
-    <%# Builder Turbo Frame — hidden when in raw mode %>
     <div data-schema-builder-target="builderView">
       <%= turbo_frame_tag "schema_builder" do %>
         <%= render Orchestration::SchemaBuilderComponent.new(
@@ -78,7 +73,6 @@
       <% end %>
     </div>
 
-    <%# Raw JSON editor — hidden by default, shown when in raw mode %>
     <div data-schema-builder-target="rawView" style="display:none">
       <form action="<%= parse_orchestration_schema_builders_path %>"
             method="post"
@@ -105,7 +99,6 @@
   <% end %>
 <% end %>
 
-<%# Submit bar — always visible, targets the main form via form= attribute %>
 <div class="flex items-center gap-3 pt-4 mt-6 border-t border-gray-200">
   <button type="submit"
           form="agent-form"
