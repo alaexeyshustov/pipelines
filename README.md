@@ -17,7 +17,7 @@ A Rails 8.1 multi-agent pipeline management system. Integration with Gmail and Y
 
 ## Prerequisites
 
-- Ruby 4.0 (`rbenv install 4.0.1`)
+- Ruby 4.0 (`rbenv install 4.0.9`)
 - SQLite 3 with dev headers (`brew install sqlite` / `apt-get install libsqlite3-dev`)
 - At least one LLM API key (Mistral is the default)
 
