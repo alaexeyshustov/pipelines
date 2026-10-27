@@ -1,0 +1,227 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+fail() {
+  printf 'Error: %s\n' "$*" >&2
+  exit 1
+}
+
+usage() {
+  cat <<'USAGE'
+Usage: .sandbox/bin/recreate-worktree [issue-or-scratch-name] [profile] [options]
+
+Rebuilds a worktree's sandbox from scratch: removes its container and its
+per-worktree bundle/node_modules volumes, rebuilds the profile image without
+the layer cache, then attaches.
+
+The Git worktree itself is never touched -- the checkout, its branch, and any
+uncommitted changes survive. Volumes shared with other sandboxes are also
+preserved:
+  pipelines-sandbox-pnpm-store   (shared by every sandbox)
+  pipelines-<profile>-home       (shared by every worktree on that profile)
+
+Agent session history survives: the claude-* profiles keep Claude Code state
+(CLAUDE_CONFIG_DIR=/root/.claude) on the shared home volume.
+
+Options:
+  --profile=<name>  Sandbox profile (default: claude-matt)
+  --keep-image      Recreate the container and volumes only; reuse the image
+  --no-attach       Recreate everything but do not start the container
+  --dry-run         Print what would be removed and rebuilt, then exit
+  -h, --help        Show this help
+USAGE
+}
+
+for command in git podman ruby; do
+  command -v "$command" >/dev/null || fail "Required command not found: $command"
+done
+
+profile=""
+keep_image=false
+attach=true
+dry_run=false
+positional=()
+for arg in "$@"; do
+  case "$arg" in
+    --profile=*) profile="${arg#--profile=}" ;;
+    --profile) fail "--profile requires a value, e.g. --profile=claude-matt" ;;
+    --keep-image) keep_image=true ;;
+    --no-attach) attach=false ;;
+    --dry-run) dry_run=true ;;
+    -h|--help) usage; exit 0 ;;
+    -*) fail "Unknown option: $arg" ;;
+    *) positional+=("$arg") ;;
+  esac
+done
+[[ ${#positional[@]} -le 2 ]] || { usage >&2; exit 2; }
+
+identifier="${positional[0]:-}"
+[[ -n "$profile" ]] || profile="${positional[1]:-claude-matt}"
+[[ "$profile" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || fail "Invalid profile name: $profile"
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+# Where the user is, not where this script lives: the helpers are usually run
+# from the primary checkout's copy, including from inside a worktree.
+invocation_repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)"
+git_common_dir="$(git -C "$script_dir" rev-parse --path-format=absolute --git-common-dir)"
+primary_repo_root="$(dirname "$git_common_dir")"
+
+
+db_helper="$primary_repo_root/.sandbox/bin/db_helper"
+attach_helper="$primary_repo_root/.sandbox/bin/attach-worktree"
+profiles_root="$primary_repo_root/.sandbox/profiles"
+profile_dir="$profiles_root/$profile"
+profile_env="$profile_dir/profile.env"
+lib_dir="$profiles_root/lib"
+
+[[ -x "$db_helper" ]] || fail "Database helper is not executable: $db_helper"
+[[ -x "$attach_helper" ]] || fail "Sandbox attach helper is not executable: $attach_helper"
+[[ -d "$profile_dir" ]] || fail "Unknown sandbox profile: $profile (expected a directory under .sandbox/profiles/)"
+[[ -f "$profile_env" ]] || fail "Profile is missing profile.env: $profile_env"
+[[ -f "$profile_dir/Containerfile" ]] || fail "Profile image definition not found: $profile_dir/Containerfile"
+[[ -d "$lib_dir" ]] || fail "Shared profile library not found: $lib_dir"
+
+if [[ "$identifier" =~ ^#?([0-9]+)$ || "$identifier" =~ ^[Gg][Hh]-([0-9]+)$ || "$identifier" =~ ^https://github\.com/[^/]+/[^/]+/issues/([0-9]+) ]]; then
+  identifier="GH-${BASH_REMATCH[1]}"
+fi
+
+if [[ -n "$identifier" ]]; then
+  worktree_record="$("$db_helper" get_worktree "$identifier")"
+elif [[ "$invocation_repo_root" == "$primary_repo_root" ]]; then
+  worktree_record="$("$db_helper" get_worktree --latest)"
+else
+  worktree_record="$("$db_helper" get_worktree --worktree="$invocation_repo_root")"
+fi
+
+IFS=$'\t' read -r identifier repo_root _ticket <<< "$worktree_record"
+[[ -n "$identifier" && -n "$repo_root" ]] \
+  || fail "Invalid sandbox worktree registry record. Run init-worktree again."
+[[ -d "$repo_root" ]] || fail "Registered worktree no longer exists: $repo_root"
+git -C "$repo_root" rev-parse --is-inside-work-tree >/dev/null \
+  || fail "Registered path is not a Git worktree: $repo_root"
+
+worktree_name="$(basename "$repo_root")"
+container_name="pipelines-${profile}-${worktree_name}"
+[[ "$container_name" =~ ^pipelines-[a-z0-9-]+$ ]] \
+  || fail "Invalid computed sandbox container name: $container_name"
+
+bundle_volume="${container_name}-bundle"
+node_modules_volume="${container_name}-node-modules"
+
+# shellcheck disable=SC1090
+source "$profile_env"
+[[ -n "${SANDBOX_AGENT_HOME_VOLUME:-}" ]] || fail "profile.env did not set SANDBOX_AGENT_HOME_VOLUME"
+
+# Mirrors attach-worktree: the image tag is content-addressed over the primary
+# copies of the profile and the shared library, so the rebuild lands on the
+# same tag attach-worktree will look for.
+directory_fingerprint() {
+  local dir
+  for dir in "$@"; do
+    find "$dir" -type f -exec sha256sum {} +
+  done | LC_ALL=C sort | sha256sum | awk '{print $1}'
+}
+
+image_repository="pipelines-${profile}-agent"
+image_tag="${image_repository}:$(directory_fingerprint "$profile_dir" "$lib_dir")"
+
+run() {
+  if [[ "$dry_run" == true ]]; then
+    printf '  would run: %s\n' "$*"
+    return
+  fi
+  "$@"
+}
+
+remove_container() {
+  local status
+  status="$(podman container inspect --format '{{.State.Status}}' "$container_name" 2>/dev/null || true)"
+
+  if [[ -z "$status" ]]; then
+    printf 'No existing container to remove: %s\n' "$container_name"
+    return
+  fi
+
+  printf 'Removing sandbox container (%s): %s\n' "$status" "$container_name"
+  if [[ "$status" == running ]]; then
+    run podman container stop --time 20 "$container_name"
+  fi
+  run podman container rm --force "$container_name"
+}
+
+remove_volume() {
+  local volume="$1"
+
+  if ! podman volume exists "$volume"; then
+    printf 'No existing volume to remove: %s\n' "$volume"
+    return
+  fi
+
+  printf 'Removing sandbox volume: %s\n' "$volume"
+  run podman volume rm "$volume"
+}
+
+# Tags of this profile's image that no container depends on. A tag still used
+# by another worktree's container is left alone: removing it would strand that
+# sandbox, and the rebuild below only needs the target tag gone. This worktree's
+# own container is discounted -- it is already gone by this point, except under
+# --dry-run, where counting it would misreport the tag as in use.
+remove_unused_profile_images() {
+  local tags tag users
+
+  tags="$(podman image list --format '{{.Repository}}:{{.Tag}}' "$image_repository" 2>/dev/null || true)"
+  if [[ -z "$tags" ]]; then
+    printf 'No existing image to remove: %s\n' "$image_repository"
+    return
+  fi
+
+  while IFS= read -r tag; do
+    [[ -n "$tag" ]] || continue
+    users="$(podman container list --all --filter "ancestor=$tag" --format '{{.Names}}' \
+      | grep -vxF "$container_name" || true)"
+    if [[ -n "$users" ]]; then
+      printf 'Keeping image still used by another container (%s): %s\n' \
+        "$(printf '%s' "$users" | paste -sd, -)" "$tag"
+      continue
+    fi
+    printf 'Removing sandbox image: %s\n' "$tag"
+    run podman image rm "$tag"
+  done <<< "$tags"
+}
+
+printf 'Recreating sandbox for %s (%s)\n' "$identifier" "$profile"
+printf '  worktree:  %s\n' "$repo_root"
+printf '  container: %s\n' "$container_name"
+printf '  image:     %s\n' "$image_tag"
+printf '  preserved: %s, pipelines-sandbox-pnpm-store, the Git worktree\n' "$SANDBOX_AGENT_HOME_VOLUME"
+printf '\n'
+
+remove_container
+remove_volume "$bundle_volume"
+remove_volume "$node_modules_volume"
+
+if [[ "$keep_image" == true ]]; then
+  printf 'Keeping the existing image as requested (--keep-image).\n'
+else
+  remove_unused_profile_images
+  printf 'Rebuilding %s agent image without the layer cache: %s\n' "$profile" "$image_tag"
+  run podman build --no-cache --tag "$image_tag" \
+    --file "$profile_dir/Containerfile" \
+    --build-context "lib=$lib_dir" \
+    "$profile_dir"
+fi
+
+if [[ "$dry_run" == true ]]; then
+  printf '\nDry run: nothing was changed.\n'
+  exit 0
+fi
+
+if [[ "$attach" != true ]]; then
+  printf '\nSandbox recreated. Start it with:\n  cd %q && %q %q --profile=%q\n' \
+    "$repo_root" "$attach_helper" "$identifier" "$profile"
+  exit 0
+fi
+
+printf '\n'
+exec "$attach_helper" "$identifier" "--profile=$profile"

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Runs on the host Ruby with globally installed gems rather than the
+# application's bundle, so it works before `bundle install` and across Ruby
+# upgrades. One-time setup: gem install dry-cli sqlite3
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+exec ruby -e '$0 = ARGV.shift; load ARGV.shift' "$0" "$script_dir/db_helper.rb" "$@"

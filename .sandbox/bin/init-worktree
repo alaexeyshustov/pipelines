@@ -1,0 +1,170 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage: .sandbox/bin/init-worktree <github-issue>   (42, #42, GH-42, or an issue URL)
+       .sandbox/bin/init-worktree
+
+Creates or reopens a sandbox worktree and opens it in a new Zed window.
+Start an agent from that window's Agent Panel > Terminal using:
+  .sandbox/bin/attach-worktree [issue] [profile]
+Available profiles live as directories under .sandbox/profiles/ (default: claude-matt).
+USAGE
+}
+
+fail() {
+  printf 'Error: %s\n' "$*" >&2
+  exit 1
+}
+
+[[ $# -le 1 ]] || { usage >&2; exit 2; }
+
+for command in git ruby zed; do
+  command -v "$command" >/dev/null || fail "Required command not found: $command"
+done
+
+ticket="${1:-}"
+scratch_worktree=false
+
+if [[ -z "$ticket" ]]; then
+  scratch_worktree=true
+elif [[ "$ticket" =~ ^#?([0-9]+)$ || "$ticket" =~ ^[Gg][Hh]-([0-9]+)$ || "$ticket" =~ ^https://github\.com/[^/]+/[^/]+/issues/([0-9]+) ]]; then
+  ticket="GH-${BASH_REMATCH[1]}"
+else
+  fail "Issue must be a GitHub issue number (42, #42, GH-42) or an issue URL."
+fi
+
+# Always the primary checkout, even when run from inside a sandbox worktree.
+repo_root="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
+cd "$repo_root"
+
+if [[ "$scratch_worktree" == true ]]; then
+  worktree_name="scratch-$(date +%Y%m%d%H%M%S)-${RANDOM}${RANDOM}"
+  branch_name="chore/$worktree_name"
+else
+  db_helper="$repo_root/.sandbox/bin/db_helper"
+  [[ -x "$db_helper" ]] || fail "Database helper is not executable: $db_helper"
+  branch_name="$("$db_helper" issue_to_branch "$ticket")"
+  [[ "$branch_name" =~ ^(feat|fix|refactor|chore)/gh-[0-9]+(-[a-z0-9]+)*$ ]] \
+    || fail "issue_to_branch did not return a valid branch name."
+  worktree_name="${branch_name#*/}"
+fi
+
+worktree_path="$repo_root/.sandbox/worktrees/$worktree_name"
+container_identifier="${ticket:-$worktree_name}"
+db_helper="${db_helper:-$repo_root/.sandbox/bin/db_helper}"
+
+[[ -x "$db_helper" ]] || fail "Database helper is not executable: $db_helper"
+
+# .sandbox itself is tracked, so worktrees get it from their checkout and the
+# helpers always run from the primary copy. What a worktree lacks are the
+# untracked local files the app needs (.env, Google credentials, dev
+# databases), listed in .worktreeinclude -- the same list Claude Code uses
+# for its own worktrees. Existing files are never overwritten.
+install_sandbox_files() {
+  local include_list="$repo_root/.worktreeinclude"
+  local entry source destination
+
+  [[ -f "$include_list" ]] || return 0
+
+  while IFS= read -r entry || [[ -n "$entry" ]]; do
+    entry="${entry%/}"
+    [[ -n "$entry" && "$entry" != \#* ]] || continue
+    # node_modules lives on a per-container volume.
+    [[ "$entry" != node_modules ]] || continue
+
+    source="$repo_root/$entry"
+    destination="$worktree_path/$entry"
+    [[ -e "$source" && ! -e "$destination" ]] || continue
+
+    mkdir -p "$(dirname "$destination")"
+    cp -R "$source" "$destination"
+  done < "$include_list"
+}
+
+configure_worktree_ruby() {
+  local mise_command
+  local project_ruby_version
+  local zed_shell_path="$worktree_path/.zed/ruby-shell"
+  local zed_settings_path="$worktree_path/.zed/settings.json"
+  local git_exclude_path
+
+  mise_command="$(command -v mise)"
+  [[ -n "$mise_command" ]] || fail "Mise is required to configure the worktree Ruby version."
+  project_ruby_version="$(mise current --cd "$repo_root" ruby)"
+  [[ "$project_ruby_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+    || fail "Could not determine the project's Ruby version from Mise."
+
+  mkdir -p "$(dirname "$zed_shell_path")" "$(dirname "$zed_settings_path")"
+  printf '%s\n' \
+    '#!/usr/bin/env bash' \
+    'set -euo pipefail' \
+    "exec $(printf '%q' "$mise_command") exec --cd \"\$(pwd -P)\" ruby@${project_ruby_version} -- /bin/zsh -i \"\$@\"" \
+    > "$zed_shell_path"
+  chmod +x "$zed_shell_path"
+
+  printf '{\n  "terminal": {\n    "shell": {\n      "program": "%s"\n    }\n  }\n}\n' "$zed_shell_path" \
+    > "$zed_settings_path"
+
+  git_exclude_path="$(git -C "$worktree_path" rev-parse --git-path info/exclude)"
+  mkdir -p "$(dirname "$git_exclude_path")"
+  if ! grep -qxF '.zed/' "$git_exclude_path" 2>/dev/null; then
+    printf '\n.zed/\n' >> "$git_exclude_path"
+  fi
+
+  "$mise_command" exec --cd "$worktree_path" "ruby@$project_ruby_version" -- ruby -v \
+    | grep -q "ruby $project_ruby_version" \
+    || fail "Worktree Ruby does not match the project version $project_ruby_version."
+}
+
+if [[ -e "$worktree_path" ]]; then
+  [[ -d "$worktree_path" ]] || fail "Existing worktree path is not a directory: $worktree_path"
+  git -C "$worktree_path" rev-parse --is-inside-work-tree >/dev/null \
+    || fail "Existing path is not a Git worktree: $worktree_path"
+  existing_branch="$(git -C "$worktree_path" branch --show-current)"
+  [[ "$existing_branch" == "$branch_name" ]] \
+    || fail "Existing worktree is on $existing_branch, expected $branch_name."
+  printf 'Reusing existing worktree for %s\n' "$branch_name"
+else
+  if git show-ref --verify --quiet "refs/heads/$branch_name"; then
+    existing_branch_worktree="$(git worktree list --porcelain | awk -v branch="refs/heads/$branch_name" '
+      $1 == "worktree" { worktree = substr($0, 10) }
+      $1 == "branch" && $2 == branch { print worktree; exit }
+    ')"
+
+    if [[ -n "$existing_branch_worktree" && -d "$existing_branch_worktree" ]] \
+      && git -C "$existing_branch_worktree" rev-parse --is-inside-work-tree >/dev/null; then
+      worktree_path="$existing_branch_worktree"
+      printf 'Reusing existing worktree for %s\n' "$branch_name"
+    else
+      [[ -z "$existing_branch_worktree" ]] || git worktree prune
+      printf 'Reusing existing branch for %s\n' "$branch_name"
+      mkdir -p "$(dirname "$worktree_path")"
+      git worktree add "$worktree_path" "$branch_name"
+    fi
+  else
+    git fetch origin main
+    git branch "$branch_name" origin/main
+    mkdir -p "$(dirname "$worktree_path")"
+    git worktree add "$worktree_path" "$branch_name"
+  fi
+fi
+
+install_sandbox_files
+configure_worktree_ruby
+zed -n "$worktree_path"
+
+if [[ "$scratch_worktree" == true ]]; then
+  "$db_helper" register_worktree "$container_identifier" "$worktree_path"
+else
+  "$db_helper" register_worktree "$container_identifier" "$worktree_path" --ticket="$ticket"
+fi
+
+if [[ "$scratch_worktree" == true ]]; then
+  printf 'Sandbox worktree ready: %s\n' "$worktree_path"
+else
+  printf 'Sandbox worktree ready for %s: %s\n' "$ticket" "$worktree_path"
+fi
+printf '\nIn the new Zed window, open Agent Panel > Terminal and run:\n  cd %q && %q %q\n' "$worktree_path" "$repo_root/.sandbox/bin/attach-worktree" "$container_identifier"

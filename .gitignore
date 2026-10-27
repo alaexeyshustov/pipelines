@@ -8,7 +8,7 @@
 /.bundle
 .idea/
 .DS_Store
-.claude/.DS_Store
+.agents/.DS_Store
 
 # Ignore all environment files.
 /.env*
@@ -50,8 +50,8 @@ coverage/
 
 node_modules/
 .pnpm-store/
-.claude/worktrees/
-.claude/settings.local.json
+.agents/worktrees/
+.agents/settings.local.json
 .DS_Store
 
 .gem_rbs_collection/

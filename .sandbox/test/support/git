@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+
+require "fileutils"
+
+worktree_path = ENV["STUB_GIT_WORKTREE_PATH"]
+
+if ARGV == ["worktree", "list", "--porcelain"] && worktree_path
+  puts "worktree #{worktree_path}"
+elsif ARGV == ["worktree", "remove", "--force", worktree_path]
+  FileUtils.remove_entry(worktree_path)
+elsif ARGV == ["worktree", "prune"] && worktree_path
+  nil
+else
+  exec "/usr/bin/git", *ARGV
+end

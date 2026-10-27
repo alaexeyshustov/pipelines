@@ -8,4 +8,4 @@ Use this guidance for Ruby and RBS changes that touch typed code paths.
 - If a gem lacks RBS types, add or update a type shim instead of skipping the check.
 - `void?` is invalid RBS syntax; if Ruby can return `nil`, use the real nullable type such as `String?` or `bool?`.
 - Keep RBS nilability aligned with actual Ruby call paths.
-- For deeper signature rules, see [docs/rbs.md](../rbs.md) and [.claude/rules/signatures.md](../../.claude/rules/signatures.md).
+- For deeper signature rules, see [docs/rbs.md](../rbs.md) and [.agents/rules/signatures.md](../../.agents/rules/signatures.md).

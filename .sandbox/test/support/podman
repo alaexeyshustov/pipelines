@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+case "$1" in
+  image)
+    exit 0
+    ;;
+  container)
+    case "$2" in
+      inspect)
+        exit 1
+        ;;
+      exists|rm)
+        exit 0
+        ;;
+      *)
+        printf 'Unexpected podman container command: %s\n' "$*" >&2
+        exit 1
+        ;;
+    esac
+    ;;
+  run)
+    exit 0
+    ;;
+  *)
+    printf 'Unexpected podman command: %s\n' "$*" >&2
+    exit 1
+    ;;
+esac

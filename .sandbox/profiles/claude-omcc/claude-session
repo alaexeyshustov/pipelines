@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+source /usr/local/lib/session-common.sh
+
+ticket="${1:-}"
+export CLAUDE_HOME="${CLAUDE_HOME:-/root/.claude}"
+
+printf 'Claude Code (oh-my-claudecode) session is starting\n'
+
+install_workspace_dependencies
+configure_rtk
+load_claude_auth
+
+# `omc setup` provisions OMC's skills/commands for this project (idempotent
+# per its own quick-start docs). Its exact non-interactive behavior on a
+# brand-new container hasn't been verified end-to-end yet -- if this ever
+# hangs waiting on a prompt, that's the first thing to check.
+omc setup || printf 'omc setup reported an error; continuing with a plain Claude Code session.\n' >&2
+
+exec_claude "$ticket"

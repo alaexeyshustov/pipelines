@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-gem "rails", "~> 8.1.2"
+gem "rails", "~> 8.1.4"
 gem "sqlite3", ">= 2.1"
 gem "sqlite-vec"
 
@@ -40,12 +40,10 @@ gem "stimulus-rails"
 # Pipeline
 gem "async"
 gem "fugit"
-gem "solid_queue", github: "crmne/solid_queue", branch: "async-worker-execution-mode"
+gem "solid_queue"
 gem "mission_control-jobs"
 gem "dotenv-rails"
 gem "dry-cli"
-
-gem "tzinfo-data", platforms: %i[ windows jruby ]
 
 group :development, :test do
   gem "simplecov", require: false

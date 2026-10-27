@@ -1,0 +1,74 @@
+FROM node:24-bookworm-slim AS node
+
+# Ahead of the application's .ruby-version (4.0.1) until #191 upgrades it.
+FROM ruby:4.0.9-trixie
+
+ARG CLAUDE_CODE_VERSION=2.1.303
+
+ARG PNPM_VERSION=11.12.0
+ARG RUBYDEX_VERSION=0.2.7
+
+COPY --from=node /usr/local /usr/local
+
+# chromium backs the Cuprite system specs; sqlite3 is the application database.
+RUN apt-get update \
+  && apt-get install --no-install-recommends -y \
+    ca-certificates \
+    build-essential \
+    chromium \
+    curl \
+    gh \
+    git \
+    jq \
+    libsqlite3-dev \
+    libyaml-dev \
+    pkg-config \
+    procps \
+    sqlite3 \
+    tmux \
+  && find /var/lib/apt/lists -mindepth 1 -delete \
+  && gh --version \
+  && npm install --global "pnpm@${PNPM_VERSION}"
+
+RUN npm install --global "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
+
+RUN gem install rubydex --version "${RUBYDEX_VERSION}" --no-document
+
+# rtk (token-optimizing CLI proxy) from its pinned upstream release. The
+# checksums are pinned here rather than read from the release's own
+# checksums.txt, so a replaced release asset fails the build.
+ARG RTK_VERSION=0.44.2
+ARG RTK_SHA256_ARM64=5cd3f7fa2697faf9e5b77a10ce4e699006e02d4752d792f06550697eb4b8e8a9
+ARG RTK_SHA256_AMD64=d94cc2a3e57fa534892b5235a726e7eeb7523f205a5f8f48f853bfcae7be7e33
+RUN set -eux; \
+    case "$(dpkg --print-architecture)" in \
+      arm64) rtk_asset="rtk-aarch64-unknown-linux-gnu.tar.gz"; rtk_sha256="${RTK_SHA256_ARM64}" ;; \
+      amd64) rtk_asset="rtk-x86_64-unknown-linux-musl.tar.gz"; rtk_sha256="${RTK_SHA256_AMD64}" ;; \
+      *) echo "Unsupported architecture for rtk: $(dpkg --print-architecture)" >&2; exit 1 ;; \
+    esac; \
+    cd /tmp; \
+    curl -fsSL -o "${rtk_asset}" "https://github.com/rtk-ai/rtk/releases/download/v${RTK_VERSION}/${rtk_asset}"; \
+    echo "${rtk_sha256}  ${rtk_asset}" | sha256sum --check; \
+    tar -xzf "${rtk_asset}" rtk; \
+    install -m 0755 rtk /usr/local/bin/rtk; \
+    rm -f rtk "${rtk_asset}"; \
+    rtk --version
+
+COPY --from=lib session-common.sh /usr/local/lib/session-common.sh
+COPY --from=lib skills/mattpocock/engineering /opt/claude-skills/mattpocock/engineering
+COPY --from=lib skills/mattpocock/productivity /opt/claude-skills/mattpocock/productivity
+COPY claude-session /usr/local/bin/claude-session
+
+RUN chmod +x /usr/local/bin/claude-session
+
+# CLAUDE_CONFIG_DIR keeps .claude.json (onboarding, project trust) on the home
+# volume next to the rest of the Claude state instead of in the container layer.
+ENV BUNDLE_APP_CONFIG=/workspace/.bundle \
+    BUNDLE_PATH=/bundle \
+    BROWSER_PATH=/usr/bin/chromium \
+    CLAUDE_CONFIG_DIR=/root/.claude \
+    PATH=/usr/local/bundle/bin:$PATH
+
+WORKDIR /workspace
+
+ENTRYPOINT ["/usr/local/bin/claude-session"]

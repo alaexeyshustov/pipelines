@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+source /usr/local/lib/session-common.sh
+
+ticket="${1:-}"
+export CLAUDE_HOME="${CLAUDE_HOME:-/root/.claude}"
+
+printf 'Claude Code session is starting\n'
+
+install_image_skills() {
+  local category_dir skill_dir skill_name destination
+  for category_dir in /opt/claude-skills/mattpocock/*/; do
+    for skill_dir in "$category_dir"*/; do
+      [[ -f "${skill_dir}SKILL.md" ]] || continue
+      skill_name="$(basename "$skill_dir")"
+      destination="$CLAUDE_HOME/skills/$skill_name"
+      mkdir -p "$destination"
+      cp -R "$skill_dir." "$destination"
+    done
+  done
+}
+
+install_image_skills
+install_workspace_dependencies
+configure_rtk
+load_claude_auth
+exec_claude "$ticket"

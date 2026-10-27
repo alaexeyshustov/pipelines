@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+
+# Stub for `gh issue view <number> --json ...`. Issues are described by
+# STUB_GH_ISSUES as JSON: {"<number>": {"title": ..., "state": ..., "labels": [...]}}.
+
+require "json"
+
+abort "stubbed gh failure" if ENV["STUB_GH_FAILURE"] == "true"
+abort "Unexpected gh command: #{ARGV.join(" ")}" unless ARGV[0, 2] == %w[issue view]
+
+issues = JSON.parse(ENV.fetch("STUB_GH_ISSUES", "{}"))
+number = ARGV.fetch(2)
+issue = issues.fetch(number) { abort "GraphQL: Could not resolve to an issue with the number of #{number}." }
+
+puts JSON.generate(
+  number: Integer(number),
+  title: issue.fetch("title", "Stubbed issue"),
+  state: issue.fetch("state", "OPEN"),
+  labels: issue.fetch("labels", []).map { |name| { name: name } }
+)
