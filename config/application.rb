@@ -50,5 +50,8 @@ module ApplicationPipeline
 
     # Autoload app/pipeline and app/tools in addition to standard Rails paths.
     config.autoload_paths += %w[pipeline tools forms].map { |d| Rails.root.join("app", d).to_s }
+
+    # Vendored ViewPrimitives components: lib/view_primitives/ui/*.rb are UI::*, so this dir is its own root.
+    config.eager_load_paths << Rails.root.join("lib/view_primitives").to_s
   end
 end

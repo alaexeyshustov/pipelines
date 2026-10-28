@@ -1,0 +1,51 @@
+<div class="flex flex-col gap-6">
+  <%= render UI::BreadcrumbComponent.new(items: [ { label: "Orchestration", href: "#" }, { label: "Pipelines", href: "#" }, { label: "daily-digest" } ]) %>
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <h1 class="text-2xl font-semibold tracking-tight">daily-digest</h1>
+      <%= render UI::BadgeComponent.new("Active") %>
+      <%= render UI::BadgeComponent.new("Scheduled", variant: :outline) %>
+    </div>
+    <div class="flex gap-2">
+      <%= render UI::ButtonComponent.new("Edit", variant: :outline) %>
+      <%= render UI::ButtonComponent.new("Run now") %>
+      <%= render UI::DialogComponent.new(title: "Delete pipeline?", description: "This removes the pipeline and its run history.") do |d| %>
+        <% d.with_trigger { render UI::ButtonComponent.new("Delete", variant: :destructive) } %>
+        <% d.with_footer do %>
+          <%= render UI::ButtonComponent.new("Cancel", variant: :outline, data: { action: "click->dialog#close" }) %>
+          <%= render UI::ButtonComponent.new("Delete", variant: :destructive) %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <%= render UI::AlertComponent.new(variant: :destructive, title: "Last run failed", description: "Step 3 (summarise) timed out after 30s. 2 retries remaining.") %>
+
+  <div class="grid grid-cols-3 gap-4">
+    <% [["Runs this week", "42", 84], ["Success rate", "93%", 93], ["Budget used", "$12.40 / $20", 62]].each do |title, value, pct| %>
+      <%= render UI::CardComponent.new do %>
+        <%= render UI::CardHeaderComponent.new do %>
+          <%= render UI::CardDescriptionComponent.new(title) %>
+          <%= render UI::CardTitleComponent.new(value, class: "text-2xl") %>
+        <% end %>
+        <%= render UI::CardContentComponent.new do %>
+          <%= render UI::ProgressComponent.new(value: pct) %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <% overview = capture do %>
+    <%= render UI::CardComponent.new(class: "mt-2") do %>
+      <%= render UI::CardHeaderComponent.new do %>
+        <%= render UI::CardTitleComponent.new("Description") %>
+        <%= render UI::CardDescriptionComponent.new("Reads new application mails, extracts status changes and writes a digest.") %>
+      <% end %>
+    <% end %>
+  <% end %>
+  <%= render UI::TabsComponent.new(items: [
+    { title: "Overview", content: overview },
+    { title: "Steps", content: "" },
+    { title: "Runs", content: "" }
+  ]) %>
+</div>

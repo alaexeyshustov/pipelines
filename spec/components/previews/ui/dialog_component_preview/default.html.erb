@@ -1,0 +1,7 @@
+<%= render UI::DialogComponent.new(title: "Delete pipeline?", description: "This removes the pipeline and its run history.") do |d| %>
+  <% d.with_trigger { render UI::ButtonComponent.new("Open dialog", variant: :outline) } %>
+  <% d.with_footer do %>
+    <%= render UI::ButtonComponent.new("Cancel", variant: :outline, data: { action: "click->dialog#close" }) %>
+    <%= render UI::ButtonComponent.new("Delete", variant: :destructive) %>
+  <% end %>
+<% end %>

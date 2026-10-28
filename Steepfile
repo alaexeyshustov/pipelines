@@ -4,6 +4,7 @@ target :app do
   check "app/services"
   check "app/tools"
   check "lib"
+  ignore "lib/view_primitives"
 
   library "pathname"
   library "json"

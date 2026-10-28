@@ -1,0 +1,7 @@
+<div class="flex w-80 flex-col gap-3 text-sm">
+  <span>Above</span>
+  <%= render UI::SeparatorComponent.new %>
+  <div class="flex h-5 items-center gap-3">
+    <span>Left</span><%= render UI::SeparatorComponent.new(orientation: :vertical) %><span>Right</span>
+  </div>
+</div>

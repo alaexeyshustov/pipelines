@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Primitive preview</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= stylesheet_link_tag :app %>
+    <%= stylesheet_link_tag "tailwind" %>
+    <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
+  </head>
+  <body class="bg-background text-foreground antialiased">
+    <div data-preview-root class="inline-block min-w-[480px] max-w-[960px] p-8">
+      <%= yield %>
+    </div>
+  </body>
+</html>

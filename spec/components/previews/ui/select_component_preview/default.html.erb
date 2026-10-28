@@ -1,0 +1,4 @@
+<div class="flex flex-col gap-3">
+  <%= render UI::SelectComponent.new(options: %w[claude-opus-5-5 claude-sonnet-5-5 claude-haiku-5-5], selected: "claude-sonnet-5-5") %>
+  <%= render UI::SelectComponent.new(options: { "a" => "Provider A", "b" => "Provider B" }, include_blank: true, size: :sm) %>
+</div>

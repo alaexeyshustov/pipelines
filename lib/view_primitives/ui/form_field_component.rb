@@ -1,0 +1,64 @@
+# frozen_string_literal: true
+
+module UI
+  # Wraps a label + input + optional hint and error message into a consistent field layout.
+  #
+  # Usage:
+  #   <%= ui :form_field, label: "Email", error: @user.errors[:email].first do %>
+  #     <%= ui :input, type: "email", name: "user[email]", id: "user_email" %>
+  #   <% end %>
+  class FormFieldComponent < ApplicationComponent
+    WRAPPER = "group/field flex w-full flex-col gap-3"
+
+    def initialize(label: nil, hint: nil, error: nil, required: false, **html_attrs)
+      @label = label
+      @hint = hint
+      @error = error
+      @required = required
+      @extra_class = html_attrs.delete(:class)
+      @html_attrs = html_attrs
+    end
+
+    def call
+      content_tag(:div,
+        class: cn(WRAPPER, (@error.present? ? "data-[invalid=true]" : nil), @extra_class),
+        "data-slot": "field",
+        "data-invalid": @error.present?.to_s,
+        **@html_attrs) do
+        concat field_label if @label
+        concat content_tag(:div, content, class: "flex flex-col gap-1.5 leading-snug", "data-slot": "field-content")
+        concat hint_tag if @hint && @error.blank?
+        concat error_tag if @error.present?
+      end
+    end
+
+    private
+
+    def field_label
+      content_tag(:label,
+        label_text,
+        class: "flex items-center gap-2 text-sm leading-none font-medium select-none " \
+               "group-data-[disabled=true]/field:opacity-50",
+        "data-slot": "field-label")
+    end
+
+    def label_text
+      return @label unless @required
+
+      safe_join([@label, content_tag(:span, " *", class: "text-destructive")])
+    end
+
+    def hint_tag
+      content_tag(:p, @hint,
+        class: "text-sm leading-normal font-normal text-muted-foreground",
+        "data-slot": "field-description")
+    end
+
+    def error_tag
+      content_tag(:p, @error,
+        class: "text-sm font-normal text-destructive",
+        role: "alert",
+        "data-slot": "field-error")
+    end
+  end
+end

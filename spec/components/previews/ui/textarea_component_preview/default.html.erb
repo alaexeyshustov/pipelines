@@ -1,0 +1,4 @@
+<div class="flex w-96 flex-col gap-3">
+  <%= render UI::TextareaComponent.new(placeholder: "Describe what the agent should do…", rows: 3) %>
+  <%= render UI::TextareaComponent.new(rows: 2).with_content("Prefilled instructions") %>
+</div>
