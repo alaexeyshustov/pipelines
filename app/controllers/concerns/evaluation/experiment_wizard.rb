@@ -36,7 +36,7 @@ module Evaluation
     end
 
     def fork_prompt_record(based_on)
-      Evaluation::Prompt.create!(
+      Evaluation::PromptCreator.call(
         name: based_on.name,
         system_prompt: fork_prompt_params[:system_prompt] || based_on.system_prompt,
         user_prompt:   fork_prompt_params[:user_prompt]   || based_on.user_prompt,

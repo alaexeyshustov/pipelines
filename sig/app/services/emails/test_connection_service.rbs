@@ -1,0 +1,13 @@
+module Emails
+  class TestConnectionService
+    @connector: EmailConnector
+
+    def self.call: (connector: EmailConnector) -> Emails::ConnectionTester::outcome
+    def initialize: (connector: EmailConnector) -> void
+    def call: () -> Emails::ConnectionTester::outcome
+
+    private
+
+    def record_outcome: (Emails::ConnectionTester::outcome outcome) -> void
+  end
+end

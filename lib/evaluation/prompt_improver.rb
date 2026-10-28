@@ -19,7 +19,7 @@ module Evaluation
 
       improved = run_agent(input)
 
-      Evaluation::Prompt.create!(
+      Evaluation::PromptCreator.call(
         name: current_prompt.name,
         system_prompt: improved[:system_prompt],
         user_prompt: improved[:user_prompt].presence || current_prompt.user_prompt,

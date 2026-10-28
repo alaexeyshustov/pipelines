@@ -25,6 +25,14 @@ RSpec.describe "evaluation:migrate_prompts rake task" do # rubocop:disable RSpec
       .to change(Evaluation::Prompt, :count).by(agent_classes.size)
   end
 
+  it "enqueues PromptAutoEvalJob once per newly created prompt, and not on re-run" do
+    Rake::Task[task_name].invoke
+    Rake::Task[task_name].reenable
+    Rake::Task[task_name].invoke
+
+    expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).exactly(agent_classes.size).times
+  end
+
   it "creates prompts named after each agent class" do
     Rake::Task[task_name].invoke
     created_names = Evaluation::Prompt.pluck(:name)

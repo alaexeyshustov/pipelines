@@ -1,0 +1,88 @@
+---
+violations:
+- id: 7d2c6613b3204490d75d2632
+  rule: dependencies.allow
+  path: app/forms/base_form.rb
+  line: 5
+  message: application may not depend on interface
+- id: 90a780735310c00c3a357813
+  rule: dependencies.no_cycles
+  path: app/forms/evaluation/wizard/step1_form.rb
+  line: 10
+  message: 'component dependency cycle among 4 components: application, domain, interface,
+    tools'
+- id: c2fb34bb16213a04960832f6
+  rule: dependencies.allow
+  path: app/models/evaluation/experiment.rb
+  line: 51
+  message: domain may not depend on application
+- id: 91bf2fbd35c005552e682e52
+  rule: dependencies.allow
+  path: app/models/orchestration/pipeline.rb
+  line: 19
+  message: domain may not depend on application
+- id: dcca96e7cf734271ad14a304
+  rule: dependencies.allow
+  path: app/tools/emails/classify_tool.rb
+  line: 29
+  message: tools may not depend on application
+- id: 69b171194de060799965f1a4
+  rule: naming.forbidden
+  path: lib/emails.rb
+  line: 27
+  message: 'Emails must not define #get_message'
+- id: 0de38e698f8c1ce18110f5bc
+  rule: naming.forbidden
+  path: lib/emails.rb
+  line: 31
+  message: 'Emails must not define #get_labels'
+- id: 575e13359ecae10d5b2604a6
+  rule: naming.forbidden
+  path: lib/emails.rb
+  line: 35
+  message: 'Emails must not define #get_unread_count'
+- id: 6be165bc346cf26fb6729b19
+  rule: naming.forbidden
+  path: lib/emails/adapters/base_adapter.rb
+  line: 23
+  message: 'Emails::Adapters::BaseAdapter must not define #get_message'
+- id: a6df5e0db7aa500b1bc6e160
+  rule: naming.forbidden
+  path: lib/emails/adapters/base_adapter.rb
+  line: 27
+  message: 'Emails::Adapters::BaseAdapter must not define #get_labels'
+- id: 51bbd7a9e5a93d75b24972c8
+  rule: naming.forbidden
+  path: lib/emails/adapters/base_adapter.rb
+  line: 31
+  message: 'Emails::Adapters::BaseAdapter must not define #get_unread_count'
+- id: 65b1c5f104ead0d19981b8ad
+  rule: naming.forbidden
+  path: lib/emails/adapters/gmail_adapter.rb
+  line: 56
+  message: 'Emails::Adapters::GmailAdapter must not define #get_message'
+- id: 688448f0da10f032cdcbcfbc
+  rule: naming.forbidden
+  path: lib/emails/adapters/gmail_adapter.rb
+  line: 63
+  message: 'Emails::Adapters::GmailAdapter must not define #get_unread_count'
+- id: 5201c641f696edc4f5e1ea5d
+  rule: naming.forbidden
+  path: lib/emails/adapters/gmail_adapter.rb
+  line: 68
+  message: 'Emails::Adapters::GmailAdapter must not define #get_labels'
+- id: 34d98096129525ccde72858e
+  rule: naming.forbidden
+  path: lib/emails/adapters/yahoo_adapter.rb
+  line: 53
+  message: 'Emails::Adapters::YahooAdapter must not define #get_message'
+- id: 023d534836a6bdf93d6f905e
+  rule: naming.forbidden
+  path: lib/emails/adapters/yahoo_adapter.rb
+  line: 67
+  message: 'Emails::Adapters::YahooAdapter must not define #get_labels'
+- id: b72e8fbbccf2f28165a26e7a
+  rule: naming.forbidden
+  path: lib/emails/adapters/yahoo_adapter.rb
+  line: 76
+  message: 'Emails::Adapters::YahooAdapter must not define #get_unread_count'
