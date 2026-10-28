@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../stylesheets/view_primitives";
 
 /* Tailwind v4 puts all utilities inside @layer, which the CSS cascade spec
    makes losers against any unlayered rule — including Bulma's `svg { height: auto; width: auto; }`.

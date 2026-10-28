@@ -157,6 +157,10 @@ gems:
   version: '0'
   source:
     type: stdlib
+- name: dbm
+  version: '0'
+  source:
+    type: stdlib
 - name: delegate
   version: '0'
   source:
@@ -366,13 +370,13 @@ gems:
   source:
     type: rubygems
 - name: pstore
-  version: '0.2'
+  version: '0'
   source:
-    type: git
-    name: ruby/gem_rbs_collection
-    revision: 9e17daa08b1710667699a208981cffd21dbf15f6
-    remote: https://github.com/ruby/gem_rbs_collection.git
-    repo_dir: gems
+    type: stdlib
+- name: psych
+  version: '0'
+  source:
+    type: stdlib
 - name: racc
   version: '1.8'
   source:

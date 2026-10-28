@@ -1,4 +1,4 @@
-<%= render UI::TableComponent.new(collection: @metrics, empty_message: "No metrics found.") do |table| %>
+<%= render UI::LegacyTableComponent.new(collection: @metrics, empty_message: "No metrics found.") do |table| %>
   <% table.with_columns([
     { key: "name",        label: "Name",        variant: :mono },
     { key: "description", label: "Description", cell: ->(m) { m.description } },

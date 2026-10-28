@@ -1,0 +1,7 @@
+/* ViewPrimitives design system entry point. */
+@import "./view_primitives/tokens.css";
+@import "./view_primitives/utilities.css";
+@import "./view_primitives/themes/default.css";
+
+/* Optional themes — install with: rails g view_primitives:theme rose */
+/* @import "./view_primitives/themes/rose.css"; */

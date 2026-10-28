@@ -1,0 +1,18 @@
+module UI
+  class LegacyTabsComponent < ViewComponent::Base
+    @extra_controllers: Array[String] | String
+
+    def initialize: (?extra_controllers: Array[String] | String) -> void
+    def controller_value: () -> String
+  end
+
+  class LegacyTabsComponent::TabComponent < ViewComponent::Base
+    def initialize: (id: String, label: String, controls: String, ?active: bool) -> void
+    def call: () -> String
+  end
+
+  class LegacyTabsComponent::PanelComponent < ViewComponent::Base
+    def initialize: (id: String, tab_id: String, ?active: bool) -> void
+    def call: () -> String
+  end
+end

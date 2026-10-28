@@ -18,7 +18,7 @@
 
 <div class="mt-10">
   <h2 class="text-lg font-semibold text-gray-900 mb-4">All Experiments</h2>
-  <%= render UI::TableComponent.new(collection: @experiments, empty_message: "No experiments yet.") do |table| %>
+  <%= render UI::LegacyTableComponent.new(collection: @experiments, empty_message: "No experiments yet.") do |table| %>
     <% table.with_columns([
       { key: "name",       label: "Name",    cell: ->(e) { e.name } },
       { key: "status",     label: "Status",  cell: ->(e) { e.status.to_s } },

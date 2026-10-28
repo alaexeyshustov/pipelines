@@ -2,7 +2,7 @@
   <% header.with_action(type: :link, label: "New Pipeline", url: new_orchestration_pipeline_path) %>
 <% end %>
 
-<%= render UI::TableComponent.new(collection: @pipelines, empty_message: "No pipelines found.") do |table| %>
+<%= render UI::LegacyTableComponent.new(collection: @pipelines, empty_message: "No pipelines found.") do |table| %>
   <% table.with_columns([
     { key: "name",        label: "Name",        cell: ->(pipeline) { link_to(pipeline.name, orchestration_pipeline_path(pipeline), class: "hover:text-indigo-600 font-medium text-gray-900") } },
     { key: "description", label: "Description", variant: :muted, cell: ->(pipeline) { pipeline.description || "—" } },

@@ -19,7 +19,7 @@
   </head>
 
   <body class="bg-gray-50 text-gray-900 antialiased flex h-screen overflow-hidden">
-    <%= render UI::SidebarComponent.new(current_path: request.path) %>
+    <%= render UI::LegacySidebarComponent.new(current_path: request.path) %>
     <main class="flex-1 overflow-y-auto px-8 py-8">
       <%= render UI::FlashComponent.new(flash: flash) %>
       <%= yield %>

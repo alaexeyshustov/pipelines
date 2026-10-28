@@ -21,8 +21,8 @@ module Orchestration
     def all_validator_errors: () -> Array[PipelineValidator::Issue]
     def validity_badge_classes: () -> String
     def validity_badge_label: () -> String
-    def detach_buttons: () -> Array[UI::DialogComponent]
-    def remove_button: () -> UI::DialogComponent?
+    def detach_buttons: () -> Array[UI::LegacyDialogComponent]
+    def remove_button: () -> UI::LegacyDialogComponent?
 
     private
 

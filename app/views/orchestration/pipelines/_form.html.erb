@@ -1,4 +1,4 @@
-<%= render UI::TabsComponent.new(extra_controllers: ["schema-builder"]) do |t| %>
+<%= render UI::LegacyTabsComponent.new(extra_controllers: ["schema-builder"]) do |t| %>
   <% t.with_tab(id: "pipeline-tab-general", label: "General", controls: "pipeline-panel-general", active: true) %>
   <% t.with_tab(id: "pipeline-tab-schema", label: "Schema Builder", controls: "pipeline-panel-schema") %>
 

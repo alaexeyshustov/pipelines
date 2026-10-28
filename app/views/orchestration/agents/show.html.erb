@@ -23,7 +23,7 @@
 <div class="mt-8">
   <h2 class="text-lg font-semibold text-gray-900 mb-4">Using Actions</h2>
 
-  <%= render UI::TableComponent.new(collection: @using_actions, empty_message: "No actions use this agent.") do |table| %>
+  <%= render UI::LegacyTableComponent.new(collection: @using_actions, empty_message: "No actions use this agent.") do |table| %>
     <% table.with_columns([
       { key: "name",      label: "Action" },
       { key: "pipelines", label: "Pipelines", cell: ->(action) {

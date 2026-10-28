@@ -1,6 +1,6 @@
 <%= render UI::PageHeaderComponent.new(title: "Pipeline Runs") %>
 
-<%= render UI::TableComponent.new(collection: @runs, empty_message: "No runs yet.", pagy: @pagy) do |table| %>
+<%= render UI::LegacyTableComponent.new(collection: @runs, empty_message: "No runs yet.", pagy: @pagy) do |table| %>
   <% table.with_columns([
     { key: "pipeline",     label: "Pipeline",     style: :compact, cell: ->(run) { run.pipeline.name } },
     { key: "status",       label: "Status",       style: :compact, badge: Orchestration::RunStatusBadgeComponent },

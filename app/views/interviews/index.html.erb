@@ -8,7 +8,7 @@
     ) %>
 
 <div data-controller="batch">
-  <%= render UI::TableComponent.new(
+  <%= render UI::LegacyTableComponent.new(
         collection: @interviews,
         selectable: true,
         pagy: @pagy,

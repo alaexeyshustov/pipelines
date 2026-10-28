@@ -2,8 +2,8 @@ module Orchestration
   class StepComponent < ViewComponent::Base
     with_collection_parameter :step
 
-    renders_many :detach_buttons, UI::DialogComponent
-    renders_one :remove_button, UI::DialogComponent
+    renders_many :detach_buttons, UI::LegacyDialogComponent
+    renders_one :remove_button, UI::LegacyDialogComponent
 
     def initialize(step:, step_counter:, step_iteration:, pipeline:, actions:,
                    upstream_schemas_per_step: {}, validator_results_per_step: {})

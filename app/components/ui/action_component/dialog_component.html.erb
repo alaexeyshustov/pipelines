@@ -1,9 +1,9 @@
-<div data-controller="dialog">
-  <button type="button" data-action="dialog#open" class="<%= trigger_classes %>">
+<div data-controller="legacy-dialog">
+  <button type="button" data-action="legacy-dialog#open" class="<%= trigger_classes %>">
     <%= @label %>
   </button>
 
-  <dialog data-dialog-target="dialog" class="<%= dialog_css %>">
+  <dialog data-legacy-dialog-target="dialog" class="<%= dialog_css %>">
     <h2 class="dialog-title text-base font-semibold text-gray-900 mb-4"><%= @dialog_title %></h2>
 
     <% if @method == :post %>
@@ -12,7 +12,7 @@
           <div class="mb-4"><%= render_body(f) %></div>
         <% end %>
         <div class="flex justify-end gap-3">
-          <button type="button" data-action="dialog#close" class="<%= cancel_classes %>">
+          <button type="button" data-action="legacy-dialog#close" class="<%= cancel_classes %>">
             Cancel
           </button>
           <%= f.button @confirm_label, type: :submit, class: confirm_classes %>
@@ -23,7 +23,7 @@
         <div class="mb-4"><%= render_body %></div>
       <% end %>
       <div class="flex justify-end gap-3">
-        <button type="button" data-action="dialog#close" class="<%= cancel_classes %>">
+        <button type="button" data-action="legacy-dialog#close" class="<%= cancel_classes %>">
           Cancel
         </button>
         <%= button_to @confirm_label, @url, method: @method, class: confirm_classes %>

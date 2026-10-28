@@ -103,3 +103,7 @@ RSpec/MultipleMemoizedHelpers:
 Style/FrozenStringLiteralComment:
   Enabled: true
   EnforcedStyle: never
+
+App/ComponentMustHavePreview:
+  Exclude:
+    - 'app/components/application_component.rb'

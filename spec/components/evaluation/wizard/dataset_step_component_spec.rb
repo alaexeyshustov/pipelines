@@ -30,7 +30,7 @@ RSpec.describe Evaluation::Wizard::DatasetStepComponent, type: :component do
   end
 
   it "renders a Resync button for each dataset" do
-    resync_buttons = rendered.css("button[data-action='dialog#open']")
+    resync_buttons = rendered.css("button[data-action='legacy-dialog#open']")
     expect(resync_buttons.size).to eq(datasets.size)
   end
 

@@ -1,0 +1,33 @@
+module UI
+  class LegacySidebarComponent < ViewComponent::Base
+    class NavItem
+      attr_reader label: String
+      attr_reader path: String
+
+      def initialize: (label: String, path: String) -> void
+    end
+
+    class NavGroup
+      attr_reader label: String
+      attr_reader items: Array[NavItem]
+
+      def initialize: (label: String, items: Array[NavItem]) -> void
+    end
+
+    @current_path: String
+
+    def initialize: (current_path: String) -> void
+    def nav_groups: () -> Array[NavGroup]
+    def group_open?: (NavGroup group) -> bool
+    def active?: (String path) -> bool
+    def root_path: () -> String
+
+    private
+
+    def llm_nav_group: () -> NavGroup
+    def mails_nav_group: () -> NavGroup
+    def orchestration_nav_group: () -> NavGroup
+    def settings_nav_group: () -> NavGroup
+    def current_path_matches?: (String path) -> bool
+  end
+end
