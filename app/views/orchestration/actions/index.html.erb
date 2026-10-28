@@ -2,7 +2,7 @@
   <% header.with_action(type: :link, label: "New Action", url: new_orchestration_action_path) %>
 <% end %>
 
-<%= render UI::TableComponent.new(collection: @actions, empty_message: "No actions found.") do |table| %>
+<%= render UI::LegacyTableComponent.new(collection: @actions, empty_message: "No actions found.") do |table| %>
   <% table.with_columns([
     { key: "name",           label: "Name" },
     { key: "kind", label: "Kind", cell: ->(action) {

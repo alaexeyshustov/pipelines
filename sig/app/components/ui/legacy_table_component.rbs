@@ -1,0 +1,123 @@
+module UI
+  class LegacyTableComponent < ViewComponent::Base
+    interface _Collection
+      def each: () { (top) -> void } -> void
+      def empty?: () -> bool
+    end
+
+    type cell = { ?style: Symbol, ?variant: Symbol?, ?classes: String? }
+    type sort_param = { ?sort_url: String, ?sort_active: bool, ?sort_direction: String }
+    type batch_action = { ?type: Symbol, ?label: String?, ?url: String?, ?action: String?, ?variant: Symbol?, ?confirm: String?, ?dialog_title: String?, ?require_selection: bool }
+    type column = { key: String, ?label: String?, ?cell: (^(ApplicationRecord) -> String)?, ?badge_component: singleton(ViewComponent::Base)?, ?component: singleton(ViewComponent::Base)?, ?props: (^(ApplicationRecord) -> Hash[Symbol, top])? } & cell & sort_param
+    type action_columns = { ?style: Symbol, ?actions: (^(ApplicationRecord) -> Array[action_column])? }
+    type action_column = { label: String, url: String, ?variant: Symbol, ?method: Symbol, ?confirm: String }
+
+    @collection: _Collection
+    @empty_message: String
+    @selectable: bool
+    @pagy: Pagy?
+    @filters: ApplicationController::Filters?
+
+    def initialize: (collection: _Collection, ?empty_message: String, ?selectable: bool, ?pagy: Pagy?, ?filters: ApplicationController::Filters?) -> void
+    def before_render: () -> void
+    def with_batch_actions: (Array[batch_action] action_defs) -> void
+    def with_columns: (Array[column] column_defs) -> void
+    def empty?: () -> bool
+    def selectable?: () -> bool
+    def total_columns: () -> Integer
+
+    def with_column: (column) ?{ () -> void } -> ColumnComponent
+    def columns: () -> Array[ColumnComponent]
+
+    def with_action_column: (action_columns) -> ActionColumnComponent
+    def action_column: () -> ActionColumnComponent?
+    def action_column?: () -> bool
+
+    def per_page_options: () -> Array[Integer]?
+    def per_page_link_class: (Integer n) -> String
+    def per_page_url_for: (Integer n) -> String
+
+    def with_pagination: (pagy: Pagy) -> LegacyPaginationComponent
+    def pagination: () -> String?
+    def pagination?: () -> bool
+
+    def with_batch_action: (batch_action) ?{ () -> void } -> BatchActionComponent
+    def batch_actions: () -> Array[BatchActionSlot]
+    def batch_actions?: () -> bool
+
+    private
+
+    def sort_params_for: (String? key) -> sort_param
+
+    class ColumnComponent < ViewComponent::Base
+      HEADER_CLASSES: Hash[Symbol, String]
+      PADDING_CLASSES: Hash[Symbol, String]
+
+      def initialize: (column) -> void
+      def call: () -> String
+      def render_cell: (ApplicationRecord record) -> String
+
+      private
+
+      def cell_value: (ApplicationRecord record) -> String
+      def badge_cell_value: (ApplicationRecord record) -> String
+      def component_cell_value: (ApplicationRecord record) -> String
+      def cell_css_classes: () -> String
+      def resolved_classes: () -> String
+      def derive_label: (String? key) -> String?
+      def sort_link_classes: () -> String
+      def sort_indicator: () -> String?
+    end
+
+    class CellComponent < ViewComponent::Base
+      PADDING_CLASSES: Hash[Symbol, String]
+      VARIANT_CLASSES: Hash[Symbol, String]
+
+      def initialize: (cell) -> void
+      def call: () -> String
+
+      private
+
+      def resolved_classes: () -> String
+    end
+
+    class RowComponent < ViewComponent::Base
+      def call: () -> String
+    end
+
+    class ActionCellComponent < ViewComponent::Base
+      PADDING_CLASSES: Hash[Symbol, String]
+
+      def initialize: (?style: Symbol) -> void
+      def resolved_classes: () -> String
+
+      def with_action: (action_column) -> ActionCellComponent::ActionSlot
+      def actions: () -> Array[ActionCellComponent::ActionSlot]
+
+      class ActionSlot < ViewComponent::Base
+        VARIANT_CLASSES: Hash[Symbol, String]
+
+        def initialize: (action_column) -> void
+        def call: () -> String
+
+        private
+
+        def link_classes: () -> String
+        def button_classes: () -> String
+        def non_get?: () -> bool
+      end
+    end
+
+    class BatchActionSlot < ViewComponent::Base
+      def call: () -> String
+    end
+
+    class ActionColumnComponent < ViewComponent::Base
+      PADDING_CLASSES: Hash[Symbol, String]
+
+      def initialize: (action_columns) -> void
+      def call: () -> String
+      def render_cell: (ApplicationRecord record) -> String
+    end
+  end
+end

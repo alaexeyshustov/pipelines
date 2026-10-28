@@ -1,0 +1,6 @@
+<div class="flex w-80 flex-col gap-3">
+  <%= render UI::InputComponent.new(placeholder: "Pipeline name") %>
+  <%= render UI::InputComponent.new(value: "daily-digest") %>
+  <%= render UI::InputComponent.new(type: "email", placeholder: "email@example.com", disabled: true) %>
+  <%= render UI::InputComponent.new(value: "bad value", "aria-invalid": "true") %>
+</div>

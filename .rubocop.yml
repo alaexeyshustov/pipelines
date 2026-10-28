@@ -11,6 +11,7 @@ AllCops:
   NewCops: enable
   Exclude:
     - ".gem_rbs_collection/**/*"
+    - "lib/view_primitives/**/*"
 
 Lint:
  Enabled: true
@@ -103,3 +104,7 @@ RSpec/MultipleMemoizedHelpers:
 Style/FrozenStringLiteralComment:
   Enabled: true
   EnforcedStyle: never
+
+App/ComponentMustHavePreview:
+  Exclude:
+    - 'app/components/application_component.rb'

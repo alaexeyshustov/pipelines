@@ -1,0 +1,9 @@
+module UI
+  class LegacyPaginationComponent < ViewComponent::Base
+    @pagy: Pagy
+
+    def initialize: (pagy: Pagy) -> void
+    def render?: () -> bool
+    def call: () -> ActiveSupport::SafeBuffer
+  end
+end

@@ -11,7 +11,7 @@
     </a>
   </div>
 
-  <%= render UI::TableComponent.new(collection: @prompts, empty_message: "No prompts found.") do |table| %>
+  <%= render UI::LegacyTableComponent.new(collection: @prompts, empty_message: "No prompts found.") do |table| %>
     <% table.with_columns([
       { label: nil,
         cell: ->(prompt) { tag.input(type: :checkbox, value: prompt.id,

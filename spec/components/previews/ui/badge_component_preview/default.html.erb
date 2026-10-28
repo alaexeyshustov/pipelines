@@ -1,0 +1,5 @@
+<div class="flex flex-wrap items-center gap-3">
+  <% %i[default secondary destructive outline ghost link].each do |v| %>
+    <%= render UI::BadgeComponent.new(v.to_s.capitalize, variant: v) %>
+  <% end %>
+</div>

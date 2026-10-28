@@ -1,0 +1,4 @@
+<div class="flex flex-col gap-4">
+  <%= render UI::AlertComponent.new(title: "Heads up", description: "Pipeline run #42 finished with warnings.") %>
+  <%= render UI::AlertComponent.new(variant: :destructive, title: "Run failed", description: "Agent timed out after 30s.") %>
+</div>

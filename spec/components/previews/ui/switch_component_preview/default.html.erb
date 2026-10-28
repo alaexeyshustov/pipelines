@@ -1,0 +1,5 @@
+<div class="flex flex-col gap-3">
+  <%= render UI::SwitchComponent.new(label: "Enabled", name: "enabled", checked: true) %>
+  <%= render UI::SwitchComponent.new(label: "Paused", name: "paused") %>
+  <%= render UI::SwitchComponent.new(label: "Small", name: "small", size: :sm, checked: true) %>
+</div>

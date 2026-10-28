@@ -81,3 +81,7 @@ group :test do
   gem "capybara", "~> 3.40"
   gem "cuprite", "~> 0.17"
 end
+
+gem "view_primitives", "= 0.2.4"
+
+gem "tailwind_merge", "~> 1.5"

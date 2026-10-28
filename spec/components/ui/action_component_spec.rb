@@ -189,11 +189,11 @@ RSpec.describe UI::ActionComponent, type: :component do
     end
 
     it "wraps content in a Stimulus dialog controller" do
-      expect(rendered.css("[data-controller='dialog']")).to be_present
+      expect(rendered.css("[data-controller='legacy-dialog']")).to be_present
     end
 
     it "renders a trigger button that opens the dialog" do
-      btn = rendered.css("button[data-action='dialog#open']").first
+      btn = rendered.css("button[data-action='legacy-dialog#open']").first
       expect(btn).to be_present
       expect(btn.text.strip).to eq("Delete")
     end
@@ -205,7 +205,7 @@ RSpec.describe UI::ActionComponent, type: :component do
     end
 
     it "renders a cancel button that closes the dialog" do
-      cancel = rendered.css("button[data-action='dialog#close']").first
+      cancel = rendered.css("button[data-action='legacy-dialog#close']").first
       expect(cancel).to be_present
       expect(cancel.text.strip).to eq("Cancel")
     end
@@ -216,7 +216,7 @@ RSpec.describe UI::ActionComponent, type: :component do
     end
 
     it "applies danger variant styling to the trigger button" do
-      btn = rendered.css("button[data-action='dialog#open']").first
+      btn = rendered.css("button[data-action='legacy-dialog#open']").first
       expect(btn["class"]).to include("text-red-600")
       expect(btn["class"]).to include("border-red-200")
     end

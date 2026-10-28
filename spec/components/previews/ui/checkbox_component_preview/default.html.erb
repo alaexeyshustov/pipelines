@@ -1,0 +1,5 @@
+<div class="flex flex-col gap-3">
+  <%= render UI::CheckboxComponent.new(label: "Run on schedule", name: "schedule", checked: true) %>
+  <%= render UI::CheckboxComponent.new(label: "Notify on failure", name: "notify") %>
+  <%= render UI::CheckboxComponent.new(label: "Disabled", name: "disabled", disabled: true) %>
+</div>

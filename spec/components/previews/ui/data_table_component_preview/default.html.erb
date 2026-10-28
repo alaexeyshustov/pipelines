@@ -1,0 +1,11 @@
+<%= render UI::DataTableComponent.new(
+  columns: [ { key: :name, label: "Name", sortable: true }, { key: :provider, label: "Provider", sortable: true }, { key: :context, label: "Context", sortable: true } ],
+  rows: [
+    { name: "claude-opus-5-5", provider: "anthropic", context: "1,000,000" },
+    { name: "claude-sonnet-5-5", provider: "anthropic", context: "1,000,000" },
+    { name: "claude-haiku-5-5", provider: "anthropic", context: "500,000" },
+    { name: "gpt-5", provider: "openai", context: "400,000" },
+    { name: "gemini-3-pro", provider: "google", context: "2,000,000" }
+  ],
+  per_page: 3
+) %>

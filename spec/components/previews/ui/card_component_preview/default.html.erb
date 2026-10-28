@@ -1,0 +1,13 @@
+<%= render UI::CardComponent.new(class: "w-96") do %>
+  <%= render UI::CardHeaderComponent.new do %>
+    <%= render UI::CardTitleComponent.new("Daily digest") %>
+    <%= render UI::CardDescriptionComponent.new("Summarises new application mails every morning.") %>
+  <% end %>
+  <%= render UI::CardContentComponent.new do %>
+    <p class="text-sm">3 steps · last run 12 minutes ago</p>
+  <% end %>
+  <%= render UI::CardFooterComponent.new(class: "gap-2") do %>
+    <%= render UI::ButtonComponent.new("Run now") %>
+    <%= render UI::ButtonComponent.new("Edit", variant: :outline) %>
+  <% end %>
+<% end %>

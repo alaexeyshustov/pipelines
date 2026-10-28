@@ -1,15 +1,9 @@
 module UI
   class DialogComponentPreview < ViewComponent::Preview
-    def danger
-      render(UI::DialogComponent.new(label: "Delete", dialog_title: "Delete this record?", variant: :danger))
-    end
+    layout "primitive_preview"
 
-    def neutral
-      render(UI::DialogComponent.new(label: "Archive", dialog_title: "Archive this record?", variant: :neutral))
-    end
-
-    def primary
-      render(UI::DialogComponent.new(label: "Confirm", dialog_title: "Confirm action?", variant: :primary))
+    def default
+      render_with_template(template: "ui/dialog_component_preview/default")
     end
   end
 end

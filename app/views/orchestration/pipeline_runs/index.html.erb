@@ -7,7 +7,7 @@
   <p class="mb-2 text-xs text-gray-500"><%= @pagy.count %> total</p>
 <% end %>
 
-<%= render UI::TableComponent.new(collection: @runs, empty_message: "No runs yet.", pagy: @pagy) do |table| %>
+<%= render UI::LegacyTableComponent.new(collection: @runs, empty_message: "No runs yet.", pagy: @pagy) do |table| %>
   <% table.with_columns([
     { key: "status",       label: "Status",       style: :compact, badge: Orchestration::RunStatusBadgeComponent },
     { key: "triggered_by", label: "Triggered By", style: :compact, variant: :subtle, cell: ->(run) { run.triggered_by || "—" } },

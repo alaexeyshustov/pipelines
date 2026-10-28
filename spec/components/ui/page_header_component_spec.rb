@@ -88,7 +88,7 @@ RSpec.describe UI::PageHeaderComponent, type: :component do
     end
 
     it "renders a dialog trigger button in the header" do
-      expect(rendered.css("button[data-action='dialog#open']")).to be_present
+      expect(rendered.css("button[data-action='legacy-dialog#open']")).to be_present
     end
 
     it "renders the confirmation dialog" do

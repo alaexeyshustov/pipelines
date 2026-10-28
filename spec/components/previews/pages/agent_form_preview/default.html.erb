@@ -1,0 +1,27 @@
+<div class="mx-auto flex max-w-2xl flex-col gap-6">
+  <%= render UI::BreadcrumbComponent.new(items: [ { label: "Orchestration", href: "#" }, { label: "Agents", href: "#" }, { label: "New" } ]) %>
+  <%= render UI::CardComponent.new do %>
+    <%= render UI::CardHeaderComponent.new do %>
+      <%= render UI::CardTitleComponent.new("New agent") %>
+      <%= render UI::CardDescriptionComponent.new("Configure the model and instructions for this agent.") %>
+    <% end %>
+    <%= render UI::CardContentComponent.new(class: "flex flex-col gap-5") do %>
+      <%= render UI::FormFieldComponent.new(label: "Name", required: true, hint: "Lowercase, no spaces.") do %>
+        <%= render UI::InputComponent.new(value: "mail-summariser") %>
+      <% end %>
+      <%= render UI::FormFieldComponent.new(label: "Model") do %>
+        <%= render UI::SelectComponent.new(options: %w[claude-opus-5-5 claude-sonnet-5-5 claude-haiku-5-5], selected: "claude-sonnet-5-5", class: "w-full") %>
+      <% end %>
+      <%= render UI::FormFieldComponent.new(label: "Instructions", error: "Instructions can't be blank.") do %>
+        <%= render UI::TextareaComponent.new(rows: 4, "aria-invalid": "true", placeholder: "Tell the agent what to do…") %>
+      <% end %>
+      <%= render UI::SeparatorComponent.new %>
+      <%= render UI::SwitchComponent.new(label: "Enabled", name: "enabled", checked: true) %>
+      <%= render UI::CheckboxComponent.new(label: "Allow tool calls", name: "tools", checked: true) %>
+    <% end %>
+    <%= render UI::CardFooterComponent.new(class: "justify-end gap-2") do %>
+      <%= render UI::ButtonComponent.new("Cancel", variant: :outline) %>
+      <%= render UI::ButtonComponent.new("Create agent") %>
+    <% end %>
+  <% end %>
+</div>

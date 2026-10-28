@@ -1,0 +1,8 @@
+<div class="flex w-96 flex-col gap-6">
+  <%= render UI::FormFieldComponent.new(label: "Name", hint: "Lowercase, no spaces.", required: true) do %>
+    <%= render UI::InputComponent.new(value: "daily-digest") %>
+  <% end %>
+  <%= render UI::FormFieldComponent.new(label: "Schedule", error: "Cron expression is invalid.") do %>
+    <%= render UI::InputComponent.new(value: "* * * *", "aria-invalid": "true") %>
+  <% end %>
+</div>

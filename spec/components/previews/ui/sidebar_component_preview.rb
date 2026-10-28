@@ -1,15 +1,9 @@
 module UI
   class SidebarComponentPreview < ViewComponent::Preview
+    layout "primitive_preview"
+
     def default
-      render(UI::SidebarComponent.new(current_path: "/"))
-    end
-
-    def pipelines_active
-      render(UI::SidebarComponent.new(current_path: "/orchestration/pipelines"))
-    end
-
-    def evaluation_active
-      render(UI::SidebarComponent.new(current_path: "/evaluation"))
+      render_with_template(template: "ui/sidebar_component_preview/default")
     end
   end
 end

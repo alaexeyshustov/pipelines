@@ -1,0 +1,13 @@
+<div class="relative h-[420px] w-72 overflow-hidden rounded-lg border border-border">
+  <%= render UI::SidebarComponent.new(brand: "Pipelines", class: "!absolute") do |s| %>
+    <% s.with_group(label: "Orchestration") do |g| %>
+      <% g.with_item(label: "Pipelines", href: "#", icon: :home, active: true) %>
+      <% g.with_item(label: "Agents", href: "#") %>
+      <% g.with_item(label: "Actions", href: "#") %>
+    <% end %>
+    <% s.with_group(label: "Data") do |g| %>
+      <% g.with_item(label: "Models", href: "#") %>
+      <% g.with_item(label: "Settings", href: "#", icon: :settings) %>
+    <% end %>
+  <% end %>
+</div>

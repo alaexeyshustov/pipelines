@@ -1,0 +1,14 @@
+<div class="flex flex-col gap-6">
+  <div class="flex flex-wrap items-center gap-3">
+    <% %i[default secondary outline ghost link destructive].each do |v| %>
+      <%= render UI::ButtonComponent.new(v.to_s.capitalize, variant: v) %>
+    <% end %>
+  </div>
+  <div class="flex flex-wrap items-center gap-3">
+    <% %i[xs sm default lg].each do |s| %>
+      <%= render UI::ButtonComponent.new("Size #{s}", size: s) %>
+    <% end %>
+    <%= render UI::ButtonComponent.new("Disabled", disabled: true) %>
+    <%= render UI::ButtonComponent.new("As link", href: "#", variant: :outline) %>
+  </div>
+</div>

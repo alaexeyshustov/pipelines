@@ -1,0 +1,47 @@
+<% models = [
+  ["claude-opus-5-5", "anthropic", "1,000,000", "$15.00", "$75.00", "text, image"],
+  ["claude-sonnet-5-5", "anthropic", "1,000,000", "$3.00", "$15.00", "text, image"],
+  ["claude-haiku-5-5", "anthropic", "500,000", "$0.80", "$4.00", "text"],
+  ["gpt-5", "openai", "400,000", "$1.25", "$10.00", "text, image, audio"],
+  ["gemini-3-pro", "google", "2,000,000", "$2.00", "$12.00", "text, image, video"],
+  ["mistral-large", "mistral", "128,000", "$2.00", "$6.00", "text"]
+] %>
+<div class="flex flex-col gap-6">
+  <%= render UI::BreadcrumbComponent.new(items: [ { label: "Home", href: "#" }, { label: "Models" } ]) %>
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">Models</h1>
+      <p class="text-sm text-muted-foreground">Synced from the provider registry.</p>
+    </div>
+    <%= render UI::ButtonComponent.new("Sync Models") %>
+  </div>
+
+  <%= render UI::AlertComponent.new(title: "Last sync 2 hours ago", description: "6 models available across 5 providers.") %>
+
+  <div class="flex items-center gap-3">
+    <div class="w-72"><%= render UI::SearchInputComponent.new(placeholder: "Search models…") %></div>
+    <%= render UI::SelectComponent.new(options: %w[All anthropic openai google mistral], selected: "All") %>
+    <%= render UI::SeparatorComponent.new(orientation: :vertical, class: "h-6") %>
+    <%= render UI::CheckboxComponent.new(label: "Vision only", name: "vision") %>
+  </div>
+
+  <%= render UI::DataTableComponent.new(
+    columns: [
+      { key: :name, label: "Name", sortable: true },
+      { key: :provider, label: "Provider", sortable: true },
+      { key: :context, label: "Context window", sortable: true },
+      { key: :input, label: "Input $/M" },
+      { key: :output, label: "Output $/M" },
+      { key: :modalities, label: "Modalities" }
+    ],
+    rows: models.map { |n, p, c, i, o, m|
+      { name: n,
+        provider: render(UI::BadgeComponent.new(p, variant: p == "anthropic" ? :default : :secondary)),
+        context: c, input: i, output: o,
+        modalities: safe_join(m.split(", ").map { |x| render(UI::BadgeComponent.new(x, variant: :outline)) }, " ") }
+    },
+    per_page: 5
+  ) %>
+
+  <%= render UI::PaginationComponent.new(current_page: 2, total_pages: 9, url: ->(p) { "#p#{p}" }) %>
+</div>

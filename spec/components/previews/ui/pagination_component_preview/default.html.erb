@@ -1,0 +1,4 @@
+<div class="flex flex-col gap-4">
+  <%= render UI::PaginationComponent.new(current_page: 1, total_pages: 5, url: ->(p) { "#p#{p}" }) %>
+  <%= render UI::PaginationComponent.new(current_page: 8, total_pages: 20, url: ->(p) { "#p#{p}" }) %>
+</div>
