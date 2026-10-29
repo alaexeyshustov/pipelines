@@ -104,6 +104,10 @@ load_claude_auth() {
 exec_claude() {
   local ticket="${1:-}"
 
+  # The fullscreen TUI captures the mouse, which blocks the host terminal's
+  # native text selection across the attach. Keep selection with the terminal.
+  export CLAUDE_CODE_DISABLE_MOUSE=1
+
   if [[ "$ticket" =~ ^GH-([0-9]+)$ ]]; then
     exec claude --dangerously-skip-permissions \
       "Make an overview of GitHub issue #${BASH_REMATCH[1]} (use \`gh issue view ${BASH_REMATCH[1]} --comments\`)."
