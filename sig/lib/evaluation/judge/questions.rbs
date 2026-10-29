@@ -1,0 +1,12 @@
+module Evaluation
+  module Judge
+    class Questions
+      TYPES: Hash[String, Symbol]
+      CRITERIA_KEYS: Hash[Symbol, Symbol]
+
+      def self.call: (Array[Metric] metrics) -> Hash[String, RubyLLM::Judge::question]
+      def self.question_for: (Metric metric) -> RubyLLM::Judge::question
+      def self.criteria_for: (Metric metric, Symbol type) -> json_object_value
+    end
+  end
+end

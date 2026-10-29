@@ -1,0 +1,18 @@
+module Evaluation
+  class GradeDetailComponent < ViewComponent::Base
+    @result: EvaluationResult
+
+    def initialize: (result: EvaluationResult) -> void
+    def score_label: () -> String?
+    def verdict: () -> { label: String, variant: Symbol }?
+    def confidence_label: () -> String?
+    def level_label: () -> String?
+    def probabilities: () -> Array[[String, String]]
+    def raw?: () -> bool
+
+    private
+
+    def raw: () -> Hash[String, json_object_value]
+    def score_level: () -> String?
+  end
+end

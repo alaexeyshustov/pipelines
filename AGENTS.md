@@ -9,6 +9,6 @@
 - [Schema definition](docs/schemas.md)
 - [Architecture overview](docs/architecture.md)
 - [Orchestration subsystem](docs/orchestration.md)
-- [Evaluations (Leva) subsystem](docs/evals.md)
+- [Evaluations subsystem](docs/evals.md)
 
 ## [Gotchas](docs/claude/gotchas.md)

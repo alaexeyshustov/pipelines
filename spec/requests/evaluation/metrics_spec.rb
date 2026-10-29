@@ -40,6 +40,18 @@ RSpec.describe "Evaluation::Metrics" do
       expect(metric.reload.active).to be(false)
     end
 
+    it "updates kind, minimum and levels from the editor" do
+      metric = create(:evaluation_metric)
+      patch evaluation_metric_path(metric), params: { evaluation_metric: { kind: "score", minimum: "0.5", levels_text: "Bad\nGood" } }
+      expect(metric.reload).to have_attributes(kind: "score", minimum: 0.5, levels: [ "Bad", "Good" ])
+    end
+
+    it "keeps levels when the editor sends no levels text" do
+      metric = create(:evaluation_metric, :score)
+      patch evaluation_metric_path(metric), params: { evaluation_metric: { weight: 2.0 } }
+      expect(metric.reload.levels).to eq([ "Wrong", "Partly right", "Fully right" ])
+    end
+
     it "returns 422 with invalid params" do
       metric = create(:evaluation_metric)
       patch evaluation_metric_path(metric), params: {
@@ -84,6 +96,33 @@ RSpec.describe "Evaluation::Metrics" do
       end
     end
 
+    context "with a score kind and level text" do
+      it "stores kind, minimum and ordered levels" do
+        post evaluation_metrics_path, params: { evaluation_metric: valid_params[:evaluation_metric].merge(
+          kind: "score", minimum: "0.6", levels_text: "Wrong\nPartly right\nFully right"
+        ) }
+        expect(Evaluation::Metric.last).to have_attributes(kind: "score", minimum: 0.6, levels: [ "Wrong", "Partly right", "Fully right" ])
+      end
+    end
+
+    context "with a choice kind and option text" do
+      it "stores options with values and descriptions" do
+        post evaluation_metrics_path, params: { evaluation_metric: valid_params[:evaluation_metric].merge(
+          kind: "choice", levels_text: "good | 1.0 | Fully correct\nbad | 0 | Wrong"
+        ) }
+        expect(Evaluation::Metric.last.levels).to eq(
+          "good" => { "description" => "Fully correct", "value" => 1.0 }, "bad" => { "description" => "Wrong", "value" => 0.0 }
+        )
+      end
+    end
+
+    context "with a score kind and too few levels" do
+      it "returns 422" do
+        post evaluation_metrics_path, params: { evaluation_metric: valid_params[:evaluation_metric].merge(kind: "score", levels_text: "only one") }
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+    end
+
     context "with invalid params (missing name)" do
       let(:invalid_params) { { evaluation_metric: { agent_name: "", name: "", weight: nil } } }
 
@@ -125,7 +164,9 @@ RSpec.describe "Evaluation::Metrics" do
   end
 
   describe "POST /evaluation/metrics/generate" do
-    let(:suggestions) { [ { name: "clarity", description: "Output is clear", weight: 1.0 } ] }
+    let(:suggestions) do
+      [ { name: "clarity", description: "Output is clear", weight: 1.0, kind: "score", levels: [ "Murky", "Clear" ], minimum: 0.5 } ]
+    end
 
     before do
       allow(Evaluation::MetricSuggester).to receive(:call).and_return(suggestions)
@@ -135,6 +176,14 @@ RSpec.describe "Evaluation::Metrics" do
       post generate_evaluation_metrics_path, params: { agent_name: "Emails::ClassifyAgent" }
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("clarity")
+    end
+
+    it "renders kind, levels and a form that carries them to the create action" do
+      post generate_evaluation_metrics_path, params: { agent_name: "Emails::ClassifyAgent" }
+      page = Nokogiri::HTML(response.body)
+      expect(page.at_css("input[name='evaluation_metric[kind]']")["value"]).to eq("score")
+      expect(page.at_css("input[name='evaluation_metric[minimum]']")["value"]).to eq("0.5")
+      expect(page.at_css("input[name='evaluation_metric[levels_text]']")["value"]).to eq("Murky\nClear")
     end
 
     it "calls MetricSuggester with the agent_name" do

@@ -1,14 +1,20 @@
 module Evaluation
   class DashboardComponent < ViewComponent::Base
     @summary: Evaluation::AgentSummaryQuery::AgentSummary
+    @pass_rate: Float?
+    @usage: ExperimentUsageQuery::Usage?
 
-    def initialize: (summary: Evaluation::AgentSummaryQuery::AgentSummary) -> void
+    def initialize: (summary: Evaluation::AgentSummaryQuery::AgentSummary, ?pass_rate: Float?, ?usage: ExperimentUsageQuery::Usage?) -> void
     def agent_name: () -> String
     def latest_experiment: () -> Evaluation::Experiment?
     def latest_score: () -> Float?
     def active_prompt_version: () -> Integer?
     def sample_count: () -> Integer
     def score_over_time_data: () -> Array[{ created_at: String, avg_score: Float? }]
+    def latest_pass_rate: () -> Float?
+    def latest_usage: () -> ExperimentUsageQuery::Usage?
     def format_score: (Float? score) -> String
+    def format_pass_rate: (Float? rate) -> String
+    def usage_label: () -> String
   end
 end

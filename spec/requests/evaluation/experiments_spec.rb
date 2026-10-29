@@ -32,6 +32,13 @@ RSpec.describe "Evaluation::Experiments" do
       expect(response.body).to include(experiment.status.to_s)
     end
 
+    it "shows cost and tokens when the experiment has usage" do
+      RubyLLM::ActiveRecord::Usage.create!(operation: "chat", provider: "openai", model: "gpt-5.4", status: "succeeded",
+                                           input_tokens: 100, output_tokens: 50, total_cost: 0.01, owner: experiment)
+      get evaluation_experiment_path(experiment)
+      expect(response.body).to include("$0.0100", "100 in / 50 out")
+    end
+
     it "shows records evaluated count" do
       get evaluation_experiment_path(experiment)
       expect(response.body).to include("Records evaluated")
@@ -62,11 +69,11 @@ RSpec.describe "Evaluation::Experiments" do
           sample = create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_sample)
           eval_result = Evaluation::EvaluationResult.create!(
             experiment: experiment, dataset_sample: dataset_sample,
-            sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
+            sample: sample, evaluator_class: "Evaluation::Grader", score: 0.8, passed: true
           )
           Evaluation::Justification.create!(evaluation_result: eval_result, metric_name: "Accuracy", justification: "Good")
           get evaluation_experiment_path(experiment)
-          expect(response.body).to include("4.00")
+          expect(response.body).to include("80%")
         end
 
         it "shows overall average" do
@@ -74,11 +81,11 @@ RSpec.describe "Evaluation::Experiments" do
           sample = create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_sample)
           eval_result = Evaluation::EvaluationResult.create!(
             experiment: experiment, dataset_sample: dataset_sample,
-            sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
+            sample: sample, evaluator_class: "Evaluation::Grader", score: 0.8, passed: true
           )
           Evaluation::Justification.create!(evaluation_result: eval_result, metric_name: "Accuracy", justification: "Good")
           get evaluation_experiment_path(experiment)
-          expect(response.body).to include("Overall average")
+          expect(response.body).to include("Weighted grade", "Pass rate", "100.0%")
         end
       end
     end
@@ -126,12 +133,12 @@ RSpec.describe "Evaluation::Experiments" do
       before do
         allow(Evaluation::Comparison).to receive(:call).and_return(
           Evaluation::Comparison::ComparisonResult.new(
-            baseline_score: 3.0,
-            candidate_score: 4.0,
-            baseline_metrics: { "clarity" => 3.0 },
-            candidate_metrics: { "clarity" => 4.0 },
-            metric_deltas: { "clarity" => 1.0 },
-            overall_delta: 1.0
+            baseline_score: 0.6,
+            candidate_score: 0.8,
+            baseline_metrics: { "clarity" => 0.6 },
+            candidate_metrics: { "clarity" => 0.8 },
+            metric_deltas: { "clarity" => 0.2 },
+            overall_delta: 0.2
           )
         )
       end
@@ -337,7 +344,8 @@ RSpec.describe "Evaluation::Experiments" do
       let!(:eval_result) do
         Evaluation::EvaluationResult.create!(
           experiment: experiment, dataset_sample: sample.dataset_sample,
-          sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 3.5
+          sample: sample, evaluator_class: "Evaluation::Grader", score: 0.7, passed: false, confidence: 0.6,
+          raw: { "type" => "choice", "choice" => "ok" }
         )
       end
       let!(:justification) do # rubocop:disable RSpec/LetSetup
@@ -349,7 +357,7 @@ RSpec.describe "Evaluation::Experiments" do
 
       it "shows the score" do
         get metric_results_evaluation_experiment_path(experiment, metric_name: metric_name)
-        expect(response.body).to include("3.50")
+        expect(response.body).to include("70.0%", "failed", "confidence 60%")
       end
 
       it "shows the agent output" do
@@ -506,7 +514,7 @@ RSpec.describe "Evaluation::Experiments" do
       before do
         Evaluation::EvaluationResult.create!(
           experiment: experiment, dataset_sample: sample.dataset_sample,
-          sample: sample, evaluator_class: "Evaluation::Evaluators::LLMJudgeEval", score: 4.0
+          sample: sample, evaluator_class: "Evaluation::Grader", score: 0.8, passed: true
         )
       end
 
@@ -536,7 +544,7 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     context "when the experiment is in progress" do
-      let!(:experiment) { create(:evaluation_experiment, status: :sampling) }
+      let!(:experiment) { create(:evaluation_experiment, status: :running) }
 
       it "does not destroy the experiment" do
         expect {

@@ -1,8 +1,7 @@
 module Evaluation
   module Improvement
-    class Agent < ::RubyLLM::Agent
+    class Agent < AuxiliaryAgent
       chat_model Chat
-      model LlmModels.evaluation
       tools LoadSamplesTool, ListExperimentsTool, GetExperimentJustificationsTool, GetExperimentPromptTool
 
       schema do
@@ -18,9 +17,17 @@ module Evaluation
           "experiment_id": "The ID of the experiment being evaluated",
           "prompt_name": "The name of the prompt being evaluated",
           "system_prompt": "The current system prompt text",
-          "metrics": ["list", "of", "evaluation", "metrics", "to", "score"],
-          "scores": [{"metric_name": "name_of_metric", "score": 1-5, "justification": "rationale for the score"}, ...],
+          "metrics": [{"name": "...", "description": "...", "kind": "probability|score|choice", "levels": [...] or {...} or null, "minimum": 0.0-1.0 or null}, ...],
+          "scores": [{"metric_name": "...", "score": 0.0-1.0, "passed": true|false|null, "confidence": 0.0-1.0|null, "justification": "..."}, ...],
         }
+
+      Scores are normalized grades from 0.0 (worst) to 1.0 (best); `passed` compares the score with the metric's
+      `minimum`. The judge returns no free text, so each justification is generated from its answer, e.g.
+      "accuracy: 60% - level 1 of 0..2 (1.2): <description of the closest level> [confidence 0.8; 0=10%, 1=50%, 2=40%]".
+      Read it as: the percentage is the grade; "level N ... <description>" (or "chose <option> (<description>)",
+      or "judged P% likely true: <criterion>") says which level the output was closest to; the bracket gives the
+      judge's confidence and probability per level. Compare the described level with the best level in `levels` to
+      see what the output lacked. A low confidence or a spread-out distribution means the output was borderline.
 
       Your task: improve the system prompt to address weak areas (low scores) while preserving
       behaviors that already score well.

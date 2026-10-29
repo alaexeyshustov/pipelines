@@ -1,0 +1,6 @@
+module Evaluation
+  module DatasetCases
+    def self.call: (dataset: Dataset) -> Array[RubyLLM::Evaluation::Case]
+    def self.for_sample: (DatasetSample dataset_sample) -> RubyLLM::Evaluation::Case
+  end
+end

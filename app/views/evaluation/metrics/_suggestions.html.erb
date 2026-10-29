@@ -7,14 +7,24 @@
           <div class="flex-1 min-w-0">
             <p class="text-sm font-semibold text-gray-900"><%= suggestion[:name] %></p>
             <p class="text-xs text-gray-600 mt-0.5"><%= suggestion[:description] %></p>
+            <% levels_text = Evaluation::MetricLevelsText.dump(kind: suggestion[:kind], levels: suggestion[:levels]) %>
+            <% if levels_text.present? %>
+              <pre class="text-xs text-gray-500 mt-1 whitespace-pre-wrap"><%= levels_text %></pre>
+            <% end %>
           </div>
-          <span class="text-xs text-gray-500 shrink-0">weight: <%= suggestion[:weight] %></span>
+          <span class="text-xs text-gray-500 shrink-0 text-right">
+            <%= suggestion[:kind] %><%= " ≥ #{Evaluation::ScoreFormatter.percent(suggestion[:minimum])}" if suggestion[:minimum] %><br>
+            weight: <%= suggestion[:weight] %>
+          </span>
         </div>
         <%= form_with url: evaluation_metrics_path, method: :post, class: "mt-2", data: { turbo: true } do |f| %>
           <%= f.hidden_field :evaluation_metric, name: "evaluation_metric[agent_name]", value: agent_name %>
           <%= f.hidden_field :evaluation_metric, name: "evaluation_metric[name]", value: suggestion[:name] %>
           <%= f.hidden_field :evaluation_metric, name: "evaluation_metric[description]", value: suggestion[:description] %>
           <%= f.hidden_field :evaluation_metric, name: "evaluation_metric[weight]", value: suggestion[:weight] %>
+          <%= hidden_field_tag "evaluation_metric[kind]", suggestion[:kind] %>
+          <%= hidden_field_tag "evaluation_metric[minimum]", suggestion[:minimum] %>
+          <%= hidden_field_tag "evaluation_metric[levels_text]", levels_text %>
           <button type="submit" class="text-xs font-medium text-indigo-600 hover:text-indigo-800">
             + Add this metric
           </button>

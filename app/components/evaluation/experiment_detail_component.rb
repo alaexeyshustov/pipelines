@@ -2,10 +2,16 @@ module Evaluation
   class ExperimentDetailComponent < ViewComponent::Base
     renders_one :header, UI::PageHeaderComponent
     renders_one :status_badge, -> { Evaluation::Experiments::StatusBadgeComponent.new(experiment: @experiment) }
-    renders_many :metric_rows, ->(metric:, avg:) { Evaluation::ExperimentMetricRowComponent.new(metric: metric, avg: avg, experiment: @experiment) }
+    renders_many :metric_rows, ->(metric:, avg:) {
+      Evaluation::ExperimentMetricRowComponent.new(metric: metric, avg: avg, experiment: @experiment, pass_rate: @metric_pass_rates[metric.name])
+    }
 
-    def initialize(experiment:)
+    # usage: Evaluation::ExperimentUsageQuery::Usage; pass_rate / metric_pass_rates: Evaluation::PassRateQuery (callers load them).
+    def initialize(experiment:, usage: nil, pass_rate: nil, metric_pass_rates: {})
       @experiment = experiment
+      @usage = usage
+      @pass_rate = pass_rate
+      @metric_pass_rates = metric_pass_rates
     end
 
     def before_render
@@ -15,6 +21,10 @@ module Evaluation
     end
 
     private
+
+    def metric_weights
+      @metric_weights ||= metrics.to_h { |m| [ m.name, m.weight.to_f ] }
+    end
 
     def setup_header
       with_header(title: @experiment.name, parent: { label: "Experiments", url: helpers.evaluation_experiments_path }) do |h|
@@ -46,10 +56,46 @@ module Evaluation
       @per_metric_avg ||= @experiment.per_metric_averages
     end
 
+    # Weighted grade (0.0..1.0): metric averages weighted by Metric#weight, like Evaluation::SampleGrade.
     def overall_avg
-      return unless per_metric_avg.any?
+      graded = per_metric_avg.slice(*metric_weights.keys)
+      return if graded.empty?
 
-      per_metric_avg.values.sum / per_metric_avg.size
+      total = graded.keys.sum { |name| metric_weights.fetch(name) }
+      graded.sum { |name, avg| avg * metric_weights.fetch(name) } / total unless total.zero?
+    end
+
+    def overall_label = ScoreFormatter.percent(overall_avg, digits: 1)
+    def pass_rate_label = @pass_rate && ScoreFormatter.percent(@pass_rate, digits: 1)
+
+    def usage?
+      !@usage.nil? && @usage.calls.positive?
+    end
+
+    def cost_label = ScoreFormatter.cost(@usage&.cost)
+
+    def tokens_label
+      usage = @usage
+      return unless usage
+
+      "#{ScoreFormatter.tokens(usage.input_tokens)} in / #{ScoreFormatter.tokens(usage.output_tokens)} out"
+    end
+
+    def models_label = @usage&.models&.keys&.join(", ")
+
+    def active_run?
+      @experiment.pending? || @experiment.running?
+    end
+
+    def progress_label
+      return unless @experiment.running?
+
+      "#{sample_count} sampled, #{@experiment.pending_samples_count} pending"
+    end
+
+    def newer_experiment_active?
+      newer = @experiment.newer_experiment
+      !!newer && (newer.pending? || newer.running?)
     end
 
     def dataset_samples
@@ -57,7 +103,7 @@ module Evaluation
     end
 
     def judge_model
-      @judge_model ||= Evaluators::LLMJudgeEval.judge_model
+      @judge_model ||= @experiment.evaluation_model.presence || LlmModels.judge
     end
 
     def output_schema_json

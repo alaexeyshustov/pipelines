@@ -1,0 +1,11 @@
+module Evaluation
+  class PassRateQuery
+    PASS_RATE: Arel::Nodes::SqlLiteral
+
+    @experiment_ids: Array[Integer]
+
+    def self.call: (experiment_ids: Array[Integer]) -> Hash[Integer, Float]
+    def initialize: (experiment_ids: Array[Integer]) -> void
+    def call: () -> Hash[Integer, Float]
+  end
+end

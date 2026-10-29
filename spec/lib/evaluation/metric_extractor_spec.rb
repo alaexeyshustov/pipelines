@@ -1,89 +1,78 @@
 require "rails_helper"
 
 RSpec.describe Evaluation::MetricExtractor do
+  let(:agent_name) { "Emails::ClassifyAgent" }
+  let(:instructions) { "You are an email classifier. Classify emails by subject." }
+  let(:output) do
+    { metrics: [
+      { name: "classification_accuracy", description: "How accurately emails are classified" },
+      { name: "tag_relevance", description: "Whether suggested tags are relevant" }
+    ] }
+  end
+  let(:content) { JSON.generate(output) }
+
+  before do
+    create(:orchestration_prompt, name: agent_name, system_prompt: instructions)
+    stub_request(:post, %r{api\.openai\.com}).to_return(
+      status: 200, headers: { "Content-Type" => "application/json" },
+      body: {
+        id: "cmpl-test", object: "chat.completion", model: "gpt-5.4",
+        choices: [ { index: 0, message: { role: "assistant", content: content }, finish_reason: "stop" } ],
+        usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 }
+      }.to_json
+    )
+  end
+
   describe ".call" do
+    it "returns name/description hashes parsed from the structured output" do
+      expect(described_class.call(agent_name)).to eq(
+        [ { "name" => "classification_accuracy", "description" => "How accurately emails are classified" },
+          { "name" => "tag_relevance", "description" => "Whether suggested tags are relevant" } ]
+      )
+    end
+
+    it "does not persist any metrics" do
+      expect { described_class.call(agent_name) }.not_to change(Evaluation::Metric, :count)
+    end
+
+    it "requests structured output and sends the agent instructions" do
+      described_class.call(agent_name)
+      expect(WebMock).to(have_requested(:post, %r{api\.openai\.com}).with { |req|
+        body = JSON.parse(req.body)
+        body.dig("response_format", "json_schema", "schema", "properties", "metrics") &&
+          body["messages"].any? { |m| m["content"].to_s.include?(instructions) }
+      })
+    end
+
     it "raises ArgumentError for a blank agent_name" do
-      expect { described_class.call("") }.to raise_error(ArgumentError, /blank/)
+      expect { described_class.call("") }.to raise_error(ArgumentError, /agent_name must not be blank/)
     end
 
     it "raises ArgumentError when no prompt exists for the agent" do
-      expect { described_class.call("NonExistentAgent") }
-        .to raise_error(ArgumentError, /No prompt found/)
+      expect { described_class.call("NonExistentAgent") }.to raise_error(ArgumentError, /No prompt found/)
     end
 
-    context "with a prompt and a stubbed LLM response" do
-      let(:metrics_json) do
-        JSON.generate([
-          { "name" => "accuracy", "description" => "How accurate the classification is." },
-          { "name" => "relevance", "description" => "How relevant the output is." }
-        ])
-      end
-
-      before do
-        create(:orchestration_prompt, name: "Emails::ClassifyAgent", system_prompt: "Classify emails.")
-        stub_request(:post, %r{api\.openai\.com})
-          .to_return(
-            status: 200,
-            body: {
-              id: "chatcmpl-x", object: "chat.completion", model: "gpt-5.4",
-              choices: [ { index: 0, message: { role: "assistant", content: metrics_json }, finish_reason: "stop" } ],
-              usage: { prompt_tokens: 50, completion_tokens: 20, total_tokens: 70 }
-            }.to_json,
-            headers: { "Content-Type" => "application/json" }
-          )
-      end
-
-      it "returns an array of metric hashes" do
-        result = described_class.call("Emails::ClassifyAgent")
-        expect(result).to be_an(Array)
-        expect(result.first).to include("name" => "accuracy")
-      end
-
-      it "returns the correct number of metrics" do
-        result = described_class.call("Emails::ClassifyAgent")
-        expect(result.size).to eq(2)
-      end
-    end
-
-    context "when the LLM returns invalid JSON" do
-      before do
-        create(:orchestration_prompt, name: "Emails::ClassifyAgent")
-        stub_request(:post, %r{api\.openai\.com})
-          .to_return(
-            status: 200,
-            body: {
-              id: "chatcmpl-x", object: "chat.completion", model: "gpt-5.4",
-              choices: [ { index: 0, message: { role: "assistant", content: "not json" }, finish_reason: "stop" } ],
-              usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 }
-            }.to_json,
-            headers: { "Content-Type" => "application/json" }
-          )
-      end
-
-      it "raises ArgumentError with a descriptive message" do
-        expect { described_class.call("Emails::ClassifyAgent") }
-          .to raise_error(ArgumentError, /invalid JSON/)
-      end
-    end
-
-    context "when the LLM returns a non-array JSON value" do
-      before do
-        create(:orchestration_prompt, name: "Emails::ClassifyAgent")
-        stub_request(:post, %r{api\.openai\.com})
-          .to_return(
-            status: 200,
-            body: {
-              id: "chatcmpl-x", object: "chat.completion", model: "gpt-5.4",
-              choices: [ { index: 0, message: { role: "assistant", content: '{"not":"array"}' }, finish_reason: "stop" } ],
-              usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 }
-            }.to_json,
-            headers: { "Content-Type" => "application/json" }
-          )
-      end
+    context "when the output is not valid JSON" do
+      let(:content) { "not json" }
 
       it "raises ArgumentError" do
-        expect { described_class.call("Emails::ClassifyAgent") }
-          .to raise_error(ArgumentError, /non-array/)
+        expect { described_class.call(agent_name) }.to raise_error(ArgumentError, /invalid output/)
+      end
+    end
+
+    context "when the output has no metrics array" do
+      let(:content) { JSON.generate({ key: "value" }) }
+
+      it "raises ArgumentError" do
+        expect { described_class.call(agent_name) }.to raise_error(ArgumentError, /no metrics/)
+      end
+    end
+
+    context "when entries are blank" do
+      let(:output) { { metrics: [ { name: "ok", description: "fine" }, { name: " ", description: "x" } ] } }
+
+      it "drops them" do
+        expect(described_class.call(agent_name).pluck("name")).to eq([ "ok" ])
       end
     end
   end

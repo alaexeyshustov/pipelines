@@ -1,0 +1,25 @@
+module RubyLLM
+  class Evaluation
+    class Case
+      def initialize: (name: String, inputs: json_object_value, ?metadata: Hash[Symbol, json_object_value], ?expected_output: json_object_value) -> void
+      def name: () -> String
+      def inputs: () -> json_object_value
+      def metadata: () -> Hash[Symbol, json_object_value]
+      def expected_output: () -> json_object_value
+      def expected_output?: () -> bool
+    end
+
+    class Trial
+      def test_case: () -> Case
+      def output: () -> (String | json_object_value)
+      def evidence: () -> json_object?
+      def error: () -> StandardError?
+    end
+
+    class Report
+      def trials: () -> Array[Trial]
+    end
+
+    def self.run: (?dataset: Array[Case], ?only: Array[String], ?repetitions: Integer, ?id: String) -> Report
+  end
+end

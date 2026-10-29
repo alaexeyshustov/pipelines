@@ -14,32 +14,26 @@ module Evaluation
 
     serialize :metadata, coder: JSON
 
+    # Share of dataset samples that must be sampled and graded for a run to count as completed.
+    COMPLETION_THRESHOLD = 0.8
+
     aasm column: :status do
       state :pending, initial: true
-      state :sampling
-      state :evaluating
+      state :running
       state :completed
       state :failed
 
-      event :start_sampling do
-        transitions from: :pending, to: :sampling
-      end
-
-      event :start_evaluating do
-        transitions from: :sampling, to: :evaluating, guard: :ready_to_evaluate?
+      event :start do
+        transitions from: :pending, to: :running
       end
 
       event :complete do
-        transitions from: :evaluating, to: :completed, guard: :evaluations_finished?
+        transitions from: :running, to: :completed, guard: :run_finished_above_threshold?
       end
 
       event :fail do
-        transitions from: %i[pending sampling evaluating], to: :failed
+        transitions from: %i[pending running], to: :failed
       end
-    end
-
-    def in_progress?
-      sampling? || evaluating?
     end
 
     def agent_name
@@ -74,12 +68,8 @@ module Evaluation
 
     private
 
-    def ready_to_evaluate?
-      pending_samples_count.zero? && pending_evaluations_count.positive?
-    end
-
-    def evaluations_finished?
-      pending_evaluations_count.zero?
+    def run_finished_above_threshold?
+      pending_samples_count.zero? && samples.count >= dataset.dataset_samples.count * COMPLETION_THRESHOLD
     end
   end
 end

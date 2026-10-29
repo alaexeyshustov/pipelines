@@ -1,0 +1,8 @@
+module Evaluation
+  module Judge
+    class ModelChoice
+      def self.call: (String? preferred) -> String
+      def self.judgment_model?: (String id) -> bool
+    end
+  end
+end

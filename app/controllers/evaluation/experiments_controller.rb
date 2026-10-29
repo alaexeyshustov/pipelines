@@ -1,14 +1,17 @@
 module Evaluation
   class ExperimentsController < ApplicationController
     include Evaluation::ExperimentWizard
+    include Evaluation::ExperimentStats
 
     before_action :set_experiment, only: [ :show, :improve, :compare, :activate, :status_frame, :metric_results, :destroy ]
 
     def index
       @experiments = Experiment.order(created_at: :desc).includes(:prompt)
+      @usage_by_experiment = ExperimentUsageQuery.call(experiment_ids: @experiments.map(&:id))
     end
 
-    def show; end
+    def show = load_experiment_stats(@experiment)
+
     def new
       @wizard_form = build_wizard_form(step_param: params[:step])
     end
@@ -19,7 +22,7 @@ module Evaluation
     end
 
     def destroy
-      if @experiment.pending? || @experiment.in_progress?
+      if @experiment.pending? || @experiment.running?
         return redirect_to evaluation_experiments_path, alert: "Cannot delete an experiment that is still running."
       end
 

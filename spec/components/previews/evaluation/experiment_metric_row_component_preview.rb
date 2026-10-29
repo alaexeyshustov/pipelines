@@ -4,7 +4,7 @@ module Evaluation
       experiment = Evaluation::Experiment.new(id: 1, name: "Experiment #1",
                                               dataset: Evaluation::Dataset.new(id: 1, name: "Demo"))
       metric     = Evaluation::Metric.new(id: 1, name: "accuracy", agent_name: "ClassifyAgent")
-      render(Evaluation::ExperimentMetricRowComponent.new(metric: metric, avg: 85.42, experiment: experiment))
+      render(Evaluation::ExperimentMetricRowComponent.new(metric: metric, avg: 0.8542, experiment: experiment, pass_rate: 0.75))
     end
 
     def no_avg

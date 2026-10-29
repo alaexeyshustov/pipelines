@@ -301,6 +301,64 @@ Managed by **RubyLLM** (`acts_as_chat` / `acts_as_message` / `acts_as_tool_call`
 
 ---
 
+## Evaluation tables
+
+Models live in `app/models/evaluation/` (see [evals.md](evals.md)). Scores are normalized 0.0..1.0.
+
+### evaluation_datasets / evaluation_dataset_samples
+| Column | Type | Notes |
+|---|---|---|
+| `evaluation_datasets.name`, `description`, `agent_name` | string/text | `agent_name` nullable |
+| `evaluation_dataset_samples.dataset_id` | FK | required |
+| `evaluation_dataset_samples.input` | JSON | required; fed to the agent |
+| `evaluation_dataset_samples.expected_tool_calls` | JSON | nullable; present when seeded from a production run |
+| `evaluation_dataset_samples.source_run_id` | integer | nullable |
+
+### evaluation_prompts
+`name` (agent), `version`, `system_prompt`, `user_prompt`, `output_schema` (JSON), `metadata`. Immutable versions.
+
+### evaluation_experiments
+| Column | Type | Notes |
+|---|---|---|
+| `dataset_id`, `prompt_id` | FK | `prompt_id` nullable |
+| `sample_model`, `evaluation_model` | string | agent model, judge model |
+| `status` | string | `pending` (default), `running`, `completed`, `failed` |
+| `pending_samples_count` | integer | default 0; the single run counter, decremented by each `SampleJob` |
+| `metadata` | text (JSON) | |
+
+### evaluation_samples
+`experiment_id`, `dataset_sample_id`, `prompt_id` (FKs), `tool_calls` (JSON: `tool_name`, `arguments`, `result` per call), `output` (text).
+
+### evaluation_metrics
+| Column | Type | Notes |
+|---|---|---|
+| `agent_name`, `name` | string | unique together |
+| `description` | text | the judge question / rubric |
+| `weight` | decimal | default 1.0; weight in the sample grade |
+| `active` | boolean | default true |
+| `kind` | string | `probability` (default), `score`, `choice` |
+| `levels` | JSON | `score`: array of >= 2 level descriptions; `choice`: `{option => {"description", "value" (0.0..1.0)}}`; optional for `probability` |
+| `minimum` | float | nullable, 0.0..1.0; per-metric pass threshold |
+
+### evaluation_evaluation_results
+One row per metric per sample.
+| Column | Type | Notes |
+|---|---|---|
+| `experiment_id`, `dataset_sample_id`, `sample_id` | FK | |
+| `evaluator_class` | string | `Evaluation::Grader` |
+| `score` | float | normalized 0.0..1.0, nullable (unknown) |
+| `raw` | JSON | native answer (`to_h`) |
+| `confidence` | float | nullable; nil for probabilities |
+| `passed` | boolean | nullable; verdict against `Metric#minimum` |
+
+### evaluation_justifications
+`evaluation_result_id`, `metric_name`, `justification` (text derived from the native answer).
+
+### ruby_llm_usages (evaluation use)
+RubyLLM's usage ledger. `owner_type`/`owner_id` point at the `Evaluation::Experiment` (set by `Evaluation::UsageScope`); `Evaluation::ExperimentUsageQuery` sums tokens and `total_cost` per experiment.
+
+---
+
 ## Quick perks
 
 - `ApplicationMail.as_rows` and `Interview.as_rows` return `Array<Hash<String, String|nil>>` — safe to pass directly to LLM tool responses.

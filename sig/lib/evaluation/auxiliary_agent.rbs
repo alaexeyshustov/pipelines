@@ -1,0 +1,4 @@
+module Evaluation
+  class AuxiliaryAgent < ::RubyLLM::Agent
+  end
+end

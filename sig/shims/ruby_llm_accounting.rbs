@@ -1,0 +1,47 @@
+module RubyLLM
+  def self.with_usage_owner: [T] (ApplicationRecord? owner) { () -> T } -> T
+
+  class Models
+    class ModelInfo
+      def id: () -> String
+    end
+  end
+
+  class Fallback
+    def id: () -> String?
+    def from: () -> Models::ModelInfo?
+    def error: () -> Exception?
+  end
+
+  class Message
+    def model: () -> String?
+  end
+
+  class Agent
+    def self.fallbacks: (*String models) -> void
+    def self.temperature: (Numeric temperature) -> void
+    def self.number: (Symbol name, ?required: bool, ?description: String, ?minimum: Numeric, ?maximum: Numeric) -> void
+    def after_fallback: () { (Fallback) -> void } -> void
+  end
+
+  module Accounting
+    class Usage
+      def self.owner: () -> ApplicationRecord?
+    end
+  end
+
+  module ActiveRecord
+    class Usage < ::ActiveRecord::Base
+    end
+  end
+end
+
+module Schematist
+  class SchemaBuilder
+    def number: (Symbol name, ?required: bool, ?description: String, ?minimum: Numeric, ?maximum: Numeric) -> void
+    def string: (Symbol name, ?required: bool, ?description: String, ?enum: Array[String]) -> void
+              | ...
+    def array: (Symbol name, ?required: bool, ?description: String) { () [self: SchemaBuilder] -> void } -> void
+             | ...
+  end
+end

@@ -31,6 +31,27 @@ RSpec.describe Evaluation::Metric do
       expect(metric.errors[:weight]).to be_present
     end
 
+    it 'rejects an unknown kind' do
+      expect(build(:evaluation_metric, kind: 'ranking')).not_to be_valid
+    end
+
+    it 'requires at least 2 levels for a score metric' do
+      expect(build(:evaluation_metric, :score, levels: [ 'only' ])).not_to be_valid
+      expect(build(:evaluation_metric, :score)).to be_valid
+    end
+
+    it 'requires options with values within 0.0..1.0 for a choice metric' do
+      expect(build(:evaluation_metric, :choice)).to be_valid
+      expect(build(:evaluation_metric, kind: 'choice', levels: nil)).not_to be_valid
+      expect(build(:evaluation_metric, kind: 'choice',
+                   levels: { 'a' => { 'value' => 2.0 }, 'b' => { 'value' => 0.0 } })).not_to be_valid
+    end
+
+    it 'keeps minimum within 0.0..1.0' do
+      expect(build(:evaluation_metric, minimum: 0.7)).to be_valid
+      expect(build(:evaluation_metric, minimum: 1.5)).not_to be_valid
+    end
+
     it 'enforces uniqueness of name scoped to agent_name' do
       create(:evaluation_metric, agent_name: 'TestAgent', name: 'accuracy')
       duplicate = build(:evaluation_metric, agent_name: 'TestAgent', name: 'accuracy')

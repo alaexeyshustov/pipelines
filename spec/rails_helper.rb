@@ -41,6 +41,9 @@ RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
   config.include ViewComponent::TestHelpers, type: :component
 
+  # Live LLM regression gate (spec/evals): opt in with EVALS=1, see docs/evals.md.
+  config.filter_run_excluding eval: true unless ENV["EVALS"] == "1"
+
   config.before do
     allow(Evaluation::PromptAutoEvalJob).to receive(:perform_later)
   end

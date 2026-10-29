@@ -7,19 +7,34 @@ module Evaluation
     @per_metric_avg: Hash[String, Float]?
 
     @sample_count: Integer?
+    @metric_weights: Hash[String?, Float]?
+    @usage: ExperimentUsageQuery::Usage?
+    @pass_rate: Float?
+    @metric_pass_rates: Hash[String, Float]
 
-    def initialize: (experiment: Experiment) -> void
+    def initialize: (experiment: Experiment, ?usage: ExperimentUsageQuery::Usage?, ?pass_rate: Float?, ?metric_pass_rates: Hash[String, Float]) -> void
 
     def before_render: () -> void
     def metrics: () -> Metric::relation
     def sample_count: () -> Integer
     def per_metric_avg: () -> Hash[String, Float]
     def overall_avg: () -> Float?
+    def overall_label: () -> String
+    def pass_rate_label: () -> String?
+    def usage?: () -> bool
+    def cost_label: () -> String
+    def tokens_label: () -> String?
+    def models_label: () -> String?
+    def active_run?: () -> bool
+    def progress_label: () -> String?
+    def newer_experiment_active?: () -> bool
     def dataset_samples: () -> DatasetSample::relation
     def judge_model: () -> String
     def output_schema_json: () -> String
 
     private
+
+    def metric_weights: () -> Hash[String?, Float]
 
     def setup_header: () -> void
     def setup_metric_rows: () -> void

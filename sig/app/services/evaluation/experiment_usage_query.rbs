@@ -1,0 +1,31 @@
+module Evaluation
+  class ExperimentUsageQuery
+    class Usage
+      attr_reader input_tokens: Integer
+      attr_reader output_tokens: Integer
+      attr_reader total_tokens: Integer
+      attr_reader cache_read_tokens: Integer
+      attr_reader cost: BigDecimal
+      attr_reader calls: Integer
+      attr_reader models: Hash[String, Integer]
+
+      def self.new: (input_tokens: Integer, output_tokens: Integer, total_tokens: Integer, cache_read_tokens: Integer, cost: BigDecimal, calls: Integer, models: Hash[String, Integer]) -> instance
+    end
+
+    EMPTY: Usage
+
+    def self.call: (experiment_ids: Array[Integer]) -> Hash[Integer, Usage]
+
+    @experiment_ids: Array[Integer]
+
+    def initialize: (experiment_ids: Array[Integer]) -> void
+    def call: () -> Hash[Integer, Usage]
+
+    private
+
+    def scope: () -> _Relation[ApplicationRecord, Integer]
+    def totals_by_experiment: () -> Hash[Integer, Array[Numeric]]
+    def models_by_experiment: () -> Hash[Integer, Hash[String, Integer]]
+    def build_usage: (Array[Numeric] row, Hash[String, Integer] models) -> Usage
+  end
+end

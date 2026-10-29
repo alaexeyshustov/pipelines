@@ -1,4 +1,4 @@
-<% if @experiment.newer_experiment&.pending? || @experiment.newer_experiment&.in_progress? %>
+<% if newer_experiment_active? || active_run? %>
   <meta name="turbo-refresh-interval" content="5000">
   <meta name="turbo-refresh-method" content="replace">
 <% end %>
@@ -20,6 +20,18 @@
       <dd class="text-gray-700"><%= @experiment.dataset&.name %></dd>
       <dt class="font-medium text-gray-500">Records evaluated</dt>
       <dd class="text-gray-700"><%= sample_count %></dd>
+      <% if progress_label %>
+        <dt class="font-medium text-gray-500">Progress</dt>
+        <dd class="text-gray-700"><%= progress_label %></dd>
+      <% end %>
+      <% if usage? %>
+        <dt class="font-medium text-gray-500">Cost</dt>
+        <dd class="text-gray-700"><%= cost_label %></dd>
+        <dt class="font-medium text-gray-500">Tokens</dt>
+        <dd class="text-gray-700"><%= tokens_label %></dd>
+        <dt class="font-medium text-gray-500">Models used</dt>
+        <dd class="text-gray-700 font-mono text-xs"><%= models_label %></dd>
+      <% end %>
       <dt class="font-medium text-gray-500">Created</dt>
       <dd class="text-gray-700"><%= @experiment.created_at.strftime("%Y-%m-%d %H:%M") %></dd>
     </dl>
@@ -90,16 +102,18 @@
       </div>
       <% if overall_avg %>
         <div class="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
-          <span class="text-sm text-gray-500">Overall average</span>
-          <span class="text-sm font-semibold text-gray-900">
-            <%= "%.2f" % overall_avg %> / 5
-          </span>
+          <span class="text-sm text-gray-500">Weighted grade</span>
+          <span class="text-sm font-semibold text-gray-900"><%= overall_label %></span>
+        </div>
+        <div class="mt-2 flex items-center justify-between">
+          <span class="text-sm text-gray-500">Pass rate</span>
+          <span class="text-sm font-semibold text-gray-900"><%= pass_rate_label || "—" %></span>
         </div>
       <% end %>
     <% end %>
   </div>
 
-  <% if @experiment.newer_experiment&.pending? || @experiment.newer_experiment&.in_progress? %>
+  <% if newer_experiment_active? %>
     <div class="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
       Evaluation for improved prompt is pending. This page refreshes automatically.
     </div>

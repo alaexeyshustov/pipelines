@@ -1,23 +1,15 @@
 module Evaluation
+  # Suggests Metric attributes for an agent. Output is schema-constrained (MetricSuggestionAgent); this class
+  # only maps it to Metric columns: kind, levels (score: Array, choice: {option => {description, value}},
+  # probability: nil), weight, minimum.
   class MetricSuggester
-    SYSTEM_PROMPT = <<~PROMPT.freeze
-      You are an evaluation designer. Given an AI agent's system prompt, suggest 3 to 7
-      evaluation metrics that measure the quality of its outputs.
-      Return ONLY a JSON array with no additional text. Each element must have:
-      - "name": short metric name (string)
-      - "description": rubric description (string)
-      - "weight": relative importance, float between 0.0 and 1.0
-    PROMPT
-
-    DEFAULT_MODEL = LlmModels.evaluation
-
     class Error < StandardError; end
 
     def self.call(agent_name:, model: nil)
       new(agent_name: agent_name, model:).call
     end
 
-    def initialize(agent_name:, model: DEFAULT_MODEL)
+    def initialize(agent_name:, model: nil)
       @agent_name = agent_name
       @model = model
     end
@@ -26,7 +18,10 @@ module Evaluation
       prompt_to_analyze = agent_system_prompt
       raise Error, "No prompt found for agent '#{@agent_name}'" if prompt_to_analyze.blank?
 
-      parse_response(query_llm(prompt_to_analyze).content)
+      entries = StructuredOutput.from(query_llm(prompt_to_analyze))["metrics"]
+      raise Error, "Expected a metrics array" unless entries.is_a?(Array)
+
+      entries.filter_map { |entry| build_metric(entry) if entry.is_a?(Hash) }
     rescue Error
       raise
     rescue StandardError => e
@@ -36,49 +31,70 @@ module Evaluation
     private
 
     def query_llm(prompt)
-      RubyLLM.chat(model: @model)
-              .with_temperature(0)
-              .with_instructions(SYSTEM_PROMPT)
-              .ask(prompt)
+      agent = MetricSuggestionAgent.new
+      model = @model
+      agent.with_model(model) if model
+      agent.ask(prompt)
     end
 
     def agent_system_prompt
       Prompt.last_for_agent(@agent_name)&.system_prompt
     end
 
-    def parse_response(content)
-      parsed = JSON::Helpers.parse_maybe(content)
-      raise Error, "Expected JSON array" unless parsed.is_a?(Array)
+    def build_metric(entry)
+      name = text(entry, "name")
+      description = text(entry, "description")
+      weight = Float(entry["weight"]) #: Float
+      return if name.blank? || description.blank?
+      return drop("out-of-range weight #{weight}") unless weight.between?(0.0, 1.0)
 
-      parsed.filter_map { |entry| parse_metric_entry(entry) }
+      kind, levels = kind_and_levels(entry)
+      { name:, description:, weight:, kind:, levels:, minimum: minimum_for(entry) }
+    rescue ArgumentError, TypeError
+      drop("unparseable entry #{entry.inspect}")
     end
 
-    def parse_metric_entry(entry)
-      return unless entry.is_a?(Hash)
+    def text(entry, key) = entry[key].to_s.strip
 
-      name, description, weight = extract_metric_fields(entry)
-      return if name.blank? || description.blank?
-      return if out_of_range_weight?(weight)
+    # A score/choice without usable levels degrades to a probability question instead of failing the batch.
+    def kind_and_levels(entry)
+      case entry["kind"]
+      when "score" then score_levels(entry) || [ "probability", nil ]
+      when "choice" then choice_levels(entry) || [ "probability", nil ]
+      else [ "probability", nil ]
+      end
+    end
 
-      { name: name, description: description, weight: weight }
+    def score_levels(entry)
+      levels = Array(entry["levels"]).map { |level| level.to_s.strip }.compact_blank
+      [ "score", levels ] if levels.size >= 2
+    end
+
+    def choice_levels(entry)
+      options = Array(entry["options"]).filter_map { |option| choice_option(option) if option.is_a?(Hash) }
+      [ "choice", options.to_h ] if options.size >= 2
+    end
+
+    def choice_option(option)
+      name = option["name"].to_s.strip
+      value = Float(option["value"]) #: Float
+      return if name.blank? || !value.between?(0.0, 1.0)
+
+      [ name, { "description" => option["description"].to_s.strip, "value" => value } ]
     rescue ArgumentError, TypeError
-      Rails.logger.warn("MetricSuggester: dropping unparseable entry #{entry.inspect}")
       nil
     end
 
-    def extract_metric_fields(entry)
-      [
-        entry["name"].to_s.strip,
-        entry["description"].to_s.strip,
-        Float(entry["weight"]) #: Float
-      ]
+    def minimum_for(entry)
+      minimum = Float(entry["minimum"]) #: Float
+      minimum.clamp(0.0, 1.0)
+    rescue ArgumentError, TypeError
+      nil
     end
 
-    def out_of_range_weight?(weight)
-      return false if weight.between?(0.0, 1.0)
-
-      Rails.logger.warn("MetricSuggester: dropping entry with out-of-range weight #{weight}")
-      true
+    def drop(reason)
+      Rails.logger.warn("MetricSuggester: dropping entry with #{reason}")
+      nil
     end
   end
 end

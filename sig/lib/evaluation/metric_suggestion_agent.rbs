@@ -1,0 +1,4 @@
+module Evaluation
+  class MetricSuggestionAgent < AuxiliaryAgent
+  end
+end

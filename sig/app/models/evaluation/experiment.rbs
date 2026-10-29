@@ -4,6 +4,8 @@ module Evaluation
 
     type relation = _Relation[Experiment, Integer]
 
+    COMPLETION_THRESHOLD: Float
+
     def self.table_name: () -> String
     def self.find: (Integer id) -> Experiment
     def self.find_by: (**top attrs) -> Experiment?
@@ -39,11 +41,10 @@ module Evaluation
     def evaluation_results: () -> EvaluationResult::relation
 
     def pending?: () -> bool
-    def sampling?: () -> bool
-    def evaluating?: () -> bool
+    def running?: () -> bool
     def completed?: () -> bool
     def failed?: () -> bool
-    def in_progress?: () -> bool
+    def pending_samples_count: () -> Integer
 
     def update!: (**top attrs) -> Experiment
 
@@ -54,7 +55,6 @@ module Evaluation
 
     private
 
-    def ready_to_evaluate?: () -> bool
-    def evaluations_finished?: () -> bool
+    def run_finished_above_threshold?: () -> bool
   end
 end

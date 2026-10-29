@@ -41,19 +41,34 @@ RSpec.describe Evaluation::DashboardComponent, type: :component do
       build_summary(
         agent_name: experiment.prompt.name,
         latest_experiment: experiment,
-        latest_score: 3.8,
+        latest_score: 0.78,
         active_prompt_version: 2,
         sample_count: 10
       )
     end
-    let(:component) { described_class.new(summary: summary) }
+    let(:usage) do
+      Evaluation::ExperimentUsageQuery::Usage.new(
+        input_tokens: 1200, output_tokens: 300, total_tokens: 1500, cache_read_tokens: 0,
+        cost: BigDecimal("0.0123"), calls: 4, models: { "gpt-5.4" => 4 }
+      )
+    end
+    let(:component) { described_class.new(summary: summary, pass_rate: 0.9, usage: usage) }
 
     it "renders the experiment id" do
       expect(rendered.text).to include(experiment.id.to_s)
     end
 
     it "renders the average score" do
-      expect(rendered.text).to include("3.8")
+      expect(rendered.text).to include("78%")
+    end
+
+    it "renders the pass rate" do
+      expect(rendered.text).to include("90%")
+    end
+
+    it "renders cost and tokens of the latest experiment" do
+      expect(rendered.text).to include("$0.0123")
+      expect(rendered.text).to include("1,500 tokens")
     end
 
     it "renders the active prompt version" do
@@ -73,8 +88,8 @@ RSpec.describe Evaluation::DashboardComponent, type: :component do
     let(:experiment) { create(:evaluation_experiment) }
     let(:score_history) do
       [
-        { created_at: "2026-01-01", avg_score: 3.0 },
-        { created_at: "2026-02-01", avg_score: 4.0 }
+        { created_at: "2026-01-01", avg_score: 0.6 },
+        { created_at: "2026-02-01", avg_score: 0.8 }
       ]
     end
     let(:component) do

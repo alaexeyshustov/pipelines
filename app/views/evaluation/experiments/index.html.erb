@@ -6,12 +6,13 @@
   <% table.with_columns([
     { key: "name",   label: "Name",    cell: ->(e) { e.name } },
     { key: "status", label: "Status",  cell: ->(e) { e.status.to_s } },
-    { key: "prompt", label: "Prompt",  cell: ->(e) { e.prompt&.name.to_s } }
+    { key: "prompt", label: "Prompt",  cell: ->(e) { e.prompt&.name.to_s } },
+    { key: "cost",   label: "Cost",    variant: :subtle, cell: ->(e) { Evaluation::ScoreFormatter.cost(@usage_by_experiment[e.id].cost) } }
   ]) %>
   <% table.with_action_column(
     actions: ->(experiment) {
       actions = [{ label: "Show", url: evaluation_experiment_path(experiment), variant: :primary }]
-      unless experiment.pending? || experiment.in_progress?
+      unless experiment.pending? || experiment.running?
         actions << { label: "Delete", url: evaluation_experiment_path(experiment), variant: :danger, method: :delete, confirm: "Delete experiment '#{experiment.name}'? This cannot be undone." }
       end
       actions
