@@ -1,7 +1,7 @@
 module Evaluation
   module Experiments
     class StatusBadgeComponentPreview < ViewComponent::Preview
-      %w[pending sampling evaluating completed failed].each do |state|
+      %w[pending running completed failed].each do |state|
         define_method(state) do
           experiment = Evaluation::Experiment.new(id: 1, name: "Experiment",
                                                   status: state,

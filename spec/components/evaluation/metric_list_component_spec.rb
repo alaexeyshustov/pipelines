@@ -4,15 +4,15 @@ RSpec.describe Evaluation::MetricListComponent, type: :component do
   subject(:rendered) { render_inline(component) }
 
   let(:metric_class) do
-    Data.define(:id, :name, :description, :weight, :active) do
+    Data.define(:id, :name, :description, :weight, :active, :kind, :minimum) do
       def active? = active
     end
   end
 
   let(:metrics) do
     [
-      metric_class.new(id: 1, name: "clarity", description: "Response is clear", weight: 1.5, active: true),
-      metric_class.new(id: 2, name: "accuracy", description: "Answer is correct", weight: 2.0, active: false)
+      metric_class.new(id: 1, name: "clarity", description: "Response is clear", weight: 1.5, active: true, kind: "score", minimum: 0.6),
+      metric_class.new(id: 2, name: "accuracy", description: "Answer is correct", weight: 2.0, active: false, kind: "probability", minimum: nil)
     ]
   end
 

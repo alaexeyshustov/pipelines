@@ -30,7 +30,7 @@ RSpec.describe Evaluation::Experiment do
     end
 
     it "excludes non-completed experiments for the same prompt name" do
-      create(:evaluation_experiment, prompt: prompt, status: "sampling")
+      create(:evaluation_experiment, prompt: prompt, status: "running")
 
       expect(described_class.completed_for_prompt_name("classifier")).to be_empty
     end
@@ -70,19 +70,15 @@ RSpec.describe Evaluation::Experiment do
       expect(experiment).to be_pending
     end
 
-    it "transitions pending → sampling" do
-      experiment.start_sampling!
-      expect(experiment.reload).to be_sampling
+    it "transitions pending → running" do
+      experiment.start!
+      expect(experiment.reload).to be_running
     end
 
-    it "transitions sampling → evaluating" do
-      experiment.update!(status: "sampling", pending_samples_count: 0, pending_evaluations_count: 1)
-      experiment.start_evaluating!
-      expect(experiment.reload).to be_evaluating
-    end
-
-    it "transitions evaluating → completed" do
-      experiment.update!(status: "evaluating", pending_evaluations_count: 0)
+    it "transitions running → completed when all samples are done and the threshold is met" do
+      experiment = create(:evaluation_experiment, status: "running", pending_samples_count: 0)
+      ds = create(:evaluation_dataset_sample, dataset: experiment.dataset)
+      create(:evaluation_sample, experiment: experiment, dataset_sample: ds)
       experiment.complete!
       expect(experiment.reload).to be_completed
     end
@@ -92,14 +88,8 @@ RSpec.describe Evaluation::Experiment do
       expect(experiment.reload).to be_failed
     end
 
-    it "transitions sampling → failed" do
-      experiment.update!(status: "sampling")
-      experiment.fail!
-      expect(experiment.reload).to be_failed
-    end
-
-    it "transitions evaluating → failed" do
-      experiment.update!(status: "evaluating")
+    it "transitions running → failed" do
+      experiment = create(:evaluation_experiment, status: "running")
       experiment.fail!
       expect(experiment.reload).to be_failed
     end
@@ -108,18 +98,25 @@ RSpec.describe Evaluation::Experiment do
       expect { experiment.complete! }.to raise_error(AASM::InvalidTransition)
     end
 
-    it "raises on an invalid transition from pending to evaluating" do
-      expect { experiment.start_evaluating! }.to raise_error(AASM::InvalidTransition)
-    end
-
-    it "raises on an invalid transition from sampling to evaluating while sampling is still in flight" do
-      experiment.update!(status: "sampling", pending_samples_count: 1, pending_evaluations_count: 1)
-      expect { experiment.start_evaluating! }.to raise_error(AASM::InvalidTransition)
-    end
-
-    it "raises on an invalid transition from evaluating to completed while evaluations are still pending" do
-      experiment.update!(status: "evaluating", pending_evaluations_count: 1)
+    it "raises on completing while samples are still pending" do
+      experiment = create(:evaluation_experiment, status: "running", pending_samples_count: 1)
+      create(:evaluation_dataset_sample, dataset: experiment.dataset)
       expect { experiment.complete! }.to raise_error(AASM::InvalidTransition)
+    end
+
+    it "raises on completing below the 80% threshold" do
+      experiment = create(:evaluation_experiment, status: "running", pending_samples_count: 0)
+      dss = create_list(:evaluation_dataset_sample, 5, dataset: experiment.dataset)
+      create(:evaluation_sample, experiment: experiment, dataset_sample: dss.first)
+      expect { experiment.complete! }.to raise_error(AASM::InvalidTransition)
+    end
+
+    it "completes at exactly 80%" do
+      experiment = create(:evaluation_experiment, status: "running", pending_samples_count: 0)
+      dss = create_list(:evaluation_dataset_sample, 5, dataset: experiment.dataset)
+      dss.first(4).each { |ds| create(:evaluation_sample, experiment: experiment, dataset_sample: ds) }
+      experiment.complete!
+      expect(experiment.reload).to be_completed
     end
   end
 end

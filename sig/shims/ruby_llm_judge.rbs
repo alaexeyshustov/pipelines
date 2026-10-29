@@ -1,0 +1,59 @@
+module RubyLLM
+  class ModelNotFoundError < Error
+  end
+
+  class Configuration
+    def default_judgment_model: () -> String
+  end
+
+  def self.config: () -> Configuration
+
+  class Models
+    class ModelInfo
+      def type: () -> Symbol
+      def capabilities: () -> Array[String]
+    end
+  end
+
+  class Cost
+    def total: () -> Float?
+  end
+
+  class Tokens
+    def to_h: () -> Hash[Symbol, Integer?]
+  end
+
+  class Probability
+    def probability: () -> Float
+    def to_h: () -> Hash[Symbol, json_object_value | Symbol]
+  end
+
+  class Score
+    def score: () -> Float
+    def levels: () -> Array[String]
+    def probabilities: () -> Hash[Integer, Float]
+    def confidence: () -> Float?
+    def to_h: () -> Hash[Symbol, json_object_value | Symbol]
+  end
+
+  class Choice
+    def choice: () -> (String | Symbol)
+    def probabilities: () -> Hash[String | Symbol, Float]
+    def confidence: () -> Float?
+    def to_h: () -> Hash[Symbol, json_object_value | Symbol]
+  end
+
+  type answer = Probability | Score | Choice
+
+  class Judgment
+    def fetch: (String name) -> answer
+    def tokens: () -> Tokens
+    def cost: () -> Cost
+  end
+
+  class Judge
+    type question = Hash[Symbol, Symbol | json_object_value]
+
+    def judge: (json_object input, questions: Hash[String, question], ?model: String, ?owner: ActiveRecord::Base, ?metadata: Hash[Symbol, Integer]) -> Judgment
+  end
+end

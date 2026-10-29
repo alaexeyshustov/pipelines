@@ -4,7 +4,11 @@
 
 <div class="space-y-8">
   <% @agent_summaries.each do |summary| %>
-    <%= render Evaluation::DashboardComponent.new(summary: summary) %>
+    <%= render Evaluation::DashboardComponent.new(
+      summary: summary,
+      pass_rate: @pass_rates[summary.latest_experiment&.id],
+      usage: @usage_by_experiment[summary.latest_experiment&.id]
+    ) %>
   <% end %>
 
   <% if @agent_summaries.empty? %>
@@ -23,6 +27,7 @@
       { key: "name",       label: "Name",    cell: ->(e) { e.name } },
       { key: "status",     label: "Status",  cell: ->(e) { e.status.to_s } },
       { key: "prompt",     label: "Prompt",  cell: ->(e) { e.prompt&.name.to_s } },
+      { key: "cost",       label: "Cost",    variant: :subtle, cell: ->(e) { Evaluation::ScoreFormatter.cost(@usage_by_experiment[e.id].cost) } },
       { key: "created_at", label: "Created", cell: ->(e) { e.created_at.strftime("%Y-%m-%d %H:%M") } }
     ]) %>
     <% table.with_action_column(

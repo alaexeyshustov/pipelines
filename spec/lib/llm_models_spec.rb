@@ -73,9 +73,9 @@ RSpec.describe LlmModels do
   end
 
   describe ".judge" do
-    it "defaults to gpt-5.4" do
+    it "defaults to gpt-6-luna" do
       with_env("JUDGE_LLM_MODEL", nil) do
-        expect(described_class.judge).to eq("gpt-5.4")
+        expect(described_class.judge).to eq("gpt-6-luna")
       end
     end
 

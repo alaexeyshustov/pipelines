@@ -22,6 +22,14 @@
       <dd class="text-gray-700"><%= format_score(latest_score) %></dd>
     </div>
     <div>
+      <dt class="font-medium text-gray-500">Pass Rate</dt>
+      <dd class="text-gray-700"><%= format_pass_rate(latest_pass_rate) %></dd>
+    </div>
+    <div>
+      <dt class="font-medium text-gray-500">Cost</dt>
+      <dd class="text-gray-700"><%= usage_label %></dd>
+    </div>
+    <div>
       <dt class="font-medium text-gray-500">Active Prompt</dt>
       <dd class="text-gray-700"><%= active_prompt_version ? "v#{active_prompt_version}" : "—" %></dd>
     </div>

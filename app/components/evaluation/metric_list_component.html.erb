@@ -2,6 +2,8 @@
   <% table.with_columns([
     { key: "name",        label: "Name",        variant: :mono },
     { key: "description", label: "Description", cell: ->(m) { m.description } },
+    { key: "kind",        label: "Kind",        variant: :subtle, cell: ->(m) { m.kind } },
+    { key: "minimum",     label: "Pass at",     variant: :subtle, cell: ->(m) { Evaluation::ScoreFormatter.percent(m.minimum) } },
     { key: "weight",      label: "Weight",      variant: :subtle, cell: ->(m) { m.weight.to_s } },
     { key: "active",      label: "Active",      cell: ->(m) { m.active? ? "Yes" : "No" } }
   ]) %>

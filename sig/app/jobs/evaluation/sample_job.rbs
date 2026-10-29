@@ -1,0 +1,14 @@
+module Evaluation
+  class SampleJob < ApplicationJob
+    TRANSPORT_ERRORS: Array[singleton(StandardError)]
+
+    def perform: (Integer experiment_id, Integer dataset_sample_id) -> void
+    def release_slot: (Integer experiment_id, Integer dataset_sample_id) -> void
+
+    private
+
+    def run_sample: (Evaluation::Experiment experiment, Evaluation::DatasetSample dataset_sample) -> void
+    def grade: (Evaluation::Experiment experiment, Evaluation::DatasetSample dataset_sample, Evaluation::Sample sample) -> void
+    def finish_slot: (Evaluation::Experiment experiment) -> void
+  end
+end

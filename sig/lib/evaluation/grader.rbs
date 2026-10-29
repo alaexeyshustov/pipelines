@@ -1,0 +1,28 @@
+module Evaluation
+  class Grader
+    @experiment: Experiment
+    @dataset_sample: DatasetSample
+    @sample: Sample
+
+    def self.call: (experiment: Experiment, dataset_sample: DatasetSample, sample: Sample) -> Array[Grade]
+
+    def initialize: (experiment: Experiment, dataset_sample: DatasetSample, sample: Sample) -> void
+    def call: () -> Array[Grade]
+
+    private
+
+    def active_metrics: () -> Array[Metric]
+    def blank_sample: () -> Array[Grade]
+    def judge: (Array[Metric] metrics) -> RubyLLM::Judgment
+    def grade_for: (Metric metric, RubyLLM::answer answer) -> Grade
+    def confidence: (RubyLLM::answer answer) -> Float?
+    def attach_usage: (Array[Grade] grades, RubyLLM::Judgment judgment) -> Array[Grade]
+    def justification: (Metric metric, RubyLLM::answer answer, Float? score) -> String
+    def detail: (Metric metric, RubyLLM::answer answer) -> String
+    def percent: (Float | Integer | nil fraction) -> String
+    def distribution: (Hash[String | Symbol | Integer, Float] probabilities) -> String
+    def evidence: (RubyLLM::Score | RubyLLM::Choice answer) -> String
+    def score_detail: (RubyLLM::Score answer) -> String
+    def choice_detail: (RubyLLM::Choice answer, Metric metric) -> String
+  end
+end

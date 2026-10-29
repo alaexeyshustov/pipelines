@@ -1,0 +1,16 @@
+module Evaluation
+  class MetricDefinitionFieldsComponent < ViewComponent::Base
+    HINTS: Hash[String, String]
+
+    @kind: String
+    @minimum: Float?
+    @levels: MetricLevelsText::levels?
+
+    def initialize: (?kind: String, ?minimum: Float?, ?levels: MetricLevelsText::levels?) -> void
+    def kind_options: () -> Array[[String, String]]
+    def selected_kind: () -> String
+    def minimum: () -> Float?
+    def hints: () -> Hash[String, String]
+    def levels_text: () -> String
+  end
+end

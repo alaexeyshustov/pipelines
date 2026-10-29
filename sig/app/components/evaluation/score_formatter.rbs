@@ -1,0 +1,10 @@
+module Evaluation
+  module ScoreFormatter
+    PLACEHOLDER: String
+
+    def self.percent: (Numeric? score, ?digits: Integer) -> String
+    def self.points: (Numeric? delta) -> String
+    def self.cost: (Numeric? amount) -> String
+    def self.tokens: (Integer count) -> String
+  end
+end

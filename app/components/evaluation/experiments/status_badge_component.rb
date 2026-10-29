@@ -16,6 +16,7 @@ module Evaluation
         case @experiment.status.to_sym
         when :completed then :success
         when :failed    then :danger
+        when :running   then :info
         else                 :warning
         end
       end

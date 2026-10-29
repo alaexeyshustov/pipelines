@@ -4,13 +4,13 @@ module Evaluation
       summary = OpenStruct.new(
         agent_name: "ClassifyAgent",
         latest_experiment: OpenStruct.new(id: 1, name: "Experiment #42"),
-        latest_score: 87.5,
+        latest_score: 0.875,
         active_prompt_version: 3,
         sample_count: 120,
         score_history: [
-          { date: "2024-01-01", score: 80.0 },
-          { date: "2024-01-15", score: 85.0 },
-          { date: "2024-02-01", score: 87.5 }
+          { created_at: "2024-01-01", avg_score: 0.8 },
+          { created_at: "2024-01-15", avg_score: 0.85 },
+          { created_at: "2024-02-01", avg_score: 0.875 }
         ]
       )
       render(Evaluation::DashboardComponent.new(summary: summary))

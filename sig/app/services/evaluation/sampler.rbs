@@ -16,11 +16,12 @@ module Evaluation
 
     private
 
+    def task_class: () -> singleton(RubyLLM::Evaluation)
     def build_agent: () -> RubyLLM::Agent
-    def persist_sample: (RubyLLM::Agent agent, RubyLLM::Message result) -> Sample
+    def persist_sample: (RubyLLM::Evaluation::Trial trial) -> Sample
+    def tool_calls_from: (json_object? evidence) -> Array[tool_call]
+    def index_calls: (Array[json_object] messages) -> Hash[String, json_object]
     def wrap_write_tools: (Array[singleton(RubyLLM::Tool)] tool_classes) -> Array[singleton(RubyLLM::Tool)]
     def block_write_tool: (singleton(RubyLLM::Tool) tool_class) -> singleton(RubyLLM::Tool)
-    def capture_tool_calls: (RubyLLM::Agent agent) -> Array[tool_call]
-    def agent_messages: (RubyLLM::Agent agent) -> Array[::Message]
   end
 end

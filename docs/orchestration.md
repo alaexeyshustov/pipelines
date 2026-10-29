@@ -36,3 +36,12 @@ Pipelines and Actions can be configured via the Web UI:
 - `/orchestration/actions`
 
 New steps can be added to existing pipelines, and actions can be assigned to those steps to build complex automated workflows.
+
+## Evaluation hooks
+
+The evaluation subsystem ([evals.md](evals.md)) depends on orchestration, never the reverse (see [ADR 0011](adr/0011-archspec-layers.md)).
+
+- `Orchestration::SamplingGateway.build` builds an agent from an `Agent`/`Action` record with an optional prompt override, model override and `tool_transform` (used to block write tools). `Evaluation::Sampler` calls it from inside a native `RubyLLM::Evaluation#perform`.
+- `Orchestration.prompt_resolver` is injected by an initializer to serve the active `Evaluation::Prompt` at runtime.
+- Experiments run as one `Evaluation::SampleJob` per dataset sample (`pending → running → completed | failed`, one `pending_samples_count` counter, 80% completion threshold). Retry policy: no job retry on `RubyLLM::Error` (RubyLLM retries and falls back itself); one outer retry for raw transport errors; the job always releases its counter slot.
+- LLM usage of an experiment is attributed with `Evaluation::UsageScope`; orchestration runs outside an experiment have no usage owner.

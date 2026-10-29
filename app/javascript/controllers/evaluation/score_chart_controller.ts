@@ -33,7 +33,10 @@ export default class extends Controller {
     if (!canvas) return;
 
     const labels = this.pointsValue.map((p) => p.created_at);
-    const scores = this.pointsValue.map((p) => p.avg_score);
+    // Scores are normalized 0.0..1.0; chart them as percentages.
+    const scores = this.pointsValue.map((p) =>
+      p.avg_score === null ? null : Math.round(p.avg_score * 1000) / 10,
+    );
 
     new Chart(canvas as HTMLCanvasElement, {
       type: 'line',
@@ -41,7 +44,7 @@ export default class extends Controller {
         labels,
         datasets: [
           {
-            label: 'Avg Score',
+            label: 'Avg Score (%)',
             data: scores,
             borderColor: '#6366f1',
             backgroundColor: 'rgba(99, 102, 241, 0.1)',
@@ -54,7 +57,11 @@ export default class extends Controller {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          y: { min: 0, max: 5, ticks: { stepSize: 1 } },
+          y: {
+            min: 0,
+            max: 100,
+            ticks: { stepSize: 25, callback: (value) => `${value}%` },
+          },
         },
         plugins: { tooltip: { enabled: true } },
       },

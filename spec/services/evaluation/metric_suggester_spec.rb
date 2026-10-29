@@ -5,56 +5,63 @@ RSpec.describe Evaluation::MetricSuggester do
 
   let(:agent_name) { "Emails::ClassifyAgent" }
   let(:instructions) { "You are an email classifier. Classify emails by topic." }
-
-  let(:metrics_json) do
-    JSON.generate([
-      { "name" => "classification_accuracy", "description" => "How accurately emails are classified", "weight" => 0.5 },
-      { "name" => "response_quality",        "description" => "Quality of the response text",         "weight" => 0.3 }
-    ])
+  let(:entries) do
+    [
+      { name: "is_correct", description: "Is the label right", weight: 0.5, kind: "probability",
+        levels: [], options: [], minimum: 0.8 },
+      { name: "quality", description: "Quality of the reply", weight: 0.3, kind: "score",
+        levels: [ "wrong", "ok", "great" ], options: [], minimum: 0.5 },
+      { name: "tone", description: "Tone of the reply", weight: 0.2, kind: "choice", levels: [], minimum: 0.5,
+        options: [ { name: "formal", description: "Formal tone", value: 1.0 },
+                   { name: "rude", description: "Rude tone", value: 0.0 } ] }
+    ]
   end
-
-  let(:llm_response_body) do
-    {
-      id: "cmpl-test", object: "chat.completion",
-      model: "gpt-5.4",
-      choices: [ { index: 0, message: { role: "assistant", content: metrics_json }, finish_reason: "stop" } ],
-      usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 }
-    }.to_json
-  end
+  let(:content) { JSON.generate({ metrics: entries }) }
 
   before do
     create(:orchestration_prompt, name: agent_name, system_prompt: instructions)
-    stub_request(:post, %r{api\.openai\.com})
-      .to_return(status: 200, body: llm_response_body, headers: { "Content-Type" => "application/json" })
+    stub_request(:post, %r{api\.openai\.com}).to_return(
+      status: 200, headers: { "Content-Type" => "application/json" },
+      body: {
+        id: "cmpl-test", object: "chat.completion", model: "gpt-5.4",
+        choices: [ { index: 0, message: { role: "assistant", content: content }, finish_reason: "stop" } ],
+        usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 }
+      }.to_json
+    )
   end
 
   describe ".call" do
     it "delegates to a new instance" do
-      result = described_class.call(agent_name: agent_name)
-      expect(result).to be_an(Array).and have_attributes(size: 2)
+      expect(described_class.call(agent_name: agent_name).size).to eq(3)
     end
   end
 
   describe "#call" do
-    it "returns an array of metric hashes" do
-      result = suggester.call
-      expect(result).to be_an(Array).and have_attributes(size: 2)
-    end
-
-    it "returns hashes with symbol keys name, description, weight" do
-      result = suggester.call
-      expect(result.first).to include(
-        name: "classification_accuracy",
-        description: a_kind_of(String),
-        weight: be_a(Float)
+    it "maps entries to Metric columns: kind, levels, weight, minimum" do
+      expect(suggester.call).to eq(
+        [
+          { name: "is_correct", description: "Is the label right", weight: 0.5, kind: "probability", levels: nil, minimum: 0.8 },
+          { name: "quality", description: "Quality of the reply", weight: 0.3, kind: "score", levels: [ "wrong", "ok", "great" ], minimum: 0.5 },
+          { name: "tone", description: "Tone of the reply", weight: 0.2, kind: "choice", minimum: 0.5,
+            levels: { "formal" => { "description" => "Formal tone", "value" => 1.0 },
+                      "rude" => { "description" => "Rude tone", "value" => 0.0 } } }
+        ]
       )
     end
 
-    it "sends the agent system prompt to the LLM" do
+    it "yields attributes that build valid Metric rows" do
+      suggester.call.each do |attrs|
+        expect(Evaluation::Metric.new(attrs.merge(agent_name: agent_name))).to be_valid
+      end
+    end
+
+    it "requests structured output with the metric schema and sends the agent prompt" do
       suggester.call
       expect(WebMock).to(have_requested(:post, %r{api\.openai\.com}).with { |req|
         body = JSON.parse(req.body)
-        body["messages"].any? { |m| m["content"].to_s.include?(instructions) }
+        item = body.dig("response_format", "json_schema", "schema", "properties", "metrics", "items", "properties")
+        item.key?("levels") && item.key?("options") && item.dig("kind", "enum") == %w[probability score choice] &&
+          body["messages"].any? { |m| m["content"].to_s.include?(instructions) }
       })
     end
 
@@ -62,83 +69,45 @@ RSpec.describe Evaluation::MetricSuggester do
       expect { suggester.call }.not_to change(Evaluation::Metric, :count)
     end
 
-    context "when agent prompt is not found" do
-      subject(:suggester) { described_class.new(agent_name: "NonExistentAgent") }
+    it "raises Error when no prompt exists" do
+      expect { described_class.call(agent_name: "NonExistentAgent") }
+        .to raise_error(described_class::Error, /No prompt found/)
+    end
 
-      it "raises MetricSuggester::Error" do
-        expect { suggester.call }.to raise_error(Evaluation::MetricSuggester::Error, /No prompt found/)
+    context "when the output is not valid JSON" do
+      let(:content) { "not json at all" }
+
+      it("raises Error") { expect { suggester.call }.to raise_error(described_class::Error) }
+    end
+
+    context "when the output has no metrics array" do
+      let(:content) { JSON.generate({ key: "value" }) }
+
+      it("raises Error") { expect { suggester.call }.to raise_error(described_class::Error, /metrics array/) }
+    end
+
+    context "when a score has fewer than two levels or a choice fewer than two options" do
+      let(:entries) do
+        [ { name: "a", description: "A", weight: 0.5, kind: "score", levels: [ "only" ], options: [], minimum: 0.5 },
+          { name: "b", description: "B", weight: 0.5, kind: "choice", levels: [], minimum: 0.5,
+            options: [ { name: "x", description: "X", value: 1.0 } ] } ]
+      end
+
+      it "degrades them to probability metrics" do
+        expect(suggester.call).to all(include(kind: "probability", levels: nil))
       end
     end
 
-    context "when LLM returns invalid JSON" do
-      let(:llm_response_body) do
-        {
-          id: "cmpl-test", object: "chat.completion",
-          model: "gpt-5.4",
-          choices: [ { index: 0, message: { role: "assistant", content: "not json at all" }, finish_reason: "stop" } ],
-          usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 }
-        }.to_json
+    context "when entries are invalid" do
+      let(:entries) do
+        [ { name: "good", description: "Valid", weight: 0.5, kind: "probability", levels: [], options: [], minimum: 2 },
+          { name: "bad_weight", description: "Invalid", weight: 1.5, kind: "probability", levels: [], options: [], minimum: 0.5 },
+          { name: "", description: "No name", weight: 0.4, kind: "probability", levels: [], options: [], minimum: 0.5 },
+          { name: "nan", description: "Bad weight", weight: "not-a-float", kind: "probability", levels: [], options: [], minimum: 0.5 } ]
       end
 
-      it "raises MetricSuggester::Error" do
-        expect { suggester.call }.to raise_error(Evaluation::MetricSuggester::Error)
-      end
-    end
-
-    context "when LLM returns a non-array JSON value" do
-      let(:llm_response_body) do
-        {
-          id: "cmpl-test", object: "chat.completion",
-          model: "gpt-5.4",
-          choices: [ { index: 0, message: { role: "assistant", content: '{"key":"value"}' }, finish_reason: "stop" } ],
-          usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 }
-        }.to_json
-      end
-
-      it "raises MetricSuggester::Error" do
-        expect { suggester.call }.to raise_error(Evaluation::MetricSuggester::Error, /Expected JSON array/)
-      end
-    end
-
-    context "when an entry has an out-of-range weight" do
-      let(:metrics_json) do
-        JSON.generate([
-          { "name" => "good_metric", "description" => "Valid",   "weight" => 0.5 },
-          { "name" => "bad_weight",  "description" => "Invalid", "weight" => 1.5 }
-        ])
-      end
-
-      it "drops the invalid entry and returns the rest" do
-        result = suggester.call
-        expect(result.pluck(:name)).to eq([ "good_metric" ])
-      end
-    end
-
-    context "when an entry has a blank name" do
-      let(:metrics_json) do
-        JSON.generate([
-          { "name" => "",            "description" => "No name", "weight" => 0.4 },
-          { "name" => "valid_name",  "description" => "Has name", "weight" => 0.6 }
-        ])
-      end
-
-      it "drops the blank-name entry" do
-        result = suggester.call
-        expect(result.pluck(:name)).to eq([ "valid_name" ])
-      end
-    end
-
-    context "when an entry has an unparseable weight" do
-      let(:metrics_json) do
-        JSON.generate([
-          { "name" => "ok",  "description" => "Fine",       "weight" => 0.5 },
-          { "name" => "bad", "description" => "Bad weight", "weight" => "not-a-float" }
-        ])
-      end
-
-      it "drops the unparseable entry" do
-        result = suggester.call
-        expect(result.pluck(:name)).to eq([ "ok" ])
+      it "drops them and clamps the minimum" do
+        expect(suggester.call).to match([ include(name: "good", minimum: 1.0) ])
       end
     end
   end

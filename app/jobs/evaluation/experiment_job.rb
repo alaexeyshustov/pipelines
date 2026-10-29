@@ -11,7 +11,7 @@ module Evaluation
         return
       end
 
-      dataset_sample_ids.each { |id| Evaluation::SamplingJob.perform_later(experiment.id, id) }
+      dataset_sample_ids.each { |id| Evaluation::SampleJob.perform_later(experiment.id, id) }
     end
 
     private
@@ -21,12 +21,12 @@ module Evaluation
     end
 
     def sampling_ids_from_state(experiment)
-      if experiment.may_start_sampling?
+      if experiment.may_start?
         ids = experiment.dataset.dataset_samples.ids
         experiment.update!(pending_samples_count: ids.size)
-        experiment.start_sampling!
+        experiment.start!
         ids
-      elsif experiment.sampling?
+      elsif experiment.running?
         recoverable_dataset_sample_ids(experiment)
       end
     end
@@ -37,14 +37,16 @@ module Evaluation
         .ids
 
       return nil if missing_dataset_sample_ids.empty?
-      return nil if sampling_jobs_still_in_flight?(experiment.id)
+      return nil if sample_jobs_still_in_flight?(experiment.id)
 
+      # Finished jobs already released their slot, so the counter restarts from the work left.
+      experiment.update!(pending_samples_count: missing_dataset_sample_ids.size)
       missing_dataset_sample_ids
     end
 
-    def sampling_jobs_still_in_flight?(experiment_id)
+    def sample_jobs_still_in_flight?(experiment_id)
       jobs = SolidQueue::Job
-        .where(class_name: "Evaluation::SamplingJob", finished_at: nil)
+        .where(class_name: "Evaluation::SampleJob", finished_at: nil)
         .where("arguments LIKE ?", "%[#{experiment_id},%")
 
       SolidQueue::ReadyExecution.exists?(job_id: jobs.select(:id)) ||

@@ -10,11 +10,11 @@ module Evaluation
     end
 
     def create
-      @metric = Evaluation::Metric.new(metric_params)
+      @metric = Evaluation::Metric.new(metric_attributes)
       @metric.save ? render_metric_created : render_metric_form_error
     end
     def update
-      if @metric.update(metric_params)
+      if @metric.update(metric_attributes)
         redirect_to evaluation_metrics_path, notice: "Metric updated."
       else
         render :edit, status: :unprocessable_content
@@ -73,7 +73,17 @@ module Evaluation
     end
 
     def metric_params
-      params.expect(evaluation_metric: [ :agent_name, :name, :description, :weight, :active ])
+      params.expect(evaluation_metric: [ :agent_name, :name, :description, :weight, :active, :kind, :minimum, :levels_text ])
+    end
+
+    # levels_text (one line per level / option, see MetricLevelsText) becomes Metric#levels; absent keeps the stored levels.
+    def metric_attributes
+      attributes = metric_params.to_h.symbolize_keys
+      text = attributes.delete(:levels_text)
+      return attributes if text.nil?
+
+      kind = attributes[:kind] || @metric&.kind
+      attributes.merge(levels: MetricLevelsText.parse(kind: kind, text: text))
     end
   end
 end

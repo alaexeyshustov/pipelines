@@ -1,0 +1,5 @@
+module Evaluation
+  class StructuredOutput
+    def self.from: (RubyLLM::Message message) -> Hash[String, json_object_value]
+  end
+end

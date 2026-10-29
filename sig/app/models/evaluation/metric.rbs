@@ -1,5 +1,7 @@
 module Evaluation
   class Metric < ApplicationRecord
+    KINDS: Array[String]
+
     type relation = _Relation[Metric, Integer]
 
     def self.table_name: () -> String
@@ -16,7 +18,19 @@ module Evaluation
     def description=: (String?) -> String?
     def weight: () -> BigDecimal?
     def weight=: (BigDecimal | Float | String | nil) -> (BigDecimal | Float | String | nil)
+    def kind: () -> String
+    def kind=: (String) -> String
+    def levels: () -> (Array[String] | Hash[String, json_object_value] | nil)
+    def levels=: (Array[String] | Hash[String, json_object_value] | nil) -> (Array[String] | Hash[String, json_object_value] | nil)
+    def minimum: () -> Float?
+    def minimum=: (Float | Integer | nil) -> (Float | Integer | nil)
     def active: () -> bool
     def active=: (bool) -> bool
+
+    private
+
+    def levels_match_kind: () -> void
+    def valid_score_levels?: () -> bool
+    def valid_choice_levels?: () -> bool
   end
 end

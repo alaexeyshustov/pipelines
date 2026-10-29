@@ -1,0 +1,21 @@
+module Evaluation
+  class GradeNormalizer
+    type value = RubyLLM::answer | bool | nil
+
+    @value: value
+    @metric: Metric
+
+    def self.call: (value: value, metric: Metric) -> Float?
+
+    def initialize: (value: value, metric: Metric) -> void
+    def call: () -> Float?
+
+    private
+
+    def native_number: (value value) -> (Float | Integer | nil)
+    def score_fraction: (RubyLLM::Score score) -> Float?
+    def choice_expectation: (RubyLLM::Choice choice) -> Float?
+    def option_value: (json_object_value definition) -> Float
+    def clamp: (Float | Integer | nil number) -> Float?
+  end
+end

@@ -15,6 +15,10 @@ module Evaluation
 
     def score: () -> Float?
     def score=: (Float | Integer | nil) -> (Float | Integer | nil)
+    def raw: () -> json_object?
+    def raw=: (json_object?) -> json_object?
+    def confidence: () -> Float?
+    def passed: () -> bool?
     def evaluator_class: () -> String?
     def evaluator_class=: (String?) -> String?
 

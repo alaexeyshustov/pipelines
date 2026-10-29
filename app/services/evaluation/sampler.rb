@@ -1,4 +1,7 @@
 module Evaluation
+  # Runs the agent under test through a native RubyLLM::Evaluation (evaluator disabled:
+  # sampling only) and persists the captured evidence as an Evaluation::Sample.
+  # Write tools are replaced by a sentinel so sampling never mutates data.
   class Sampler
     WRITE_BLOCKED_SENTINEL = "[write tool blocked during sampling]"
 
@@ -13,12 +16,30 @@ module Evaluation
     end
 
     def call
-      agent  = build_agent
-      result = agent.ask(@dataset_sample.input.to_json)
-      persist_sample(agent, result)
+      test_case = Evaluation::DatasetCases.for_sample(@dataset_sample)
+      trial     = task_class.run(dataset: [ test_case ]).trials.first # : RubyLLM::Evaluation::Trial
+      error     = trial.error
+      raise error if error
+
+      persist_sample(trial)
     end
 
     private
+
+    # RubyLLM instantiates the evaluation with no arguments, so the per-call
+    # agent factory is closed over by an anonymous subclass.
+    def task_class # steep:ignore:start
+      factory = -> { build_agent }
+      Class.new(RubyLLM::Evaluation) do
+        evaluator false
+
+        define_method(:perform) do |input|
+          agent = factory.call
+          agent.ask(input.to_json)
+          agent
+        end
+      end
+    end # steep:ignore:end
 
     def build_agent
       Orchestration::SamplingGateway.build(
@@ -29,17 +50,33 @@ module Evaluation
       )
     end
 
-    def persist_sample(agent, result)
-      tool_calls = capture_tool_calls(agent)
-      output     = result.content.is_a?(String) ? result.content : result.content.to_json
+    def persist_sample(trial)
+      output = trial.output
       Evaluation::Sample.create!(
         experiment_id:     @experiment.id,
         dataset_sample_id: @dataset_sample.id,
         prompt_id:         @prompt&.id,
-        tool_calls:        tool_calls,
-        output:            output
+        tool_calls:        tool_calls_from(trial.evidence&.deep_stringify_keys),
+        output:            output.is_a?(String) ? output : output.to_json
       )
     end
+
+    # Pairs each tool call (assistant messages) with its result (tool messages)
+    # from the native evidence, in call order.
+    def tool_calls_from(evidence) # steep:ignore:start
+      messages = Array(evidence && evidence["messages"])
+      calls = index_calls(messages)
+      messages.filter_map do |msg|
+        call = calls[msg["tool_call_id"]] if msg["role"].to_s == "tool"
+        next unless call
+
+        { "tool_name" => call["name"], "arguments" => call["arguments"], "result" => msg["content"].to_s }
+      end
+    end
+
+    def index_calls(messages)
+      messages.flat_map { |msg| (msg["tool_calls"] || {}).values }.index_by { |call| call["id"] }
+    end # steep:ignore:end
 
     def wrap_write_tools(tool_classes)
       tool_classes.map do |tool_class|
@@ -59,23 +96,6 @@ module Evaluation
         end
       end # : singleton(RubyLLM::Tool)
       # steep:ignore:end
-    end
-
-    def capture_tool_calls(agent)
-      agent_messages(agent).filter_map do |msg|
-        tc = msg.parent_tool_call # : RubyLLM::ToolCall?
-        next unless tc
-
-        {
-          "tool_name" => tc.name,
-          "arguments" => tc.arguments,
-          "result" => msg.content.to_s
-        }
-      end
-    end
-
-    def agent_messages(agent)
-      agent.messages.where(role: "tool").order(:id).includes(:ruby_llm_parent_tool_call).to_a
     end
   end
 end

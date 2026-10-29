@@ -1,0 +1,15 @@
+module Evaluation
+  class SampleGrade
+    @grades: Array[Grade]
+    @metrics: Hash[String?, Metric]
+
+    def self.call: (grades: Array[Grade], metrics: Array[Metric]) -> Float?
+
+    def initialize: (grades: Array[Grade], metrics: Array[Metric]) -> void
+    def call: () -> Float?
+
+    private
+
+    def weighted_scores: () -> Array[[ Float, Float ]]
+  end
+end

@@ -27,6 +27,17 @@ RSpec.describe Evaluation::Wizard::MetricsStepComponent, type: :component do
     expect(rendered.css("form[action*='/evaluation/experiments'] button[type='submit']").text).to include("Next")
   end
 
+  it "renders the metric editor with kind, threshold and levels inputs" do
+    expect(rendered.css("select[name='evaluation_metric[kind]'] option").map { |o| o.attr("value") }).to eq(Evaluation::Metric::KINDS)
+    expect(rendered.css("input[name='evaluation_metric[minimum]']")).to be_present
+    expect(rendered.css("textarea[name='evaluation_metric[levels_text]']")).to be_present
+  end
+
+  it "shows kind and pass threshold of existing metrics" do
+    create(:evaluation_metric, :score, agent_name: agent_name, minimum: 0.6)
+    expect(rendered.text).to include("score ≥ 60%")
+  end
+
   it "renders empty state when no metrics exist" do
     expect(rendered.text).to include("No metrics")
   end

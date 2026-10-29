@@ -2,7 +2,7 @@ module Evaluation
   class ComparisonComponentPreview < ViewComponent::Preview
     def default
       result = OpenStruct.new(
-        metric_deltas: { "accuracy" => 2.5, "relevance" => -1.0, "coherence" => nil }
+        metric_deltas: { "accuracy" => 0.025, "relevance" => -0.01, "coherence" => nil }
       )
       baseline = OpenStruct.new(name: "Experiment A")
       candidate = OpenStruct.new(name: "Experiment B")
@@ -16,7 +16,7 @@ module Evaluation
 
     def all_wins
       result = OpenStruct.new(
-        metric_deltas: { "accuracy" => 5.0, "relevance" => 3.2, "coherence" => 1.8 }
+        metric_deltas: { "accuracy" => 0.05, "relevance" => 0.032, "coherence" => 0.018 }
       )
       render(Evaluation::ComparisonComponent.new(
         result: result,

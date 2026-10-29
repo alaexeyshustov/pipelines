@@ -16,6 +16,8 @@
     <%= f.number_field :weight, step: 0.1, min: 0, class: "w-32 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" %>
   </div>
 
+  <%= render Evaluation::MetricDefinitionFieldsComponent.new(kind: metric.kind, minimum: metric.minimum, levels: metric.levels) %>
+
   <div class="flex items-center gap-2">
     <%= f.check_box :active, class: "h-4 w-4 rounded border-gray-300 text-indigo-600" %>
     <%= f.label :active, "Active", class: "text-sm font-medium text-gray-700" %>

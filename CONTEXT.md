@@ -29,12 +29,12 @@ _Avoid_: model, LLM, AI
 **Agent snapshot**: An immutable record of the model, prompt, tools, and schema an agent used for a specific run — captured at execution time.
 _Avoid_: agent state, agent config
 
-### Evaluation (Leva)
+### Evaluation
 
-**Experiment**: A single evaluation run of an agent against a dataset using one specific prompt version. Progresses through four phases: `pending → sampling → evaluating → completed` (or `failed`).
+**Experiment**: A single evaluation run of an agent against a dataset using one specific prompt version. Progresses `pending → running → completed` (or `failed`); completes when at least 80% of dataset samples are fully graded.
 _Avoid_: eval run, test run
 
-**Prompt version**: A versioned, named snapshot of a system prompt and user prompt stored in `leva_prompts`. Each improvement produces a new version; the version number auto-increments.
+**Prompt version**: A versioned, named snapshot of a system prompt and user prompt stored in `evaluation_prompts`. Each improvement produces a new version; the version number auto-increments.
 _Avoid_: prompt, instructions
 
 **Dataset**: A named collection of dataset samples used as test cases for an experiment.
@@ -49,13 +49,13 @@ _Avoid_: runner result, prediction
 **Sampler**: The component that runs an agent against a dataset sample with real tool calls. Write tools (those where `readonly?` returns false) are blocked and return a sentinel value; read tools execute normally.
 _Avoid_: runner, agent runner
 
-**Metric**: A named rubric scoped to an agent that defines one dimension of output quality (e.g. "Tag Relevance"). Scored 1–5 by the judge. Metrics are a prerequisite for creating an experiment — if none exist for an agent, they must be generated before the experiment is created.
+**Metric**: A named rubric scoped to an agent that defines one dimension of output quality (e.g. "Tag Relevance"). Graded by the judge as a probability, a score over ordered levels, or a choice; every grade is normalized to 0.0..1.0 and weighted by the metric's weight. Metrics are a prerequisite for creating an experiment — if none exist for an agent, they must be generated before the experiment is created.
 _Avoid_: criterion, rule, dimension
 
-**Judge**: The LLM instance that scores a sample against the active metrics for an experiment. When `expected_tool_calls` is present on the dataset sample, the judge compares actual vs. expected tool-calling behaviour as one dimension of quality. Configured via `JUDGE_LLM_MODEL`.
+**Judge**: The LLM instance that scores a sample against the active metrics for an experiment. When `expected_tool_calls` is present on the dataset sample, the judge compares actual vs. expected tool-calling behaviour as one dimension of quality. A native `RubyLLM::Judge` on a judgment model, configured via `JUDGE_LLM_MODEL` (default `gpt-6-luna`).
 _Avoid_: evaluator LLM, scoring model
 
-**Justification**: The judge's written reasoning for the score it assigned on one metric for one sample.
+**Justification**: The text reason stored with one metric grade of one sample. Derived from the judge's native answer (no free text from the judge).
 _Avoid_: explanation, rationale
 
 **Improvement**: An LLM-generated revision of a prompt version, produced by `PromptImprover` from the scores and justifications of a completed experiment. The improver agent can call tools to inspect the full experiment history for the same agent — enabling it to understand direction before generating its revision.
@@ -87,8 +87,8 @@ _Avoid_: service interface, callable
 - A **Step action** has an **Input mapping** that satisfies the action's **Input schema** required keys
 - An **Experiment** uses one **Dataset** and one **Prompt version**
 - A **Dataset** contains one or more **Dataset samples**; each holds an input and optional expected tool call trace
-- The **Sampler** produces one **Sample** per **Dataset sample** during the sampling phase
-- An **Experiment** produces one **Justification** per **Metric** per **Sample** during the evaluating phase
+- The **Sampler** produces one **Sample** per **Dataset sample** during the run
+- An **Experiment** produces one **Justification** per **Metric** per **Sample** when it is graded
 - **Metrics** must exist for an agent before an experiment can be created
 - A **Prompt version** has a fixed **Output schema** that the **Judge** must not contradict when evaluating format compliance
 - Each **Improvement** creates a new **Prompt version** and triggers an **Auto-eval**

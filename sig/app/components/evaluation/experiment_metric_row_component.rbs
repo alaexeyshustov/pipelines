@@ -3,9 +3,11 @@ module Evaluation
     @metric: Evaluation::Metric
     @avg: Float?
     @experiment: Evaluation::Experiment
+    @pass_rate: Float?
 
-    def initialize: (metric: Evaluation::Metric, avg: Float?, experiment: Evaluation::Experiment) -> void
+    def initialize: (metric: Evaluation::Metric, avg: Float?, experiment: Evaluation::Experiment, ?pass_rate: Float?) -> void
     def avg_label: () -> String?
+    def pass_rate_label: () -> String?
     def metric_results_path: () -> String
   end
 end

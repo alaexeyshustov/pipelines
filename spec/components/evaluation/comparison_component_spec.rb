@@ -5,12 +5,12 @@ RSpec.describe Evaluation::ComparisonComponent, type: :component do
 
   let(:result) do
     Evaluation::Comparison::ComparisonResult.new(
-      baseline_score: 3.0,
-      candidate_score: 4.0,
-      baseline_metrics: { "clarity" => 3.0, "accuracy" => 3.0 },
-      candidate_metrics: { "clarity" => 4.5, "accuracy" => 3.5 },
-      metric_deltas: { "clarity" => 1.5, "accuracy" => 0.5 },
-      overall_delta: 1.0
+      baseline_score: 0.6,
+      candidate_score: 0.8,
+      baseline_metrics: { "clarity" => 0.6, "accuracy" => 0.6 },
+      candidate_metrics: { "clarity" => 0.9, "accuracy" => 0.7 },
+      metric_deltas: { "clarity" => 0.3, "accuracy" => 0.1 },
+      overall_delta: 0.2
     )
   end
 
@@ -24,17 +24,17 @@ RSpec.describe Evaluation::ComparisonComponent, type: :component do
   end
 
   it "renders baseline and candidate scores" do
-    expect(rendered.text).to include("3.0")
-    expect(rendered.text).to include("4.0")
+    expect(rendered.text).to include("60%")
+    expect(rendered.text).to include("80%")
   end
 
   it "renders overall delta" do
-    expect(rendered.text).to include("+1.0")
+    expect(rendered.text).to include("+20.0 pts")
   end
 
   it "renders per-metric deltas" do
-    expect(rendered.text).to include("+1.5")
-    expect(rendered.text).to include("+0.5")
+    expect(rendered.text).to include("+30.0 pts")
+    expect(rendered.text).to include("+10.0 pts")
   end
 
   it "applies green class for positive deltas" do
@@ -44,12 +44,12 @@ RSpec.describe Evaluation::ComparisonComponent, type: :component do
   context "with negative delta" do
     let(:result) do
       Evaluation::Comparison::ComparisonResult.new(
-        baseline_score: 4.0,
-        candidate_score: 3.0,
-        baseline_metrics: { "clarity" => 4.0 },
-        candidate_metrics: { "clarity" => 3.0 },
-        metric_deltas: { "clarity" => -1.0 },
-        overall_delta: -1.0
+        baseline_score: 0.8,
+        candidate_score: 0.6,
+        baseline_metrics: { "clarity" => 0.8 },
+        candidate_metrics: { "clarity" => 0.6 },
+        metric_deltas: { "clarity" => -0.2 },
+        overall_delta: -0.2
       )
     end
 
@@ -58,7 +58,7 @@ RSpec.describe Evaluation::ComparisonComponent, type: :component do
     end
 
     it "formats negative delta with minus sign" do
-      expect(rendered.text).to include("-1.0")
+      expect(rendered.text).to include("-20.0 pts")
     end
   end
 

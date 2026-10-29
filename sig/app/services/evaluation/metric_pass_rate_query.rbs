@@ -1,0 +1,9 @@
+module Evaluation
+  class MetricPassRateQuery
+    @experiment: Experiment
+
+    def self.call: (experiment: Experiment) -> Hash[String, Float]
+    def initialize: (experiment: Experiment) -> void
+    def call: () -> Hash[String, Float]
+  end
+end

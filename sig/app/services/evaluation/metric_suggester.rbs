@@ -1,26 +1,37 @@
 module Evaluation
   class MetricSuggester
-    SYSTEM_PROMPT: String
-    DEFAULT_MODEL: String
-
     class Error < StandardError
     end
 
-    def self.call: (agent_name: String, model: String?) -> Array[{ name: String, description: String, weight: Float }]
+    type suggestion = {
+      name: String,
+      description: String,
+      weight: Float,
+      kind: String,
+      levels: Array[String] | Hash[String, Hash[String, String | Float]] | nil,
+      minimum: Float?
+    }
+    type entry = Hash[String, json_object_value]
+
+    def self.call: (agent_name: String, ?model: String?) -> Array[suggestion]
 
     @agent_name: String
     @model: String?
 
-    def initialize: (agent_name: String, model: String?) -> void
-    def call: () -> Array[{ name: String, description: String, weight: Float }]
+    def initialize: (agent_name: String, ?model: String?) -> void
+    def call: () -> Array[suggestion]
 
     private
 
     def query_llm: (String prompt) -> RubyLLM::Message
     def agent_system_prompt: () -> String?
-    def parse_response: (json_object_value) -> Array[{ name: String, description: String, weight: Float }]
-    def parse_metric_entry: (json_object_value entry) -> { name: String, description: String, weight: Float }?
-    def extract_metric_fields: (json_object entry) -> [ String, String, Float ]
-    def out_of_range_weight?: (Float weight) -> bool
+    def build_metric: (entry entry) -> suggestion?
+    def text: (entry entry, String key) -> String
+    def kind_and_levels: (entry entry) -> [ String, Array[String] | Hash[String, Hash[String, String | Float]] | nil ]
+    def score_levels: (entry entry) -> [ String, Array[String] ]?
+    def choice_levels: (entry entry) -> [ String, Hash[String, Hash[String, String | Float]] ]?
+    def choice_option: (entry option) -> [ String, Hash[String, String | Float] ]?
+    def minimum_for: (entry entry) -> Float?
+    def drop: (String reason) -> nil
   end
 end

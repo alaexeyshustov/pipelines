@@ -1,20 +1,16 @@
 module Evaluation
   class MetricExtractor
-    SYSTEM_PROMPT: String
-    DEFAULT_MODEL: String
-
     def self.call: (String agent_name) -> Array[Hash[String, String]]
 
     @agent_name: String
 
-    def initialize: (String agent_name) -> void
+    def initialize: (String? agent_name) -> void
     def call: () -> Array[Hash[String, String]]
 
     private
 
     def load_prompt!: () -> Prompt
-    def parse_metrics: (json_object_value content) -> Array[Hash[String, String]]
-    def validate_metric_entries!: (Array[json_object_value] entries) -> void
-    def truncate: (String content, ?Integer limit) -> String
+    def clean: (Hash[String, json_object_value] entry) -> Hash[String, String]?
+    def metrics_from: (RubyLLM::Message response) -> Array[Hash[String, String]]
   end
 end

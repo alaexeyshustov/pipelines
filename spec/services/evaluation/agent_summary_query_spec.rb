@@ -43,13 +43,13 @@ RSpec.describe Evaluation::AgentSummaryQuery do
       before do
         dataset_sample = create(:evaluation_dataset_sample, dataset: exp.dataset)
         sample = create(:evaluation_sample, experiment: exp, dataset_sample: dataset_sample)
-        create(:evaluation_evaluation_result, experiment: exp, sample: sample, dataset_sample: dataset_sample, score: 3.0)
-        create(:evaluation_evaluation_result, experiment: exp, sample: sample, dataset_sample: dataset_sample, score: 5.0)
+        create(:evaluation_evaluation_result, experiment: exp, sample: sample, dataset_sample: dataset_sample, score: 0.6)
+        create(:evaluation_evaluation_result, experiment: exp, sample: sample, dataset_sample: dataset_sample, score: 1.0)
       end
 
       it "populates latest_score as the rounded average" do
         summary = described_class.call.first
-        expect(summary.latest_score).to eq(4.0)
+        expect(summary.latest_score).to eq(0.8)
       end
 
       it "populates sample_count with the number of results" do
@@ -62,7 +62,7 @@ RSpec.describe Evaluation::AgentSummaryQuery do
         expect(summary.score_history.size).to eq(1)
         entry = summary.score_history.first
         expect(entry[:created_at]).to eq(exp.created_at.strftime("%Y-%m-%d"))
-        expect(entry[:avg_score]).to eq(4.0)
+        expect(entry[:avg_score]).to eq(0.8)
       end
     end
 

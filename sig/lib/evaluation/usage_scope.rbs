@@ -1,0 +1,5 @@
+module Evaluation
+  class UsageScope
+    def self.call: [T] (Experiment experiment) { () -> T } -> T
+  end
+end

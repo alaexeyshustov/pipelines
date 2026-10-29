@@ -1,0 +1,7 @@
+module Evaluation
+  module Judge
+    class Input
+      def self.call: (sample: Sample, dataset_sample: DatasetSample) -> json_object
+    end
+  end
+end

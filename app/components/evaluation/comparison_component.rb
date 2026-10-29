@@ -17,13 +17,12 @@ module Evaluation
 
     def format_delta(delta)
       return "—" if delta.nil?
-      prefix = delta >= 0 ? "+" : ""
-      "#{prefix}#{delta.round(1)}"
+
+      ScoreFormatter.points(delta)
     end
 
     def format_score(score)
-      return "—" if score.nil?
-      score.round(1).to_s
+      ScoreFormatter.percent(score)
     end
   end
 end

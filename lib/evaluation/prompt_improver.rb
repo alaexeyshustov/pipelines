@@ -17,7 +17,7 @@ module Evaluation
 
       input = build_improvement_message(current_prompt:, evaluation_data:, metrics: metrics(current_prompt))
 
-      improved = run_agent(input)
+      improved = UsageScope.call(@experiment) { run_agent(input) }
 
       Evaluation::PromptCreator.call(
         name: current_prompt.name,
@@ -50,8 +50,21 @@ module Evaluation
         experiment_id: @experiment.id,
         prompt_name: current_prompt.name.to_s,
         system_prompt: current_prompt.system_prompt,
-        metrics: metrics.map { |m| { name: m.name, description: m.description } },
-        scores: evaluation_data.map { |r| { metric_name: r.metric_name, score: r.evaluation_result.score, justification: r.justification } }
+        metrics: metrics.map { |m| { name: m.name, description: m.description, kind: m.kind, levels: m.levels, minimum: m.minimum } },
+        scores: evaluation_data.map { |j| score_entry(j) }
+      }
+    end
+
+    # Score is the normalized 0.0..1.0 grade; the justification is the Grader's derived text (level description +
+    # percentages), the only "reason" the native judge provides.
+    def score_entry(justification)
+      result = justification.evaluation_result
+      {
+        metric_name: justification.metric_name,
+        score: result.score,
+        passed: result.passed,
+        confidence: result.confidence,
+        justification: justification.justification
       }
     end
 
@@ -63,8 +76,9 @@ module Evaluation
     end
 
     def run_agent(input)
-      response = Evaluation::Improvement::Agent.create.with_model(@model).ask(input)
-      parse_response(response.content)
+      response = build_agent.ask(input)
+      log_actual_model(response)
+      parse_response(response)
     rescue Error
       raise
     rescue StandardError => e
@@ -72,16 +86,30 @@ module Evaluation
       raise Error, "LLM call failed"
     end
 
-    def parse_response(content)
-      str_content = content #: String
-      parsed = content.is_a?(Hash) ? content : JSON.parse(str_content)
-      raise Error, "Expected JSON object" unless parsed.is_a?(Hash)
+    def build_agent
+      agent = Evaluation::Improvement::Agent.create
+      agent.with_model(@model)
+      agent.after_fallback { |fallback| log_fallback(fallback) }
+      agent
+    end
+
+    def log_fallback(fallback)
+      Rails.logger.warn("[PromptImprover] fallback #{fallback.from&.id} -> #{fallback.id}: #{fallback.error.class}")
+    end
+
+    def log_actual_model(response)
+      actual = response.model
+      Rails.logger.info("[PromptImprover] experiment #{@experiment.id} answered by #{actual}") if actual.to_s != @model.to_s
+    end
+
+    def parse_response(response)
+      parsed = StructuredOutput.from(response)
       system_prompt = parsed["system_prompt"]
       raise Error, "Missing system_prompt in LLM response" unless system_prompt.is_a?(String) && system_prompt.present?
 
       { system_prompt: system_prompt, user_prompt: parsed["user_prompt"].to_s }
-    rescue JSON::ParserError => e
-      raise Error, "Prompt improvement returned invalid JSON: #{e.message}"
+    rescue JSON::ParserError, ArgumentError => e
+      raise Error, "Prompt improvement returned invalid output: #{e.message}"
     end
   end
 end

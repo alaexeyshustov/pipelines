@@ -1,0 +1,12 @@
+module Evaluation
+  module MetricLevelsText
+    type levels = Array[String] | Hash[String, json_object_value]
+
+    SEPARATOR: String
+
+    def self.parse: (kind: String | Symbol | nil, text: String?) -> levels?
+    def self.dump: (kind: String | Symbol | nil, levels: levels?) -> String
+    def self.parse_option: (String line) -> [String, Hash[String, json_object_value]]
+    def self.dump_option: (String name, json_object_value option) -> String
+  end
+end

@@ -1,0 +1,4 @@
+module Evaluation
+  class MetricExtractionAgent < AuxiliaryAgent
+  end
+end

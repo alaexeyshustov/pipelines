@@ -1,0 +1,16 @@
+module Evaluation
+  class Grade
+    attr_reader metric_name: String
+    attr_reader score: Float?
+    attr_reader raw: Hash[Symbol, json_object_value | Symbol]
+    attr_reader confidence: Float?
+    attr_reader passed: bool?
+    attr_reader justification: String
+    attr_reader tokens: Hash[Symbol, Integer?]?
+    attr_reader cost: Float?
+
+    def self.new: (metric_name: String, score: Float?, raw: Hash[Symbol, json_object_value | Symbol], confidence: Float?, passed: bool?, justification: String, tokens: Hash[Symbol, Integer?]?, cost: Float?) -> instance
+
+    def with: (?metric_name: String, ?score: Float?, ?raw: Hash[Symbol, json_object_value | Symbol], ?confidence: Float?, ?passed: bool?, ?justification: String, ?tokens: Hash[Symbol, Integer?]?, ?cost: Float?) -> self
+  end
+end

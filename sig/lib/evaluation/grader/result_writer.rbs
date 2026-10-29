@@ -1,0 +1,22 @@
+module Evaluation
+  class Grader
+    class ResultWriter
+      EVALUATOR_CLASS: String
+
+      @grades: Array[Grade]
+      @experiment: Experiment
+      @dataset_sample: DatasetSample
+      @sample: Sample
+
+      def self.call: (grades: Array[Grade], experiment: Experiment, dataset_sample: DatasetSample, sample: Sample) -> Array[EvaluationResult]
+
+      def initialize: (grades: Array[Grade], experiment: Experiment, dataset_sample: DatasetSample, sample: Sample) -> void
+      def call: () -> Array[EvaluationResult]
+
+      private
+
+      def result_rows: () -> Array[Hash[Symbol, top]]
+      def justification_rows: (Array[Integer] ids) -> Array[Hash[Symbol, top]]
+    end
+  end
+end

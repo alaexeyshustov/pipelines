@@ -80,4 +80,51 @@ RSpec.describe Evaluation::ExperimentDetailComponent, type: :component do
       expect(rendered.text).to include("pending")
     end
   end
+
+  describe "scores and usage" do
+    subject(:rendered) { render_inline(described_class.new(experiment: experiment, usage: usage, pass_rate: 0.75, metric_pass_rates: { "precision" => 0.5 })) }
+
+    let(:experiment) { create(:evaluation_experiment, status: :completed) }
+    let(:usage) { nil }
+
+    before do
+      create(:evaluation_metric, agent_name: experiment.prompt.name, name: "precision", weight: 3.0)
+      create(:evaluation_metric, agent_name: experiment.prompt.name, name: "recall", weight: 1.0)
+      allow(experiment).to receive(:per_metric_averages).and_return({ "precision" => 0.8, "recall" => 0.4 })
+    end
+
+    it "shows metric averages as percentages with their pass rate" do
+      expect(rendered.text).to include("80%", "40%", "50% pass")
+    end
+
+    it "shows the weighted grade and the overall pass rate" do
+      expect(rendered.text).to include("Weighted grade", "70.0%", "75.0%")
+    end
+
+    it "does not render a cost block without usage" do
+      expect(rendered.text).not_to include("Cost")
+    end
+
+    context "with usage" do
+      let(:usage) do
+        Evaluation::ExperimentUsageQuery::Usage.new(
+          input_tokens: 12_000, output_tokens: 3_400, total_tokens: 15_400, cache_read_tokens: 0,
+          cost: BigDecimal("0.0421"), calls: 7, models: { "gpt-5.4" => 6, "jev-latest" => 1 }
+        )
+      end
+
+      it "shows cost, tokens and models used" do
+        expect(rendered.text).to include("$0.0421", "12,000 in / 3,400 out", "gpt-5.4, jev-latest")
+      end
+    end
+
+    context "when running" do
+      let(:experiment) { create(:evaluation_experiment, status: :running, pending_samples_count: 3) }
+
+      it "shows progress and refreshes itself" do
+        expect(rendered.text).to include("3 pending")
+        expect(rendered.css("meta[name='turbo-refresh-interval']")).to be_present
+      end
+    end
+  end
 end
