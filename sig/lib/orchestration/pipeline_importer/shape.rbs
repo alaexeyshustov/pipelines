@@ -1,0 +1,12 @@
+module Orchestration
+  class PipelineImporter
+    module Shape
+      private
+
+      def slice: (json_object data, Array[String] keys) -> json_object
+      def hash!: (Object? value, String label) -> json_object
+      def required_array!: (Object? value, String label) -> json_array
+      def array!: (Object? value, String label) -> json_array
+    end
+  end
+end
