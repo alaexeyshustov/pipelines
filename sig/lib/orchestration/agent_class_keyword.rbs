@@ -1,0 +1,12 @@
+module Orchestration
+  module AgentClassKeyword
+    class UnknownKeyword < StandardError
+    end
+
+    PREFIX: String
+
+    def self.encode: (Class | String klass_or_name) -> String
+
+    def self.decode: (String keyword) -> String
+  end
+end

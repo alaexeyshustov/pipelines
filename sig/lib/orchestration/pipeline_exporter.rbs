@@ -1,0 +1,22 @@
+module Orchestration
+  class PipelineExporter
+    FORMAT: String
+    SCHEMA_VERSION: Integer
+    PRELOAD: { steps: { step_actions: { action: Symbol } } }
+
+    @pipelines: Array[Pipeline]
+
+    def self.call: (Enumerable[Pipeline] pipelines) -> json_object
+
+    def initialize: (Enumerable[Pipeline] pipelines) -> void
+    def call: () -> json_object
+
+    private
+
+    def export_pipeline: (Pipeline pipeline) -> json_object
+    def export_step: (Step step) -> json_object
+    def export_step_action: (StepAction step_action) -> json_object
+    def export_action: (Action action) -> json_object
+    def export_agent: (Agent agent) -> json_object
+  end
+end

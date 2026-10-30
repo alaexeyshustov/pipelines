@@ -1,0 +1,21 @@
+module Orchestration
+  class PipelineImportForm < BaseForm
+    interface _Upload
+      def read: () -> String
+    end
+
+    attr_reader file: _Upload?
+    attr_reader pipelines: Array[Pipeline]
+
+    @payload: json_value
+
+    def initialize: (file: _Upload?) -> void
+    def save: () -> bool
+
+    private
+
+    def payload: () -> json_value
+    def file_present: () -> void
+    def file_is_json_object: () -> void
+  end
+end
