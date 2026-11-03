@@ -23,6 +23,7 @@ module Emails
         @session = GmailSession.new(credentials_path: credentials_path, token_path: token_path)
         @service = Google::Apis::GmailV1::GmailService.new
         @service.client_options.application_name = GmailSession::APPLICATION_NAME
+        @attachment_reader, @inbox_lister = GmailAttachmentReader.new(@service), GmailInboxLister.new(@service)
         @label_manager = GmailLabelManager.new(service: @service, labels_provider: -> { get_labels })
       end
 
@@ -62,18 +63,35 @@ module Emails
 
       # Raw bytes of a message attachment.
       def attachment(message_id, attachment_id)
-        body = @service.get_user_message_attachment("me", message_id.to_s, attachment_id.to_s) # steep:ignore
-        raise "Attachment not found: #{attachment_id}" unless body
-
-        body.data.to_s
+        @attachment_reader.data(message_id, attachment_id)
       end
 
       # Attachment metadata of a message: [{ id:, filename:, mime_type:, size: }], nested parts included.
       def attachments(message_id)
-        message = @service.get_user_message("me", message_id.to_s, format: "full")
-        raise "Message not found: #{message_id}" unless message
+        @attachment_reader.list(message_id)
+      end
 
-        collect_attachments(message.payload)
+      # The mailbox owner and the current sync position: { email_address:, history_id: }.
+      def profile
+        profile = @service.get_user_profile("me") || raise("Gmail profile not available")
+        { email_address: profile.email_address.to_s, history_id: profile.history_id.to_s }
+      end
+
+      # Ids of messages added to INBOX after +history_id+. Raises Emails::HistoryExpiredError when Gmail has
+      # dropped that history (404).
+      def inbox_message_ids_since(history_id)
+        @inbox_lister.since(history_id)
+      end
+
+      # Ids of INBOX messages received on or after +date+.
+      def inbox_message_ids_after(date)
+        @inbox_lister.after(date)
+      end
+
+      # A message with +body+, +html_body+, +source_url+ and a parsed +date+ (Time).
+      def fetch_message(message_id)
+        message = @service.get_user_message("me", message_id.to_s, format: "full") || raise("Message not found: #{message_id}")
+        GmailFullMessage.new(message).to_h
       end
 
       def get_unread_count
@@ -102,19 +120,6 @@ module Emails
       end
 
       private
-
-      def collect_attachments(part)
-        own = attachment_metadata(part)
-        own + Array(part.parts).flat_map { |child| collect_attachments(child) }
-      end
-
-      def attachment_metadata(part)
-        body = part.body
-        filename = part.filename.to_s # steep:ignore
-        return [] unless body&.attachment_id && !filename.empty?
-
-        [ { id: body.attachment_id.to_s, filename: filename, mime_type: part.mime_type.to_s, size: body.size.to_i } ]
-      end
 
       def format_message(message, parsed)
         {

@@ -9,7 +9,19 @@ module Emails
         extract_body(@payload)
       end
 
+      # The text/html content, or nil when the message has none.
+      def html
+        found = html_parts(@payload)
+        found.empty? ? nil : found.join("\n\n")
+      end
+
       private
+
+      def html_parts(part)
+        data = part.body&.data
+        own = part.mime_type == "text/html" && data ? [ decode_body(data) ] : Array.new
+        own + Array(part.parts).flat_map { |child| html_parts(child) }
+      end
 
       def extract_body(payload)
         parts = payload.parts

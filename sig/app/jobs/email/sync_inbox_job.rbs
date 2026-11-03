@@ -1,0 +1,23 @@
+class Email
+  class SyncInboxJob < ApplicationJob
+    type counts = Hash[String, String | Integer]
+
+    class Result
+      attr_reader counts: counts
+      attr_reader email_ids: Array[Integer]
+
+      def self.new: (counts: counts, email_ids: Array[Integer]) -> Result
+    end
+
+    def perform: (String provider) -> Result
+
+    private
+
+    def sync_gmail: () -> Result
+    def gmail_message_ids: (SyncCursor cursor) -> [String, Array[String]]
+    def window_ids: () -> Array[String]
+    def store_all: (String provider, String mode, Array[String] ids) -> Result
+    def store: (String provider, String message_id) -> [String, Email?]
+    def attributes_for: (String provider, Emails::full_message message) -> Hash[Symbol, String | Time | nil]
+  end
+end

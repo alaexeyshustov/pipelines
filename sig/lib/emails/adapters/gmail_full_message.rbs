@@ -1,0 +1,18 @@
+module Emails
+  module Adapters
+    class GmailFullMessage
+      WEB_URL: String
+
+      @message: Google::Apis::GmailV1::Message
+      @parsed: message
+      @extractor: GmailBodyExtractor
+
+      def initialize: (Google::Apis::GmailV1::Message message) -> void
+      def to_h: () -> full_message
+
+      private
+
+      def date: () -> Time
+    end
+  end
+end
