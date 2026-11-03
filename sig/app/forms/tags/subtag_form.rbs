@@ -1,0 +1,12 @@
+module Tags
+  class SubtagForm < BaseForm
+    attr_reader subtag: Subtag?
+
+    @tag: Tag
+
+    def name: () -> String?
+    def name=: (String?) -> String?
+    def initialize: (tag: Tag, ?name: String?) -> void
+    def save: () -> bool
+  end
+end

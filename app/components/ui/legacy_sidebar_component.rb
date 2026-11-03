@@ -40,7 +40,8 @@ module UI
       ma = helpers.main_app
       NavGroup.new(label: "Mails", items: [
         NavItem.new(label: "Application Emails", path: ma.application_mails_path),
-        NavItem.new(label: "Interviews",         path: ma.interviews_path)
+        NavItem.new(label: "Interviews",         path: ma.interviews_path),
+        NavItem.new(label: "Tags",               path: ma.tags_path)
       ])
     end
 

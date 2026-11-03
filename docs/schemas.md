@@ -79,6 +79,9 @@ Interview.as_rows(scope)  # accepts a custom ActiveRecord scope
 ## emails
 
 One row per INBOX email, full body kept (replaces `application_mails`, which is removed later). `Email`; ingestion is separate.
+## tags
+
+Fixed top-level tags (not editable in the UI); seeded by `Tag.seed_defaults!`.
 
 | Column | Type | Null | Notes |
 |---|---|---|---|
@@ -104,6 +107,43 @@ Email::SearchQuery.call("interview acme", limit: 20)
 ```
 
 Input is split into quoted terms ANDed together, so operators and quotes are plain text.
+| name | STRING | NO | One of `Tag::NAMES`: medical, job_application, child, subscription, bureaucracy, finance |
+| created_at / updated_at | DATETIME | NO | |
+
+**Indexes:** `name` (unique)
+
+---
+
+## subtags
+
+User-extendable subtags of a tag (starter set in `Tag::STARTER_SUBTAGS`); added from the Tags page (`/tags`).
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| id | INTEGER | NO | PK |
+| tag_id | INTEGER | NO | FK to `tags` |
+| name | STRING | NO | Unique within its tag (`invoice` may exist under several tags) |
+| created_at / updated_at | DATETIME | NO | |
+
+**Indexes:** `[tag_id, name]` (unique), `tag_id`
+
+---
+
+## taggings
+
+Polymorphic join: `taggable` (Email or Document) gets tags. Untagged items have no rows.
+
+| Column | Type | Null | Default | Notes |
+|---|---|---|---|---|
+| id | INTEGER | NO | autoincrement | PK |
+| taggable_type / taggable_id | STRING / INTEGER | NO | — | Polymorphic owner |
+| tag_id | INTEGER | NO | — | FK to `tags` |
+| subtag_id | INTEGER | YES | — | FK to `subtags`; must belong to `tag_id` (validation) |
+| source | STRING | NO | `"llm"` | `"llm"` or `"manual"` (`Tagging::SOURCES`) |
+| confidence | FLOAT | YES | — | |
+| created_at / updated_at | DATETIME | NO | — | |
+
+**Indexes:** `[taggable_type, taggable_id, tag_id]` (unique: one tag per taggable), `tag_id`, `subtag_id`
 
 ---
 
