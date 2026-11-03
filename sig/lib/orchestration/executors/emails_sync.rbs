@@ -4,6 +4,7 @@ module Orchestration
       type provider_output = Hash[String, String | Integer | bool]
 
       PROVIDERS: Array[String]
+      REQUEUE_AFTER: ActiveSupport::Duration
       MISSING_CREDENTIALS: Regexp
       SKIPPED: Hash[String, String | bool]
 
@@ -16,6 +17,7 @@ module Orchestration
       def self.call: (**json_object_value) -> Hash[String, provider_output]
 
       def self.sync: (String provider, Hash[String, String] failures) -> provider_output
+      def self.enqueue_processing: (String provider, Array[Integer] new_email_ids) -> Hash[String, Integer]
       def self.failure_message: (Hash[String, String] failures, Hash[String, provider_output] output) -> String
     end
   end

@@ -5,6 +5,7 @@ class Email < ApplicationRecord
   PROVIDERS: Array[String]
   DEFAULT_BACKFILL_DAYS: Integer
 
+  def self.awaiting_tagging: (before: Time | ActiveSupport::TimeWithZone) -> ActiveRecord::Relation
   def self.backfill_days: () -> Integer
 
   def provider: () -> String

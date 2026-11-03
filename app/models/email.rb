@@ -10,6 +10,9 @@ class Email < ApplicationRecord
   validates :provider_message_id, :from_address, :date, presence: true
   validates :provider_message_id, uniqueness: { scope: :provider }
 
+  # Emails the processing chain has not completed (tagged_at NULL) that were stored before +before+.
+  scope :awaiting_tagging, ->(before:) { where(tagged_at: nil).where(created_at: ...before) }
+
   # How far back the first sync of a mailbox (or a rescan) looks: Setting "email_backfill_days", then
   # ENV EMAIL_BACKFILL_DAYS, then 90.
   def self.backfill_days
