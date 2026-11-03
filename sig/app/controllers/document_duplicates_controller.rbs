@@ -1,0 +1,11 @@
+class DocumentDuplicatesController < ApplicationController
+  @document: Document
+  @duplicate: DocumentDuplicate
+
+  def confirm: () -> void
+  def dismiss: () -> void
+
+  private
+
+  def set_duplicate: () -> void
+end

@@ -1,0 +1,25 @@
+class Document
+  class DetectDuplicates
+    class Result
+      attr_reader flagged: Integer
+
+      def self.new: (flagged: Integer) -> instance
+    end
+
+    DEFAULT_THRESHOLD: Float
+    NEIGHBORS: Integer
+
+    @document: Document
+    @model: String
+    @threshold: Float
+
+    def self.call: (Document document, ?model: String, ?threshold: Float) -> Result
+    def self.threshold: () -> Float
+    def initialize: (Document document, model: String, threshold: Float) -> void
+    def call: () -> Result
+
+    private
+
+    def neighbours: (Embedding embedding) -> Array[Embedding::Neighbor]
+  end
+end

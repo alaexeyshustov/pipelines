@@ -13,6 +13,7 @@ class Embedding < ApplicationRecord
   def self.index_vector: (Embedding embedding, Array[Float] vector) -> void
   def self.pack: (Array[Float] vector) -> String
 
+  def vector: () -> Array[Float]
   def embeddable: () -> ApplicationRecord
   def model: () -> String
   def dimensions: () -> Integer

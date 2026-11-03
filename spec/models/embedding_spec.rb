@@ -11,6 +11,14 @@ RSpec.describe Embedding do
     described_class.store!(record, model:, content_digest: digest, vector:)
   end
 
+  describe "#vector" do
+    it "reads the stored vector back" do
+      embedding = store(create(:document), unit(3))
+
+      expect(embedding.vector).to eq(unit(3))
+    end
+  end
+
   describe ".store!" do
     it "records model, dimensions, digest and time, and indexes the vector" do
       email = create(:email)

@@ -26,6 +26,12 @@ Rails.application.routes.draw do
 
   resources :documents, only: [ :index, :show ] do
     get :download, on: :member
+    resources :duplicates, only: [], controller: "document_duplicates" do
+      member do
+        patch :confirm
+        patch :dismiss
+      end
+    end
     resources :taggings, only: [ :create, :destroy ]
   end
 

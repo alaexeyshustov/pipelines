@@ -213,7 +213,17 @@ CREATE VIRTUAL TABLE embedding_vectors USING vec0(
   model text partition key,
   embedding float[1024] distance_metric=cosine
 );
+CREATE TABLE IF NOT EXISTS "document_duplicates" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "document_id" integer NOT NULL, "duplicate_id" integer NOT NULL, "similarity" float NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_635a9eabaa"
+FOREIGN KEY ("document_id")
+  REFERENCES "documents" ("id")
+, CONSTRAINT "fk_rails_722e1646e3"
+FOREIGN KEY ("duplicate_id")
+  REFERENCES "documents" ("id")
+);
+CREATE INDEX "index_document_duplicates_on_duplicate_id" ON "document_duplicates" ("duplicate_id");
+CREATE UNIQUE INDEX "index_document_duplicates_on_document_id_and_duplicate_id" ON "document_duplicates" ("document_id", "duplicate_id");
 INSERT INTO "schema_migrations" (version) VALUES
+('20261103120000'),
 ('20261103090700'),
 ('20261103090600'),
 ('20261103090500'),

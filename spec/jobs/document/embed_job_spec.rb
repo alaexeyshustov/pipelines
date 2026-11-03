@@ -2,6 +2,7 @@ require "rails_helper"
 
 RSpec.describe Document::EmbedJob do
   include ActiveJob::TestHelper
+  include EmbeddingHelpers
 
   let(:url) { "http://localhost:11434/v1/embeddings" }
   let(:document) { create(:document) }
@@ -15,6 +16,12 @@ RSpec.describe Document::EmbedJob do
     described_class.perform_now(document.id)
 
     expect(document.embeddings.count).to eq(1)
+  end
+
+  it "enqueues duplicate detection once the document is embedded" do
+    stub_ollama_embeddings(unit_vector(0))
+
+    expect { described_class.perform_now(document.id) }.to have_enqueued_job(Document::DetectDuplicatesJob).with(document.id)
   end
 
   it "ignores a document deleted in the meantime" do

@@ -16,4 +16,6 @@
                                          errors: @form_errors) %>
 </div>
 
+<%= render Documents::DuplicatesComponent.new(document: @document, duplicates: @duplicates) %>
+
 <pre class="whitespace-pre-wrap text-sm text-gray-800"><%= @document.text %></pre>
