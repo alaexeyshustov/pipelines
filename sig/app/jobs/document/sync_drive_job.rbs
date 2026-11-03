@@ -1,0 +1,25 @@
+class Document
+  class SyncDriveJob < ApplicationJob
+    type summary = Hash[String, Integer]
+
+    SETTING_KEY: String
+
+    @summary: summary
+
+    def self.folder_ids: () -> Array[String]
+
+    def perform: () -> summary
+
+    private
+
+    def summary: () -> summary
+    def sync_all: (Emails::Adapters::DriveFileFetcher fetcher, Array[String] folder_ids) -> void
+    def store: (Hash[Symbol, String | Hash[Symbol, String?]?] attributes, Document? document) -> Document?
+    def sync: (Emails::Adapters::DriveFileFetcher fetcher, Emails::Adapters::DriveFileFetcher::Entry entry, Document? document) -> void
+    def mime_type_of: (Emails::Adapters::DriveFileFetcher::Entry entry) -> String
+    def unchanged?: (Emails::Adapters::DriveFileFetcher::Entry entry, Document document) -> bool
+    def process: (Emails::Adapters::DriveFileFetcher fetcher, Emails::Adapters::DriveFileFetcher::Entry entry, Document? document) -> void
+    def attributes_for: (Emails::Adapters::DriveFileFetcher::Entry entry, Emails::Adapters::DriveFileFetcher::File file, String text, String checksum) -> Hash[Symbol, String | Hash[Symbol, String?]?]
+    def delete_missing: (Hash[String?, Document] existing, Array[Emails::Adapters::DriveFileFetcher::Entry] entries) -> void
+  end
+end

@@ -375,6 +375,26 @@ steps.each_with_index do |step_attrs, index|
   )
 end
 
+# Nightly full scan of the whitelisted Drive folders (Setting "drive_folder_ids") into tagged Documents.
+drive_action = Orchestration::Action.find_or_initialize_by(name: "Sync Drive Documents").tap do |a|
+  a.kind        = :service
+  a.agent_class = "Orchestration::Executors::DriveDocumentsSync"
+  a.save!
+end
+
+drive_pipeline = Orchestration::Pipeline.find_or_create_by!(name: "Drive Documents Sync") do |p|
+  p.description     = "Scans the whitelisted Google Drive folders and turns new or changed files into tagged Documents."
+  p.enabled         = true
+  p.cron_expression = "0 3 * * *"
+end
+
+if drive_pipeline.steps.empty?
+  drive_step = drive_pipeline.steps.create!(name: drive_action.name, position: 1)
+  Orchestration::StepAction.create!(
+    step: drive_step, action: drive_action, position: 1, output_key: "sync_drive_documents", input_mapping: {}
+  )
+end
+
 # Create agents not part of any pipeline step.
 %w[Orchestration::Agents::RecordsFiller].each do |name|
   config = AGENT_DEFINITIONS.fetch(name)
