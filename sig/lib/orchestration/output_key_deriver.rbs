@@ -5,6 +5,8 @@ module Orchestration
 
     private
 
+    def unique_key: (String base) -> String
+
     attr_reader action_name: String
     attr_reader step: Step
   end

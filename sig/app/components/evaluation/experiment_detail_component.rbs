@@ -1,6 +1,6 @@
 module Evaluation
   class ExperimentDetailComponent < ViewComponent::Base
-    @dataset_samples: DatasetSample::relation?
+    @dataset_samples: Array[DatasetSample]?
     @experiment: Experiment
 
     @judge_model: String?
@@ -28,7 +28,7 @@ module Evaluation
     def active_run?: () -> bool
     def progress_label: () -> String?
     def newer_experiment_active?: () -> bool
-    def dataset_samples: () -> DatasetSample::relation
+    def dataset_samples: () -> Array[DatasetSample]
     def judge_model: () -> String
     def output_schema_json: () -> String
 

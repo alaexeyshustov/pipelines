@@ -1,7 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "Seeds: pipeline 2 step input_mapping" do # rubocop:disable RSpec/DescribeClass
-  before { load Rails.root.join("db/seeds.rb") }
+  # Seeding is per-record by design; the examples check what it left behind.
+  before { Prosopite.pause { load Rails.root.join("db/seeds.rb") } }
 
   let(:pipeline) { Orchestration::Pipeline.find_by!(name: "Applications Workflow") }
 

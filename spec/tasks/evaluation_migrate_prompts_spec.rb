@@ -1,7 +1,8 @@
 require 'rails_helper'
 require 'rake'
 
-RSpec.describe "evaluation:migrate_prompts rake task" do # rubocop:disable RSpec/DescribeClass
+# A one-off migration script that handles each agent class in turn.
+RSpec.describe "evaluation:migrate_prompts rake task", prosopite: false do # rubocop:disable RSpec/DescribeClass
   let(:task_name) { "evaluation:migrate_prompts" }
   let(:agent_classes) do
     %w[

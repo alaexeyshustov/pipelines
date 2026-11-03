@@ -99,7 +99,7 @@ module Evaluation
     end
 
     def dataset_samples
-      @dataset_samples ||= @experiment.dataset.dataset_samples
+      @dataset_samples ||= @experiment.dataset.dataset_samples.to_a
     end
 
     def judge_model
