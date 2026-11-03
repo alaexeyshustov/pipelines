@@ -75,7 +75,10 @@ cd "$repo_root"
 
 # A linked worktree's .git file holds an absolute path into its repository's
 # common directory, so that directory has to be mounted at the identical path
-# for Git to work inside the container. Derive it from the worktree being
+# for Git to work inside the container. The worktree itself is mounted at its
+# host path too: the common directory's gitdir back-pointer names that path,
+# and from anywhere else Git lists the worktree as prunable and Claude Code
+# refuses to create isolated worktrees from it. Derive it from the worktree being
 # mounted, not from this script's own location: when the toolkit is checked out
 # as <application>/.sandbox it is its own repository, and mounting its common
 # directory leaves the worktree's gitdir pointer dangling in the container.
@@ -247,16 +250,17 @@ case "$container_status" in
       --label "io.pipelines.sandbox.profile=$profile" \
       --hostname "${container_name:0:63}" \
       --memory "${SANDBOX_MEMORY:-3g}" \
-      --workdir /workspace \
+      --workdir "$repo_root" \
+      --env "SANDBOX_WORKSPACE=$repo_root" \
       --env "SANDBOX_WORKTREE_NAME=$worktree_name" \
       --env "SANDBOX_HOST_PORT=$host_port" \
       --env 'BINDING=0.0.0.0' \
       --publish "127.0.0.1:$host_port:3000" \
       "${gh_token_mount[@]+"${gh_token_mount[@]}"}" \
-      --mount "type=bind,src=$repo_root,dst=/workspace" \
+      --mount "type=bind,src=$repo_root,dst=$repo_root" \
       --mount "type=bind,src=$git_common_dir,dst=$git_common_dir" \
       --mount "type=volume,src=$bundle_volume,dst=/bundle" \
-      --mount "type=volume,src=$node_modules_volume,dst=/workspace/node_modules" \
+      --mount "type=volume,src=$node_modules_volume,dst=$repo_root/node_modules" \
       --mount "type=volume,src=$pnpm_store_volume,dst=/pnpm/store" \
       --mount "type=volume,src=$SANDBOX_AGENT_HOME_VOLUME,dst=$SANDBOX_AGENT_HOME_CONTAINER_PATH" \
       --mount "type=bind,src=$SANDBOX_AUTH_HOST_PATH,dst=$SANDBOX_AUTH_CONTAINER_PATH,ro" \

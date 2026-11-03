@@ -63,12 +63,10 @@ RUN chmod +x /usr/local/bin/claude-session
 
 # CLAUDE_CONFIG_DIR keeps .claude.json (onboarding, project trust) on the home
 # volume next to the rest of the Claude state instead of in the container layer.
-ENV BUNDLE_APP_CONFIG=/workspace/.bundle \
-    BUNDLE_PATH=/bundle \
+ENV BUNDLE_PATH=/bundle \
     BROWSER_PATH=/usr/bin/chromium \
     CLAUDE_CONFIG_DIR=/root/.claude \
     PATH=/usr/local/bundle/bin:$PATH
 
-WORKDIR /workspace
 
 ENTRYPOINT ["/usr/local/bin/claude-session"]

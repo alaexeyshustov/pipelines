@@ -150,7 +150,24 @@ def test_attach_builds_and_runs_the_sandbox_as_amd64
   assert_match %r{--tag pipelines-claude-matt-agent-amd64:\h{64}}, build
   assert_includes run, "--platform linux/amd64"
   assert_match %r{src=pipelines-claude-matt-[a-z0-9-]+-bundle-amd64,dst=/bundle}, run
-  assert_match %r{src=pipelines-claude-matt-[a-z0-9-]+-node-modules-amd64,dst=/workspace/node_modules}, run
+  assert_match %r{src=pipelines-claude-matt-[a-z0-9-]+-node-modules-amd64,dst=#{Regexp.escape(File.realpath(File.expand_path("../..", __dir__)))}/node_modules}, run
+end
+
+# A linked worktree's gitdir points back at the worktree's host path; mounted
+# anywhere else, git and Claude Code's worktree isolation treat it as stale.
+def test_attach_mounts_the_worktree_at_its_host_path
+  worktree_path = File.realpath(File.expand_path("../..", __dir__))
+  run_helper("register_worktree", "GH-133", worktree_path, "--ticket=GH-133")
+  log = File.join(@temporary_directory, "podman.log")
+
+  attached = run_attach("GH-133", "STUB_PODMAN_LOG" => log)
+  run = File.readlines(log, chomp: true).find { _1.start_with?("run ") }
+
+  assert attached.fetch(2).success?, attached.fetch(1)
+  assert_includes run, "--workdir #{worktree_path}"
+  assert_includes run, "type=bind,src=#{worktree_path},dst=#{worktree_path}"
+  assert_includes run, "SANDBOX_WORKSPACE=#{worktree_path}"
+  refute_includes run, "/workspace"
 end
 
   # A cgroup cap keeps an overrun (e.g. steep workers) inside one sandbox

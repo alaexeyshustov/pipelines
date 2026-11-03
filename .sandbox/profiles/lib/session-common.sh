@@ -64,10 +64,32 @@ install_pnpm_dependencies() {
   printf '%s\n' "$fingerprint" > "$marker_path"
 }
 
+# Steep needs the RBS collection, which is gitignored and so missing from a
+# fresh worktree. Install it here rather than letting the pre-commit hook's
+# steep run fetch it mid-commit.
+install_rbs_collection() {
+  bundle exec rbs collection install --frozen
+}
+
 install_workspace_dependencies() {
-  cd /workspace
+  cd "$SANDBOX_WORKSPACE"
   install_bundle_dependencies
   install_pnpm_dependencies
+  install_rbs_collection
+}
+
+# The container has no SSH key, so the SSH remote (git@github.com:...) cannot
+# fetch or push. Rewrite it to HTTPS authenticated by the host's gh token.
+# Global (container-only) config: the repository config is shared with the
+# host through the mounted common directory and must stay untouched.
+configure_github_https() {
+  if [[ -z "${GH_TOKEN:-}" ]]; then
+    printf 'No GH_TOKEN; git cannot reach GitHub from this sandbox.\n' >&2
+    return 0
+  fi
+
+  gh auth setup-git --hostname github.com
+  git config --global url."https://github.com/".insteadOf git@github.com:
 }
 
 # Same global rtk setup as on the host (`rtk init -g`): the Bash PreToolUse
@@ -104,9 +126,11 @@ load_claude_auth() {
 exec_claude() {
   local ticket="${1:-}"
 
-  # The fullscreen TUI captures the mouse, which blocks the host terminal's
-  # native text selection across the attach. Keep selection with the terminal.
-  export CLAUDE_CODE_DISABLE_MOUSE=1
+  # Render on the main screen so the host terminal keeps native scrollback and
+  # text selection across the attach. On the alternate screen, mouse capture
+  # blocks selection, and without it the terminal turns the scroll wheel into
+  # Up/Down keys, which page through prompt history.
+  export CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1
 
   if [[ "$ticket" =~ ^GH-([0-9]+)$ ]]; then
     exec claude --dangerously-skip-permissions \

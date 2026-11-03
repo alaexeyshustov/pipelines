@@ -33,16 +33,44 @@ class SessionCommonTest < Minitest::Test
     end
   end
 
-  def test_exec_claude_leaves_text_selection_to_the_host_terminal
+  def test_exec_claude_leaves_scrolling_and_selection_to_the_host_terminal
     Dir.mktmpdir("session-common-test") do |workspace|
       stub = File.join(workspace, "claude")
-      File.write(stub, "#!/usr/bin/env bash\nprintf 'disable_mouse=%s\\n' \"${CLAUDE_CODE_DISABLE_MOUSE:-}\"\n")
+      File.write(stub, "#!/usr/bin/env bash\nprintf 'alt_screen_off=%s disable_mouse=%s\\n' \"${CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN:-}\" \"${CLAUDE_CODE_DISABLE_MOUSE:-}\"\n")
       File.chmod(0o755, stub)
 
       stdout, stderr, status = run_bash(%(PATH="#{workspace}:$PATH" exec_claude), workspace)
 
       assert status.success?, stderr
-      assert_equal "disable_mouse=1\n", stdout
+      assert_equal "alt_screen_off=1 disable_mouse=\n", stdout
+    end
+  end
+
+  def test_configure_github_https_routes_ssh_remotes_through_gh
+    Dir.mktmpdir("session-common-test") do |workspace|
+      stub = File.join(workspace, "gh")
+      File.write(stub, "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >> \"$HOME/gh-calls\"\n")
+      File.chmod(0o755, stub)
+
+      _, stderr, status = run_bash(<<~SH, workspace)
+        export HOME="#{workspace}" GH_TOKEN=token PATH="#{workspace}:$PATH"
+        configure_github_https
+        configure_github_https
+      SH
+
+      assert status.success?, stderr
+      assert_equal "auth setup-git --hostname github.com\n" * 2, File.read(File.join(workspace, "gh-calls"))
+      rewritten, = Open3.capture2({ "HOME" => workspace }, "git", "ls-remote", "--get-url", "git@github.com:owner/repo.git", chdir: workspace)
+      assert_equal "https://github.com/owner/repo.git\n", rewritten
+    end
+  end
+
+  def test_configure_github_https_skips_without_a_token
+    Dir.mktmpdir("session-common-test") do |workspace|
+      _, stderr, status = run_bash(%(export HOME="#{workspace}"; unset GH_TOKEN; configure_github_https), workspace)
+
+      assert status.success?, stderr
+      refute File.exist?(File.join(workspace, ".gitconfig"))
     end
   end
 
