@@ -42,7 +42,7 @@ RSpec.describe Orchestration::PipelineRun do
       running = create(:orchestration_pipeline_run, status: 'running')
       completed = create(:orchestration_pipeline_run, status: 'completed')
       failed = create(:orchestration_pipeline_run, status: 'failed')
-      result = described_class.in_progress
+      result = described_class.in_progress.to_a
       expect(result).to include(pending, running)
       expect(result).not_to include(completed, failed)
     end

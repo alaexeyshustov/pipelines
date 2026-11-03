@@ -33,7 +33,8 @@ RSpec.describe Evaluation::Grader::ResultWriter do
 
   it "links justifications to their results by metric name" do
     results = write
-    expect(results.map { |r| r.justifications.pick(:metric_name, :justification) })
+    justifications = Evaluation::Justification.where(evaluation_result: results).order(:evaluation_result_id)
+    expect(justifications.pluck(:metric_name, :justification))
       .to eq([ [ "accuracy", "Good." ], [ "quality", "Meh." ] ])
   end
 

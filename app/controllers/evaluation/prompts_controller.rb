@@ -17,7 +17,9 @@ module Evaluation
     private
 
     def find_compare_prompts
-      [ Prompt.find_by(id: params[:prompt_a_id]), Prompt.find_by(id: params[:prompt_b_id]) ]
+      ids = [ params[:prompt_a_id].to_s, params[:prompt_b_id].to_s ]
+      prompts = Prompt.where(id: ids).index_by { |prompt| prompt.id.to_s }
+      prompts.values_at(*ids)
     end
 
     def find_completed_experiments(prompt_a, prompt_b)

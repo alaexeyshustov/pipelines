@@ -10,9 +10,16 @@ module Orchestration
       base = "action" if base.blank?
       base = "x_#{base}" unless base.match?(/\A[a-z]/)
 
+      unique_key(base)
+    end
+
+    private
+
+    def unique_key(base)
+      taken     = @step.step_actions.pluck(:output_key)
       candidate = base
       suffix    = 2
-      while @step.step_actions.exists?(output_key: candidate)
+      while taken.include?(candidate)
         candidate = "#{base}_#{suffix}"
         suffix += 1
       end

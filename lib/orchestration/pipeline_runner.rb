@@ -28,7 +28,7 @@ module Orchestration
     end
 
     def process_steps(previous_outputs)
-      steps = @pipeline_run.pipeline.enabled_steps.to_a # : Array[Step]
+      steps = @pipeline_run.pipeline.enabled_steps.includes(step_actions: { action: :agent }).to_a # : Array[Step]
       completed = steps.each do |step|
         action_runs = run_step(step, previous_outputs)
         break if handle_step_failure(action_runs)
@@ -59,7 +59,14 @@ module Orchestration
         runnable = action_runs.select { |ar| ar.status == "pending" }
         run_actions_in_parallel(runnable) if runnable.any?
       end
-      action_runs.each(&:reload)
+      reload_action_runs(action_runs)
+    end
+
+    # One query for the step's fresh statuses and outputs, instead of a
+    # `reload` per action run.
+    def reload_action_runs(action_runs)
+      fresh = ActionRun.where(id: action_runs.map(&:id)).includes(:step_action).index_by(&:id)
+      action_runs.map { |ar| fresh.fetch(ar.id) }
     end
 
     def prepare_action_runs(step, previous_outputs)

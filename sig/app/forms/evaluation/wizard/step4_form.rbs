@@ -2,6 +2,8 @@ module Evaluation
   module Wizard
     class Step4Form
       @payload: wizard_payload
+      @prompt: Prompt?
+      @dataset: Dataset?
 
       def initialize: (draft_payload: wizard_payload) -> void
 

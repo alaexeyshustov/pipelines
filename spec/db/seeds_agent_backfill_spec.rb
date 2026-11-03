@@ -1,7 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "Seeds: agent config backfill" do # rubocop:disable RSpec/DescribeClass
-  before { load Rails.root.join("db/seeds.rb") }
+  # Seeding is per-record by design; the examples check what it left behind.
+  before { Prosopite.pause { load Rails.root.join("db/seeds.rb") } }
 
   agents_without_output_schema = %w[
     Emails::MappingAgent

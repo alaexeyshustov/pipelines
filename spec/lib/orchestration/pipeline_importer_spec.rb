@@ -223,7 +223,7 @@ RSpec.describe Orchestration::PipelineImporter do
 
     it "re-creates an exported pipeline that exports identically", :aggregate_failures do
       exported = Orchestration::PipelineExporter.call([ pipeline ])
-      pipeline.destroy!
+      Prosopite.pause { pipeline.destroy! }
 
       result = described_class.call(JSON.parse(JSON.generate(exported)))
 

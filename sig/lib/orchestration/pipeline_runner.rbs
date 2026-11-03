@@ -16,6 +16,7 @@ module Orchestration
     def accumulate_step_outputs: (Array[ActionRun] action_runs, Hash[String, json_object] previous_outputs) -> void
     def run_step: (Step step, Hash[String, json_object] previous_outputs) -> Array[ActionRun]
     def prepare_action_runs: (Step step, Hash[String, json_object] previous_outputs) -> Array[ActionRun]
+    def reload_action_runs: (Array[ActionRun] action_runs) -> Array[ActionRun]
     def create_action_run: (StepAction step_action) -> ActionRun
     def resolve_action_input: (ActionRun action_run, StepAction step_action, Hash[String, json_object] previous_outputs) -> void
     def run_actions_in_parallel: (Array[ActionRun] action_runs) -> void
