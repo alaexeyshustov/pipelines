@@ -12,7 +12,5 @@ class CreateEmailSyncCursors < ActiveRecord::Migration[8.1]
       t.timestamps
     end
     add_index :email_sync_cursors, %i[provider account mailbox], unique: true
-
-    add_column :emails, :tagged_at, :datetime
   end
 end

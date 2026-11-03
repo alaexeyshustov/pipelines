@@ -1,6 +1,0 @@
-class Email
-  class YahooIdRewriter
-    def self.rewrite: (Integer uid_validity) -> Integer
-    def self.rewrite_from_env: () -> Integer?
-  end
-end
