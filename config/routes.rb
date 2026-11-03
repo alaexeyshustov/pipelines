@@ -25,6 +25,10 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :tags, only: [ :index ] do
+    resources :subtags, only: [ :create ]
+  end
+
   namespace :evaluation do
     root to: "dashboard#show"
     resources :metrics, only: [ :index, :edit, :update, :create, :destroy ] do

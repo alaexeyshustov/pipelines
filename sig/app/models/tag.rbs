@@ -1,0 +1,11 @@
+class Tag < ApplicationRecord
+  NAMES: Array[String]
+  STARTER_SUBTAGS: Hash[String, Array[String]]
+
+  def self.seed_defaults!: () -> void
+
+  def name: () -> String?
+  def name=: (String?) -> String?
+  def subtags: () -> ActiveRecord::Associations::CollectionProxy
+  def taggings: () -> ActiveRecord::Associations::CollectionProxy
+end

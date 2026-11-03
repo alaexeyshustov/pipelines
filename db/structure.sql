@@ -171,7 +171,26 @@ CREATE TRIGGER emails_fts_au AFTER UPDATE ON emails BEGIN
   INSERT INTO emails_fts(rowid, subject, body, from_address)
   VALUES (new.id, new.subject, new.body, new.from_address);
 END;
+CREATE TABLE IF NOT EXISTS "tags" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE UNIQUE INDEX "index_tags_on_name" ON "tags" ("name") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "subtags" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "tag_id" integer NOT NULL, "name" varchar NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_8f0a6d217b"
+FOREIGN KEY ("tag_id")
+  REFERENCES "tags" ("id")
+);
+CREATE INDEX "index_subtags_on_tag_id" ON "subtags" ("tag_id") /*application='ApplicationPipeline'*/;
+CREATE UNIQUE INDEX "index_subtags_on_tag_id_and_name" ON "subtags" ("tag_id", "name") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "taggings" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "taggable_type" varchar NOT NULL, "taggable_id" integer NOT NULL, "tag_id" integer NOT NULL, "subtag_id" integer, "source" varchar DEFAULT 'llm' NOT NULL, "confidence" float, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_9fcd2e236b"
+FOREIGN KEY ("tag_id")
+  REFERENCES "tags" ("id")
+, CONSTRAINT "fk_rails_bc23324ec4"
+FOREIGN KEY ("subtag_id")
+  REFERENCES "subtags" ("id")
+);
+CREATE INDEX "index_taggings_on_tag_id" ON "taggings" ("tag_id") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_taggings_on_subtag_id" ON "taggings" ("subtag_id") /*application='ApplicationPipeline'*/;
+CREATE UNIQUE INDEX "index_taggings_on_taggable_type_and_taggable_id_and_tag_id" ON "taggings" ("taggable_type", "taggable_id", "tag_id") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20261103090100'),
 ('20261103090000'),
 ('20261029100000'),
 ('20261029090000'),

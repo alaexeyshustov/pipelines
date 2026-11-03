@@ -394,3 +394,7 @@ AGENT_DEFINITIONS.each_key do |agent_name|
   result = Evaluation::DatasetSeeder.call(agent_name: agent_name, sample_size: 20)
   Rails.logger.debug { "Dataset '#{result.agent_name}': #{result.created} created, #{result.skipped} skipped." }
 end
+
+# == Tags and Subtags ==
+
+Tag.seed_defaults!

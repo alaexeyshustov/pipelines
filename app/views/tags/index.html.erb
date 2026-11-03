@@ -1,0 +1,8 @@
+<%= render UI::PageHeaderComponent.new(title: "Tags", notice: notice, alert: alert) %>
+
+<div class="space-y-4">
+  <% @tags.each do |tag| %>
+    <%= render ::Tags::TagCardComponent.new(tag: tag, subtags: tag.subtags.sort_by(&:name),
+                                          form_url: tag_subtags_path(tag), errors: @form_errors[tag.id]) %>
+  <% end %>
+</div>
