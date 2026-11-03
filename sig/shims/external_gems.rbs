@@ -148,6 +148,7 @@ module Google
       class MessagePartBody
         def data: () -> String?
         def attachment_id: () -> String?
+        def size: () -> Integer?
       end
 
       class MessagePartHeader
@@ -228,3 +229,12 @@ module Arel
 end
 # rubocop:enable RBS/Lint/NoUntyped
 
+module Zip
+  class Error < StandardError
+  end
+
+  class File
+    def self.open_buffer: (StringIO io) { (File zip) -> void } -> void
+    def read: (String entry) -> String
+  end
+end

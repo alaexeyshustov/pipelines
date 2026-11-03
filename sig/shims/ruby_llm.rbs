@@ -62,6 +62,16 @@ module RubyLLM
 
   def self.models: () -> Models
   def self.chat: (?model: String?) -> Chat
+
+  class Attachment
+    def self.new: (IO | StringIO | String source, ?filename: String?) -> instance
+  end
+
+  class OCR
+    def markdown: () -> String
+  end
+
+  def self.ocr: (Attachment | String file, ?model: String?, ?provider: Symbol?, ?assume_model_exists: bool) -> OCR
 end
 
 module Schematist

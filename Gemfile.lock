@@ -594,6 +594,7 @@ GEM
     rubydex (0.4.3-arm64-darwin)
     rubydex (0.4.3-x86_64-darwin)
     rubydex (0.4.3-x86_64-linux)
+    rubyzip (3.7.0)
     samovar (2.4.1)
       console (~> 1.0)
       mapping (~> 1.0)
@@ -760,6 +761,7 @@ DEPENDENCIES
   ruby_llm (~> 2.1.1)
   ruby_llm-monitoring
   rubycritic
+  rubyzip (~> 3.7)
   schematist
   simplecov
   solid_queue
@@ -975,6 +977,7 @@ CHECKSUMS
   rubydex (0.4.3-arm64-darwin) sha256=6d9735367e2c9e4caece42da2732fa7492c68507aa97a58afc41f58296013cdb
   rubydex (0.4.3-x86_64-darwin) sha256=f70c6ee8988e20dbc29a69e2b283ebbd6483ea89bf10a806dd8696c3710af71b
   rubydex (0.4.3-x86_64-linux) sha256=550138ee5a5c005066560321cfe003130a111468821d8ef7cf30826742b1c2f5
+  rubyzip (3.7.0) sha256=65c19294da75297a939006f3516deacc33185fbd721ff1954f7a231db6d3e121
   samovar (2.4.1) sha256=c3b91dd0580771e3bc600621c1111f29542529dcffafaac3b6bf068b3f309e80
   schematist (1.1.0) sha256=905d8f0286830926e77e0d631bee325ee741c4b99640bc99735593b40ba73e7b
   securerandom (0.4.1) sha256=cc5193d414a4341b6e225f0cb4446aceca8e50d5e1888743fac16987638ea0b1

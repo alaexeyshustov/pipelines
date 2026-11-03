@@ -68,6 +68,14 @@ module Emails
         body.data.to_s
       end
 
+      # Attachment metadata of a message: [{ id:, filename:, mime_type:, size: }], nested parts included.
+      def attachments(message_id)
+        message = @service.get_user_message("me", message_id.to_s, format: "full")
+        raise "Message not found: #{message_id}" unless message
+
+        collect_attachments(message.payload)
+      end
+
       def get_unread_count
         label = @service.get_user_label("me", "UNREAD")
         label&.messages_total.to_i
@@ -94,6 +102,19 @@ module Emails
       end
 
       private
+
+      def collect_attachments(part)
+        own = attachment_metadata(part)
+        own + Array(part.parts).flat_map { |child| collect_attachments(child) }
+      end
+
+      def attachment_metadata(part)
+        body = part.body
+        filename = part.filename.to_s # steep:ignore
+        return [] unless body&.attachment_id && !filename.empty?
+
+        [ { id: body.attachment_id.to_s, filename: filename, mime_type: part.mime_type.to_s, size: body.size.to_i } ]
+      end
 
       def format_message(message, parsed)
         {
