@@ -31,6 +31,9 @@
   <% header.with_action(type: :link, label: "Edit",
                         url: edit_orchestration_pipeline_path(@pipeline),
                         variant: :secondary) %>
+  <% header.with_action(type: :link, label: "Export",
+                        url: export_orchestration_pipeline_path(@pipeline),
+                        variant: :secondary) %>
   <% header.with_action(type: :dialog,
                         label: "Delete",
                         dialog_title: "Delete pipeline \"#{@pipeline.name}\"? This will also delete all steps and step-actions.",

@@ -79,11 +79,16 @@ Rails.application.routes.draw do
       end
     end
     resources :actions
+    resources :pipeline_imports, only: [ :create ]
     resources :pipeline_runs, only: [ :index ], controller: "all_pipeline_runs"
     resources :pipelines do
       member do
         post :run
         patch :toggle
+        get :export
+      end
+      collection do
+        get :export_all
       end
       resources :pipeline_runs, only: [ :index, :show ]
       resources :steps, only: [ :create, :update, :destroy ] do

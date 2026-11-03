@@ -2,7 +2,7 @@ module Orchestration
   class PipelinesController < ApplicationController
     include JsonParamsParsing
 
-    before_action :set_pipeline, only: [ :show, :edit, :update, :destroy, :run, :toggle ]
+    before_action :set_pipeline, only: [ :show, :edit, :update, :destroy, :run, :toggle, :export ]
 
     def index
       @pipelines = Orchestration::Pipeline.with_step_counts
@@ -40,6 +40,14 @@ module Orchestration
       end
     end
 
+    def export
+      send_json_export([ @pipeline ], "pipeline-#{@pipeline.name.to_s.parameterize.presence || @pipeline.id}.json")
+    end
+
+    def export_all
+      send_json_export(Orchestration::Pipeline.order(:id).to_a, "pipelines.json")
+    end
+
     def toggle
       @pipeline.update!(enabled: !@pipeline.enabled)
       redirect_to request.referer || orchestration_pipeline_path(@pipeline),
@@ -60,6 +68,11 @@ module Orchestration
     end
 
     private
+
+    def send_json_export(pipelines, filename)
+      payload = Orchestration::PipelineExporter.call(pipelines)
+      send_data JSON.pretty_generate(payload), filename: filename, type: "application/json", disposition: "attachment"
+    end
 
     def set_pipeline
       @pipeline = Orchestration::Pipeline.find(params[:id])

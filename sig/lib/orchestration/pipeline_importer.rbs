@@ -1,0 +1,44 @@
+module Orchestration
+  class PipelineImporter
+    class Result < Data
+      def self.new: (pipelines: Array[Pipeline], errors: Array[String]) -> Result
+      attr_reader pipelines: Array[Pipeline]
+      attr_reader errors: Array[String]
+    end
+
+    class ImportError < StandardError
+    end
+
+    FORMAT: String
+    KINDS: Array[String]
+    PIPELINE_KEYS: Array[String]
+    STEP_KEYS: Array[String]
+    STEP_ACTION_KEYS: Array[String]
+    ACTION_KEYS: Array[String]
+    AGENT_KEYS: Array[String]
+
+    include Shape
+
+    @data: Object?
+
+    def self.call: (Object? data) -> Result
+
+    def initialize: (Object? data) -> void
+    def call: () -> Result
+
+    private
+
+    def import_all: () -> Array[Pipeline]
+    def import_pipeline: (json_object data) -> Pipeline
+    def build_pipeline: (json_object data) -> Pipeline
+    def import_step: (Pipeline pipeline, json_object data, Integer position, String parent_label) -> void
+    def import_step_action: (Step step, json_object data, Integer position, String parent_label) -> void
+    def import_action: (json_object data, String parent_label) -> Action
+    def assign_executor: (Action action, json_object data, String label) -> void
+    def find_or_create_agent: (json_object data, String parent_label) -> Agent
+    def decode_keyword: (Object? keyword, String label) -> String?
+    def report_mapping_errors: (Pipeline pipeline, String label) -> void
+    def unique_name: (Object? name) -> String
+    def save!: (ActiveRecord::Base record, String label) -> void
+  end
+end

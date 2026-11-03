@@ -1,5 +1,12 @@
 <%= render UI::PageHeaderComponent.new(title: "Pipelines", notice: notice, alert: alert) do |header| %>
   <% header.with_action(type: :link, label: "New Pipeline", url: new_orchestration_pipeline_path) %>
+  <% header.with_action(type: :link, label: "Export all", url: export_all_orchestration_pipelines_path, variant: :secondary) %>
+  <% header.with_action(type: :raw) do %>
+    <%= form_with url: orchestration_pipeline_imports_path, multipart: true, class: "inline-flex items-center gap-2" do |f| %>
+      <%= f.file_field :file, accept: "application/json,.json", required: true, class: "text-sm text-gray-600" %>
+      <%= f.submit "Import", class: "px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors border border-gray-300 cursor-pointer" %>
+    <% end %>
+  <% end %>
 <% end %>
 
 <%= render UI::LegacyTableComponent.new(collection: @pipelines, empty_message: "No pipelines found.") do |table| %>
