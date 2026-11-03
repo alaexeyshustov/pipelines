@@ -30,6 +30,10 @@ Rails.application.routes.draw do
   end
 
   get "search", to: "searches#show"
+  # One page per fixed tag (Tag::NAMES): /tag_pages/job_application -> TagPages::JobApplicationController.
+  namespace :tag_pages do
+    Tag::NAMES.each { |name| get name, to: "#{name}#show", as: name }
+  end
   resources :tags, only: [ :index ] do
     resources :subtags, only: [ :create ]
   end

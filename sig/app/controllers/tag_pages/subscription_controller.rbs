@@ -1,0 +1,4 @@
+module TagPages
+  class SubscriptionController < BaseController
+  end
+end

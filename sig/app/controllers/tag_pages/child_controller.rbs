@@ -1,0 +1,4 @@
+module TagPages
+  class ChildController < BaseController
+  end
+end

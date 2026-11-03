@@ -1,0 +1,25 @@
+module TagPages
+  class FilterForm < BaseForm
+    DEFAULT_DAYS: Integer
+    TYPES: Array[String]
+
+    def q: () -> String?
+    def q=: (String?) -> String?
+    def subtag: () -> String?
+    def subtag=: (String?) -> String?
+    def type: () -> String?
+    def type=: (String?) -> String?
+    def from: () -> Date?
+    def from=: (Date?) -> Date?
+    def to: () -> Date?
+    def to=: (Date?) -> Date?
+
+    def query: () -> String?
+    def subtag_name: () -> String?
+    def from_date: () -> Date
+    def to_date: () -> Date?
+    def include_emails?: () -> bool
+    def include_documents?: () -> bool
+    def to_params: () -> Hash[Symbol, String | Date]
+  end
+end

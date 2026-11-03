@@ -41,8 +41,14 @@ module UI
       NavGroup.new(label: "Mails", items: [
         NavItem.new(label: "Interviews", path: ma.interviews_path),
         NavItem.new(label: "Tags",       path: ma.tags_path),
-        NavItem.new(label: "Search",     path: ma.search_path)
+        NavItem.new(label: "Search",     path: ma.search_path),
+        *tag_page_items
       ])
+    end
+
+    def tag_page_items
+      ma = helpers.main_app
+      Tag::NAMES.map { |name| NavItem.new(label: name.humanize, path: ma.public_send(:"tag_pages_#{name}_path")) }
     end
 
     def orchestration_nav_group

@@ -4,6 +4,7 @@ class Tag < ApplicationRecord
 
   def self.seed_defaults!: () -> void
 
+  def id: () -> Integer
   def name: () -> String?
   def name=: (String?) -> String?
   def subtags: () -> ActiveRecord::Associations::CollectionProxy
