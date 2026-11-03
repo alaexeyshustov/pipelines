@@ -32,6 +32,11 @@ RSpec.describe Document::ExtractEmailAttachmentsJob do
       expect(Tags::Classifier).to have_received(:call).with(doc)
     end
 
+    it "enqueues the embedding of the new Document, once for a repeated attachment" do
+      expect { described_class.perform_now(email.id) }.to have_enqueued_job(Document::EmbedJob)
+      expect { described_class.perform_now(email.id) }.not_to have_enqueued_job(Document::EmbedJob)
+    end
+
     it "yields one Document when the same attachment arrives on two emails, tagging it once" do
       other = create(:email, provider: "gmail", provider_message_id: "m2")
       create(:tagging, taggable: other, tag: Tag.first)

@@ -1,0 +1,5 @@
+module Embeddings
+  module RankFusion
+    def self?.call: (*Array[Integer] rankings, ?k: Integer) -> Array[[ Integer, Float ]]
+  end
+end

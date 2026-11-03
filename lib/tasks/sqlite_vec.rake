@@ -11,11 +11,13 @@ namespace :sqlite_vec do
 end
 
 # FTS5 creates its own shadow tables (<name>_data/_idx/_docsize/_config); the dump lists them too and
-# loading them fails ("object name reserved for internal use"), so drop them from structure.sql.
+# loading them fails ("object name reserved for internal use"), so drop them from structure.sql. Same for the
+# vec0 shadow tables (<name>_info/_chunks/_rowids/_vector_chunksNN).
 Rake::Task["db:schema:dump"].enhance do
   path = Rails.root.join("db/structure.sql")
   next unless path.exist?
 
-  sql = path.read.gsub(/^CREATE TABLE IF NOT EXISTS '\w+_fts_(?:data|idx|docsize|config)'.*\n/, "")
+  shadow = /^CREATE TABLE IF NOT EXISTS ['"]\w+_(?:fts_(?:data|idx|docsize|config)|vectors_(?:info|chunks|rowids|vector_chunks\d+))['"].*\n/
+  sql = path.read.gsub(shadow, "")
   path.write(sql)
 end

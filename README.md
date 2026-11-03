@@ -42,6 +42,10 @@ ANTHROPIC_API_KEY=
 
 DEFAULT_MODEL=mistral-large-latest   # used by the pipeline when --model is not passed
 
+# Vector search (Ollama; `ollama pull qwen3-embedding:0.6b`, then `rake embeddings:reembed` to backfill)
+OLLAMA_API_BASE=http://localhost:11434/v1
+EMBEDDING_MODEL=qwen3-embedding:0.6b
+
 # Email providers to activate (comma-separated)
 MAIL_PROVIDERS=gmail,yahoo
 

@@ -1,0 +1,21 @@
+class Embedding < ApplicationRecord
+  class Neighbor
+    attr_reader embeddable: ApplicationRecord
+    attr_reader distance: Float
+
+    def self.new: (embeddable: ApplicationRecord, distance: Float) -> instance
+  end
+
+  def self.store!: (ApplicationRecord embeddable, model: String, content_digest: String, vector: Array[Float]) -> Embedding
+  def self.nearest: (Array[Float] vector, type: String, model: String, ?limit: Integer) -> Array[Neighbor]
+  def self.purge_except!: (String model) -> void
+  def self.delete_vectors: (Integer id) -> void
+  def self.index_vector: (Embedding embedding, Array[Float] vector) -> void
+  def self.pack: (Array[Float] vector) -> String
+
+  def embeddable: () -> ApplicationRecord
+  def model: () -> String
+  def dimensions: () -> Integer
+  def content_digest: () -> String
+  def embedded_at: () -> Time
+end

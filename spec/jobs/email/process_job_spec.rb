@@ -30,6 +30,10 @@ RSpec.describe Email::ProcessJob do
         end
       end
 
+      it "enqueues the embedding" do
+        expect { described_class.perform_now(email.id) }.to have_enqueued_job(Email::EmbedJob).with(email.id)
+      end
+
       it "enqueues the attachment extraction" do
         expect { described_class.perform_now(email.id) }
           .to have_enqueued_job(Document::ExtractEmailAttachmentsJob).with(email.id)

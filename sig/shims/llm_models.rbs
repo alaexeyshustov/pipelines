@@ -4,4 +4,5 @@ module LlmModels
   def self.evaluation: () -> String
   def self.evaluation_fallbacks: () -> Array[String]
   def self.judge: () -> String
+  def self.embedding: () -> String
 end

@@ -17,3 +17,9 @@ ActiveSupport.on_load(:active_record) do
     ActiveSupport.on_load(:active_record_sqlite3adapter) { prepend SqliteVecExtension }
   end
 end
+
+# db:schema:load / db:test:prepare feed structure.sql to the sqlite3 CLI, which needs the extension to create the
+# vec0 virtual tables.
+ActiveSupport.on_load(:active_record) do
+  ActiveRecord::Tasks::DatabaseTasks.structure_load_flags = { sqlite3: [ "-cmd", %("#{".load #{SqliteVec.loadable_path}"}") ] }
+end

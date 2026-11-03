@@ -1,0 +1,33 @@
+module Embeddings
+  class Embed
+    class Result
+      attr_reader embedded: Integer
+      attr_reader unchanged: Integer
+      attr_reader skipped: Integer
+
+      def self.new: (embedded: Integer, unchanged: Integer, skipped: Integer) -> instance
+    end
+
+    class Pending
+      attr_reader record: Email | Document
+      attr_reader text: String
+      attr_reader digest: String
+
+      def self.new: (record: Email | Document, text: String, digest: String) -> instance
+    end
+
+    @records: Array[Email | Document]
+    @model: String
+
+    def self.call: (Array[Email | Document] records, ?model: String) -> Result
+
+    def initialize: (Array[Email | Document] records, model: String) -> void
+    def call: () -> Result
+
+    private
+
+    def candidates: () -> Array[Pending]
+    def stale?: (Pending candidate) -> bool
+    def store: (Array[Pending] stale) -> void
+  end
+end

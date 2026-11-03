@@ -1,6 +1,8 @@
 class Email < ApplicationRecord
   include Taggable
+  include Embeddable
   extend FtsSearchable::ClassMethods
+  extend Embeddable::ClassMethods
 
   PROVIDERS: Array[String]
   DEFAULT_BACKFILL_DAYS: Integer

@@ -81,15 +81,17 @@ class Document::SyncDriveJob < ApplicationJob
   def store(attributes, document)
     if document
       document.update!(attributes)
-      summary["updated"] += 1
-      document
+      stored(document, "updated")
     else
       created = Document.ingest!(attributes)
-      return unless created.previously_new_record?
-
-      summary["created"] += 1
-      created
+      stored(created, "created") if created.previously_new_record?
     end
+  end
+
+  def stored(document, outcome)
+    summary[outcome] += 1
+    Document::EmbedJob.perform_later(document.id)
+    document
   end
 
   def attributes_for(entry, file, text, checksum)

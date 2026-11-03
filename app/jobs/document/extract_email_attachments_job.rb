@@ -28,7 +28,10 @@ class Document::ExtractEmailAttachmentsJob < ApplicationJob
     data = Emails.attachment(email.provider, email.provider_message_id, attachment[:id])
     text = Document::TextExtractor.call(data:, mime_type: attachment[:mime_type], filename: attachment[:filename])
     document = ingest(email, attachment, data, text)
-    Tags::Classifier.call(document) if document.previously_new_record?
+    return unless document.previously_new_record?
+
+    Tags::Classifier.call(document)
+    Document::EmbedJob.perform_later(document.id)
   end
 
   def ingest(email, attachment, data, text)

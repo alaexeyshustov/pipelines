@@ -76,7 +76,7 @@ RSpec.describe Setting do
     it "lists the known LLM model setting keys" do
       expect(described_class::KEYS).to include(
         "emails_agent_model", "records_agent_model",
-        "evaluation_llm_model", "judge_llm_model"
+        "evaluation_llm_model", "judge_llm_model", "embedding_model"
       )
     end
   end
