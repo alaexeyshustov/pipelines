@@ -3,6 +3,9 @@ class Email < ApplicationRecord
   extend FtsSearchable::ClassMethods
 
   PROVIDERS: Array[String]
+  DEFAULT_BACKFILL_DAYS: Integer
+
+  def self.backfill_days: () -> Integer
 
   def provider: () -> String
   def provider=: (String) -> String
@@ -22,4 +25,6 @@ class Email < ApplicationRecord
   def html_body=: (String?) -> String?
   def source_url: () -> String?
   def source_url=: (String?) -> String?
+  def tagged_at: () -> Time?
+  def tagged_at=: (Time?) -> Time?
 end

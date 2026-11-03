@@ -1,5 +1,5 @@
 class Setting < ApplicationRecord
-  KEYS = %w[emails_agent_model records_agent_model evaluation_llm_model judge_llm_model drive_folder_ids].freeze
+  KEYS = %w[emails_agent_model records_agent_model evaluation_llm_model judge_llm_model drive_folder_ids email_backfill_days].freeze
 
   validates :key,   presence: true, uniqueness: true
   validates :value, presence: true

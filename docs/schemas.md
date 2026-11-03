@@ -79,6 +79,41 @@ Interview.as_rows(scope)  # accepts a custom ActiveRecord scope
 ## emails
 
 One row per INBOX email, full body kept (replaces `application_mails`, which is removed later). `Email`; ingestion is separate.
+### Email columns added for ingestion
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| tagged_at | DATETIME | YES | Set by the per-email processing job after a successful classification; `NULL` = untagged backlog |
+
+`Email.backfill_days` reads Setting `email_backfill_days` (then ENV `EMAIL_BACKFILL_DAYS`, default 90): the window for a first sync or rescan.
+
+---
+
+## email_sync_cursors
+
+Where the last sync of one mailbox stopped (ADR 0013). `Email::SyncCursor`; one row per `[provider, account, mailbox]` (unique index).
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| id | INTEGER | NO | PK |
+| provider | STRING | NO | `gmail` / `yahoo` |
+| account | STRING | NO | Mailbox owner (Gmail address, Yahoo username) |
+| mailbox | STRING | NO | Default `INBOX` |
+| history_id | STRING | YES | Gmail only |
+| uid_validity | BIGINT | YES | IMAP only |
+| last_uid | BIGINT | YES | IMAP only |
+| last_synced_at | DATETIME | YES | |
+| last_rescan_at | DATETIME | YES | |
+| created_at, updated_at | DATETIME | NO | |
+
+```ruby
+cursor = Email::SyncCursor.for(provider: "gmail", account: "me@example.com")  # find or build (unsaved = backfill)
+cursor.advance!(history_id: "123")   # forward only; stamps last_synced_at
+cursor.reset!(history_id: "456")     # after a rescan; may move backwards; stamps last_rescan_at
+```
+
+---
+
 ## documents
 
 A pdf/doc(x)/image reduced to extracted text (markdown). Only the text is stored; the original is re-fetched live. `Document`; extraction/ingestion is separate. Taggable (like `Email`, via `Taggable`).

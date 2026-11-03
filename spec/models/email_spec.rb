@@ -79,4 +79,29 @@ RSpec.describe Email do
         .not_to raise_error
     end
   end
+
+  describe "#tagged_at" do
+    it "is nil by default and can be set" do
+      email = create(:email)
+      expect(email.tagged_at).to be_nil
+      email.update!(tagged_at: Time.zone.now)
+      expect(email.reload.tagged_at).not_to be_nil
+    end
+  end
+
+  describe ".backfill_days" do
+    it "defaults to 90" do
+      expect(described_class.backfill_days).to eq(90)
+    end
+
+    it "is overridable through the email_backfill_days setting" do
+      Setting.set("email_backfill_days", "30")
+      expect(described_class.backfill_days).to eq(30)
+    end
+
+    it "falls back to ENV when no setting exists" do
+      stub_const("ENV", ENV.to_h.merge("EMAIL_BACKFILL_DAYS" => "14"))
+      expect(described_class.backfill_days).to eq(14)
+    end
+  end
 end
