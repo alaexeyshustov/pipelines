@@ -3,23 +3,6 @@ require 'rails_helper'
 RSpec.describe Records::ReadRowsTool do
   subject(:tool) { described_class.new }
 
-  describe 'application_mails' do
-    before { create(:application_mail, company: 'Acme', job_title: 'Engineer') }
-
-    it 'returns all rows with headers' do
-      result = tool.execute(table: 'application_mails')
-      expect(result[:headers]).to eq(ApplicationMail::COLUMN_NAMES)
-      expect(result[:row_count]).to eq(1)
-    end
-
-    it 'filters rows by column value' do
-      create(:application_mail, company: 'Other Corp', job_title: 'Designer')
-      result = tool.execute(table: 'application_mails', column_name: 'company', column_value: 'Acme')
-      expect(result[:row_count]).to eq(1)
-      expect(result[:rows].first['company']).to eq('Acme')
-    end
-  end
-
   describe 'interviews' do
     before { create(:interview, company: 'Globex', job_title: 'Developer 1') }
 

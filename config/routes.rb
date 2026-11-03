@@ -13,11 +13,6 @@ Rails.application.routes.draw do
       post :batch
     end
   end
-  resources :application_mails do
-    collection do
-      post :batch
-    end
-  end
   resources :interviews do
     collection do
       post :batch

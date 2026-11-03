@@ -1,5 +1,5 @@
 # Structured output of Interviews::EmailExtractor: what one job_application email says about one application.
-# Field semantics are those of the legacy ApplicationMailsSchema, minus the per-email fields (id, provider, date).
+# Per-email fields (id, provider, date) are not extracted; the Email row already carries them.
 class InterviewExtractionSchema < Schematist::Schema
   ACTIONS = %w[apply notification interview offer rejection].freeze
 

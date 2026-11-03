@@ -1,38 +1,6 @@
 # Schemas — AI Agent Quick Reference
 
-Schema format is `:sql` (not `:ruby`) because sqlite-vec `vec0` virtual tables cannot be expressed in the Ruby DSL. Source of truth: `db/structure.sql`.
-
----
-
-## application_mails
-
-One row per unique job-related email received.
-
-| Column | Type | Null | Default | Notes |
-|---|---|---|---|---|
-| id | INTEGER | NO | autoincrement | PK |
-| date | DATE | NO | — | Date the email was received |
-| provider | STRING | NO | — | `"gmail"` or `"yahoo"` |
-| email_id | STRING | NO | — | Provider-assigned message ID; globally unique |
-| company | STRING | YES | — | Extracted by LLM; nil if unknown |
-| job_title | STRING | YES | — | Extracted by LLM; nil if unknown |
-| action | STRING | YES | — | Extracted by LLM; e.g. `"applied"`, `"rejected"` |
-| created_at | DATETIME | NO | — | |
-| updated_at | DATETIME | NO | — | |
-
-**Indexes:** `email_id` (unique), `date`
-
-**Model constants:**
-```ruby
-ApplicationMail::COLUMN_NAMES
-# => ["date", "provider", "email_id", "company", "job_title", "action"]
-```
-
-**Key method:**
-```ruby
-ApplicationMail.as_rows          # => Array of plain hashes, ordered by date asc
-ApplicationMail.as_rows(scope)   # accepts a custom ActiveRecord scope
-```
+Schema format is `:sql` (not `:ruby`) because FTS5 virtual tables and their triggers cannot be expressed in the Ruby DSL. Source of truth: `db/structure.sql`.
 
 ---
 
@@ -80,7 +48,7 @@ Interview.as_rows(scope)  # accepts a custom ActiveRecord scope
 
 ## emails
 
-One row per INBOX email, full body kept (replaces `application_mails`, which is removed later). `Email`; ingestion is separate.
+One row per INBOX email, full body kept.
 ### Email columns added for ingestion
 
 | Column | Type | Null | Notes |
@@ -224,26 +192,6 @@ Tags::Classifier.threshold                 # 0.35; Setting "tagging_threshold" >
 ```
 
 **Indexes:** `[taggable_type, taggable_id, tag_id]` (unique: one tag per taggable), `tag_id`, `subtag_id`
-
----
-
-## email_vectors
-
-sqlite-vec `vec0` virtual table. Stores 1536-dim float embeddings for RAG. **Not yet wired into the main workflow — reserved for future use.**
-
-| Column | Type | Notes |
-|---|---|---|
-| email_id | TEXT (PK) | Matches `application_mails.email_id` |
-| embedding | FLOAT[1536] | OpenAI-compatible 1536-dim vector |
-
-**Model methods:**
-```ruby
-EmailVector.upsert_embedding(email_id: id, embedding: float_array)
-EmailVector.search(float_array, limit: 5)
-# => [{ email_id: "...", distance: 0.12 }, ...]
-```
-
-The sqlite-vec extension is loaded on every connection by `config/initializers/sqlite_vec.rb`.
 
 ---
 
@@ -512,9 +460,8 @@ RubyLLM's usage ledger. `owner_type`/`owner_id` point at the `Evaluation::Experi
 
 ## Quick perks
 
-- `ApplicationMail.as_rows` and `Interview.as_rows` return `Array<Hash<String, String|nil>>` — safe to pass directly to LLM tool responses.
+- `Interview.as_rows` returns `Array<Hash<String, String|nil>>` — safe to pass directly to LLM tool responses.
 - All `STATUSES` / `TRIGGERED_BY` constants are frozen arrays — use them for validation or display without querying the DB.
-- `email_vectors` KNN search returns results sorted by distance ascending (nearest first).
 - Orchestration objects cascade on destroy: `Pipeline → Steps → StepActions`; `PipelineRun → ActionRuns`. Actions block deletion if any `StepAction` references them.
 - `Chat` → `Message` (has_many), `Message` → `ToolCall` (has_many) — load with `Chat.includes(messages: :tool_calls)` to avoid N+1.
 - Schema is loaded via `db/structure.sql`, not `db/schema.rb` — run `rails db:schema:load` (not `rails db:migrate`) on a fresh database.

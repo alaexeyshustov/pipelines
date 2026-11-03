@@ -1,10 +1,10 @@
 module Records
   class FillJob < ApplicationJob
     def perform(ids)
-      mails = ApplicationMail.by_ids(ids)
+      interviews = Interview.where(id: ids)
       input = {
-        emails:            mails.map(&:attributes),
-        destination_table: "application_mails"
+        emails:            interviews.map(&:attributes),
+        destination_table: "interviews"
       }.to_json
 
       Orchestration::Agents::RecordsFiller.new.ask(input)

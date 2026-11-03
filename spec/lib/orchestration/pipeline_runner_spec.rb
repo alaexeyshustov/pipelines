@@ -782,7 +782,7 @@ RSpec.describe Orchestration::PipelineRunner do
         step2 = create(:orchestration_step, pipeline: pipeline, name: "filter",  position: 2)
         step3 = create(:orchestration_step, pipeline: pipeline, name: "ingest",  position: 3)
 
-        filter_agent_record = create(:orchestration_agent, name: "Orchestration::Agents::EmailsFilter")
+        filter_agent_record = create(:orchestration_agent, name: "Orchestration::Agents::RecordsFiller")
 
         fetch_action  = create(:orchestration_action, :service_kind, agent_class: "Orchestration::Executors::EmailsFetcher")
         filter_action = create(:orchestration_action, agent: filter_agent_record)
@@ -1216,7 +1216,7 @@ RSpec.describe Orchestration::PipelineRunner do
         step2 = create(:orchestration_step, pipeline: pipeline, name: "filter",  position: 2)
         step3 = create(:orchestration_step, pipeline: pipeline, name: "ingest",  position: 3)
 
-        filter_agent_record = create(:orchestration_agent, name: "Orchestration::Agents::EmailsFilter")
+        filter_agent_record = create(:orchestration_agent, name: "Orchestration::Agents::RecordsFiller")
 
         fetch_action  = create(:orchestration_action, :service_kind, agent_class: "Orchestration::Executors::EmailsFetcher")
         filter_action = create(:orchestration_action, agent: filter_agent_record)

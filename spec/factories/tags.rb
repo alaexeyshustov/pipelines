@@ -9,7 +9,7 @@ FactoryBot.define do
   end
 
   factory :tagging do
-    association :taggable, factory: :application_mail
+    association :taggable, factory: :email
     tag
     source { "manual" }
   end

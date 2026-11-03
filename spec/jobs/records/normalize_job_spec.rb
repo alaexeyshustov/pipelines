@@ -1,8 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Records::NormalizeJob do
-  let(:mails) { create_list(:application_mail, 2) }
-  let(:ids)   { mails.map(&:id) }
+  let(:interviews) { create_list(:interview, 2) }
+  let(:ids)   { interviews.map(&:id) }
   let(:captured_inputs) { [] }
 
   before do
@@ -17,7 +17,7 @@ RSpec.describe Records::NormalizeJob do
 
     parsed = JSON.parse(captured_inputs.last)
     expect(parsed).to include(
-      "destination_table" => "application_mails",
+      "destination_table" => "interviews",
       "columns_to_normalize" => %w[company job_title]
     )
     expect(parsed["records_to_normalize"].pluck("id")).to match_array(ids)
