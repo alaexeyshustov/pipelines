@@ -26,6 +26,7 @@ module UI
 
     def llm_nav_group: () -> NavGroup
     def mails_nav_group: () -> NavGroup
+    def tag_page_items: () -> Array[NavItem]
     def orchestration_nav_group: () -> NavGroup
     def settings_nav_group: () -> NavGroup
     def current_path_matches?: (String path) -> bool

@@ -27,6 +27,12 @@ RSpec.describe UI::LegacySidebarComponent, type: :component do
     expect(links).to include("Chats", "Models", "Monitoring", "Evaluation", "Prompts")
   end
 
+  it "renders one nav link per tag page" do
+    details = rendered.css("details")[1]
+    links = details.css("a").map { |a| a.text.strip }
+    expect(links).to include(*Tag::NAMES.map(&:humanize))
+  end
+
   it "renders Mails group links" do
     details = rendered.css("details")[1]
     links = details.css("a").map { |a| a.text.strip }

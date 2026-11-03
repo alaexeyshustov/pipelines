@@ -1,0 +1,13 @@
+module UI
+  class FilterChipComponent < ViewComponent::Base
+    BASE_CLASSES: String
+    VARIANT_CLASSES: Hash[bool, String]
+
+    @label: String
+    @href: String
+    @active: bool
+
+    def initialize: (label: String, href: String, ?active: bool) -> void
+    def call: () -> ActiveSupport::SafeBuffer
+  end
+end

@@ -1,0 +1,4 @@
+module TagPages
+  class BureaucracyController < BaseController
+  end
+end
