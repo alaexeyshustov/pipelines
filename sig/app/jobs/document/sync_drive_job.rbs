@@ -14,6 +14,7 @@ class Document
 
     def summary: () -> summary
     def sync_all: (Emails::Adapters::DriveFileFetcher fetcher, Array[String] folder_ids) -> void
+    def stored: (Document document, String outcome) -> Document
     def store: (Hash[Symbol, String | Hash[Symbol, String?]?] attributes, Document? document) -> Document?
     def sync: (Emails::Adapters::DriveFileFetcher fetcher, Emails::Adapters::DriveFileFetcher::Entry entry, Document? document) -> void
     def mime_type_of: (Emails::Adapters::DriveFileFetcher::Entry entry) -> String

@@ -5,6 +5,7 @@ class Email < ApplicationRecord
 
   include Taggable
   include FtsSearchable
+  include Embeddable
 
   # The Interview this email fed (set by the Interview extraction); nil until extracted or for other emails.
   belongs_to :interview, optional: true

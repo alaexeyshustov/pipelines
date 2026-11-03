@@ -4,6 +4,7 @@
 class Document < ApplicationRecord
   include Taggable
   include FtsSearchable
+  include Embeddable
 
   SOURCES = %w[email_attachment drive].freeze
 

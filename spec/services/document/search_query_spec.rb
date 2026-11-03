@@ -39,4 +39,40 @@ RSpec.describe Document::SearchQuery do
     create(:document, title: "Offer and terms", text: "x")
     expect(described_class.call("offer AND terms").size).to eq(1)
   end
+
+  describe "mode: :semantic" do
+    include EmbeddingHelpers
+
+    it "returns the nearest documents first, not the emails" do
+      near = create(:document, title: "Lease.pdf")
+      far = create(:document, title: "Menu.pdf")
+      embed_as(near, unit_vector(0))
+      embed_as(far, unit_vector(1))
+      embed_as(create(:email), unit_vector(0))
+      stub_ollama_embeddings(unit_vector(0))
+
+      hits = described_class.call("rent agreement", mode: :semantic)
+
+      expect(hits.map(&:document)).to eq([ near, far ])
+      expect(hits.first.rank).to eq(0.0)
+    end
+  end
+
+  describe "mode: :hybrid" do
+    include EmbeddingHelpers
+
+    it "fuses full-text and vector rankings, so a match in both comes first" do
+      both = create(:document, title: "Relocation policy", text: "schedule")
+      text_only = create(:document, title: "Relocation", text: "relocation relocation")
+      semantic_only = create(:document, title: "Moving guide", text: "boxes")
+      embed_as(both, unit_vector(0))
+      embed_as(semantic_only, unit_vector(1))
+      stub_ollama_embeddings(unit_vector(0))
+
+      hits = described_class.call("relocation", mode: :hybrid)
+
+      expect(hits.first.document).to eq(both)
+      expect(hits.map(&:document)).to contain_exactly(both, text_only, semantic_only)
+    end
+  end
 end

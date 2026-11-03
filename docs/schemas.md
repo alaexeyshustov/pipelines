@@ -120,6 +120,41 @@ Document::SearchQuery.call("lease rent", limit: 20)
 
 Shares sanitising and ranking with `Email::SearchQuery` through `FtsSearchable#fts_search`.
 
+## embeddings
+
+One vector per Email or Document and embedding model (ADR 0014, GH #226). Qwen3-Embedding-0.6B via Ollama, 1024 dims, cosine distance, no chunking (`Embeddings::Text` embeds subject/title plus cleaned text, cut at 16k chars).
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| id | INTEGER | NO | PK, also the rowid of `embedding_vectors` |
+| embeddable_type, embeddable_id | STRING, INTEGER | NO | `Email` or `Document`; unique together with `model` |
+| model | STRING | NO | e.g. `qwen3-embedding:0.6b` (`LlmModels.embedding`) |
+| dimensions | INTEGER | NO | 1024 (`Embeddings::Client::DIMENSIONS`) |
+| content_digest | STRING | NO | SHA256 of the embedded text; unchanged text is not re-embedded |
+| embedded_at | DATETIME | NO | |
+
+### embedding_vectors
+
+sqlite-vec table, rowid = `embeddings.id`:
+
+```sql
+CREATE VIRTUAL TABLE embedding_vectors USING vec0(
+  embeddable_type text partition key, model text partition key,
+  embedding float[1024] distance_metric=cosine
+);
+-- KNN: SELECT rowid, distance FROM embedding_vectors
+--      WHERE embedding MATCH ? AND k = 20 AND embeddable_type = 'Email' AND model = ?
+```
+
+Shadow tables are stripped from `structure.sql` on dump; `structure_load_flags` (`config/initializers/sqlite_vec.rb`) makes the sqlite3 CLI load the extension for `db:schema:load`.
+
+```ruby
+Embeddings::Embed.call([email, document])        # batched, skips unchanged digests; run by Email::EmbedJob / Document::EmbedJob
+Email::SearchQuery.call("rent contract", mode: :semantic)  # or :hybrid (FTS5 + KNN, reciprocal rank fusion)
+```
+
+Setup: `ollama pull qwen3-embedding:0.6b`; `OLLAMA_API_BASE` (default `http://localhost:11434/v1`), `EMBEDDING_MODEL` or Setting `embedding_model`. Backfill or model change: `rake embeddings:reembed[new-model]` (embeds everything, switches the setting, drops old vectors).
+
 ## tags
 
 Fixed top-level tags (not editable in the UI); seeded by `Tag.seed_defaults!`.

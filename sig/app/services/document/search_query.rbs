@@ -8,12 +8,19 @@ class Document
       def self.new: (document: Document, rank: Float?, snippet: String?) -> instance
     end
 
-    def self.call: (String? query, ?limit: Integer) -> Array[Hit]
+    def self.call: (String? query, ?limit: Integer, ?mode: Symbol) -> Array[Hit]
 
     @query: String?
     @limit: Integer
+    @mode: Symbol
 
-    def initialize: (String? query, limit: Integer) -> void
+    def initialize: (String? query, limit: Integer, mode: Symbol) -> void
     def call: () -> Array[Hit]
+
+    private
+
+    def text_hits: () -> Array[Hit]
+    def semantic_hits: () -> Array[Hit]
+    def hybrid_hits: () -> Array[Hit]
   end
 end

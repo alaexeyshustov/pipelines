@@ -92,4 +92,25 @@ RSpec.describe LlmModels do
       end
     end
   end
+
+  describe ".embedding" do
+    it "defaults to qwen3-embedding:0.6b" do
+      with_env("EMBEDDING_MODEL", nil) do
+        expect(described_class.embedding).to eq("qwen3-embedding:0.6b")
+      end
+    end
+
+    it "reads from EMBEDDING_MODEL" do
+      with_env("EMBEDDING_MODEL", "bge-m3") do
+        expect(described_class.embedding).to eq("bge-m3")
+      end
+    end
+
+    it "prefers Setting over ENV" do
+      Setting.create!(key: "embedding_model", value: "db-model")
+      with_env("EMBEDDING_MODEL", "env-model") do
+        expect(described_class.embedding).to eq("db-model")
+      end
+    end
+  end
 end

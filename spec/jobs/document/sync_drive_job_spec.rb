@@ -57,6 +57,17 @@ RSpec.describe Document::SyncDriveJob do
     expect(Tags::Classifier).to have_received(:call).twice
   end
 
+  it "enqueues the embedding of each new Document" do
+    expect { described_class.perform_now }.to have_enqueued_job(Document::EmbedJob).exactly(2).times
+  end
+
+  it "enqueues the embedding of a changed Document, and none for unchanged ones" do
+    existing = drive_document("f1", md5: "stale-md5", text: "old")
+    drive_document("g1", modified_time: "2026-02-01T00:00:00.000Z")
+
+    expect { described_class.perform_now }.to have_enqueued_job(Document::EmbedJob).with(existing.id).once
+  end
+
   context "when files are unchanged" do
     before do
       drive_document("f1", md5: "md5-1")
