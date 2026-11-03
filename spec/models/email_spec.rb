@@ -5,6 +5,25 @@ RSpec.describe Email do
     described_class.connection.select_values("SELECT rowid FROM emails_fts WHERE emails_fts MATCH '#{term}'")
   end
 
+  describe "interview" do
+    it "is optional" do
+      expect(build(:email, interview: nil)).to be_valid
+    end
+
+    it "is listed on the interview's emails" do
+      interview = create(:interview)
+      email = create(:email, interview: interview)
+      expect(interview.emails).to contain_exactly(email)
+    end
+
+    it "keeps the email, with a nil interview_id, when the interview is destroyed" do
+      interview = create(:interview)
+      email = create(:email, interview: interview)
+      interview.destroy!
+      expect(email.reload.interview_id).to be_nil
+    end
+  end
+
   describe "validations" do
     it "requires provider, message id, from and date" do
       email = described_class.new

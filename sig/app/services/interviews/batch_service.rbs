@@ -29,7 +29,7 @@ module Interviews
     def handle_merge: (Integer count) -> Result
 
     def merge_records: () -> void
-    def build_merge_attributes: (Interview::relation records) -> { status: String?, first_interview_at: String?, second_interview_at: String?, third_interview_at: String?, fourth_interview_at: String? }
-    def collect_dates: (Interview::relation records) -> Array[String]
+    def build_merge_attributes: (Interview::relation records) -> { status: String?, first_interview_at: Date?, second_interview_at: Date?, third_interview_at: Date?, fourth_interview_at: Date? }
+    def collect_dates: (Interview::relation records) -> Array[Date]
   end
 end

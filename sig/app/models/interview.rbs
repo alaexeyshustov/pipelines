@@ -11,24 +11,26 @@ class Interview < ApplicationRecord
   def self.search: (String? q) -> relation
   def self.destroy_by_ids: (Array[Integer] | Array[String] ids) -> Array[Interview]
 
+  def emails: () -> ActiveRecord::Associations::CollectionProxy
+
   def company: () -> String?
   def company=: (String?) -> String?
   def job_title: () -> String?
   def job_title=: (String?) -> String?
   def status: () -> String?
   def status=: (String?) -> String?
-  def applied_at: () -> String?
-  def applied_at=: (String?) -> String?
-  def rejected_at: () -> String?
-  def rejected_at=: (String?) -> String?
-  def first_interview_at: () -> String?
-  def first_interview_at=: (String?) -> String?
-  def second_interview_at: () -> String?
-  def second_interview_at=: (String?) -> String?
-  def third_interview_at: () -> String?
-  def third_interview_at=: (String?) -> String?
-  def fourth_interview_at: () -> String?
-  def fourth_interview_at=: (String?) -> String?
+  def applied_at: () -> Date?
+  def applied_at=: (Date?) -> Date?
+  def rejected_at: () -> Date?
+  def rejected_at=: (Date?) -> Date?
+  def first_interview_at: () -> Date?
+  def first_interview_at=: (Date?) -> Date?
+  def second_interview_at: () -> Date?
+  def second_interview_at=: (Date?) -> Date?
+  def third_interview_at: () -> Date?
+  def third_interview_at=: (Date?) -> Date?
+  def fourth_interview_at: () -> Date?
+  def fourth_interview_at=: (Date?) -> Date?
 
   def self.as_rows: (?ActiveRecord::Relation scope) -> Array[Hash[String, String?]]
 end

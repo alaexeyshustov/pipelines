@@ -36,6 +36,29 @@ RSpec.describe Email::ProcessJob do
       end
     end
 
+    context "when the email carries the job_application tag" do
+      before { classify_as_tagged }
+
+      it "enqueues the interview extraction" do
+        expect { described_class.perform_now(email.id) }
+          .to have_enqueued_job(Interview::ExtractJob).with(email.id)
+      end
+    end
+
+    context "when the email only has other tags" do
+      before do
+        other = create(:tag, name: "finance")
+        allow(Tags::Classifier).to receive(:call) do |item|
+          Tagging.create!(taggable: item, tag: other, source: "llm")
+          Tags::Classifier::Result.new(taggings: item.taggings.to_a)
+        end
+      end
+
+      it "enqueues no interview extraction" do
+        expect { described_class.perform_now(email.id) }.not_to have_enqueued_job(Interview::ExtractJob)
+      end
+    end
+
     context "when the classifier assigns no tag" do
       before { allow(Tags::Classifier).to receive(:call).and_return(Tags::Classifier::Result.new(taggings: [])) }
 
@@ -46,6 +69,10 @@ RSpec.describe Email::ProcessJob do
 
       it "enqueues no attachment extraction" do
         expect { described_class.perform_now(email.id) }.not_to have_enqueued_job(Document::ExtractEmailAttachmentsJob)
+      end
+
+      it "enqueues no interview extraction" do
+        expect { described_class.perform_now(email.id) }.not_to have_enqueued_job(Interview::ExtractJob)
       end
     end
 
@@ -58,6 +85,11 @@ RSpec.describe Email::ProcessJob do
       it "keeps the manual tagging" do
         described_class.perform_now(email.id)
         expect(email.taggings.pluck(:source)).to eq([ "manual" ])
+      end
+
+      it "enqueues the interview extraction for a manual job_application tag" do
+        expect { described_class.perform_now(email.id) }
+          .to have_enqueued_job(Interview::ExtractJob).with(email.id)
       end
 
       it "enqueues the attachment extraction for it" do

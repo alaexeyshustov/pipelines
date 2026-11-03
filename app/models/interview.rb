@@ -1,6 +1,8 @@
 class Interview < ApplicationRecord
   include Searchable
   include Batchable
+  has_many :emails, dependent: :nullify
+
   validates :company, :job_title, presence: true
   validates :job_title, uniqueness: { scope: :company }
 

@@ -7,6 +7,6 @@ class Email
     private
 
     def enqueue_later_stages: (Email email) -> void
-    def enqueue_interview_extraction: (Email _email) -> void
+    def enqueue_interview_extraction: (Email email) -> void
   end
 end

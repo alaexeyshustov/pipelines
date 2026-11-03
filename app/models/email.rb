@@ -6,6 +6,9 @@ class Email < ApplicationRecord
   include Taggable
   include FtsSearchable
 
+  # The Interview this email fed (set by the Interview extraction); nil until extracted or for other emails.
+  belongs_to :interview, optional: true
+
   validates :provider, inclusion: { in: PROVIDERS }
   validates :provider_message_id, :from_address, :date, presence: true
   validates :provider_message_id, uniqueness: { scope: :provider }

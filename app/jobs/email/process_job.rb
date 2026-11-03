@@ -1,6 +1,6 @@
 # Per-email processing chain after ingest (ADR 0013): tag the email, stamp +tagged_at+, then hand it to the later
-# stages, each its own job so it retries on its own. Attachments are extracted when the email has any tagging
-# (manual ones count). +tagged_at+ is set only after the classifier succeeded, so an email whose tagging failed stays
+# stages (attachments, and the Interview upsert for job_application emails), each its own job so it retries on its
+# own. Attachments are extracted when the email has any tagging (manual ones count). +tagged_at+ is set only after the classifier succeeded, so an email whose tagging failed stays
 # NULL and EmailsSync re-enqueues it on a later run.
 #
 # Retries mirror Evaluation::SampleJob: RubyLLM already retries HTTP-level failures, so a RubyLLM::Error reaching
@@ -30,7 +30,8 @@ class Email::ProcessJob < ApplicationJob
     enqueue_interview_extraction(email)
   end
 
-  # Hook point for the Interview stage (#239): enqueue the interview extraction job (#228) here when the email has
-  # the job_application tag. Nothing is enqueued until that job exists.
-  def enqueue_interview_extraction(_email); end
+  # The Interview stage (#239, #228) only concerns job application emails, manual taggings included.
+  def enqueue_interview_extraction(email)
+    Interview::ExtractJob.perform_later(email.id) if email.tags.find_by(name: Interviews::EmailExtractor::TAG)
+  end
 end
