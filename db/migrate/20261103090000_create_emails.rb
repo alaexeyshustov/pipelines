@@ -11,6 +11,9 @@ class CreateEmails < ActiveRecord::Migration[8.1]
       t.text :html_body
       t.string :source_url
       t.timestamps
+      t.datetime :tagged_at # set once Tags::Classifier ran (GH #234)
+      # which Interview the email fed (GH #228); emails survive an Interview being removed
+      t.references :interview, foreign_key: { on_delete: :nullify }
     end
     add_index :emails, %i[provider provider_message_id], unique: true
     add_index :emails, :date
