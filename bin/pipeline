@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 
-require "fileutils"
 require_relative "../config/environment"
 
 require "dry/cli"
@@ -9,62 +8,6 @@ require "dotenv/load"
 module PipelineCLI
   module Commands
     extend Dry::CLI::Registry
-
-    class Run < Dry::CLI::Command
-      WATCH_INTERVAL = 6 * 60 * 60 # 6 hours
-
-      desc "Run a pipeline"
-
-      option :pipeline,  required: true, desc: "The pipeline to run", default: "test"
-
-      option :model,     default: ENV.fetch("DEFAULT_MODEL", "mistral-large-latest"),
-                         desc: "LLM model (e.g. mistral-large-latest, gpt-5.1)"
-      option :watch,     type: :boolean, default: false,
-                         desc: "Run in a loop every 6 hours"
-      option :log_level, default: "info",
-                         desc: "Logging verbosity: debug, info, warn, error"
-      option :log_file,  desc: "Path to log file (default: log/pipeline.log)"
-      option :date,      desc: "Date for the workflow (default: today)"
-
-      def call(pipeline:, model:, watch:, log_level: "info", log_file: nil, date: Date.today, **)
-        pipeline_class = case pipeline.downcase
-        when "applications", "jobs"
-                           Pipeline::ApplicationsWorkflow
-        when 'test'
-                           Pipeline::ApplicationsWorkflow # or define a proper test workflow
-        else
-                           raise ArgumentError, "Unknown pipeline: #{pipeline}"
-        end
-
-        log_path = log_file || Rails.root.join("log/pipeline.log").to_s
-        FileUtils.mkdir_p(File.dirname(log_path))
-        logger = Pipeline::Logger.new(level: log_level.to_sym, log_file: log_path)
-
-        RubyLLM.configure do |config|
-          config.mistral_api_key   = ENV.fetch("MISTRAL_API_KEY", "")
-          config.openai_api_key    = ENV.fetch("OPENAI_API_KEY", "")
-          config.gemini_api_key    = ENV.fetch("GEMINI_API_KEY", "")
-          config.anthropic_api_key = ENV.fetch("ANTHROPIC_API_KEY", "")
-          config.log_level = log_level.to_sym
-          config.logger    = logger
-        end
-
-        providers = ENV.fetch("MAIL_PROVIDERS", "gmail,yahoo").split(",").map(&:strip).reject(&:empty?)
-        Emails.configure(**providers.to_h { |p| [ p.to_sym, {} ] })
-
-        loop do
-          logger.info "Starting pipeline (model: #{model})..."
-          result = pipeline_class.new(model: model, logger: logger, date: date).run
-          logger.info "Pipeline complete: #{result.inspect}"
-
-          break unless watch
-
-          next_run = Time.now + WATCH_INTERVAL
-          logger.info "Watch mode: next run at #{next_run.strftime('%Y-%m-%d %H:%M:%S')}. Ctrl+C to stop."
-          sleep WATCH_INTERVAL
-        end
-      end
-    end
 
     class TestProviders < Dry::CLI::Command
       desc "Test connectivity to configured mail providers"
@@ -150,7 +93,6 @@ module PipelineCLI
       end
     end
 
-    register "run",            Run
     register "test",           TestProviders
     register "setup",          SetupProviders
     register "upload_gist",    UploadGist

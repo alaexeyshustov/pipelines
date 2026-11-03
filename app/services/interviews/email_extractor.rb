@@ -1,8 +1,7 @@
 # Upserts the Interview a job_application-tagged Email belongs to (ADR 0013, GH #228); nothing per email is stored
 # except +emails.interview_id+.
 #
-# - One structured-output LLM call (company, job title, action; same field semantics as the legacy ApplicationMail
-#   extraction) with the email subject, sender, date and body.
+# - One structured-output LLM call (company, job title, action) with the email subject, sender, date and body.
 # - Matched to an existing Interview by company + job title, case-insensitive (the legacy reconciler's rule), else
 #   created as +pending_reply+.
 # - The action moves the status forward only (an old "apply" confirmation never undoes a rejection) and fills dates

@@ -35,12 +35,9 @@ matcher:
     - Records*
     - Orchestration*
     - Interview*
-    - EmailVector*
     - SqliteVecExtension*
     - Evaluation::ActivePromptResolver*
   ignore:
-    - ApplicationMailsSchema*
-    - Pipeline*
     # Value-object DTOs (Data.define) and the null-object resolver carry no
     # branching logic to protect -- mutant only surfaces equivalent mutants
     # here (e.g. flipping a field name in an accessor), so they're scoped out
@@ -65,7 +62,6 @@ matcher:
     - Emails::ClassifyTool*
     # Controllers: UI routing layer, low mutation testing value
     - ApplicationController*
-    - ApplicationMailsController*
     - InterviewsController*
     - Orchestration::ActionsController*
     - Orchestration::AgentsController*

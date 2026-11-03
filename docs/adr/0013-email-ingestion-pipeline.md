@@ -5,7 +5,7 @@ Accepted (GH #222, part of #215)
 
 ## Context
 
-`Email` (GH #217) stores every INBOX email with its full body, but nothing fills it. After ingest an email must be tagged (`Tags::Classifier`, #219), its attachments extracted when tagged (`Document::ExtractEmailAttachmentsJob`, #220) and, for `job_application` emails, its `Interview` upserted (#228). The Drive pipeline (#221: `Document::SyncDriveJob` run by the `DriveDocumentsSync` step) is the pattern to mirror. Constraints: INBOX only, Gmail and Yahoo (IMAP), full body. The legacy `Applications Workflow` (`EmailsFetcher` -> `ApplicationMail`) stays untouched until #228 removes it.
+`Email` (GH #217) stores every INBOX email with its full body, but nothing fills it. After ingest an email must be tagged (`Tags::Classifier`, #219), its attachments extracted when tagged (`Document::ExtractEmailAttachmentsJob`, #220) and, for `job_application` emails, its `Interview` upserted (#228). The Drive pipeline (#221: `Document::SyncDriveJob` run by the `DriveDocumentsSync` step) is the pattern to mirror. Constraints: INBOX only, Gmail and Yahoo (IMAP), full body. The legacy `Applications Workflow` (`EmailsFetcher` -> `ApplicationMail`) coexisted until #228 removed it.
 
 ## Decision
 

@@ -6,7 +6,7 @@ module Records
 
     description "Query rows from a database table filtering by a column value. For example by id, email, or company name."
 
-    parameter :table,        type: :string, description: "Table name: application_mails or interviews", required: true
+    parameter :table,        type: :string, description: "Table name: interviews", required: true
     parameter :column_name,  type: :string, description: "Column name to filter on"
     parameter :column_value, type: :string, description: "Column value to match"
 

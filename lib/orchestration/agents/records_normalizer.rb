@@ -2,7 +2,7 @@ module Orchestration
   module Agents
     class RecordsNormalizer < RubyLLM::Agent
       chat_model Chat
-      tools Records::ListRowsTool, Records::ReadRowsTool, Records::UpdateRowsTool, Records::ReadSchemaTool, Records::SearchSimilarTool
+      tools Records::ListRowsTool, Records::ReadRowsTool, Records::UpdateRowsTool, Records::ReadSchemaTool
       model LlmModels.records_agent
 
       schema do
@@ -24,11 +24,11 @@ module Orchestration
         Steps:
         1. Read the schema of the <destination_table> to understand its structure.
         2. For each record in <records_to_normalize>, for each column in <columns_to_normalize>:
-           a. If the field is populated: use search_similar to find all variant spellings of that value in the table.
+           a. If the field is populated: use list_rows / read_rows to find all variant spellings of that value in the table.
               Choose the most canonical form among the variants (e.g. shortest non-abbreviated, non-suffixed form).
               (e.g. "Google Inc." → "Google", "SWE" → "Software Engineer").
            b. If the field is missing: look at the record's other populated columns (e.g. company when job_title is missing, or vice versa)
-              and call search_similar on those to find sibling records that share the same context and DO have the missing field populated.
+              and call read_rows on those to find sibling records that share the same context and DO have the missing field populated.
               Use the most common or canonical value found among those siblings to fill in the gap.
         3. Update all rows where a normalized or propagated value was determined using update_rows, matching on row ID and updating only the affected columns.
            Skip rows where no new value could be determined.

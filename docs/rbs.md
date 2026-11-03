@@ -3,7 +3,7 @@
 All Ruby source files have corresponding RBS signatures under `sig/`, mirroring the source tree:
 
 ```
-sig/app/models/          ← ApplicationRecord, ApplicationMail, Interview, EmailVector
+sig/app/models/          ← ApplicationRecord, Interview
 sig/app/agents/          ← one .rbs per agent class
 sig/app/tools/           ← one .rbs per tool class
 sig/app/services/        ← MailService

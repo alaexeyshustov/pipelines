@@ -22,9 +22,9 @@ RSpec.describe Tagging do
   end
 
   it "allows several different tags on one taggable" do
-    mail = create(:application_mail)
-    create(:tagging, taggable: mail)
-    expect(build(:tagging, taggable: mail)).to be_valid
+    email = create(:email)
+    create(:tagging, taggable: email)
+    expect(build(:tagging, taggable: email)).to be_valid
   end
 
   it "rejects the same tag twice on one taggable" do

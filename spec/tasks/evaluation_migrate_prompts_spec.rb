@@ -7,12 +7,8 @@ RSpec.describe "evaluation:migrate_prompts rake task", prosopite: false do # rub
   let(:agent_classes) do
     %w[
       Orchestration::Agents::EmailsClassifier
-      Orchestration::Agents::EmailsFilter
-      Orchestration::Agents::EmailsMapper
       Orchestration::Agents::RecordsFiller
       Orchestration::Agents::RecordsNormalizer
-      Orchestration::Agents::RecordsStorer
-      Orchestration::Agents::RecordsReconciler
     ]
   end
 

@@ -1,8 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Records::FillJob do
-  let(:mails) { create_list(:application_mail, 2, company: nil, job_title: nil) }
-  let(:ids)   { mails.map(&:id) }
+  let(:interviews) { create_list(:interview, 2) }
+  let(:ids)   { interviews.map(&:id) }
   let(:captured_inputs) { [] }
 
   before do
@@ -16,7 +16,7 @@ RSpec.describe Records::FillJob do
     described_class.perform_now(ids)
 
     parsed = JSON.parse(captured_inputs.last)
-    expect(parsed["destination_table"]).to eq("application_mails")
+    expect(parsed["destination_table"]).to eq("interviews")
     expect(parsed["emails"].pluck("id")).to match_array(ids)
   end
 

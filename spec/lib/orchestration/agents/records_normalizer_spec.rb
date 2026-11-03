@@ -7,7 +7,7 @@ RSpec.describe Orchestration::Agents::RecordsNormalizer, type: :model do
 
   before do
     stub_openai_agent_response(content: '{"rows_updated":0}')
-    agent.ask('{"records_to_normalize":[],"destination_table":"application_mails","columns_to_normalize":["company"]}')
+    agent.ask('{"records_to_normalize":[],"destination_table":"interviews","columns_to_normalize":["company"]}')
   end
 
   it 'sends gpt-5.1 as the model' do
@@ -29,7 +29,7 @@ RSpec.describe Orchestration::Agents::RecordsNormalizer, type: :model do
     expect(
       a_request(:post, openai_completions_url).with { |req|
         tool_names = JSON.parse(req.body)['tools'].map { |t| t.dig('function', 'name') }
-        %w[list_rows read_rows update_rows read_schema search_similar].all? { |t| tool_names.include?(t) }
+        %w[list_rows read_rows update_rows read_schema].all? { |t| tool_names.include?(t) }
       }
     ).to have_been_made
   end
