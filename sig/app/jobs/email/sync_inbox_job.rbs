@@ -14,8 +14,13 @@ class Email
     private
 
     def sync_gmail: () -> Result
+    def sync_yahoo: () -> Result
+    def save_yahoo_cursor: (SyncCursor cursor, String mode, Integer uid_validity, Integer? last_uid) -> void
+    def yahoo_uids: (SyncCursor cursor, Integer uid_validity) -> [String, Array[Integer]]
+    def yahoo_window_uids: () -> Array[Integer]
     def gmail_message_ids: (SyncCursor cursor) -> [String, Array[String]]
     def window_ids: () -> Array[String]
+    def failures?: (Result result) -> bool
     def store_all: (String provider, String mode, Array[String] ids) -> Result
     def store: (String provider, String message_id) -> [String, Email?]
     def attributes_for: (String provider, Emails::full_message message) -> Hash[Symbol, String | Time | nil]

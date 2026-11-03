@@ -48,6 +48,22 @@ module Emails
     fetch(provider_name).inbox_message_ids_after(date) # steep:ignore
   end
 
+  def self.account(provider_name)
+    fetch(provider_name).account # steep:ignore
+  end
+
+  def self.inbox_uid_validity(provider_name)
+    fetch(provider_name).inbox_uid_validity # steep:ignore
+  end
+
+  def self.inbox_uids_after(provider_name, last_uid)
+    fetch(provider_name).inbox_uids_after(last_uid) # steep:ignore
+  end
+
+  def self.inbox_uids_since(provider_name, date)
+    fetch(provider_name).inbox_uids_since(date) # steep:ignore
+  end
+
   def self.fetch_message(provider_name, message_id)
     fetch(provider_name).fetch_message(message_id) # steep:ignore
   end
