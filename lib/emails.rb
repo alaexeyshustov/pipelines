@@ -28,6 +28,10 @@ module Emails
     fetch(provider_name).get_message(message_id, label:)
   end
 
+  def self.attachment(provider_name, message_id, attachment_id)
+    fetch(provider_name).attachment(message_id, attachment_id) # steep:ignore
+  end
+
   def self.get_labels(provider_name)
     fetch(provider_name).get_labels
   end

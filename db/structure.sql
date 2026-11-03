@@ -189,7 +189,30 @@ FOREIGN KEY ("subtag_id")
 CREATE INDEX "index_taggings_on_tag_id" ON "taggings" ("tag_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_taggings_on_subtag_id" ON "taggings" ("subtag_id") /*application='ApplicationPipeline'*/;
 CREATE UNIQUE INDEX "index_taggings_on_taggable_type_and_taggable_id_and_tag_id" ON "taggings" ("taggable_type", "taggable_id", "tag_id") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "documents" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "title" varchar NOT NULL, "mime_type" varchar NOT NULL, "text" text DEFAULT '' NOT NULL, "checksum" varchar NOT NULL, "source" varchar NOT NULL, "source_url" varchar, "source_ref" json DEFAULT '{}' NOT NULL, "email_id" integer, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_5607550914"
+FOREIGN KEY ("email_id")
+  REFERENCES "emails" ("id")
+ ON DELETE SET NULL);
+CREATE INDEX "index_documents_on_email_id" ON "documents" ("email_id") /*application='ApplicationPipeline'*/;
+CREATE UNIQUE INDEX "index_documents_on_checksum" ON "documents" ("checksum") /*application='ApplicationPipeline'*/;
+CREATE VIRTUAL TABLE documents_fts USING fts5(
+  title, text, content='documents', content_rowid='id'
+)
+/* documents_fts(title,text) */;
+CREATE TRIGGER documents_fts_ai AFTER INSERT ON documents BEGIN
+  INSERT INTO documents_fts(rowid, title, text) VALUES (new.id, new.title, new.text);
+END;
+CREATE TRIGGER documents_fts_ad AFTER DELETE ON documents BEGIN
+  INSERT INTO documents_fts(documents_fts, rowid, title, text)
+  VALUES ('delete', old.id, old.title, old.text);
+END;
+CREATE TRIGGER documents_fts_au AFTER UPDATE ON documents BEGIN
+  INSERT INTO documents_fts(documents_fts, rowid, title, text)
+  VALUES ('delete', old.id, old.title, old.text);
+  INSERT INTO documents_fts(rowid, title, text) VALUES (new.id, new.title, new.text);
+END;
 INSERT INTO "schema_migrations" (version) VALUES
+('20261103090200'),
 ('20261103090100'),
 ('20261103090000'),
 ('20261029100000'),

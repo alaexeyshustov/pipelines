@@ -1,0 +1,21 @@
+<%= render UI::PageHeaderComponent.new(title: "Documents", notice: notice, alert: alert) %>
+
+<%= form_with url: documents_path, method: :get, class: "mb-4" do |f| %>
+  <%= f.search_field :q, value: params[:q], placeholder: "Search documents", class: "border rounded px-3 py-1 w-full max-w-md" %>
+<% end %>
+
+<% if @hits.empty? %>
+  <p class="text-gray-400 text-sm">No documents found.</p>
+<% else %>
+  <ul class="space-y-3">
+    <% @hits.each do |hit| %>
+      <li>
+        <%= link_to hit.document.title, document_path(hit.document), class: "font-medium text-blue-600" %>
+        <span class="text-xs text-gray-500"><%= hit.document.mime_type %></span>
+        <% if hit.snippet.present? %>
+          <p class="text-sm text-gray-600"><%= hit.snippet %></p>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

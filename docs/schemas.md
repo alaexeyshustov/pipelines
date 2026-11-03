@@ -79,6 +79,41 @@ Interview.as_rows(scope)  # accepts a custom ActiveRecord scope
 ## emails
 
 One row per INBOX email, full body kept (replaces `application_mails`, which is removed later). `Email`; ingestion is separate.
+## documents
+
+A pdf/doc(x)/image reduced to extracted text (markdown). Only the text is stored; the original is re-fetched live. `Document`; extraction/ingestion is separate. Taggable (like `Email`, via `Taggable`).
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| id | INTEGER | NO | PK |
+| title | STRING | NO | |
+| mime_type | STRING | NO | |
+| text | TEXT | NO | Extracted markdown, default `""` |
+| checksum | STRING | NO | Unique; dedup key |
+| source | STRING | NO | `"email_attachment"` or `"drive"` |
+| source_url | STRING | YES | Drive `webViewLink` / Gmail message link |
+| source_ref | JSON | NO | `provider` + `message_id`/`attachment_id` (gmail) or `drive_file_id` (drive) |
+| email_id | FK | YES | `emails.id`, nulled when the email is deleted |
+| created_at, updated_at | DATETIME | NO | |
+
+```ruby
+Document.ingest!(attrs)               # idempotent on checksum: returns the existing Document on re-ingest
+Document::Download.call(document)     # => File(data:, filename:, mime_type:), fetched live via source_ref
+```
+
+`GET /documents/:id/download` streams it. Gmail uses `Emails.attachment`; Drive uses `Emails::Adapters::DriveFileFetcher` (minimal Net::HTTP client for Drive v3, `drive.readonly` token from `DRIVE_TOKEN_PATH`, raises `NotConfigured` otherwise).
+
+### documents_fts
+
+FTS5 external-content virtual table over `title`, `text` (rowid = `documents.id`), triggers `documents_fts_ai/_au/_ad`; shadow tables stripped from `structure.sql` on dump.
+
+```ruby
+Document::SearchQuery.call("lease rent", limit: 20)
+# => [#<data Hit document: Document, rank: -1.2, snippet: "... [[rent]] ...">]  (bm25, best first)
+```
+
+Shares sanitising and ranking with `Email::SearchQuery` through `FtsSearchable#fts_search`.
+
 ## tags
 
 Fixed top-level tags (not editable in the UI); seeded by `Tag.seed_defaults!`.

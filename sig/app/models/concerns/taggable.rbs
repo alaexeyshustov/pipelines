@@ -1,0 +1,2 @@
+module Taggable
+end

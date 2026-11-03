@@ -1,23 +1,19 @@
-class Email::SearchQuery
-  class Hit
-    attr_reader email: Email
-    attr_reader rank: Float
-    attr_reader snippet: String
+class Email
+  class SearchQuery
+    class Hit
+      attr_reader email: Email
+      attr_reader rank: Float
+      attr_reader snippet: String
 
-    def self.new: (email: Email, rank: Float, snippet: String) -> instance
+      def self.new: (email: Email, rank: Float, snippet: String) -> instance
+    end
+
+    def self.call: (String? query, ?limit: Integer) -> Array[Hit]
+
+    @query: String?
+    @limit: Integer
+
+    def initialize: (String? query, limit: Integer) -> void
+    def call: () -> Array[Hit]
   end
-
-  SQL: String
-
-  def self.call: (String? query, ?limit: Integer) -> Array[Hit]
-
-  @query: String
-  @limit: Integer
-
-  def initialize: (String? query, limit: Integer) -> void
-  def call: () -> Array[Hit]
-
-  private
-
-  def match_expression: () -> String
 end

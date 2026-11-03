@@ -25,6 +25,10 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :documents, only: [ :index, :show ] do
+    get :download, on: :member
+  end
+
   resources :tags, only: [ :index ] do
     resources :subtags, only: [ :create ]
   end

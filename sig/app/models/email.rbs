@@ -1,4 +1,6 @@
 class Email < ApplicationRecord
+  extend FtsSearchable::ClassMethods
+
   PROVIDERS: Array[String]
 
   def provider: () -> String
