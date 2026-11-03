@@ -1,2 +1,8 @@
 allowBuilds:
   esbuild: true
+
+auditConfig:
+  ignoreGhsas:
+    # minimatch <11.0.1 DoS via globparts amplification. Dev-only, pulled in by
+    # eslint, which still requires minimatch ^10. Remove once eslint moves to 11.
+    - GHSA-g3hv-75wg-m249
