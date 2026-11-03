@@ -10,6 +10,8 @@ class DocumentsController < ApplicationController
 
   def show
     @document = Document.find(params[:id])
+    @taggings = @document.taggings.includes(:tag, :subtag).order(:id)
+    @tags = Tag.includes(:subtags).order(:id)
   end
 
   def download

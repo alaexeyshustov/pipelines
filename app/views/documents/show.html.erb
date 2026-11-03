@@ -11,4 +11,9 @@
   <% end %>
 </p>
 
+<div class="mb-6">
+  <%= render ::Tags::TaggingsComponent.new(taggings: @taggings, tags: @tags, base_url: document_taggings_path(@document),
+                                         errors: @form_errors) %>
+</div>
+
 <pre class="whitespace-pre-wrap text-sm text-gray-800"><%= @document.text %></pre>

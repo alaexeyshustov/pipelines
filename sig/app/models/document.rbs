@@ -1,4 +1,5 @@
 class Document < ApplicationRecord
+  include Taggable
   extend FtsSearchable::ClassMethods
 
   SOURCES: Array[String]

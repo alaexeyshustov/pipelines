@@ -1,4 +1,5 @@
 class Email < ApplicationRecord
+  include Taggable
   extend FtsSearchable::ClassMethods
 
   PROVIDERS: Array[String]

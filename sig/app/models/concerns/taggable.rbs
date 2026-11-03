@@ -1,2 +1,4 @@
 module Taggable
+  def taggings: () -> ActiveRecord::Associations::CollectionProxy
+  def tags: () -> ActiveRecord::Associations::CollectionProxy
 end
