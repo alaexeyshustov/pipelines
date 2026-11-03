@@ -1,0 +1,22 @@
+module Orchestration
+  module Executors
+    class EmailsSync
+      type provider_output = Hash[String, String | Integer | bool]
+
+      PROVIDERS: Array[String]
+      MISSING_CREDENTIALS: Regexp
+      SKIPPED: Hash[String, String | bool]
+
+      class ProviderFailure < StandardError
+      end
+
+      include Executable
+      extend Executable::ClassMethods
+
+      def self.call: (**json_object_value) -> Hash[String, provider_output]
+
+      def self.sync: (String provider, Hash[String, String] failures) -> provider_output
+      def self.failure_message: (Hash[String, String] failures, Hash[String, provider_output] output) -> String
+    end
+  end
+end

@@ -22,6 +22,10 @@ RSpec.describe Orchestration::ServiceRegistry do
       expect(described_class.lookup("Orchestration::Executors::DriveDocumentsSync")).to eq(Orchestration::Executors::DriveDocumentsSync)
     end
 
+    it 'returns Orchestration::Executors::EmailsSync for its class name' do
+      expect(described_class.lookup("Orchestration::Executors::EmailsSync")).to eq(Orchestration::Executors::EmailsSync)
+    end
+
     it 'returns nil for an unknown class name' do
       expect(described_class.lookup("Unknown::Class")).to be_nil
     end

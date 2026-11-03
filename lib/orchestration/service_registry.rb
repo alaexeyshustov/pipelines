@@ -5,7 +5,8 @@ module Orchestration
       "Orchestration::Executors::Ingestion"              => Orchestration::Executors::Ingestion,
       "Orchestration::Executors::Query"                  => Orchestration::Executors::Query,
       "Orchestration::Executors::InterviewsGistExporter" => Orchestration::Executors::InterviewsGistExporter,
-      "Orchestration::Executors::DriveDocumentsSync"     => Orchestration::Executors::DriveDocumentsSync
+      "Orchestration::Executors::DriveDocumentsSync"     => Orchestration::Executors::DriveDocumentsSync,
+      "Orchestration::Executors::EmailsSync"             => Orchestration::Executors::EmailsSync
     }.freeze # : Hash[String, _AgentCallable]
 
     def self.lookup(name)
