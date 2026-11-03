@@ -1,0 +1,4 @@
+module Emails
+  class HistoryExpiredError < StandardError
+  end
+end

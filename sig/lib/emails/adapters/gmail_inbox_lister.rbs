@@ -1,0 +1,19 @@
+module Emails
+  module Adapters
+    class GmailInboxLister
+      PAGE_SIZE: Integer
+
+      @service: Google::Apis::GmailV1::GmailService
+
+      def initialize: (Google::Apis::GmailV1::GmailService service) -> void
+      def since: (String history_id) -> Array[String]
+      def after: (Date date) -> Array[String]
+
+      private
+
+      def paged_ids: () { (String? page_token) -> [Array[String], String?] } -> Array[String]
+      def list_history: (String history_id, String? page_token) -> Google::Apis::GmailV1::ListHistoryResponse?
+      def added_message_ids: (Google::Apis::GmailV1::ListHistoryResponse? response) -> [Array[String], String?]
+    end
+  end
+end

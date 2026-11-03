@@ -36,6 +36,22 @@ module Emails
     fetch(provider_name).attachments(message_id) # steep:ignore
   end
 
+  def self.profile(provider_name)
+    fetch(provider_name).profile # steep:ignore
+  end
+
+  def self.inbox_message_ids_since(provider_name, history_id)
+    fetch(provider_name).inbox_message_ids_since(history_id) # steep:ignore
+  end
+
+  def self.inbox_message_ids_after(provider_name, date)
+    fetch(provider_name).inbox_message_ids_after(date) # steep:ignore
+  end
+
+  def self.fetch_message(provider_name, message_id)
+    fetch(provider_name).fetch_message(message_id) # steep:ignore
+  end
+
   def self.get_labels(provider_name)
     fetch(provider_name).get_labels
   end
