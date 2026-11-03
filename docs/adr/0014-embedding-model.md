@@ -60,6 +60,8 @@ Close third: EmbeddingGemma-300m if RAM or CPU latency of the 0.6B proves a prob
 
 **Dedup threshold (#227).** Start with cosine similarity 0.95 as a "near-duplicate" candidate range of 0.93-0.98 (re-scans and format changes of the same text usually land above 0.95; same-template but different documents, like two invoices from one sender, can score 0.9+ and are the main false-positive risk). This is a starting guess from general experience, not a measured value: it must be calibrated on real data per model (the threshold differs between models), kept configurable (`Setting`), and the first release should link and flag candidates for review rather than merge or hide automatically. Behaviour (merge, link, hide) is left to #227.
 
+**Decision (GH #227):** link and flag for review. Near-duplicate pairs (cosine similarity >= 0.95, Setting `document_dedup_threshold` / ENV `DOCUMENT_DEDUP_THRESHOLD`) are stored in `document_duplicates` and shown on both documents; the user confirms or dismisses each pair; nothing is merged, hidden or deleted automatically, and a dismissed pair is not flagged again.
+
 ## Consequences
 
 - A new `Ollama` base URL setting (shared with #208) and an Ollama service on dev and Hetzner, unless the runner-up is chosen.

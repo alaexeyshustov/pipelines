@@ -155,6 +155,23 @@ Email::SearchQuery.call("rent contract", mode: :semantic)  # or :hybrid (FTS5 + 
 
 Setup: `ollama pull qwen3-embedding:0.6b`; `OLLAMA_API_BASE` (default `http://localhost:11434/v1`), `EMBEDDING_MODEL` or Setting `embedding_model`. Backfill or model change: `rake embeddings:reembed[new-model]` (embeds everything, switches the setting, drops old vectors).
 
+## document_duplicates
+
+Near-duplicate candidate pairs of Documents (GH #227), one row per pair in canonical order (`document_id` < `duplicate_id`).
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| id | INTEGER | NO | PK |
+| document_id, duplicate_id | INTEGER | NO | FK to `documents`; unique together |
+| similarity | FLOAT | NO | cosine similarity (1 - distance) at detection |
+| status | STRING | NO | `pending` (default), `confirmed`, `dismissed` (Rails enum); a dismissed pair is never re-flagged |
+
+```ruby
+Document::DetectDuplicates.call(document)  # flags embedded Documents with similarity >= Document::DetectDuplicates.threshold
+```
+
+Threshold: Setting `document_dedup_threshold`, then ENV `DOCUMENT_DEDUP_THRESHOLD`, default 0.95. Backfill or after changing it: `rake documents:detect_duplicates`.
+
 ## tags
 
 Fixed top-level tags (not editable in the UI); seeded by `Tag.seed_defaults!`.

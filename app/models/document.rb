@@ -9,6 +9,9 @@ class Document < ApplicationRecord
   SOURCES = %w[email_attachment drive].freeze
 
   belongs_to :email, optional: true
+  has_many :document_duplicates, dependent: :destroy
+  has_many :reverse_document_duplicates, class_name: "DocumentDuplicate", foreign_key: :duplicate_id,
+                                         inverse_of: :duplicate, dependent: :destroy
 
   validates :title, :mime_type, :checksum, presence: true
   validates :text, exclusion: { in: [ nil ] }

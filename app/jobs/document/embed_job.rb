@@ -10,5 +10,6 @@ class Document::EmbedJob < ApplicationJob
 
   def perform(document_id)
     Embeddings::Embed.call([ Document.find(document_id) ])
+    Document::DetectDuplicatesJob.perform_later(document_id)
   end
 end

@@ -31,6 +31,7 @@ class TaggingsController < ApplicationController
   def render_taggable_show
     @taggings = @taggable.taggings.includes(:tag, :subtag).order(:id)
     @tags = Tag.includes(:subtags).order(:id)
+    @duplicates = DocumentDuplicate.candidates_for(@taggable) if @taggable.is_a?(Document)
     instance_variable_set(:"@#{@taggable.model_name.element}", @taggable)
     render "#{@taggable.model_name.plural}/show", status: :unprocessable_content
   end

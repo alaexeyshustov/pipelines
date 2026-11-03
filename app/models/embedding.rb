@@ -11,6 +11,12 @@ class Embedding < ApplicationRecord
 
   after_destroy { self.class.delete_vectors(id) }
 
+  # The stored vector, read back from the sqlite-vec table.
+  def vector
+    blob = self.class.connection.raw_connection.execute("SELECT embedding FROM embedding_vectors WHERE rowid = ?", [ id ]).dig(0, "embedding")
+    blob.unpack("f*")
+  end
+
   class << self
     # Creates or replaces the embedding of +embeddable+ under +model+.
     def store!(embeddable, model:, content_digest:, vector:)

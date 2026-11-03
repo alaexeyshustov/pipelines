@@ -12,6 +12,7 @@ class DocumentsController < ApplicationController
     @document = Document.find(params[:id])
     @taggings = @document.taggings.includes(:tag, :subtag).order(:id)
     @tags = Tag.includes(:subtags).order(:id)
+    @duplicates = DocumentDuplicate.candidates_for(@document)
   end
 
   def download
