@@ -76,6 +76,37 @@ Interview.as_rows(scope)  # accepts a custom ActiveRecord scope
 
 ---
 
+## emails
+
+One row per INBOX email, full body kept (replaces `application_mails`, which is removed later). `Email`; ingestion is separate.
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| id | INTEGER | NO | PK |
+| provider | STRING | NO | `"gmail"` or `"yahoo"` |
+| provider_message_id | STRING | NO | Unique together with `provider` |
+| from_address | STRING | NO | |
+| to_address | STRING | YES | |
+| subject | STRING | YES | |
+| date | DATETIME | NO | Indexed |
+| body | TEXT | YES | Plain text |
+| html_body | TEXT | YES | |
+| source_url | STRING | YES | Gmail web link |
+| created_at, updated_at | DATETIME | NO | |
+
+### emails_fts
+
+FTS5 external-content virtual table over `subject`, `body`, `from_address` (rowid = `emails.id`). Insert/update/delete triggers (`emails_fts_ai/_au/_ad`) keep it in sync, including `update_all`/`delete_all`. The FTS5 shadow tables are stripped from `structure.sql` on dump (`lib/tasks/sqlite_vec.rake`).
+
+```ruby
+Email::SearchQuery.call("interview acme", limit: 20)
+# => [#<data Hit email: Email, rank: -1.2, snippet: "... [[interview]] ...">]  (bm25, best first)
+```
+
+Input is split into quoted terms ANDed together, so operators and quotes are plain text.
+
+---
+
 ## email_vectors
 
 sqlite-vec `vec0` virtual table. Stores 1536-dim float embeddings for RAG. **Not yet wired into the main workflow — reserved for future use.**

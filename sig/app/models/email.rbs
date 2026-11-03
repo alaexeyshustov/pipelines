@@ -1,0 +1,22 @@
+class Email < ApplicationRecord
+  PROVIDERS: Array[String]
+
+  def provider: () -> String
+  def provider=: (String) -> String
+  def provider_message_id: () -> String
+  def provider_message_id=: (String) -> String
+  def from_address: () -> String
+  def from_address=: (String) -> String
+  def to_address: () -> String?
+  def to_address=: (String?) -> String?
+  def subject: () -> String?
+  def subject=: (String?) -> String?
+  def date: () -> Time
+  def date=: (Time) -> Time
+  def body: () -> String?
+  def body=: (String?) -> String?
+  def html_body: () -> String?
+  def html_body=: (String?) -> String?
+  def source_url: () -> String?
+  def source_url=: (String?) -> String?
+end
