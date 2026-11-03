@@ -46,6 +46,34 @@ class SessionCommonTest < Minitest::Test
     end
   end
 
+  def test_configure_github_https_routes_ssh_remotes_through_gh
+    Dir.mktmpdir("session-common-test") do |workspace|
+      stub = File.join(workspace, "gh")
+      File.write(stub, "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >> \"$HOME/gh-calls\"\n")
+      File.chmod(0o755, stub)
+
+      _, stderr, status = run_bash(<<~SH, workspace)
+        export HOME="#{workspace}" GH_TOKEN=token PATH="#{workspace}:$PATH"
+        configure_github_https
+        configure_github_https
+      SH
+
+      assert status.success?, stderr
+      assert_equal "auth setup-git --hostname github.com\n" * 2, File.read(File.join(workspace, "gh-calls"))
+      rewritten, = Open3.capture2({ "HOME" => workspace }, "git", "ls-remote", "--get-url", "git@github.com:owner/repo.git", chdir: workspace)
+      assert_equal "https://github.com/owner/repo.git\n", rewritten
+    end
+  end
+
+  def test_configure_github_https_skips_without_a_token
+    Dir.mktmpdir("session-common-test") do |workspace|
+      _, stderr, status = run_bash(%(export HOME="#{workspace}"; unset GH_TOKEN; configure_github_https), workspace)
+
+      assert status.success?, stderr
+      refute File.exist?(File.join(workspace, ".gitconfig"))
+    end
+  end
+
   private
 
   def run_bash(script, workspace)

@@ -11,6 +11,7 @@ printf 'Claude Code (oh-my-claudecode) session is starting\n'
 
 install_workspace_dependencies
 configure_rtk
+configure_github_https
 load_claude_auth
 
 # `omc setup` provisions OMC's skills/commands for this project (idempotent

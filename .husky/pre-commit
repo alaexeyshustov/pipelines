@@ -15,7 +15,10 @@ bundle exec archspec check
 
 echo "Running steep type check..."
 # Each worker loads the full RBS env (~250MB); default is one per CPU.
-bundle exec steep check --jobs 2
+# Git exports GIT_INDEX_FILE to hooks. Steep may install the RBS collection,
+# whose `git reset --hard` in its own cache repo would then overwrite this
+# repository's index with foreign entries and fail the commit.
+env -u GIT_INDEX_FILE bundle exec steep check --jobs 2
 
 echo "Running brakeman..."
 bundle exec brakeman --no-pager

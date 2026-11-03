@@ -25,5 +25,6 @@ install_image_skills() {
 install_image_skills
 install_workspace_dependencies
 configure_rtk
+configure_github_https
 load_claude_auth
 exec_claude "$ticket"
