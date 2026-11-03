@@ -140,8 +140,42 @@ RSpec.describe Email::SyncInboxJob do
 
       expect(result.counts).to include("fetched" => 2, "stored" => 1, "failed" => 1)
       expect(Rails.logger).to have_received(:error).with(/bad/)
-      expect(cursor.history_id).to eq("500")
     end
+
+    it "holds the cursor when a message failed, so the next run re-reads the range" do
+      allow(Rails.logger).to receive(:error)
+      stub_history("bad", "good")
+      stub_request(:get, %r{#{base}/messages/bad\?format=full}).to_return(status: 500, headers: json, body: "{}")
+      stub_message("good")
+
+      described_class.perform_now("gmail")
+
+      expect(cursor).to have_attributes(history_id: "100", last_rescan_at: nil)
+      expect(cursor.last_synced_at).to eq(cursor.created_at)
+    end
+
+    it "holds the cursor when a failure happens during a 404 rescan" do
+      allow(Rails.logger).to receive(:error)
+      stub_history(status: 404)
+      stub_window("bad")
+      stub_request(:get, %r{#{base}/messages/bad\?format=full}).to_return(status: 500, headers: json, body: "{}")
+
+      described_class.perform_now("gmail")
+
+      expect(cursor).to have_attributes(history_id: "100", last_rescan_at: nil)
+    end
+  end
+
+  it "does not store a cursor when a backfill message failed" do
+    allow(Rails.logger).to receive(:error)
+    stub_window("bad", "good")
+    stub_request(:get, %r{#{base}/messages/bad\?format=full}).to_return(status: 500, headers: json, body: "{}")
+    stub_message("good")
+
+    result = described_class.perform_now("gmail")
+
+    expect(result.counts).to include("stored" => 1, "failed" => 1)
+    expect(Email::SyncCursor.count).to eq(0)
   end
 
   it "does not store a cursor when the first run aborts" do
@@ -152,6 +186,6 @@ RSpec.describe Email::SyncInboxJob do
   end
 
   it "rejects providers it cannot sync yet" do
-    expect { described_class.perform_now("yahoo") }.to raise_error(ArgumentError, /yahoo/)
+    expect { described_class.perform_now("aol") }.to raise_error(ArgumentError, /aol/)
   end
 end

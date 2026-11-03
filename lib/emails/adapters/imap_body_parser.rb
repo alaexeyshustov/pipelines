@@ -17,7 +17,24 @@ module Emails
         extract_body(@mail)
       end
 
+      # The decoded text/html part, or nil when the message has none.
+      def html
+        part = find_html(@mail)
+        part ? decode_part(part) : nil
+      end
+
       private
+
+      def find_html(mail)
+        return mail if mail.mime_type == "text/html"
+        return nil unless mail.multipart?
+
+        mail.parts.each do |part|
+          found = find_html(part)
+          return found if found
+        end
+        nil
+      end
 
       def extract_body(mail)
         if mail.multipart?

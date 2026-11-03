@@ -21,7 +21,7 @@ module Emails
       date: Time,
       body: String,
       html_body: String?,
-      source_url: String,
+      source_url: String?,
       thread_id: String?,
       labels: Array[String]
     }
@@ -42,6 +42,10 @@ module Emails
   def self.profile: (String provider_name) -> { email_address: String, history_id: String }
   def self.inbox_message_ids_since: (String provider_name, String history_id) -> Array[String]
   def self.inbox_message_ids_after: (String provider_name, Date date) -> Array[String]
+  def self.account: (String provider_name) -> String
+  def self.inbox_uid_validity: (String provider_name) -> Integer
+  def self.inbox_uids_after: (String provider_name, Integer last_uid) -> Array[Integer]
+  def self.inbox_uids_since: (String provider_name, Date date) -> Array[Integer]
   def self.fetch_message: (String provider_name, String | Integer message_id) -> full_message
   def self.get_labels: (String provider_name) -> Array[label]
   def self.get_unread_count: (String provider_name) -> Integer

@@ -1,0 +1,21 @@
+module Emails
+  module Adapters
+    class ImapInboxReader
+      MAILBOX: String
+
+      @session: ImapSession
+
+      def self.split_message_id: (String | Integer message_id) -> [Integer?, Integer]
+
+      def initialize: (ImapSession session) -> void
+      def uid_validity: () -> Integer
+      def uids_after: (Integer last_uid) -> Array[Integer]
+      def uids_since: (Date date) -> Array[Integer]
+      def mail: (Integer uid) -> Mail::Message?
+
+      private
+
+      def search: (Array[String] criteria) -> Array[Integer]
+    end
+  end
+end

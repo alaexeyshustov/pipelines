@@ -1,6 +1,8 @@
 module Emails
   module Adapters
     class YahooAdapter < BaseAdapter
+      include YahooInboxSync
+
       def self.setup(_opts = {})
         Rails.logger.debug "Yahoo setup:"
         Rails.logger.debug "1. Sign in to your Yahoo account and go to Account Security settings."
@@ -32,8 +34,10 @@ module Emails
       end
 
       def initialize(host:, port:, username:, password:)
+        @account       = username
         @session       = ImapSession.new(host: host, port: port, username: username, password: password)
         @label_manager = ImapLabelManager.new(session: @session)
+        @inbox         = ImapInboxReader.new(@session)
       end
 
       def on_exit
@@ -51,7 +55,7 @@ module Emails
       end
 
       def get_message(message_id, label: nil)
-        uid     = message_id.to_i
+        uid     = ImapInboxReader.split_message_id(message_id).last
         mailbox = build_mailbox(label)
 
         @session.with_lock do
