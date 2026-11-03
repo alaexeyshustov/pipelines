@@ -50,7 +50,7 @@ Close third: EmbeddingGemma-300m if RAM or CPU latency of the 0.6B proves a prob
 **Storage (#226) sketch.** `vec0` dimensions are fixed per table, and the model must be recorded per vector:
 
 - `embeddings` (ActiveRecord table): `embeddable_type`, `embeddable_id`, `model` (string, e.g. `qwen3-embedding:0.6b`), `dimensions` (int), `content_digest` (SHA256 of the embedded text), `embedded_at`; unique on `[embeddable_type, embeddable_id, model]`.
-- `embedding_vectors USING vec0(embedding float[1024] distance_metric=cosine)`, rowid = `embeddings.id`. Optionally a metadata column for the record kind, to filter Email vs Document inside KNN.
+- ~~`embedding_vectors USING vec0(...)`, rowid = `embeddings.id`~~ **Superseded:** the vector is a `vector` blob column on `embeddings`, accessed through the `neighbor` gem (`has_neighbors :vector`, `nearest_neighbors(:vector, v, distance: "cosine")`), which runs sqlite-vec's `vec_distance_cosine` over the filtered rows (brute force, same as vec0). This removes the raw SQL, the vec0 shadow tables and the `sqlite3` CLI extension-loading hack for `structure.sql`.
 - Re-embed on model change: new model name means new rows; a rake task (`embeddings:reembed`) embeds everything under the new model (and a new `vec0` table if the dimension differs), then switches the configured `LlmModels.embedding` (Setting, then ENV, then default, as for the other models) and deletes old rows. Searches filter on the current model only. Skip unchanged content via `content_digest`.
 - Add `LlmModels.embedding` following the existing accessor pattern.
 

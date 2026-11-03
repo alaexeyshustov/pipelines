@@ -12,12 +12,12 @@ module Embeddable
   module ClassMethods
     def polymorphic_name: () -> String
     def fts_search: (String? query, ?limit: Integer) -> Array[FtsSearchable::Match]
-    def semantic_search: (String? query, ?limit: Integer) -> Array[Embedding::Neighbor]
+    def semantic_search: (String? query, ?limit: Integer) -> Array[Embedding]
     def hybrid_search: (String? query, ?limit: Integer) -> Array[Hybrid]
 
     private
 
-    def fuse: (Hash[Integer, FtsSearchable::Match] matches, Hash[Integer, Embedding::Neighbor] neighbours) -> Array[Hybrid]
-    def fused_hit: (Float score, FtsSearchable::Match? match, Embedding::Neighbor? neighbour) -> Hybrid
+    def fuse: (Hash[Integer, FtsSearchable::Match] matches, Hash[Integer, Embedding] neighbours) -> Array[Hybrid]
+    def fused_hit: (Float score, FtsSearchable::Match? match, Embedding? neighbour) -> Hybrid
   end
 end

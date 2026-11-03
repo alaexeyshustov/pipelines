@@ -31,7 +31,7 @@ class Document::DetectDuplicates
     matches = neighbours(embedding)
     matches.each do |match|
       other = match.embeddable # : Document
-      DocumentDuplicate.flag!(@document, other, similarity: 1 - match.distance)
+      DocumentDuplicate.flag!(@document, other, similarity: 1 - match.neighbor_distance)
     end
     Result.new(flagged: matches.size)
   end
@@ -39,7 +39,9 @@ class Document::DetectDuplicates
   private
 
   def neighbours(embedding)
-    Embedding.nearest(embedding.vector, type: Document.polymorphic_name, model: @model, limit: NEIGHBORS + 1)
-             .reject { |neighbour| neighbour.embeddable == @document || 1 - neighbour.distance < @threshold }
+    embedding.nearest_neighbors(:vector, distance: "cosine", threshold: 1 - @threshold)
+             .where(embeddable_type: Document.polymorphic_name, model: @model)
+             .limit(NEIGHBORS)
+             .includes(:embeddable)
   end
 end

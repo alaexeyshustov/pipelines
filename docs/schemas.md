@@ -126,27 +126,15 @@ One vector per Email or Document and embedding model (ADR 0014, GH #226). Qwen3-
 
 | Column | Type | Null | Notes |
 |---|---|---|---|
-| id | INTEGER | NO | PK, also the rowid of `embedding_vectors` |
+| id | INTEGER | NO | PK |
 | embeddable_type, embeddable_id | STRING, INTEGER | NO | `Email` or `Document`; unique together with `model` |
 | model | STRING | NO | e.g. `qwen3-embedding:0.6b` (`LlmModels.embedding`) |
 | dimensions | INTEGER | NO | 1024 (`Embeddings::Client::DIMENSIONS`) |
 | content_digest | STRING | NO | SHA256 of the embedded text; unchanged text is not re-embedded |
 | embedded_at | DATETIME | NO | |
+| vector | BLOB | NO | float32 x 1024, read and queried through the [neighbor](https://github.com/ankane/neighbor) gem (`has_neighbors :vector`) |
 
-### embedding_vectors
-
-sqlite-vec table, rowid = `embeddings.id`:
-
-```sql
-CREATE VIRTUAL TABLE embedding_vectors USING vec0(
-  embeddable_type text partition key, model text partition key,
-  embedding float[1024] distance_metric=cosine
-);
--- KNN: SELECT rowid, distance FROM embedding_vectors
---      WHERE embedding MATCH ? AND k = 20 AND embeddable_type = 'Email' AND model = ?
-```
-
-Shadow tables are stripped from `structure.sql` on dump; `structure_load_flags` (`config/initializers/sqlite_vec.rb`) makes the sqlite3 CLI load the extension for `db:schema:load`.
+KNN (`Embedding.nearest`; duplicates use the record method `nearest_neighbors`): `where(embeddable_type:, model:).nearest_neighbors(:vector, vector, distance: "cosine")` orders by sqlite-vec's `vec_distance_cosine` (brute force; `config/initializers/neighbor.rb` loads the extension on every connection). (Earlier versions kept vectors in a vec0 table, `embedding_vectors`.)
 
 ```ruby
 Embeddings::Embed.call([email, document])        # batched, skips unchanged digests; run by Email::EmbedJob / Document::EmbedJob
@@ -192,7 +180,7 @@ Fixed top-level tags (not editable in the UI); seeded by `Tag.seed_defaults!`.
 
 ### emails_fts
 
-FTS5 external-content virtual table over `subject`, `body`, `from_address` (rowid = `emails.id`). Insert/update/delete triggers (`emails_fts_ai/_au/_ad`) keep it in sync, including `update_all`/`delete_all`. The FTS5 shadow tables are stripped from `structure.sql` on dump (`lib/tasks/sqlite_vec.rake`).
+FTS5 external-content virtual table over `subject`, `body`, `from_address` (rowid = `emails.id`). Insert/update/delete triggers (`emails_fts_ai/_au/_ad`) keep it in sync, including `update_all`/`delete_all`. The FTS5 shadow tables are stripped from `structure.sql` on dump (`lib/tasks/structure.rake`).
 
 ```ruby
 Email::SearchQuery.call("interview acme", limit: 20)
