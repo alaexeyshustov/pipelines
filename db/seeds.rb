@@ -395,6 +395,26 @@ if drive_pipeline.steps.empty?
   )
 end
 
+# Incremental INBOX sync of Gmail and Yahoo into Emails (ADR 0013); a provider without credentials is skipped.
+email_sync_action = Orchestration::Action.find_or_initialize_by(name: "Sync Inbox Emails").tap do |a|
+  a.kind        = :service
+  a.agent_class = "Orchestration::Executors::EmailsSync"
+  a.save!
+end
+
+email_pipeline = Orchestration::Pipeline.find_or_create_by!(name: "Email Ingestion") do |p|
+  p.description     = "Pulls new INBOX mail from Gmail and Yahoo into Emails."
+  p.enabled         = true
+  p.cron_expression = "*/30 * * * *"
+end
+
+if email_pipeline.steps.empty?
+  email_step = email_pipeline.steps.create!(name: email_sync_action.name, position: 1)
+  Orchestration::StepAction.create!(
+    step: email_step, action: email_sync_action, position: 1, output_key: "sync_inbox_emails", input_mapping: {}
+  )
+end
+
 # Create agents not part of any pipeline step.
 %w[Orchestration::Agents::RecordsFiller].each do |name|
   config = AGENT_DEFINITIONS.fetch(name)
