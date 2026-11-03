@@ -38,6 +38,7 @@ The system follows a pipeline-based architecture where data flows through severa
 - `lib/orchestration/agents/`: specialized AI agent implementations (`lib/orchestration/executors/` holds executable steps).
 - `app/models/orchestration/`: models for managing the pipeline workflow.
 - `app/models/evaluation/`, `app/services/evaluation/`, `lib/evaluation/`: evaluation logic to ensure agent quality. See [evals.md](evals.md).
+- `app/services/tags/`, `app/forms/tags/`, `app/components/tags/`: tagging of emails and documents. `Tags::Classifier` classifies with `RubyLLM::Judge` (decisions API, one multi-label call plus one choice per kept tag; never creates tags; keeps manual taggings). Not yet wired into pipelines (ingestion is GH #222). See the taggings table in [schemas.md](schemas.md).
 - `lib/pipeline/`: pipeline workflow steps.
 - `app/tools/`: LLM tools exposed to agents.
 - `lib/emails/`: provider-specific email fetching logic. See [connectors.md](docs/connectors.md) for details.

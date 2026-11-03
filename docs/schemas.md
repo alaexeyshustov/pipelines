@@ -175,8 +175,15 @@ Polymorphic join: `taggable` (Email or Document) gets tags. Untagged items have 
 | tag_id | INTEGER | NO | — | FK to `tags` |
 | subtag_id | INTEGER | YES | — | FK to `subtags`; must belong to `tag_id` (validation) |
 | source | STRING | NO | `"llm"` | `"llm"` or `"manual"` (`Tagging::SOURCES`) |
-| confidence | FLOAT | YES | — | |
+| confidence | FLOAT | YES | — | LLM tag probability; nil for manual |
 | created_at / updated_at | DATETIME | NO | — | |
+
+**Writers:** `Tags::Classifier.call(item)` writes `source: llm` rows (probability as `confidence`) and replaces the item's previous llm rows; `Tags::ManualTaggingForm` writes `source: manual` rows (an llm row for the same tag becomes manual). Manual rows are never changed or removed by the classifier, and a tag that already has one is not judged.
+
+```ruby
+Tags::Classifier.call(email_or_document)   # => #<data Result taggings: [Tagging, ...]>
+Tags::Classifier.threshold                 # 0.35; Setting "tagging_threshold" > ENV TAGGING_THRESHOLD > default
+```
 
 **Indexes:** `[taggable_type, taggable_id, tag_id]` (unique: one tag per taggable), `tag_id`, `subtag_id`
 

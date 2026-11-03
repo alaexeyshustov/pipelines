@@ -5,6 +5,8 @@ class Tagging < ApplicationRecord
   belongs_to :tag
   belongs_to :subtag, optional: true
 
+  scope :manual, -> { where(source: "manual") }
+
   validates :source, inclusion: { in: SOURCES }
   validates :tag_id, uniqueness: { scope: %i[taggable_type taggable_id] }
   validate :subtag_belongs_to_tag

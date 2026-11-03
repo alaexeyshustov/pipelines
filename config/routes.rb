@@ -25,8 +25,13 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :emails, only: [ :show ] do
+    resources :taggings, only: [ :create, :destroy ]
+  end
+
   resources :documents, only: [ :index, :show ] do
     get :download, on: :member
+    resources :taggings, only: [ :create, :destroy ]
   end
 
   get "search", to: "searches#show"
