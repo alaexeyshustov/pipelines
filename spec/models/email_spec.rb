@@ -29,6 +29,16 @@ RSpec.describe Email do
     end
   end
 
+  describe "tagging" do
+    it "has tags through taggings, removed with the email" do
+      email = create(:email)
+      tag = create(:tag, name: "job_application")
+      Tagging.create!(taggable: email, tag:, source: "llm")
+      expect(email.tags).to eq([ tag ])
+      expect { email.destroy! }.to change(Tagging, :count).by(-1)
+    end
+  end
+
   describe "FTS5 index" do
     it "indexes on insert" do
       email = create(:email, subject: "Interview invitation", body: "Let us chat")

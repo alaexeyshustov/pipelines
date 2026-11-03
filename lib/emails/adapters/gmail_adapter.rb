@@ -60,6 +60,14 @@ module Emails
         format_message(message, GmailMessageParser.new(message).to_h)
       end
 
+      # Raw bytes of a message attachment.
+      def attachment(message_id, attachment_id)
+        body = @service.get_user_message_attachment("me", message_id.to_s, attachment_id.to_s) # steep:ignore
+        raise "Attachment not found: #{attachment_id}" unless body
+
+        body.data.to_s
+      end
+
       def get_unread_count
         label = @service.get_user_label("me", "UNREAD")
         label&.messages_total.to_i

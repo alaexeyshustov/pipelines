@@ -1,0 +1,19 @@
+class Document
+  class SearchQuery
+    class Hit
+      attr_reader document: Document
+      attr_reader rank: Float?
+      attr_reader snippet: String?
+
+      def self.new: (document: Document, rank: Float?, snippet: String?) -> instance
+    end
+
+    def self.call: (String? query, ?limit: Integer) -> Array[Hit]
+
+    @query: String?
+    @limit: Integer
+
+    def initialize: (String? query, limit: Integer) -> void
+    def call: () -> Array[Hit]
+  end
+end

@@ -23,6 +23,7 @@ module Emails
   def self.search_messages: (String provider_name, String query, ?max_results: Integer, ?offset: Integer, ?label: String?) -> Array[message]
   def self.list_messages: (String provider_name, ?max_results: Integer, ?after_date: Date?, ?before_date: Date?, ?offset: Integer, ?label: String?) -> Array[message]
   def self.get_message: (String provider_name, String | Integer message_id, ?label: String?) -> message
+  def self.attachment: (String provider_name, String | Integer message_id, String attachment_id) -> String
   def self.get_labels: (String provider_name) -> Array[label]
   def self.get_unread_count: (String provider_name) -> Integer
   def self.modify_labels: (String provider_name, String | Integer message_id, ?add: Array[String], ?remove: Array[String], ?source_mailbox: String?) -> modify_result

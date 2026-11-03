@@ -1,0 +1,24 @@
+class Document < ApplicationRecord
+  extend FtsSearchable::ClassMethods
+
+  SOURCES: Array[String]
+
+  def title: () -> String
+  def title=: (String) -> String
+  def mime_type: () -> String
+  def mime_type=: (String) -> String
+  def text: () -> String
+  def text=: (String) -> String
+  def checksum: () -> String
+  def checksum=: (String) -> String
+  def source: () -> String
+  def source=: (String) -> String
+  def source_url: () -> String?
+  def source_url=: (String?) -> String?
+  def source_ref: () -> Hash[String, String]
+  def source_ref=: (Hash[String, String]) -> Hash[String, String]
+  def email: () -> Email?
+  def email=: (Email?) -> Email?
+
+  def self.ingest!: (Hash[Symbol | String, String | Hash[String, String] | Email | nil] attributes) -> Document
+end

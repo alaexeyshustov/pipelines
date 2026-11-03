@@ -1,0 +1,14 @@
+<%= render UI::PageHeaderComponent.new(
+      title: @document.title,
+      parent: { label: "Documents", url: documents_path },
+      notice: notice, alert: alert
+    ) %>
+
+<p class="mb-4 text-sm">
+  <%= link_to "Download original", download_document_path(@document), class: "text-blue-600" %>
+  <% if @document.source_url.to_s.match?(%r{\Ahttps?://}) %>
+    · <%= link_to "Open source", URI.parse(@document.source_url).to_s, class: "text-blue-600" %>
+  <% end %>
+</p>
+
+<pre class="whitespace-pre-wrap text-sm text-gray-800"><%= @document.text %></pre>
