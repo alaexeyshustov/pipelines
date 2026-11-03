@@ -16,8 +16,9 @@ module Orchestration
 
       def self.call: (**json_object_value) -> Hash[String, provider_output]
 
-      def self.sync: (String provider, Hash[String, String] failures) -> provider_output
-      def self.enqueue_processing: (String provider, Array[Integer] new_email_ids) -> Hash[String, Integer]
+      def self.sync: (String provider, Hash[String, String] failures, Array[Integer] stale_ids) -> provider_output
+      def self.stale_email_ids: () -> Hash[String, Array[Integer]]
+      def self.enqueue_processing: (Array[Integer] new_email_ids, Array[Integer] stale_ids) -> Hash[String, Integer]
       def self.failure_message: (Hash[String, String] failures, Hash[String, provider_output] output) -> String
     end
   end

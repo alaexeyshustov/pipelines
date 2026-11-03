@@ -126,8 +126,9 @@ RSpec.describe Email::SyncInboxJob do
       stub_history(status: 500)
 
       expect { described_class.perform_now("gmail") }.to raise_error(Google::Apis::ServerError)
-      expect(cursor.history_id).to eq("100")
-      expect(cursor.last_synced_at).to eq(cursor.created_at)
+      stored = cursor
+      expect(stored.history_id).to eq("100")
+      expect(stored.last_synced_at).to eq(stored.created_at)
     end
 
     it "logs and counts a message that cannot be fetched, and keeps going" do
@@ -150,8 +151,9 @@ RSpec.describe Email::SyncInboxJob do
 
       described_class.perform_now("gmail")
 
-      expect(cursor).to have_attributes(history_id: "100", last_rescan_at: nil)
-      expect(cursor.last_synced_at).to eq(cursor.created_at)
+      stored = cursor
+      expect(stored).to have_attributes(history_id: "100", last_rescan_at: nil)
+      expect(stored.last_synced_at).to eq(stored.created_at)
     end
 
     it "holds the cursor when a failure happens during a 404 rescan" do

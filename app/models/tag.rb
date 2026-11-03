@@ -18,10 +18,17 @@ class Tag < ApplicationRecord
   # Idempotent: creates the fixed tags and starter subtags if missing.
   def self.seed_defaults!
     transaction do
+      tags = where(name: STARTER_SUBTAGS.keys).index_by(&:name)
+      known = Subtag.where(tag_id: tags.values.map(&:id)).pluck(:tag_id, :name).to_set
       STARTER_SUBTAGS.each do |name, subtag_names|
-        tag = find_or_create_by!(name:)
-        subtag_names.each { |subtag_name| tag.subtags.find_or_create_by!(name: subtag_name) }
+        tag = tags[name] ||= create!(name:)
+        seed_subtags(tag, subtag_names, known)
       end
     end
   end
+
+  def self.seed_subtags(tag, names, known)
+    names.each { |name| tag.subtags.create!(name:) unless known.include?([ tag.id, name ]) }
+  end
+  private_class_method :seed_subtags
 end

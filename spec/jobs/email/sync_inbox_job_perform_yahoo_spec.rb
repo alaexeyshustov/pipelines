@@ -108,7 +108,8 @@ RSpec.describe Email::SyncInboxJob, "#perform" do
       allow(imap).to receive(:uid_search).and_raise(Net::IMAP::NoResponseError.allocate)
 
       expect { described_class.perform_now("yahoo") }.to raise_error(Net::IMAP::NoResponseError)
-      expect(cursor).to have_attributes(last_uid: 10, last_synced_at: cursor.created_at)
+      stored = cursor
+      expect(stored).to have_attributes(last_uid: 10, last_synced_at: stored.created_at)
     end
 
     it "holds the cursor when a message failed, so the next run re-reads the range" do
@@ -121,7 +122,8 @@ RSpec.describe Email::SyncInboxJob, "#perform" do
 
       expect(result.counts).to include("stored" => 1, "failed" => 1)
       expect(Rails.logger).to have_received(:error).with(/777:11/)
-      expect(cursor).to have_attributes(last_uid: 10, last_synced_at: cursor.created_at)
+      stored = cursor
+      expect(stored).to have_attributes(last_uid: 10, last_synced_at: stored.created_at)
     end
   end
 

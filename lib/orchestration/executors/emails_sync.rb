@@ -25,17 +25,18 @@ module Orchestration
 
       def self.call(**_kwargs)
         failures = {} # : Hash[String, String]
-        output = PROVIDERS.index_with { |provider| sync(provider, failures) }
+        stale = stale_email_ids
+        output = PROVIDERS.index_with { |provider| sync(provider, failures, stale.fetch(provider, [])) }
         return output if failures.empty?
 
         raise ProviderFailure, failure_message(failures, output)
       end
 
-      def self.sync(provider, failures)
+      def self.sync(provider, failures, stale_ids)
         result = Email::SyncInboxJob.perform_now(provider)
         counts = result.counts
         failures[provider] = "#{counts.fetch('failed')} message(s) failed" if counts.fetch("failed").positive?
-        counts.merge(enqueue_processing(provider, result.email_ids))
+        counts.merge(enqueue_processing(result.email_ids, stale_ids))
       rescue StandardError => error
         return SKIPPED.dup if MISSING_CREDENTIALS.match?(error.message)
 
@@ -44,9 +45,15 @@ module Orchestration
       end
       private_class_method :sync
 
-      def self.enqueue_processing(provider, new_email_ids)
-        stale_ids = Email.awaiting_tagging(before: REQUEUE_AFTER.ago).where(provider: provider)
-                         .where.not(id: new_email_ids).pluck(:id) # : Array[Integer]
+      # Untagged emails older than REQUEUE_AFTER per provider, in one query.
+      def self.stale_email_ids
+        Email.awaiting_tagging(before: REQUEUE_AFTER.ago).where(provider: PROVIDERS)
+             .pluck(:provider, :id).group_by(&:first).transform_values { |rows| rows.map(&:last) } # : Hash[String, Array[Integer]]
+      end
+      private_class_method :stale_email_ids
+
+      def self.enqueue_processing(new_email_ids, stale_ids)
+        stale_ids -= new_email_ids
         (new_email_ids + stale_ids).each { |email_id| Email::ProcessJob.perform_later(email_id) }
         { "enqueued" => new_email_ids.size + stale_ids.size, "requeued" => stale_ids.size }
       end

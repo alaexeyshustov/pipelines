@@ -5,9 +5,11 @@ class Email::YahooIdRewriter
   # Rewrites bare Yahoo ids using +uid_validity+; returns the number of rows changed.
   def self.rewrite(uid_validity)
     changed = 0
+    taken = Email.where(provider: "yahoo").where("provider_message_id LIKE ?", "#{uid_validity}:%")
+                 .pluck(:provider_message_id).to_set
     Email.where(provider: "yahoo").where.not("provider_message_id LIKE ?", "%:%").find_each do |email|
       new_id = "#{uid_validity}:#{email.provider_message_id}"
-      next if Email.exists?(provider: "yahoo", provider_message_id: new_id)
+      next if taken.include?(new_id)
 
       email.update!(provider_message_id: new_id)
       changed += 1
