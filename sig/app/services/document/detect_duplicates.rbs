@@ -20,6 +20,6 @@ class Document
 
     private
 
-    def neighbours: (Embedding embedding) -> Array[Embedding::Neighbor]
+    def neighbours: (Embedding embedding) -> Array[Embedding]
   end
 end

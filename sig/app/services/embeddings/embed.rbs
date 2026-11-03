@@ -27,7 +27,8 @@ module Embeddings
     private
 
     def candidates: () -> Array[Pending]
-    def stale?: (Pending candidate) -> bool
+    def stale_candidates: (Array[Pending] pending) -> Array[Pending]
+    def stored_digests: (Array[Email | Document] records) -> Hash[[ String, Integer ], String]
     def store: (Array[Pending] stale) -> void
   end
 end

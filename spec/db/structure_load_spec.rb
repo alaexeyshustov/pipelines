@@ -7,10 +7,7 @@ RSpec.describe "db/structure.sql" do # rubocop:disable RSpec/DescribeClass
   let(:db) do
     config = ActiveRecord::DatabaseConfigurations::HashConfig.new("test", "scratch", { adapter: "sqlite3", database: path })
     ActiveRecord::Tasks::DatabaseTasks.structure_load(config, Rails.root.join("db/structure.sql").to_s)
-    SQLite3::Database.new(path).tap do |database|
-      database.enable_load_extension(true)
-      SqliteVec.load(database)
-    end
+    SQLite3::Database.new(path)
   end
 
   after do
@@ -18,9 +15,10 @@ RSpec.describe "db/structure.sql" do # rubocop:disable RSpec/DescribeClass
     FileUtils.remove_entry(dir)
   end
 
-  it "loads into a fresh database with a working vec0 table" do
-    expect(db.execute("SELECT sql FROM sqlite_master WHERE name = 'embedding_vectors'").flatten.first).to include("USING vec0")
-    expect(db.execute("SELECT count(*) FROM embedding_vectors")).to eq([ [ 0 ] ])
+  it "loads into a fresh database without the sqlite-vec extension, with the vector on embeddings" do
+    vector = db.execute("PRAGMA table_info(embeddings)").find { |column| column[1] == "vector" }
+    expect(vector.values_at(2, 3)).to eq([ "BLOB", 1 ])
+    expect(db.execute("SELECT name FROM sqlite_master WHERE name LIKE 'embedding_vectors%'")).to be_empty
   end
 
   it "keeps the FTS5 sync triggers" do

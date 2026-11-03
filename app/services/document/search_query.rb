@@ -39,6 +39,6 @@ class Document::SearchQuery
   end
 
   def semantic_hits
-    Document.semantic_search(@query, limit: @limit).map { |n| Hit.new(document: n.embeddable, rank: n.distance, snippet: nil) } # steep:ignore
+    Document.semantic_search(@query, limit: @limit).map { |n| Hit.new(document: n.embeddable, rank: n.neighbor_distance, snippet: nil) } # steep:ignore
   end
 end

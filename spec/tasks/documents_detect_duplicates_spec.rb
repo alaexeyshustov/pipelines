@@ -17,6 +17,6 @@ RSpec.describe "documents:detect_duplicates" do # rubocop:disable RSpec/Describe
 
     expect { Rake::Task["documents:detect_duplicates"].invoke }.to output(/1 duplicate pair/).to_stdout
 
-    expect(DocumentDuplicate.sole).to have_attributes(document: first, duplicate: second)
+    expect(DocumentDuplicate.includes(:document, :duplicate).sole).to have_attributes(document: first, duplicate: second)
   end
 end

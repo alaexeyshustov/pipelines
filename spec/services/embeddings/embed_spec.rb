@@ -65,7 +65,7 @@ RSpec.describe Embeddings::Embed do
 
     expect(result).to have_attributes(embedded: 2, unchanged: 1)
     expect(a_request(:post, url)).to have_been_made.once
-    expect(fresh.map { |record| record.embeddings.count }).to eq([ 1, 1 ])
+    expect(Embedding.where(embeddable: fresh).group(:embeddable_type).count).to eq("Email" => 1, "Document" => 1)
   end
 
   it "skips records without any text" do

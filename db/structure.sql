@@ -206,13 +206,8 @@ CREATE TRIGGER documents_fts_au AFTER UPDATE ON documents BEGIN
 END;
 CREATE TABLE IF NOT EXISTS "email_sync_cursors" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "provider" varchar NOT NULL, "account" varchar NOT NULL, "mailbox" varchar DEFAULT 'INBOX' NOT NULL, "history_id" varchar, "uid_validity" bigint, "last_uid" bigint, "last_synced_at" datetime(6), "last_rescan_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_email_sync_cursors_on_provider_and_account_and_mailbox" ON "email_sync_cursors" ("provider", "account", "mailbox");
-CREATE TABLE IF NOT EXISTS "embeddings" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "embeddable_type" varchar NOT NULL, "embeddable_id" integer NOT NULL, "model" varchar NOT NULL, "dimensions" integer NOT NULL, "content_digest" varchar NOT NULL, "embedded_at" datetime(6) NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE TABLE IF NOT EXISTS "embeddings" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "embeddable_type" varchar NOT NULL, "embeddable_id" integer NOT NULL, "model" varchar NOT NULL, "dimensions" integer NOT NULL, "content_digest" varchar NOT NULL, "embedded_at" datetime(6) NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "vector" blob NOT NULL);
 CREATE UNIQUE INDEX "index_embeddings_on_embeddable_and_model" ON "embeddings" ("embeddable_type", "embeddable_id", "model");
-CREATE VIRTUAL TABLE embedding_vectors USING vec0(
-  embeddable_type text partition key,
-  model text partition key,
-  embedding float[1024] distance_metric=cosine
-);
 CREATE TABLE IF NOT EXISTS "document_duplicates" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "document_id" integer NOT NULL, "duplicate_id" integer NOT NULL, "similarity" float NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_635a9eabaa"
 FOREIGN KEY ("document_id")
   REFERENCES "documents" ("id")

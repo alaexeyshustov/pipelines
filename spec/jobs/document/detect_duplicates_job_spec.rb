@@ -11,7 +11,7 @@ RSpec.describe Document::DetectDuplicatesJob do
 
     described_class.perform_now(document.id)
 
-    expect(DocumentDuplicate.sole).to have_attributes(document:, duplicate: other)
+    expect(DocumentDuplicate.includes(:document, :duplicate).sole).to have_attributes(document:, duplicate: other)
   end
 
   it "ignores a document deleted in the meantime" do

@@ -39,6 +39,6 @@ class Email::SearchQuery
   end
 
   def semantic_hits
-    Email.semantic_search(@query, limit: @limit).map { |n| Hit.new(email: n.embeddable, rank: n.distance, snippet: nil) } # steep:ignore
+    Email.semantic_search(@query, limit: @limit).map { |n| Hit.new(email: n.embeddable, rank: n.neighbor_distance, snippet: nil) } # steep:ignore
   end
 end

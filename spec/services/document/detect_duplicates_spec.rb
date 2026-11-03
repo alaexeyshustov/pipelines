@@ -21,8 +21,9 @@ RSpec.describe Document::DetectDuplicates do
     result = described_class.call(document)
 
     expect(result.flagged).to eq(1)
-    expect(DocumentDuplicate.sole).to have_attributes(document: document, duplicate: other, status: "pending")
-    expect(DocumentDuplicate.sole.similarity).to be_within(0.001).of(0.97)
+    flagged = DocumentDuplicate.includes(:document, :duplicate).sole
+    expect(flagged).to have_attributes(document: document, duplicate: other, status: "pending")
+    expect(flagged.similarity).to be_within(0.001).of(0.97)
   end
 
   it "ignores documents below the threshold, itself and other models" do

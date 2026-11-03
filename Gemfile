@@ -3,6 +3,7 @@ source "https://rubygems.org"
 gem "rails", "~> 8.1.4"
 gem "sqlite3", ">= 2.1"
 gem "sqlite-vec"
+gem "neighbor"
 
 gem "aasm", "~> 5.5"
 gem "view_component", "~> 4.6"

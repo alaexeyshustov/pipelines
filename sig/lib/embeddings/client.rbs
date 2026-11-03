@@ -3,11 +3,7 @@ module Embeddings
     DIMENSIONS: Integer
     QUERY_INSTRUCTION: String
 
-    class DimensionMismatch < StandardError
-    end
-
     def self?.documents: (Array[String] texts, ?model: String) -> Array[Array[Float]]
     def self?.query: (String text, ?model: String) -> Array[Float]
-    def self?.check_dimensions!: (Array[Float] vector, String model) -> void
   end
 end

@@ -29,11 +29,6 @@ RSpec.describe Embeddings::Client do
       expect(described_class.documents([])).to eq([])
       expect(a_request(:post, url)).not_to have_been_made
     end
-
-    it "raises when the model returns another vector size" do
-      stub_ollama(Array.new(768, 0.1))
-      expect { described_class.documents([ "x" ]) }.to raise_error(Embeddings::Client::DimensionMismatch, /768/)
-    end
   end
 
   describe ".query" do

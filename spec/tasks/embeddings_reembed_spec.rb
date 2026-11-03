@@ -22,15 +22,14 @@ RSpec.describe "embeddings:reembed" do # rubocop:disable RSpec/DescribeClass
   context "with a new model" do
     before { run("new-model") }
 
-    it "embeds every email and document under the new model batching each kind into one request" do
-      expect(Embedding.where(model: "new-model").map(&:embeddable)).to contain_exactly(email, other_email, document)
+    it "embeds every email and document under the new model, batching each kind into one request" do
+      expect(Embedding.where(model: "new-model").includes(:embeddable).map(&:embeddable)).to contain_exactly(email, other_email, document)
       expect(a_request(:post, EmbeddingHelpers::OLLAMA_EMBEDDINGS_URL).with(body: hash_including("model" => "new-model"))).to have_been_made.twice
     end
 
-    it "switches the configured model and drops the old embeddings and vectors" do
+    it "switches the configured model and drops the old embeddings" do
       expect(LlmModels.embedding).to eq("new-model")
       expect(Embedding.distinct.pluck(:model)).to eq([ "new-model" ])
-      expect(Embedding.connection.select_values("SELECT model FROM embedding_vectors").uniq).to eq([ "new-model" ])
     end
 
     it "makes searches use the new vectors" do
@@ -53,6 +52,17 @@ RSpec.describe "embeddings:reembed" do # rubocop:disable RSpec/DescribeClass
       stub_request(:post, EmbeddingHelpers::OLLAMA_EMBEDDINGS_URL).to_return(status: 500, body: "boom")
 
       expect { task.invoke("new-model") }.to raise_error(RubyLLM::Error)
+
+      expect(Embedding.distinct.pluck(:model)).to eq([ "old-model" ])
+      expect(LlmModels.embedding).to eq("old-model")
+    end
+  end
+
+  context "when the model returns vectors of the wrong size" do
+    it "keeps the old embeddings and the configured model" do
+      stub_ollama_embeddings(Array.new(768, 0.1))
+
+      expect { task.invoke("new-model") }.to raise_error(ActiveRecord::RecordInvalid, /1024 dimensions/)
 
       expect(Embedding.distinct.pluck(:model)).to eq([ "old-model" ])
       expect(LlmModels.embedding).to eq("old-model")

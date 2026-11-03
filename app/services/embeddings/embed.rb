@@ -17,7 +17,7 @@ class Embeddings::Embed
 
   def call
     pending, skipped = candidates.partition { |candidate| candidate.text.present? }
-    stale = pending.select { |candidate| stale?(candidate) }
+    stale = stale_candidates(pending)
     store(stale)
     Result.new(embedded: stale.size, unchanged: pending.size - stale.size, skipped: skipped.size)
   end
@@ -31,8 +31,17 @@ class Embeddings::Embed
     end
   end
 
-  def stale?(candidate)
-    candidate.record.embeddings.find_by(model: @model)&.content_digest != candidate.digest
+  def stale_candidates(pending)
+    digests = stored_digests(pending.map(&:record))
+    pending.reject { |candidate| digests[[ candidate.record.class.polymorphic_name, candidate.record.id ]] == candidate.digest }
+  end
+
+  # Digest of the stored embedding of +model+ by [type, id], in one query for the whole batch.
+  def stored_digests(records)
+    return {} if records.empty?
+
+    Embedding.where(embeddable: records, model: @model).pluck(:embeddable_type, :embeddable_id, :content_digest)
+             .to_h { |type, id, digest| [ [ type, id ], digest ] }
   end
 
   def store(stale)

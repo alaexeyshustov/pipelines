@@ -5,7 +5,7 @@ A Rails 8.1 multi-agent pipeline management system. Integration with Gmail and Y
 ## Stack
 
 - **Ruby 4.0 / Rails 8.1**
-- **SQLite** + **sqlite-vec** — persistence and vector embeddings
+- **SQLite** + **sqlite-vec** via the **neighbor** gem — persistence and vector embeddings
 - **RubyLLM** — multi-provider LLM client (Mistral, OpenAI, Gemini, Anthropic)
 - **Async** — concurrent email fetching
 - **dry-cli** — CLI interface
