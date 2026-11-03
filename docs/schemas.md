@@ -57,6 +57,8 @@ One row per company + job_title pair; tracks the full interview lifecycle.
 
 **Indexes:** `[company, job_title]` (unique)
 
+Upserted from `job_application`-tagged emails by `Interviews::EmailExtractor` (match on company + job title, case-insensitive; status only moves forward); `Interview has_many :emails`.
+
 **Model constants:**
 ```ruby
 Interview::STATUSES
@@ -84,6 +86,7 @@ One row per INBOX email, full body kept (replaces `application_mails`, which is 
 | Column | Type | Null | Notes |
 |---|---|---|---|
 | tagged_at | DATETIME | YES | Set by the per-email processing job after a successful classification; `NULL` = untagged backlog |
+| interview_id | INTEGER | YES | FK `interviews.id` (`ON DELETE SET NULL`, indexed). Set by `Interviews::EmailExtractor` (job `Interview::ExtractJob`): the Interview this `job_application` email fed. `Email belongs_to :interview, optional: true` / `Interview has_many :emails` |
 
 `Email.backfill_days` reads Setting `email_backfill_days` (then ENV `EMAIL_BACKFILL_DAYS`, default 90): the window for a first sync or rescan.
 

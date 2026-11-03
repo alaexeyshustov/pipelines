@@ -150,9 +150,13 @@ CREATE INDEX "index_ruby_llm_usages_on_status" ON "ruby_llm_usages" ("status") /
 CREATE INDEX "index_ruby_llm_usages_on_owner" ON "ruby_llm_usages" ("owner_type", "owner_id") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "ruby_llm_provider_files" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "blob_key" varchar NOT NULL, "provider" varchar NOT NULL, "account" varchar NOT NULL, "file_id" text NOT NULL, "expires_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_ruby_llm_provider_files_uniqueness" ON "ruby_llm_provider_files" ("blob_key", "provider", "account") /*application='ApplicationPipeline'*/;
-CREATE TABLE IF NOT EXISTS "emails" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "provider" varchar NOT NULL, "provider_message_id" varchar NOT NULL, "from_address" varchar NOT NULL, "to_address" varchar, "subject" varchar, "date" datetime(6) NOT NULL, "body" text, "html_body" text, "source_url" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "tagged_at" datetime(6));
+CREATE TABLE IF NOT EXISTS "emails" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "provider" varchar NOT NULL, "provider_message_id" varchar NOT NULL, "from_address" varchar NOT NULL, "to_address" varchar, "subject" varchar, "date" datetime(6) NOT NULL, "body" text, "html_body" text, "source_url" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "tagged_at" datetime(6), "interview_id" integer, CONSTRAINT "fk_rails_cc1315310c"
+FOREIGN KEY ("interview_id")
+  REFERENCES "interviews" ("id")
+ ON DELETE SET NULL);
 CREATE UNIQUE INDEX "index_emails_on_provider_and_provider_message_id" ON "emails" ("provider", "provider_message_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_emails_on_date" ON "emails" ("date") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_emails_on_interview_id" ON "emails" ("interview_id") /*application='ApplicationPipeline'*/;
 CREATE VIRTUAL TABLE emails_fts USING fts5(
   subject, body, from_address, content='emails', content_rowid='id'
 )
@@ -214,6 +218,7 @@ END;
 CREATE TABLE IF NOT EXISTS "email_sync_cursors" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "provider" varchar NOT NULL, "account" varchar NOT NULL, "mailbox" varchar DEFAULT 'INBOX' NOT NULL, "history_id" varchar, "uid_validity" bigint, "last_uid" bigint, "last_synced_at" datetime(6), "last_rescan_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_email_sync_cursors_on_provider_and_account_and_mailbox" ON "email_sync_cursors" ("provider", "account", "mailbox");
 INSERT INTO "schema_migrations" (version) VALUES
+('20261103090500'),
 ('20261103090400'),
 ('20261103090300'),
 ('20261103090200'),

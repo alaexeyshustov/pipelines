@@ -28,4 +28,8 @@ class Email < ApplicationRecord
   def source_url=: (String?) -> String?
   def tagged_at: () -> Time?
   def tagged_at=: (Time?) -> Time?
+  def interview_id: () -> Integer?
+  def interview_id=: (Integer?) -> Integer?
+  def interview: () -> Interview?
+  def interview=: (Interview?) -> Interview?
 end
