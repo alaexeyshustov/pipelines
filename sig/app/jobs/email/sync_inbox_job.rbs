@@ -22,7 +22,7 @@ class Email
     def window_ids: () -> Array[String]
     def failures?: (Result result) -> bool
     def store_all: (String provider, String mode, Array[String] ids) -> Result
-    def store: (String provider, String message_id) -> [String, Email?]
+    def store: (String provider, String message_id, Set[String] known) -> [String, Email?]
     def attributes_for: (String provider, Emails::full_message message) -> Hash[Symbol, String | Time | nil]
   end
 end

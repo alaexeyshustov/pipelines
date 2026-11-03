@@ -29,9 +29,9 @@ RSpec.describe Email::SearchQuery do
     expect(described_class.call(nil)).to eq([])
   end
 
-  it "does not raise on quotes and FTS operators" do
-    [ %q("unbalanced), "foo AND", "NOT", "a OR (b", "x*", "col:val", "-", %q(it's) ].each do |q|
-      expect { described_class.call(q) }.not_to raise_error
+  [ %q("unbalanced), "foo AND", "NOT", "a OR (b", "x*", "col:val", "-", %q(it's) ].each do |query|
+    it "does not raise on quotes and FTS operators: #{query}" do
+      expect { described_class.call(query) }.not_to raise_error
     end
   end
 

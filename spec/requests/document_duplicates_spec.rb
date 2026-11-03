@@ -20,7 +20,8 @@ RSpec.describe "Document duplicates" do
   end
 
   it "does not run a query per candidate" do
-    3.times { DocumentDuplicate.flag!(document, create(:document), similarity: 0.96) }
+    # `document` was created first, so it has the lower id (canonical order).
+    create_list(:document, 3).each { |candidate| DocumentDuplicate.create!(document:, duplicate: candidate, similarity: 0.96) }
     queries = []
     callback = ->(*, payload) { queries << payload[:sql] if payload[:sql].include?('FROM "documents"') }
 

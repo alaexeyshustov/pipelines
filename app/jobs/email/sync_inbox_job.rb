@@ -93,8 +93,9 @@ class Email::SyncInboxJob < ApplicationJob
   def store_all(provider, mode, ids)
     counts = { "mode" => mode, "fetched" => ids.size, "stored" => 0, "duplicates" => 0, "failed" => 0 }
     email_ids = []
+    known = Email.where(provider: provider, provider_message_id: ids).pluck(:provider_message_id).to_set
     ids.each do |message_id|
-      outcome, email = store(provider, message_id)
+      outcome, email = store(provider, message_id, known)
       counts[outcome] += 1
       email_ids << email.id if email
     end
@@ -102,8 +103,8 @@ class Email::SyncInboxJob < ApplicationJob
   end
 
   # [counts key, new Email or nil]
-  def store(provider, message_id)
-    return [ "duplicates", nil ] if Email.exists?(provider: provider, provider_message_id: message_id)
+  def store(provider, message_id, known)
+    return [ "duplicates", nil ] if known.include?(message_id)
 
     [ "stored", Email.create!(attributes_for(provider, Emails.fetch_message(provider, message_id))) ]
   rescue ActiveRecord::RecordNotUnique

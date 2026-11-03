@@ -99,7 +99,9 @@ RSpec.describe Tags::Classifier do
   end
 
   it "does nothing when there are no tags" do
-    Tag.destroy_all
+    Tagging.delete_all
+    Subtag.delete_all
+    Tag.delete_all
     expect(result.taggings).to be_empty
     expect(bodies).to be_empty
   end

@@ -144,7 +144,9 @@ RSpec.describe Interviews::EmailExtractor do
     end
 
     it "gives the same Interview back on a re-run" do
-      expect(described_class.call(email).interview).to eq(described_class.call(email.reload).interview)
+      first = described_class.call(email).interview
+      second = Prosopite.pause { described_class.call(email.reload).interview } # same tag lookup, run twice on purpose
+      expect(first).to eq(second)
     end
 
     it "does not shift interview dates when the same interview email is re-processed from scratch" do

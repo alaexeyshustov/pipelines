@@ -3,6 +3,7 @@ class Tag < ApplicationRecord
   STARTER_SUBTAGS: Hash[String, Array[String]]
 
   def self.seed_defaults!: () -> void
+  def self.seed_subtags: (Tag tag, Array[String] names, Set[[Integer, String]] known) -> void
 
   def id: () -> Integer
   def name: () -> String?
