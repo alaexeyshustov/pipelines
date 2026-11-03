@@ -40,6 +40,7 @@ The system follows a pipeline-based architecture where data flows through severa
 - `app/models/evaluation/`, `app/services/evaluation/`, `lib/evaluation/`: evaluation logic to ensure agent quality. See [evals.md](evals.md).
 - `app/services/tags/`, `app/forms/tags/`, `app/components/tags/`: tagging of emails and documents. `Tags::Classifier` classifies with `RubyLLM::Judge` (decisions API, one multi-label call plus one choice per kept tag; never creates tags; keeps manual taggings). Not yet wired into pipelines (ingestion is GH #222). See the taggings table in [schemas.md](schemas.md).
 - `lib/pipeline/`: pipeline workflow steps.
+- Drive ingestion: `Document::SyncDriveJob` (run by the `Orchestration::Executors::DriveDocumentsSync` pipeline step, seeded as "Drive Documents Sync", nightly) scans the folders in `Setting "drive_folder_ids"` (ids or URLs, comma/whitespace separated) via `Emails::Adapters::DriveFileFetcher` (drive.readonly token in `DRIVE_TOKEN_PATH`, default `drive_token.yaml`).
 - `app/tools/`: LLM tools exposed to agents.
 - `lib/emails/`: provider-specific email fetching logic. See [connectors.md](docs/connectors.md) for details.
 
