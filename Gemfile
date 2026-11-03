@@ -86,3 +86,5 @@ end
 gem "view_primitives", "= 0.2.4"
 
 gem "tailwind_merge", "~> 1.5"
+
+gem "rubyzip", "~> 3.7"
