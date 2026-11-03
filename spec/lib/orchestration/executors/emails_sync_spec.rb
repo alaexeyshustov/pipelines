@@ -1,20 +1,58 @@
 require "rails_helper"
 
 RSpec.describe Orchestration::Executors::EmailsSync do
-  def sync_result(mode: "incremental", fetched: 2, stored: 1, duplicates: 1, failed: 0)
+  include ActiveJob::TestHelper
+
+  def sync_result(mode: "incremental", fetched: 2, stored: 1, duplicates: 1, failed: 0, email_ids: [])
     counts = { "mode" => mode, "fetched" => fetched, "stored" => stored, "duplicates" => duplicates, "failed" => failed }
-    Email::SyncInboxJob::Result.new(counts: counts, email_ids: [])
+    Email::SyncInboxJob::Result.new(counts: counts, email_ids: email_ids)
   end
 
   describe ".call" do
-    it "syncs gmail and yahoo inline and reports the counts per provider, with nothing enqueued yet" do
+    it "syncs gmail and yahoo inline and reports the counts per provider, with nothing enqueued when nothing is new or stale" do
       allow(Email::SyncInboxJob).to receive(:perform_now).with("gmail").and_return(sync_result(stored: 1))
       allow(Email::SyncInboxJob).to receive(:perform_now).with("yahoo").and_return(sync_result(mode: "backfill", fetched: 3, stored: 3, duplicates: 0))
 
       expect(described_class.call).to eq(
-        "gmail" => { "mode" => "incremental", "fetched" => 2, "stored" => 1, "duplicates" => 1, "failed" => 0, "enqueued" => 0 },
-        "yahoo" => { "mode" => "backfill", "fetched" => 3, "stored" => 3, "duplicates" => 0, "failed" => 0, "enqueued" => 0 }
+        "gmail" => { "mode" => "incremental", "fetched" => 2, "stored" => 1, "duplicates" => 1, "failed" => 0, "enqueued" => 0, "requeued" => 0 },
+        "yahoo" => { "mode" => "backfill", "fetched" => 3, "stored" => 3, "duplicates" => 0, "failed" => 0, "enqueued" => 0, "requeued" => 0 }
       )
+    end
+
+    describe "processing the emails" do
+      let(:new_email) { create(:email, provider: "gmail") }
+      let(:other_new_email) { create(:email, provider: "gmail") }
+
+      before do
+        allow(Email::SyncInboxJob).to receive(:perform_now).with("yahoo").and_return(sync_result(stored: 0))
+      end
+
+      it "enqueues Email::ProcessJob for each newly stored email and reports the count" do
+        allow(Email::SyncInboxJob).to receive(:perform_now).with("gmail")
+          .and_return(sync_result(stored: 2, email_ids: [ new_email.id, other_new_email.id ]))
+
+        output = nil
+        expect { output = described_class.call }
+          .to have_enqueued_job(Email::ProcessJob).with(new_email.id)
+          .and have_enqueued_job(Email::ProcessJob).with(other_new_email.id)
+        expect(output.fetch("gmail")).to include("enqueued" => 2, "requeued" => 0)
+      end
+
+      it "enqueues nothing for duplicates" do
+        allow(Email::SyncInboxJob).to receive(:perform_now).with("gmail")
+          .and_return(sync_result(stored: 0, duplicates: 2, email_ids: []))
+
+        expect { described_class.call }.not_to have_enqueued_job(Email::ProcessJob)
+      end
+
+      it "re-enqueues an email whose earlier tagging failed on the next run" do
+        failed = create(:email, provider: "gmail", created_at: 3.hours.ago)
+        allow(Email::SyncInboxJob).to receive(:perform_now).with("gmail").and_return(sync_result(stored: 0))
+        allow(Tags::Classifier).to receive(:call).and_raise(RubyLLM::Error, "down")
+        Email::ProcessJob.perform_now(failed.id)
+
+        expect { described_class.call }.to have_enqueued_job(Email::ProcessJob).with(failed.id)
+      end
     end
 
     it "reports a provider without credentials as skipped and still syncs the other" do
@@ -72,6 +110,29 @@ RSpec.describe Orchestration::Executors::EmailsSync do
 
     it "declares no inputs" do
       expect(described_class.input_schema).to be_nil
+    end
+  end
+
+  describe "requeueing untagged emails" do
+    let!(:stale) { create(:email, provider: "gmail", created_at: 2.hours.ago, tagged_at: nil) }
+    let!(:stale_yahoo) { create(:email, provider: "yahoo", created_at: 2.hours.ago, tagged_at: nil) }
+
+    before do
+      create(:email, provider: "gmail", created_at: 2.hours.ago, tagged_at: 1.hour.ago)
+      create(:email, provider: "gmail", created_at: 10.minutes.ago, tagged_at: nil)
+      allow(Email::SyncInboxJob).to receive(:perform_now).with("gmail").and_return(sync_result(stored: 0))
+      allow(Email::SyncInboxJob).to receive(:perform_now).with("yahoo").and_return(sync_result(stored: 0))
+    end
+
+    it "re-enqueues those older than an hour, per provider" do
+      expect { described_class.call }
+        .to have_enqueued_job(Email::ProcessJob).with(stale.id).exactly(:once)
+        .and have_enqueued_job(Email::ProcessJob).with(stale_yahoo.id).exactly(:once)
+      expect(enqueued_jobs.count { |job| job["job_class"] == "Email::ProcessJob" }).to eq(2)
+    end
+
+    it "counts them as requeued and as enqueued" do
+      expect(described_class.call.fetch("gmail")).to include("enqueued" => 1, "requeued" => 1)
     end
   end
 

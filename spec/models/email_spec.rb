@@ -29,6 +29,15 @@ RSpec.describe Email do
     end
   end
 
+  describe ".awaiting_tagging" do
+    it "returns untagged emails stored before the cutoff" do
+      old = create(:email, created_at: 2.hours.ago, tagged_at: nil)
+      create(:email, created_at: 2.hours.ago, tagged_at: Time.current)
+      create(:email, created_at: 5.minutes.ago, tagged_at: nil)
+      expect(described_class.awaiting_tagging(before: 1.hour.ago)).to eq([ old ])
+    end
+  end
+
   describe "tagging" do
     it "has tags through taggings, removed with the email" do
       email = create(:email)
