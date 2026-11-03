@@ -33,16 +33,16 @@ class SessionCommonTest < Minitest::Test
     end
   end
 
-  def test_exec_claude_leaves_text_selection_to_the_host_terminal
+  def test_exec_claude_leaves_scrolling_and_selection_to_the_host_terminal
     Dir.mktmpdir("session-common-test") do |workspace|
       stub = File.join(workspace, "claude")
-      File.write(stub, "#!/usr/bin/env bash\nprintf 'disable_mouse=%s\\n' \"${CLAUDE_CODE_DISABLE_MOUSE:-}\"\n")
+      File.write(stub, "#!/usr/bin/env bash\nprintf 'alt_screen_off=%s disable_mouse=%s\\n' \"${CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN:-}\" \"${CLAUDE_CODE_DISABLE_MOUSE:-}\"\n")
       File.chmod(0o755, stub)
 
       stdout, stderr, status = run_bash(%(PATH="#{workspace}:$PATH" exec_claude), workspace)
 
       assert status.success?, stderr
-      assert_equal "disable_mouse=1\n", stdout
+      assert_equal "alt_screen_off=1 disable_mouse=\n", stdout
     end
   end
 

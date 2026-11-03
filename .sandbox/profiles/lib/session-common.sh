@@ -104,9 +104,11 @@ load_claude_auth() {
 exec_claude() {
   local ticket="${1:-}"
 
-  # The fullscreen TUI captures the mouse, which blocks the host terminal's
-  # native text selection across the attach. Keep selection with the terminal.
-  export CLAUDE_CODE_DISABLE_MOUSE=1
+  # Render on the main screen so the host terminal keeps native scrollback and
+  # text selection across the attach. On the alternate screen, mouse capture
+  # blocks selection, and without it the terminal turns the scroll wheel into
+  # Up/Down keys, which page through prompt history.
+  export CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN=1
 
   if [[ "$ticket" =~ ^GH-([0-9]+)$ ]]; then
     exec claude --dangerously-skip-permissions \
