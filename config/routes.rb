@@ -29,6 +29,7 @@ Rails.application.routes.draw do
     get :download, on: :member
   end
 
+  get "search", to: "searches#show"
   resources :tags, only: [ :index ] do
     resources :subtags, only: [ :create ]
   end
