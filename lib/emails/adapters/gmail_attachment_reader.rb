@@ -14,7 +14,8 @@ module Emails
         body.data.to_s
       end
 
-      # Attachment metadata of a message: [{ id:, filename:, mime_type:, size: }], nested parts included.
+      # Attachment metadata of a message: [{ id:, filename:, mime_type:, size: }], nested parts included. Parts sent
+      # with Content-Disposition: inline (signature logos such as image001.png) are not attachments and are left out.
       def list(message_id)
         message = @service.get_user_message("me", message_id.to_s, format: "full")
         raise "Message not found: #{message_id}" unless message
@@ -29,10 +30,15 @@ module Emails
         own + Array(part.parts).flat_map { |child| collect(child) }
       end
 
+      def inline?(part)
+        header = Array(part.headers).find { |candidate| candidate.name.to_s.casecmp?("Content-Disposition") } # steep:ignore
+        header ? header.value.to_s.strip.downcase.start_with?("inline") : false # steep:ignore
+      end
+
       def metadata(part)
         body = part.body
         filename = part.filename.to_s # steep:ignore
-        return [] unless body&.attachment_id && !filename.empty?
+        return [] unless body&.attachment_id && !filename.empty? && !inline?(part)
 
         [ { id: body.attachment_id.to_s, filename: filename, mime_type: part.mime_type.to_s, size: body.size.to_i } ]
       end

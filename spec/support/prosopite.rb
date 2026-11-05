@@ -34,6 +34,8 @@ Prosopite.allow_stack_paths = [
   /Document::DetectDuplicates#call/,
   # A Drive file's checksum is known only after its download, so the content lookup runs per changed file.
   /Document::SyncDriveJob#process/,
+  # An attachment's checksum is known only after its download, so the content lookup runs per attachment.
+  /Document::ExtractEmailAttachmentsJob#process/,
   # Reads one setting per model role while the agent classes load.
   /LlmModels\./
 ]

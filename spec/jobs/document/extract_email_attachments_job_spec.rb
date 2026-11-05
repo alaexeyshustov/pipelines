@@ -54,6 +54,26 @@ RSpec.describe Document::ExtractEmailAttachmentsJob do
       expect { described_class.perform_now(other.id) }.not_to change(Document, :count)
     end
 
+    it "does not run the text extraction (OCR) again for bytes that already exist as a Document" do
+      other = create(:email, provider: "gmail", provider_message_id: "m2")
+      create(:tagging, taggable: other, tag: Tag.first)
+      allow(Emails).to receive(:attachments).with("gmail", "m2").and_return([ attachments.first.merge(id: "b1") ])
+      bytes["b1"] = "%PDF-one"
+
+      described_class.perform_now(email.id)
+      described_class.perform_now(other.id)
+
+      expect(Document::TextExtractor).to have_received(:call).once
+    end
+
+    it "leaves a Document whose tagging failed to the scheduled re-queue when its attachment is seen again" do
+      described_class.perform_now(email.id)
+      clear_enqueued_jobs
+
+      expect { described_class.perform_now(email.id) }.not_to have_enqueued_job
+      expect(Document.awaiting_tagging(before: 1.minute.from_now)).to contain_exactly(Document.last)
+    end
+
     it "logs a failing attachment and still processes the others" do
       attachments << { id: "a3", filename: "b.png", mime_type: "image/png", size: 1 }
       bytes["a3"] = "png"
