@@ -1,5 +1,0 @@
-module Records
-  class FillJob < ApplicationJob
-    def perform: (Array[Integer] ids) -> void
-  end
-end
