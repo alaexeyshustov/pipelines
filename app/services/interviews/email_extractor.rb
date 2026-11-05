@@ -2,8 +2,8 @@
 # except +emails.interview_id+.
 #
 # - One structured-output LLM call (company, job title, action) with the email subject, sender, date and body.
-# - Company and job title are normalised first (Interview.normalize_name: no "(m/w/d)", no trailing parenthesised
-#   groups), so the LLM's variants of one posting land on one Interview, and stored that way.
+# - Company and job title are normalised first (Interview.normalize_name: no gender markers such as
+#   "(m/w/d)"), so the LLM's variants of one posting land on one Interview, and stored that way.
 # - Matched to an existing Interview by the normalised company + job title, case-insensitive (the legacy
 #   reconciler's rule), else created as +pending_reply+. Rows stored before the normalisation keep their old text and
 #   only match when it equals the normalised one.

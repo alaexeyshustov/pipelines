@@ -8,7 +8,6 @@ class Interview < ApplicationRecord
 
   STATUSES: Array[String]
   GENDER_MARKER: Regexp
-  TRAILING_GROUP: Regexp
   TRAILING_SEPARATORS: Regexp
   def self.normalize_name: (String? value) -> String
   def self.tool_column_names: () -> Array[String]
