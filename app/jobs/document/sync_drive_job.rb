@@ -11,7 +11,8 @@
 # fetched, extracted or tagged again) when its md5 matches source_ref["md5"] or, for Google Docs which have no md5,
 # when modifiedTime matches. If the bytes of a new Drive file already exist as a Document from another source, that
 # Document is kept as is (no OCR, no second Document); the Drive file has no Document of its own, so it is downloaded
-# again on each scan (cheap) but never re-extracted. Documents of Drive files that no longer appear in the scan are
+# again on each scan (cheap) but never re-extracted. A changed file whose new bytes equal another Document's gets the
+# same treatment: its stale Drive Document is destroyed and the other one kept ("merged"). Documents of Drive files that no longer appear in the scan are
 # deleted; a failed scan raises before anything is deleted, and a failing file is logged and keeps its Document.
 # Drive answers a revoked or mistyped folder id with an empty listing, not an error, so when any whitelisted folder
 # yields no file at all nothing is deleted in that scan ("empty_folders" counts them, and they are logged): the
@@ -39,7 +40,7 @@ class Document::SyncDriveJob < ApplicationJob
   private
 
   def summary
-    @summary ||= { "created" => 0, "updated" => 0, "unchanged" => 0, "deleted" => 0, "failed" => 0, "requeued" => 0, "empty_folders" => 0 }
+    @summary ||= { "created" => 0, "updated" => 0, "unchanged" => 0, "deleted" => 0, "failed" => 0, "requeued" => 0, "empty_folders" => 0, "merged" => 0 }
   end
 
   def sync_all(fetcher, folder_ids)
@@ -80,10 +81,19 @@ class Document::SyncDriveJob < ApplicationJob
   def process(fetcher, entry, document)
     file = fetcher.fetch(entry.id)
     checksum = Digest::SHA256.hexdigest(file.data)
-    return if document.nil? && Document.exists?(checksum:)
+    return merge_into_existing(document) if Document.where.not(id: document&.id).exists?(checksum:)
 
     text = Document::TextExtractor.call(data: file.data, mime_type: file.mime_type, filename: entry.name)
     store(attributes_for(entry, file, text, checksum), document)
+  end
+
+  # The bytes already exist as another Document, which is kept. A changed file that had a Drive Document of its own
+  # loses it (it would break checksum uniqueness), so it is in the same state as a new Drive file with known bytes.
+  def merge_into_existing(document)
+    return unless document
+
+    document.destroy!
+    summary["merged"] += 1
   end
 
   # Stores the changed or new Document and queues its processing; nothing for identical content that already
