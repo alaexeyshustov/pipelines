@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Document::ExtractEmailAttachmentsJob do
+  include ActiveJob::TestHelper
+
   let(:email) { create(:email, provider: "gmail", provider_message_id: "m1", source_url: "https://mail.google.com/#inbox/m1") }
   let(:attachments) do
     [ { id: "a1", filename: "cv.pdf", mime_type: "application/pdf", size: 10 },
@@ -13,13 +15,12 @@ RSpec.describe Document::ExtractEmailAttachmentsJob do
     allow(Emails).to receive(:attachments).with("gmail", "m1").and_return(attachments)
     allow(Emails).to receive(:attachment) { |_provider, _msg, id| bytes.fetch(id) }
     allow(Document::TextExtractor).to receive(:call).and_return("extracted")
-    allow(Tags::Classifier).to receive(:call)
   end
 
   context "with a tagged email" do
     before { create(:tagging, taggable: email, tag: Tag.first) }
 
-    it "creates a Document per supported attachment, linked to the email, and tags it" do
+    it "creates a Document per supported attachment, linked to the email, and queues its tagging" do
       expect { described_class.perform_now(email.id) }.to change(Document, :count).by(1)
 
       doc = Document.last
@@ -29,7 +30,13 @@ RSpec.describe Document::ExtractEmailAttachmentsJob do
         checksum: Digest::SHA256.hexdigest("%PDF-one"),
         source_ref: { "provider" => "gmail", "message_id" => "m1", "attachment_id" => "a1" }
       )
-      expect(Tags::Classifier).to have_received(:call).with(doc)
+      expect(Document::TagJob).to have_been_enqueued.with(doc.id)
+    end
+
+    it "queues the embedding before the tagging, so a tagging failure cannot lose it" do
+      described_class.perform_now(email.id)
+      classes = enqueued_jobs.pluck("job_class")
+      expect(classes.index("Document::EmbedJob")).to be < classes.index("Document::TagJob")
     end
 
     it "enqueues the embedding of the new Document, once for a repeated attachment" do
@@ -37,7 +44,7 @@ RSpec.describe Document::ExtractEmailAttachmentsJob do
       expect { described_class.perform_now(email.id) }.not_to have_enqueued_job(Document::EmbedJob)
     end
 
-    it "yields one Document when the same attachment arrives on two emails, tagging it once" do
+    it "yields one Document when the same attachment arrives on two emails" do
       other = create(:email, provider: "gmail", provider_message_id: "m2")
       create(:tagging, taggable: other, tag: Tag.first)
       allow(Emails).to receive(:attachments).with("gmail", "m2").and_return([ attachments.first.merge(id: "b1") ])
@@ -45,7 +52,6 @@ RSpec.describe Document::ExtractEmailAttachmentsJob do
 
       described_class.perform_now(email.id)
       expect { described_class.perform_now(other.id) }.not_to change(Document, :count)
-      expect(Tags::Classifier).to have_received(:call).once
     end
 
     it "logs a failing attachment and still processes the others" do

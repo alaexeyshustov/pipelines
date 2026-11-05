@@ -14,8 +14,8 @@ RSpec.describe Orchestration::Executors::EmailsSync do
       allow(Email::SyncInboxJob).to receive(:perform_now).with("yahoo").and_return(sync_result(mode: "backfill", fetched: 3, stored: 3, duplicates: 0))
 
       expect(described_class.call).to eq(
-        "gmail" => { "mode" => "incremental", "fetched" => 2, "stored" => 1, "duplicates" => 1, "failed" => 0, "enqueued" => 0, "requeued" => 0 },
-        "yahoo" => { "mode" => "backfill", "fetched" => 3, "stored" => 3, "duplicates" => 0, "failed" => 0, "enqueued" => 0, "requeued" => 0 }
+        "gmail" => { "mode" => "incremental", "fetched" => 2, "stored" => 1, "duplicates" => 1, "failed" => 0, "enqueued" => 0, "requeued" => 0, "documents_requeued" => 0 },
+        "yahoo" => { "mode" => "backfill", "fetched" => 3, "stored" => 3, "duplicates" => 0, "failed" => 0, "enqueued" => 0, "requeued" => 0, "documents_requeued" => 0 }
       )
     end
 
@@ -133,6 +133,28 @@ RSpec.describe Orchestration::Executors::EmailsSync do
 
     it "counts them as requeued and as enqueued" do
       expect(described_class.call.fetch("gmail")).to include("enqueued" => 1, "requeued" => 1)
+    end
+  end
+
+  describe "requeueing untagged attachment Documents" do
+    let!(:email) { create(:email, provider: "gmail") }
+    let!(:stale) { create(:document, email: email, created_at: 2.hours.ago, tagged_at: nil) }
+
+    before do
+      create(:document, email: email, created_at: 2.hours.ago, tagged_at: 1.hour.ago)
+      create(:document, email: email, created_at: 10.minutes.ago, tagged_at: nil)
+      create(:document, source: "drive", source_ref: { "drive_file_id" => "f1" }, created_at: 2.hours.ago, tagged_at: nil)
+      allow(Email::SyncInboxJob).to receive(:perform_now).with("gmail").and_return(sync_result(stored: 0))
+      allow(Email::SyncInboxJob).to receive(:perform_now).with("yahoo").and_return(sync_result(stored: 0))
+    end
+
+    it "re-enqueues Document::TagJob for the stale untagged ones of the email provider only" do
+      expect { described_class.call }.to have_enqueued_job(Document::TagJob).with(stale.id).exactly(:once)
+      expect(enqueued_jobs.count { |job| job["job_class"] == "Document::TagJob" }).to eq(1)
+    end
+
+    it "reports them as documents_requeued" do
+      expect(described_class.call.fetch("gmail")).to include("documents_requeued" => 1)
     end
   end
 

@@ -182,7 +182,7 @@ FOREIGN KEY ("subtag_id")
 CREATE INDEX "index_taggings_on_tag_id" ON "taggings" ("tag_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_taggings_on_subtag_id" ON "taggings" ("subtag_id") /*application='ApplicationPipeline'*/;
 CREATE UNIQUE INDEX "index_taggings_on_taggable_type_and_taggable_id_and_tag_id" ON "taggings" ("taggable_type", "taggable_id", "tag_id") /*application='ApplicationPipeline'*/;
-CREATE TABLE IF NOT EXISTS "documents" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "title" varchar NOT NULL, "mime_type" varchar NOT NULL, "text" text DEFAULT '' NOT NULL, "checksum" varchar NOT NULL, "source" varchar NOT NULL, "source_url" varchar, "source_ref" json DEFAULT '{}' NOT NULL, "email_id" integer, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_5607550914"
+CREATE TABLE IF NOT EXISTS "documents" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "title" varchar NOT NULL, "mime_type" varchar NOT NULL, "text" text DEFAULT '' NOT NULL, "checksum" varchar NOT NULL, "source" varchar NOT NULL, "source_url" varchar, "source_ref" json DEFAULT '{}' NOT NULL, "email_id" integer, "tagged_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_5607550914"
 FOREIGN KEY ("email_id")
   REFERENCES "emails" ("id")
  ON DELETE SET NULL);

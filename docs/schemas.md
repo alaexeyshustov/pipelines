@@ -100,6 +100,7 @@ A pdf/doc(x)/image reduced to extracted text (markdown). Only the text is stored
 | source_url | STRING | YES | Drive `webViewLink` / Gmail message link |
 | source_ref | JSON | NO | `provider` + `message_id`/`attachment_id` (gmail) or `drive_file_id` (drive) |
 | email_id | FK | YES | `emails.id`, nulled when the email is deleted |
+| tagged_at | DATETIME | YES | Set by `Document::TagJob` after a successful classification; `NULL` = untagged backlog, re-queued by `EmailsSync` (attachments) / `Document::SyncDriveJob` (Drive) |
 | created_at, updated_at | DATETIME | NO | |
 
 ```ruby
