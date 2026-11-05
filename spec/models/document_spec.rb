@@ -5,6 +5,16 @@ RSpec.describe Document do
     described_class.connection.select_values("SELECT rowid FROM documents_fts WHERE documents_fts MATCH '#{term}'")
   end
 
+  describe ".awaiting_tagging" do
+    it "returns untagged Documents stored before the cutoff" do
+      stale = create(:document, created_at: 2.hours.ago, tagged_at: nil)
+      create(:document, created_at: 2.hours.ago, tagged_at: 1.hour.ago)
+      create(:document, created_at: 10.minutes.ago, tagged_at: nil)
+
+      expect(described_class.awaiting_tagging(before: 1.hour.ago)).to eq([ stale ])
+    end
+  end
+
   describe "validations" do
     it "requires title, mime type, checksum and source" do
       document = described_class.new

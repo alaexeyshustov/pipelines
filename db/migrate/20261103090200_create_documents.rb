@@ -9,6 +9,7 @@ class CreateDocuments < ActiveRecord::Migration[8.1]
       t.string :source_url
       t.json :source_ref, null: false, default: {}
       t.references :email, foreign_key: { on_delete: :nullify }
+      t.datetime :tagged_at # set once Tags::Classifier ran; NULL = untagged backlog (like emails.tagged_at)
       t.timestamps
     end
     add_index :documents, :checksum, unique: true

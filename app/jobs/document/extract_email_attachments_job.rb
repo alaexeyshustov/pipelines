@@ -2,7 +2,10 @@
 #
 # Untagged emails and providers without attachment listing (Yahoo/IMAP) are skipped. Documents dedupe on the
 # SHA256 of the bytes, so the same attachment on two emails yields one Document (linked to the first email,
-# classified once). A failing attachment is logged and does not block the email's other attachments.
+# tagged once). A failing attachment is logged and does not block the email's other attachments.
+#
+# A new Document is queued for embedding and then for tagging (Document::TagJob), each its own job so a failing
+# classifier cannot lose the embedding; an untagged Document is re-queued by EmailsSync (tagged_at stays NULL).
 # Orchestrates services here because services must not call each other (App/ServiceMustNotCallService).
 class Document::ExtractEmailAttachmentsJob < ApplicationJob
   def perform(email_id)
@@ -30,8 +33,8 @@ class Document::ExtractEmailAttachmentsJob < ApplicationJob
     document = ingest(email, attachment, data, text)
     return unless document.previously_new_record?
 
-    Tags::Classifier.call(document)
     Document::EmbedJob.perform_later(document.id)
+    Document::TagJob.perform_later(document.id)
   end
 
   def ingest(email, attachment, data, text)
