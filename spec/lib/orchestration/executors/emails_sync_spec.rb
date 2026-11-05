@@ -14,8 +14,9 @@ RSpec.describe Orchestration::Executors::EmailsSync do
       allow(Email::SyncInboxJob).to receive(:perform_now).with("yahoo").and_return(sync_result(mode: "backfill", fetched: 3, stored: 3, duplicates: 0))
 
       expect(described_class.call).to eq(
-        "gmail" => { "mode" => "incremental", "fetched" => 2, "stored" => 1, "duplicates" => 1, "failed" => 0, "enqueued" => 0, "requeued" => 0, "documents_requeued" => 0 },
-        "yahoo" => { "mode" => "backfill", "fetched" => 3, "stored" => 3, "duplicates" => 0, "failed" => 0, "enqueued" => 0, "requeued" => 0, "documents_requeued" => 0 }
+        "documents_requeued" => 0,
+        "gmail" => { "mode" => "incremental", "fetched" => 2, "stored" => 1, "duplicates" => 1, "failed" => 0, "enqueued" => 0, "requeued" => 0 },
+        "yahoo" => { "mode" => "backfill", "fetched" => 3, "stored" => 3, "duplicates" => 0, "failed" => 0, "enqueued" => 0, "requeued" => 0 }
       )
     end
 
@@ -148,13 +149,13 @@ RSpec.describe Orchestration::Executors::EmailsSync do
       allow(Email::SyncInboxJob).to receive(:perform_now).with("yahoo").and_return(sync_result(stored: 0))
     end
 
-    it "re-enqueues Document::TagJob for the stale untagged ones of the email provider only" do
+    it "re-enqueues Document::TagJob once for the stale untagged email attachments, not for Drive Documents" do
       expect { described_class.call }.to have_enqueued_job(Document::TagJob).with(stale.id).exactly(:once)
       expect(enqueued_jobs.count { |job| job["job_class"] == "Document::TagJob" }).to eq(1)
     end
 
-    it "reports them as documents_requeued" do
-      expect(described_class.call.fetch("gmail")).to include("documents_requeued" => 1)
+    it "reports them as one top-level documents_requeued" do
+      expect(described_class.call).to include("documents_requeued" => 1)
     end
   end
 

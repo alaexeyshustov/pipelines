@@ -11,7 +11,7 @@ class Document::TagJob < ApplicationJob
 
   # How long a Document may stay untagged before the scheduled steps queue its tagging again.
   REQUEUE_AFTER = 1.hour
-  TRANSPORT_ERRORS = [ Faraday::ConnectionFailed, Faraday::TimeoutError, Net::OpenTimeout, Net::ReadTimeout ].freeze
+  TRANSPORT_ERRORS = Email::ProcessJob::TRANSPORT_ERRORS
 
   discard_on ActiveRecord::RecordNotFound
   retry_on(*TRANSPORT_ERRORS, wait: 5.seconds, attempts: 2) do |job, error|
