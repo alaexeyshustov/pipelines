@@ -176,6 +176,37 @@ RSpec.describe Document::SyncDriveJob do
     expect(attachment.reload.source).to eq("email_attachment")
   end
 
+  context "when a changed file's new bytes match another Document" do
+    let!(:stale) { drive_document("f1", md5: "stale-md5", text: "old") }
+    let!(:other) { create(:document, checksum: Digest::SHA256.hexdigest("%PDF")) }
+
+    before { entries.replace([ pdf_entry ]) }
+
+    it "destroys the stale Drive Document and keeps the other one" do
+      expect { described_class.perform_now }.to change(Document, :count).by(-1)
+
+      expect(Document.exists?(stale.id)).to be(false)
+      expect(other.reload.source).to eq("email_attachment")
+    end
+
+    it "counts it as merged, not failed, and does not extract it" do
+      summary = described_class.perform_now
+
+      expect(summary).to include("merged" => 1, "failed" => 0, "updated" => 0)
+      expect(Document::TextExtractor).not_to have_received(:call)
+    end
+
+    it "queues no embedding or tagging for it" do
+      expect { described_class.perform_now }.not_to have_enqueued_job(Document::TagJob)
+    end
+
+    it "is stable on the next scan, where the file has no Document of its own" do
+      described_class.perform_now
+
+      expect(described_class.perform_now).to include("merged" => 0, "failed" => 0, "created" => 0)
+    end
+  end
+
   it "skips unsupported file types without fetching them" do
     entries << entry("z1", "a.zip", "application/zip", md5: "md5-z")
 
@@ -220,7 +251,7 @@ RSpec.describe Document::SyncDriveJob do
   it "returns a summary of what changed" do
     drive_document("old")
     expect(described_class.perform_now).to eq(
-      { "created" => 2, "updated" => 0, "unchanged" => 0, "deleted" => 1, "failed" => 0, "requeued" => 0, "empty_folders" => 0 }
+      { "created" => 2, "updated" => 0, "unchanged" => 0, "deleted" => 1, "failed" => 0, "requeued" => 0, "empty_folders" => 0, "merged" => 0 }
     )
   end
 end
