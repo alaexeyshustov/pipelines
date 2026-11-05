@@ -17,9 +17,13 @@
 #
 # Emails already stored (unique on provider + provider_message_id) are counted as duplicates; a message that cannot
 # be fetched or stored is logged, counted as failed and skipped, and holds the cursor: with any failed message the
-# cursor is neither advanced nor reset, so the next run re-reads the same range (the stored messages are cheap
-# duplicates). A permanently failing message keeps the cursor until a provider history 404 triggers a rescan. Returns a Result: the counts for the StepRun
-# output and the ids of the newly stored emails, for the caller to enqueue their processing.
+# cursor is neither advanced nor reset (a rescan included), so the next run re-reads the same range (the stored
+# messages are cheap duplicates). Failed attempts are counted per message on the cursor
+# (Email::SyncCursor#failed_attempts); after Email::SyncCursor::MAX_FAILED_ATTEMPTS failed runs the message is
+# logged and counted as "skipped" instead of being fetched again, so a permanently failing message releases the
+# cursor on the following run (for both providers) instead of holding it, and failing the step, forever. A cursor
+# that has no position yet (first backfill) is still saved to keep those counts. Returns a Result: the counts for
+# the StepRun output and the ids of the newly stored emails, for the caller to enqueue their processing.
 class Email::SyncInboxJob < ApplicationJob
   Result = Data.define(:counts, :email_ids)
 
@@ -38,7 +42,7 @@ class Email::SyncInboxJob < ApplicationJob
     cursor = Email::SyncCursor.for(provider: "gmail", account: profile.fetch(:email_address))
     mode, ids = gmail_message_ids(cursor)
 
-    result = store_all("gmail", mode, ids)
+    result = store_all("gmail", mode, ids, cursor)
     return result if failures?(result)
 
     mode == "incremental" ? cursor.advance!(history_id: profile.fetch(:history_id)) : cursor.reset!(history_id: profile.fetch(:history_id))
@@ -51,7 +55,7 @@ class Email::SyncInboxJob < ApplicationJob
     uid_validity = status.uid_validity
     mode, uids = yahoo_uids(cursor, uid_validity)
 
-    result = store_all("yahoo", mode, uids.map { |uid| "#{uid_validity}:#{uid}" })
+    result = store_all("yahoo", mode, uids.map { |uid| "#{uid_validity}:#{uid}" }, cursor)
     return result if failures?(result)
 
     save_yahoo_cursor(cursor, mode, uid_validity, mode == "incremental" ? uids.max : status.last_uid)
@@ -93,28 +97,38 @@ class Email::SyncInboxJob < ApplicationJob
     result.counts.fetch("failed").positive?
   end
 
-  def store_all(provider, mode, ids)
-    counts = { "mode" => mode, "fetched" => ids.size, "stored" => 0, "duplicates" => 0, "failed" => 0 }
+  def store_all(provider, mode, ids, cursor)
+    counts = { "mode" => mode, "fetched" => ids.size, "stored" => 0, "duplicates" => 0, "failed" => 0, "skipped" => 0 }
     email_ids = []
     known = Email.where(provider: provider, provider_message_id: ids).pluck(:provider_message_id).to_set
     ids.each do |message_id|
-      outcome, email = store(provider, message_id, known)
+      outcome, email = store(provider, message_id, known, cursor)
       counts[outcome] += 1
       email_ids << email.id if email
     end
+    cursor.save! if counts.fetch("failed").positive?
     Result.new(counts: counts, email_ids: email_ids)
   end
 
   # [counts key, new Email or nil]
-  def store(provider, message_id, known)
+  def store(provider, message_id, known, cursor)
     return [ "duplicates", nil ] if known.include?(message_id)
+    return [ "skipped", nil ] if give_up?(provider, message_id, cursor)
 
     [ "stored", Email.create!(attributes_for(provider, Emails.fetch_message(provider, message_id))) ]
   rescue ActiveRecord::RecordNotUnique
     [ "duplicates", nil ]
   rescue StandardError => error
     Rails.logger.error("Email #{provider}/#{message_id} failed: #{error.class}: #{error.message}")
+    cursor.record_failure(message_id)
     [ "failed", nil ]
+  end
+
+  def give_up?(provider, message_id, cursor)
+    return false unless cursor.gave_up_on?(message_id)
+
+    Rails.logger.warn("Email #{provider}/#{message_id} skipped after #{Email::SyncCursor::MAX_FAILED_ATTEMPTS} failed attempts")
+    true
   end
 
   def attributes_for(provider, message)

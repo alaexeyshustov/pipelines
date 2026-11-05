@@ -39,6 +39,42 @@ RSpec.describe Email::SyncCursor do
     end
   end
 
+  describe "failed attempts" do
+    let(:cursor) { create(:email_sync_cursor, provider: "yahoo") }
+
+    it "starts empty" do
+      expect(cursor.failed_attempts).to eq({})
+      expect(cursor.gave_up_on?("1:5")).to be(false)
+    end
+
+    it "counts attempts per message and gives up after MAX_FAILED_ATTEMPTS" do
+      (described_class::MAX_FAILED_ATTEMPTS - 1).times { cursor.record_failure("1:5") }
+      expect(cursor.gave_up_on?("1:5")).to be(false)
+
+      cursor.record_failure("1:5")
+      expect(cursor.gave_up_on?("1:5")).to be(true)
+      expect(cursor.gave_up_on?("1:6")).to be(false)
+    end
+
+    it "persists the counts" do
+      cursor.record_failure("1:5")
+      cursor.save!
+      expect(cursor.reload.failed_attempts).to eq("1:5" => 1)
+    end
+
+    it "forgets them when the cursor advances" do
+      cursor.record_failure("1:5")
+      cursor.advance!(uid_validity: 1, last_uid: 9)
+      expect(cursor.reload.failed_attempts).to eq({})
+    end
+
+    it "forgets them when the cursor is reset" do
+      cursor.record_failure("1:5")
+      cursor.reset!(uid_validity: 1, last_uid: 9)
+      expect(cursor.reload.failed_attempts).to eq({})
+    end
+  end
+
   describe ".for" do
     it "builds an unsaved cursor when none exists" do
       cursor = described_class.for(provider: "gmail", account: "me@example.com")

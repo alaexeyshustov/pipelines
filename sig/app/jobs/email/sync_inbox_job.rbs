@@ -21,8 +21,9 @@ class Email
     def gmail_message_ids: (SyncCursor cursor) -> [String, Array[String]]
     def window_ids: () -> Array[String]
     def failures?: (Result result) -> bool
-    def store_all: (String provider, String mode, Array[String] ids) -> Result
-    def store: (String provider, String message_id, Set[String] known) -> [String, Email?]
+    def store_all: (String provider, String mode, Array[String] ids, SyncCursor cursor) -> Result
+    def store: (String provider, String message_id, Set[String] known, SyncCursor cursor) -> [String, Email?]
+    def give_up?: (String provider, String message_id, SyncCursor cursor) -> bool
     def attributes_for: (String provider, Emails::full_message message) -> Hash[Symbol, String | Time | nil]
   end
 end

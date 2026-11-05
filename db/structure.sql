@@ -204,7 +204,7 @@ CREATE TRIGGER documents_fts_au AFTER UPDATE ON documents BEGIN
   VALUES ('delete', old.id, old.title, old.text);
   INSERT INTO documents_fts(rowid, title, text) VALUES (new.id, new.title, new.text);
 END;
-CREATE TABLE IF NOT EXISTS "email_sync_cursors" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "provider" varchar NOT NULL, "account" varchar NOT NULL, "mailbox" varchar DEFAULT 'INBOX' NOT NULL, "history_id" varchar, "uid_validity" bigint, "last_uid" bigint, "last_synced_at" datetime(6), "last_rescan_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE TABLE IF NOT EXISTS "email_sync_cursors" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "provider" varchar NOT NULL, "account" varchar NOT NULL, "mailbox" varchar DEFAULT 'INBOX' NOT NULL, "history_id" varchar, "uid_validity" bigint, "last_uid" bigint, "last_synced_at" datetime(6), "last_rescan_at" datetime(6), "failed_attempts" json DEFAULT '{}' NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_email_sync_cursors_on_provider_and_account_and_mailbox" ON "email_sync_cursors" ("provider", "account", "mailbox");
 CREATE TABLE IF NOT EXISTS "embeddings" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "embeddable_type" varchar NOT NULL, "embeddable_id" integer NOT NULL, "model" varchar NOT NULL, "dimensions" integer NOT NULL, "content_digest" varchar NOT NULL, "embedded_at" datetime(6) NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "vector" blob NOT NULL);
 CREATE UNIQUE INDEX "index_embeddings_on_embeddable_and_model" ON "embeddings" ("embeddable_type", "embeddable_id", "model");
