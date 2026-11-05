@@ -40,6 +40,22 @@ RSpec.describe Email::ProcessJob do
       end
     end
 
+    context "when the email is already tagged (a duplicate job from a slow queue)" do
+      let(:email) { create(:email, tagged_at: 1.day.ago) }
+
+      before { classify_as_tagged }
+
+      it "makes no LLM call" do
+        described_class.perform_now(email.id)
+        expect(Tags::Classifier).not_to have_received(:call)
+      end
+
+      it "keeps tagged_at and enqueues nothing" do
+        expect { described_class.perform_now(email.id) }.not_to have_enqueued_job
+        expect(email.reload.tagged_at).to be_within(1.second).of(1.day.ago)
+      end
+    end
+
     context "when the email carries the job_application tag" do
       before { classify_as_tagged }
 
