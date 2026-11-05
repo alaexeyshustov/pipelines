@@ -10,6 +10,7 @@ module Emails
       private
 
       def collect: (Google::Apis::GmailV1::MessagePart part) -> Array[attachment]
+      def inline?: (Google::Apis::GmailV1::MessagePart part) -> bool
       def metadata: (Google::Apis::GmailV1::MessagePart part) -> Array[attachment]
     end
   end

@@ -9,8 +9,10 @@ RSpec.describe Emails::Adapters::GmailAdapter, "#attachments" do
 
   after  { teardown_gmail }
 
-  def part(filename:, mime:, attachment_id: nil, size: 10, parts: nil)
-    { filename: filename, mimeType: mime, body: { attachmentId: attachment_id, size: size }.compact, parts: parts }.compact
+  def part(filename:, mime:, attachment_id: nil, size: 10, parts: nil, disposition: nil)
+    headers = disposition && [ { name: "Content-Disposition", value: disposition } ]
+    { filename: filename, mimeType: mime, body: { attachmentId: attachment_id, size: size }.compact, parts: parts,
+      headers: headers }.compact
   end
 
   let(:payload) do
@@ -32,5 +34,19 @@ RSpec.describe Emails::Adapters::GmailAdapter, "#attachments" do
       { id: "att1", filename: "cv.pdf", mime_type: "application/pdf", size: 1234 },
       { id: "att2", filename: "logo.png", mime_type: "image/png", size: 5 }
     ])
+  end
+
+  context "with inline parts such as signature logos" do
+    let(:payload) do
+      part(filename: "", mime: "multipart/mixed", parts: [
+        part(filename: "cv.pdf", mime: "application/pdf", attachment_id: "att1", disposition: "attachment; filename=\"cv.pdf\""),
+        part(filename: "image001.png", mime: "image/png", attachment_id: "att2", disposition: "inline; filename=\"image001.png\""),
+        part(filename: "image002.png", mime: "image/png", attachment_id: "att3", disposition: "Inline")
+      ])
+    end
+
+    it "skips parts whose Content-Disposition is inline" do
+      expect(adapter.attachments("msg1").pluck(:id)).to eq(%w[att1])
+    end
   end
 end
