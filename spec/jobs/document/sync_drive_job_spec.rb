@@ -7,6 +7,7 @@ RSpec.describe Document::SyncDriveJob do
   let(:pdf_entry) { entry("f1", "cv.pdf", "application/pdf", md5: "md5-1") }
   let(:gdoc_entry) { entry("g1", "Notes", Emails::Adapters::DriveFileFetcher::GOOGLE_DOC_MIME, modified_time: "2026-02-01T00:00:00.000Z") }
   let(:entries) { [ pdf_entry, gdoc_entry ] }
+  let(:empty_folders) { [] }
   let(:docx) { Document::TextExtractor::DOCX }
 
   def entry(id, name, mime_type, md5: nil, modified_time: "2026-01-01T00:00:00.000Z")
@@ -28,7 +29,9 @@ RSpec.describe Document::SyncDriveJob do
   before do
     Setting.set("drive_folder_ids", "root1, https://drive.google.com/drive/folders/root2?usp=sharing")
     allow(Emails::Adapters::DriveFileFetcher).to receive(:from_env).and_return(fetcher)
-    allow(fetcher).to receive(:scan).with(%w[root1 root2]).and_return(entries)
+    allow(fetcher).to receive(:scan_folders).with(%w[root1 root2]) do
+      Emails::Adapters::DriveFileFetcher::Scan.new(entries: entries, empty_folder_ids: empty_folders)
+    end
     allow(fetcher).to receive(:fetch).with("f1").and_return(drive_file("%PDF", "cv.pdf", "application/pdf"))
     allow(fetcher).to receive(:fetch).with("g1").and_return(drive_file("docx-bytes", "Notes", docx))
     allow(Document::TextExtractor).to receive(:call).and_return("extracted")
@@ -142,6 +145,27 @@ RSpec.describe Document::SyncDriveJob do
     expect(Document.exists?(attachment.id)).to be(true)
   end
 
+  context "when a whitelisted folder lists nothing (revoked or mistyped id)" do
+    let(:empty_folders) { [ "root2" ] }
+    let!(:gone) { drive_document("old") }
+
+    before { allow(Rails.logger).to receive(:warn) }
+
+    it "deletes no Documents, as an empty listing is not an error" do
+      entries.clear
+
+      expect { described_class.perform_now }.not_to change(Document, :count)
+      expect(Document.exists?(gone.id)).to be(true)
+    end
+
+    it "still syncs the files of the other folders and reports the empty folder" do
+      summary = described_class.perform_now
+
+      expect(summary).to include("created" => 2, "deleted" => 0, "empty_folders" => 1)
+      expect(Rails.logger).to have_received(:warn).with(/root2/)
+    end
+  end
+
   it "does not extract a file whose bytes already exist as a Document from another source" do
     attachment = create(:document, checksum: Digest::SHA256.hexdigest("%PDF"))
     entries.replace([ pdf_entry ])
@@ -181,13 +205,13 @@ RSpec.describe Document::SyncDriveJob do
 
     described_class.perform_now
 
-    expect(fetcher).not_to have_received(:scan)
+    expect(fetcher).not_to have_received(:scan_folders)
     expect(Document.exists?(keep.id)).to be(true)
   end
 
   it "deletes nothing when the scan fails" do
     keep = drive_document("f1")
-    allow(fetcher).to receive(:scan).and_raise(Emails::Adapters::DriveFileFetcher::Error, "Drive request failed (500)")
+    allow(fetcher).to receive(:scan_folders).and_raise(Emails::Adapters::DriveFileFetcher::Error, "Drive request failed (500)")
 
     expect { described_class.perform_now }.to raise_error(Emails::Adapters::DriveFileFetcher::Error)
     expect(Document.exists?(keep.id)).to be(true)
@@ -196,7 +220,7 @@ RSpec.describe Document::SyncDriveJob do
   it "returns a summary of what changed" do
     drive_document("old")
     expect(described_class.perform_now).to eq(
-      { "created" => 2, "updated" => 0, "unchanged" => 0, "deleted" => 1, "failed" => 0, "requeued" => 0 }
+      { "created" => 2, "updated" => 0, "unchanged" => 0, "deleted" => 1, "failed" => 0, "requeued" => 0, "empty_folders" => 0 }
     )
   end
 end
