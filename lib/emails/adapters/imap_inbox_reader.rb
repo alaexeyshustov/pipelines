@@ -4,6 +4,9 @@ module Emails
     class ImapInboxReader
       MAILBOX = "INBOX".freeze
 
+      # One STATUS reading: UIDVALIDITY and the highest UID currently in the mailbox (UIDNEXT - 1; 0 when empty).
+      Status = Data.define(:uid_validity, :last_uid)
+
       # ["<uid_validity>" as Integer, or nil for a legacy bare UID, uid]
       def self.split_message_id(message_id)
         validity, uid = message_id.to_s.split(":", 2)
@@ -16,6 +19,12 @@ module Emails
 
       def uid_validity
         @session.with_lock { @session.imap.status(MAILBOX, [ "UIDVALIDITY" ]).fetch("UIDVALIDITY").to_i }
+      end
+
+      # UIDVALIDITY and the highest UID from a single STATUS call, so they describe the same moment.
+      def status
+        data = @session.with_lock { @session.imap.status(MAILBOX, [ "UIDVALIDITY", "UIDNEXT" ]) }
+        Status.new(uid_validity: data.fetch("UIDVALIDITY").to_i, last_uid: data.fetch("UIDNEXT").to_i - 1)
       end
 
       # `UID n:*` always matches the last message even when it is older than n, so UIDs <= +last_uid+ are dropped.

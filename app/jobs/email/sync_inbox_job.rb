@@ -7,8 +7,10 @@
 # profile historyId is captured before listing and written to the cursor only after the whole batch is stored, so a
 # failed run re-reads instead of skipping; a provider error raises and leaves the cursor untouched.
 #
-# Yahoo (IMAP): the cursor account is the login username and the position is UIDVALIDITY + last UID, captured before
-# listing. With no cursor the last Email.backfill_days days are listed (IMAP SINCE, "backfill"); with the same
+# Yahoo (IMAP): the cursor account is the login username and the position is UIDVALIDITY + last UID. Both come from
+# one STATUS call made before listing; a backfill or rescan stores the mailbox's highest UID (UIDNEXT - 1) rather than
+# the highest listed one, so an empty date window cannot leave a cursor without a UID (the next incremental run would
+# read UID 1:*), and mail arriving during the run is still read next time. With no cursor the last Email.backfill_days days are listed (IMAP SINCE, "backfill"); with the same
 # UIDVALIDITY the UIDs above last_uid are read ("incremental"); a changed UIDVALIDITY makes old UIDs meaningless, so
 # the date window is rescanned and the cursor reset ("rescan"). provider_message_id is "<uid_validity>:<uid>", so
 # a new UIDVALIDITY yields new rows instead of collisions.
@@ -45,13 +47,14 @@ class Email::SyncInboxJob < ApplicationJob
 
   def sync_yahoo
     cursor = Email::SyncCursor.for(provider: "yahoo", account: Emails.account("yahoo"))
-    uid_validity = Emails.inbox_uid_validity("yahoo")
+    status = Emails.inbox_status("yahoo")
+    uid_validity = status.uid_validity
     mode, uids = yahoo_uids(cursor, uid_validity)
 
     result = store_all("yahoo", mode, uids.map { |uid| "#{uid_validity}:#{uid}" })
     return result if failures?(result)
 
-    save_yahoo_cursor(cursor, mode, uid_validity, uids.max)
+    save_yahoo_cursor(cursor, mode, uid_validity, mode == "incremental" ? uids.max : status.last_uid)
     result
   end
 
