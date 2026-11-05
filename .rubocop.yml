@@ -12,6 +12,9 @@ AllCops:
   Exclude:
     - ".gem_rbs_collection/**/*"
     - "lib/view_primitives/**/*"
+    # Standalone tooling scripts, not app code; the Metrics cops don't suit them.
+    - ".sandbox/**/*"
+    - "bin/**/*"
 
 Lint:
  Enabled: true
