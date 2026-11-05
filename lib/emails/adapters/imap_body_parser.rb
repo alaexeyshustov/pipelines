@@ -9,6 +9,12 @@ module Emails
         value.to_s
       end
 
+      # Plain text from an HTML body; shared with GmailBodyExtractor so both
+      # providers hand the tagger text, never markup.
+      def self.strip_html(html)
+        html.gsub(/<[^>]+>/, " ").gsub(/\s+/, " ").strip
+      end
+
       def initialize(mail)
         @mail = mail
       end
@@ -71,7 +77,7 @@ module Emails
       end
 
       def strip_html(html)
-        html.gsub(/<[^>]+>/, " ").gsub(/\s+/, " ").strip
+        self.class.strip_html(html)
       end
     end
   end
