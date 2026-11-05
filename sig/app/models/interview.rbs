@@ -7,6 +7,10 @@ class Interview < ApplicationRecord
   type relation = _Relation[Interview, Integer]
 
   STATUSES: Array[String]
+  GENDER_MARKER: Regexp
+  TRAILING_GROUP: Regexp
+  TRAILING_SEPARATORS: Regexp
+  def self.normalize_name: (String? value) -> String
   def self.tool_column_names: () -> Array[String]
   def self.search: (String? q) -> relation
   def self.destroy_by_ids: (Array[Integer] | Array[String] ids) -> Array[Interview]

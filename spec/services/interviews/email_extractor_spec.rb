@@ -122,6 +122,18 @@ RSpec.describe Interviews::EmailExtractor do
       expect(Interview.count).to eq(1)
     end
 
+    it "matches a job title that differs only by a gender marker" do
+      existing = create(:interview, company: "Acme", job_title: "Ruby Developer")
+      extraction["job_title"] = "Ruby Developer (m/w/d)"
+      expect(result.interview).to eq(existing)
+      expect(Interview.count).to eq(1)
+    end
+
+    it "stores the normalised company and job title" do
+      extraction.merge!("company" => "Acme GmbH (Germany)", "job_title" => "Ruby  Developer (f/m/x)")
+      expect(result.interview).to have_attributes(company: "Acme GmbH", job_title: "Ruby Developer")
+    end
+
     it "keeps different job titles at one company apart" do
       create(:interview, company: "Acme", job_title: "Python Developer")
       expect { result }.to change(Interview, :count).by(1)

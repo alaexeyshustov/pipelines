@@ -2,8 +2,11 @@
 # except +emails.interview_id+.
 #
 # - One structured-output LLM call (company, job title, action) with the email subject, sender, date and body.
-# - Matched to an existing Interview by company + job title, case-insensitive (the legacy reconciler's rule), else
-#   created as +pending_reply+.
+# - Company and job title are normalised first (Interview.normalize_name: no "(m/w/d)", no trailing parenthesised
+#   groups), so the LLM's variants of one posting land on one Interview, and stored that way.
+# - Matched to an existing Interview by the normalised company + job title, case-insensitive (the legacy
+#   reconciler's rule), else created as +pending_reply+. Rows stored before the normalisation keep their old text and
+#   only match when it equals the normalised one.
 # - The action moves the status forward only (an old "apply" confirmation never undoes a rejection) and fills dates
 #   from the email date: applied_at (earliest), rejected_at, the next free interview slot.
 # - Idempotent: an email already linked to an Interview is not sent to the LLM again, and an interview date that is
@@ -47,7 +50,8 @@ class Interviews::EmailExtractor
 
   def extract_and_upsert
     extraction = extract
-    company, job_title = %w[company job_title].map { |key| extraction[key].to_s.squish }
+    company = Interview.normalize_name(extraction["company"].to_s)
+    job_title = Interview.normalize_name(extraction["job_title"].to_s)
     return if company.empty? || job_title.empty?
 
     upsert(company, job_title, extraction["action"].to_s)
