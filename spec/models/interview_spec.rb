@@ -1,6 +1,26 @@
 require 'rails_helper'
 
 RSpec.describe Interview do
+  describe 'deleting an interview' do
+    let!(:interview) { create(:interview) }
+    let!(:email) { create(:email, interview: interview) }
+
+    it 'nulls emails.interview_id through the foreign key and keeps the emails' do
+      interview.destroy!
+
+      expect(email.reload.interview_id).to be_nil
+    end
+
+    it 'issues no UPDATE of its own on emails, as the foreign key does the nulling' do
+      updates = []
+      callback = ->(*, payload) { updates << payload[:sql] if payload[:sql].start_with?('UPDATE "emails"') }
+
+      ActiveSupport::Notifications.subscribed(callback, 'sql.active_record') { interview.destroy! }
+
+      expect(updates).to be_empty
+    end
+  end
+
   describe '.normalize_name' do
     {
       'Senior Backend Engineer (m/w/d)'            => 'Senior Backend Engineer',

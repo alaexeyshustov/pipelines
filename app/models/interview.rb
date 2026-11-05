@@ -1,7 +1,8 @@
 class Interview < ApplicationRecord
   include Searchable
   include Batchable
-  has_many :emails, dependent: :nullify
+  # No dependent: callback; emails.interview_id is nulled by the foreign key (on_delete: :nullify) in the database.
+  has_many :emails, dependent: nil
 
   validates :company, :job_title, presence: true
   validates :job_title, uniqueness: { scope: :company }
