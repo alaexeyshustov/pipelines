@@ -3,12 +3,20 @@ module Emails
     class ImapInboxReader
       MAILBOX: String
 
+      class Status
+        attr_reader uid_validity: Integer
+        attr_reader last_uid: Integer
+
+        def self.new: (uid_validity: Integer, last_uid: Integer) -> Status
+      end
+
       @session: ImapSession
 
       def self.split_message_id: (String | Integer message_id) -> [Integer?, Integer]
 
       def initialize: (ImapSession session) -> void
       def uid_validity: () -> Integer
+      def status: () -> Status
       def uids_after: (Integer last_uid) -> Array[Integer]
       def uids_since: (Date date) -> Array[Integer]
       def mail: (Integer uid) -> Mail::Message?

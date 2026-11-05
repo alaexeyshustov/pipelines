@@ -6,11 +6,12 @@ RSpec.describe Email::SyncInboxJob, "#perform" do
   let(:imap) { Net::IMAP.allocate }
   let(:account) { "me@yahoo.com" }
   let(:validity) { 777 }
+  let(:uidnext) { 21 } # the mailbox's highest UID is 20
 
   before do
     travel_to Time.zone.local(2026, 4, 1, 12)
     allow(Net::IMAP).to receive(:new).and_return(imap)
-    allow(imap).to receive_messages(login: nil, select: nil, status: { "UIDVALIDITY" => validity })
+    allow(imap).to receive_messages(login: nil, select: nil, status: { "UIDVALIDITY" => validity, "UIDNEXT" => uidnext })
     Emails.configure(yahoo: { username: account, password: "secret" })
   end
 
@@ -62,18 +63,18 @@ RSpec.describe Email::SyncInboxJob, "#perform" do
       )
     end
 
-    it "stores a cursor with the UIDVALIDITY and the highest UID seen" do
+    it "stores a cursor with the UIDVALIDITY and the highest UID in the mailbox (UIDNEXT - 1)" do
       described_class.perform_now("yahoo")
 
-      expect(cursor).to have_attributes(uid_validity: 777, last_uid: 5, last_synced_at: be_present)
+      expect(cursor).to have_attributes(uid_validity: 777, last_uid: 20, last_synced_at: be_present)
     end
 
-    it "stores a cursor without a last UID when the window is empty" do
+    it "still stores the mailbox's highest UID when the window is empty, so the next run is not UID 1:*" do
       stub_window
 
       described_class.perform_now("yahoo")
 
-      expect(cursor).to have_attributes(uid_validity: 777, last_uid: nil)
+      expect(cursor).to have_attributes(uid_validity: 777, last_uid: 20)
     end
   end
 
@@ -147,7 +148,7 @@ RSpec.describe Email::SyncInboxJob, "#perform" do
     it "resets the cursor to the new UIDVALIDITY" do
       described_class.perform_now("yahoo")
 
-      expect(cursor).to have_attributes(uid_validity: 777, last_uid: 5, last_rescan_at: be_present)
+      expect(cursor).to have_attributes(uid_validity: 777, last_uid: 20, last_rescan_at: be_present)
     end
 
     it "holds the old cursor when a message failed" do

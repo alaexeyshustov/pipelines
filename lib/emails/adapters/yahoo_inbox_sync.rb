@@ -13,6 +13,12 @@ module Emails
         @inbox.uid_validity
       end
 
+      # INBOX UIDVALIDITY plus the highest UID in the mailbox right now (ImapInboxReader::Status): where a sync that
+      # reads a date window should leave its cursor, even when the window held no messages.
+      def inbox_status
+        @inbox.status
+      end
+
       # UIDs of INBOX messages newer than +last_uid+, ascending.
       def inbox_uids_after(last_uid)
         @inbox.uids_after(last_uid)

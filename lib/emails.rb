@@ -56,6 +56,10 @@ module Emails
     fetch(provider_name).inbox_uid_validity # steep:ignore
   end
 
+  def self.inbox_status(provider_name)
+    fetch(provider_name).inbox_status # steep:ignore
+  end
+
   def self.inbox_uids_after(provider_name, last_uid)
     fetch(provider_name).inbox_uids_after(last_uid) # steep:ignore
   end

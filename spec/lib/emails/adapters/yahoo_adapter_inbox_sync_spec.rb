@@ -28,6 +28,20 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     end
   end
 
+  describe "#inbox_status" do
+    it "returns UIDVALIDITY and the highest UID (UIDNEXT - 1) from one STATUS call" do
+      allow(imap).to receive(:status).with("INBOX", %w[UIDVALIDITY UIDNEXT]).and_return({ "UIDVALIDITY" => 77, "UIDNEXT" => 31 })
+
+      expect(adapter.inbox_status).to have_attributes(uid_validity: 77, last_uid: 30)
+    end
+
+    it "reports 0 as the highest UID of an empty mailbox" do
+      allow(imap).to receive(:status).and_return({ "UIDVALIDITY" => 77, "UIDNEXT" => 1 })
+
+      expect(adapter.inbox_status.last_uid).to eq(0)
+    end
+  end
+
   describe "#inbox_uids_after" do
     it "searches from last_uid + 1 and returns the newer UIDs in ascending order" do
       allow(imap).to receive(:uid_search).and_return([ 12, 11 ])
