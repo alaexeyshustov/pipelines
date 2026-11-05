@@ -3,6 +3,9 @@
 # own. Attachments are extracted when the email has any tagging (manual ones count). +tagged_at+ is set only after the classifier succeeded, so an email whose tagging failed stays
 # NULL and EmailsSync re-enqueues it on a later run.
 #
+# A job for an email that already has +tagged_at+ returns at once, with no LLM call: EmailsSync re-queues untagged
+# emails older than REQUEUE_AFTER even when their job still waits in a slow queue, so duplicates become no-ops.
+#
 # Retries mirror Evaluation::SampleJob: RubyLLM already retries HTTP-level failures, so a RubyLLM::Error reaching
 # this job is final for this run (logged, tagged_at stays nil); raw transport errors get one outer retry.
 class Email::ProcessJob < ApplicationJob
@@ -16,6 +19,8 @@ class Email::ProcessJob < ApplicationJob
 
   def perform(email_id)
     email = Email.find(email_id)
+    return if email.tagged_at
+
     Tags::Classifier.call(email)
     email.update!(tagged_at: Time.current)
     enqueue_later_stages(email)
