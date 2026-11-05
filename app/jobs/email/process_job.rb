@@ -1,6 +1,9 @@
-# Per-email processing chain after ingest (ADR 0013): tag the email, stamp +tagged_at+, then hand it to the later
-# stages (embedding, attachments, and the Interview upsert for job_application emails), each its own job so it retries on its
-# own. Attachments are extracted when the email has any tagging (manual ones count). +tagged_at+ is set only after the classifier succeeded, so an email whose tagging failed stays
+# Per-email processing chain after ingest (ADR 0013): queue the embedding, tag the email and stamp +tagged_at+, then
+# hand it to the later stages (attachments, and the Interview upsert for job_application emails), each its own job so
+# it retries on its own. Embedding and tagging are independent, so the embedding is queued first, whatever the tagging
+# outcome, and only while the email has no embedding yet (a retry after a failed tagging does not queue it again once
+# it is embedded; Email::EmbedJob is idempotent anyway). Attachments are extracted when the email has any tagging
+# (manual ones count). +tagged_at+ is set only after the classifier succeeded, so an email whose tagging failed stays
 # NULL and EmailsSync re-enqueues it on a later run.
 #
 # A job for an email that already has +tagged_at+ returns at once, with no LLM call: EmailsSync re-queues untagged
@@ -21,6 +24,7 @@ class Email::ProcessJob < ApplicationJob
     email = Email.find(email_id)
     return if email.tagged_at
 
+    Email::EmbedJob.perform_later(email.id) unless email.embeddings.exists?
     Tags::Classifier.call(email)
     email.update!(tagged_at: Time.current)
     enqueue_later_stages(email)
@@ -31,7 +35,6 @@ class Email::ProcessJob < ApplicationJob
   private
 
   def enqueue_later_stages(email)
-    Email::EmbedJob.perform_later(email.id)
     Document::ExtractEmailAttachmentsJob.perform_later(email.id) if email.taggings.exists?
     enqueue_interview_extraction(email)
   end
