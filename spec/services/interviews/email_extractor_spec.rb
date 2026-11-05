@@ -130,7 +130,7 @@ RSpec.describe Interviews::EmailExtractor do
     end
 
     it "stores the normalised company and job title" do
-      extraction.merge!("company" => "Acme GmbH (Germany)", "job_title" => "Ruby  Developer (f/m/x)")
+      extraction.merge!("company" => "Acme  GmbH", "job_title" => "Ruby  Developer (f/m/x)")
       expect(result.interview).to have_attributes(company: "Acme GmbH", job_title: "Ruby Developer")
     end
 

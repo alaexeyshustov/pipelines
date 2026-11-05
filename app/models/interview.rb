@@ -13,24 +13,20 @@ class Interview < ApplicationRecord
     first_interview_at second_interview_at third_interview_at fourth_interview_at
   ].freeze
 
-  # Gender markers job ads append to titles: "(m/w/d)", "(f/m/x)", "- m/w/d", "(all genders)", "(gn)".
+  # Gender markers job ads append to titles: "(m/w/d)", "[f/m/x]", "(all genders)", "(gn)" and the bare "- m/w/d".
   GENDER_MARKER = %r{
-    \s*[(\[]\s*(?:[mwfdxi]\s*/\s*){1,2}[mwfdxi][*+]?\s*[)\]]
-    | \s*[(\[]\s*(?:all\s+genders?|alle\s+geschlechter|gn)\s*[)\]]
+    \s*[(\[]\s*(?:(?:[mwfdxi]\s*/\s*){1,2}[mwfdxi][*+]?|all\s+genders?|alle\s+geschlechter|gn)\s*[)\]]
     | (?<![\w/])(?:[mwfdxi]/){1,2}[mwfdxi](?![\w/])
   }xi
-  TRAILING_GROUP = /\s*[(\[][^()\[\]]*[)\]]\s*\z/
   TRAILING_SEPARATORS = /[\s\-\u2013\u2014,:|]+\z/
 
   # Company and job title as the LLM reports them vary ("Backend Engineer (m/w/d)" vs "Backend Engineer"), which
-  # would split one application into several Interviews. This drops gender markers and trailing parenthesised or
-  # bracketed groups, trims dangling separators and squishes whitespace. A value that would become empty (for
-  # example "(Remote)") is only squished.
+  # would split one application into several Interviews. This drops gender markers, trims dangling separators and
+  # squishes whitespace. Other parenthesised text ("Engineer (Backend)") is kept: it distinguishes real postings. A
+  # value that would become empty is only squished.
   def self.normalize_name(value)
     squished = value.to_s.squish
-    name = squished.gsub(GENDER_MARKER, " ")
-    name = name.sub(TRAILING_GROUP, "") while name.match?(TRAILING_GROUP)
-    name = name.sub(TRAILING_SEPARATORS, "").squish
+    name = squished.gsub(GENDER_MARKER, " ").sub(TRAILING_SEPARATORS, "").squish
     name.empty? ? squished : name
   end
 
