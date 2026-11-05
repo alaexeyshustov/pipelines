@@ -130,8 +130,20 @@ RSpec.describe Email::ProcessJob do
         expect(email.reload.tagged_at).to be_nil
       end
 
-      it "enqueues nothing" do
-        expect { described_class.perform_now(email.id) }.not_to have_enqueued_job
+      it "still enqueues the embedding, as the two stages are independent" do
+        expect { described_class.perform_now(email.id) }.to have_enqueued_job(Email::EmbedJob).with(email.id)
+      end
+
+      it "enqueues no later stage" do
+        expect { described_class.perform_now(email.id) }
+          .not_to have_enqueued_job(Document::ExtractEmailAttachmentsJob)
+        expect(enqueued_jobs.pluck("job_class")).to eq([ "Email::EmbedJob" ])
+      end
+
+      it "does not enqueue the embedding again on a retry once the email is embedded" do
+        Embedding.store!(email, model: LlmModels.embedding, content_digest: "d", vector: Array.new(Embeddings::Client::DIMENSIONS, 0.5))
+
+        expect { described_class.perform_now(email.id) }.not_to have_enqueued_job(Email::EmbedJob)
       end
     end
 
