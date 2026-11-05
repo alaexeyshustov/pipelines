@@ -21,6 +21,7 @@ class Document
     def unchanged?: (Emails::Adapters::DriveFileFetcher::Entry entry, Document document) -> bool
     def process: (Emails::Adapters::DriveFileFetcher fetcher, Emails::Adapters::DriveFileFetcher::Entry entry, Document? document) -> void
     def attributes_for: (Emails::Adapters::DriveFileFetcher::Entry entry, Emails::Adapters::DriveFileFetcher::File file, String text, String checksum) -> Hash[Symbol, String | Hash[Symbol, String?]?]
-    def delete_missing: (Hash[String?, Document] existing, Array[Emails::Adapters::DriveFileFetcher::Entry] entries) -> void
+    def warn_empty: (Array[String] folder_ids) -> void
+    def delete_missing: (Hash[String?, Document] existing, Array[Emails::Adapters::DriveFileFetcher::Entry] entries, Array[String] empty_folder_ids) -> void
   end
 end

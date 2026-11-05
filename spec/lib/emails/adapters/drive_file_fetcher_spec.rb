@@ -61,6 +61,50 @@ RSpec.describe Emails::Adapters::DriveFileFetcher do
     end
   end
 
+  describe "#scan_folders" do
+    def stub_children(folder_id, files)
+      stub_request(:get, "https://www.googleapis.com/drive/v3/files")
+        .with(query: hash_including(q: "'#{folder_id}' in parents and trashed=false"))
+        .to_return(status: 200, body: { files: files }.to_json)
+    end
+
+    def file(id)
+      { id: id, name: "#{id}.pdf", mimeType: "application/pdf", md5Checksum: "md5-#{id}" }
+    end
+
+    def folder(id)
+      { id: id, name: id, mimeType: described_class::FOLDER_MIME }
+    end
+
+    it "returns the entries and the whitelisted folders that listed no files at all" do
+      stub_children("full", [ file("a") ])
+      stub_children("revoked", [])
+
+      scan = fetcher.scan_folders(%w[full revoked])
+
+      expect(scan.entries.map(&:id)).to eq(%w[a])
+      expect(scan.empty_folder_ids).to eq(%w[revoked])
+    end
+
+    it "counts files found in subfolders, and files already seen under another folder" do
+      stub_children("outer", [ folder("inner") ])
+      stub_children("inner", [ file("a") ])
+      stub_children("again", [ file("a") ])
+
+      scan = fetcher.scan_folders(%w[outer again])
+
+      expect(scan.entries.map(&:id)).to eq(%w[a])
+      expect(scan.empty_folder_ids).to eq([])
+    end
+
+    it "reports a folder holding only empty subfolders as empty" do
+      stub_children("outer", [ folder("inner") ])
+      stub_children("inner", [])
+
+      expect(fetcher.scan_folders(%w[outer]).empty_folder_ids).to eq(%w[outer])
+    end
+  end
+
   describe "Google Docs" do
     it "exports a native document as docx, both via #export and #fetch" do
       export = stub_request(:get, "https://www.googleapis.com/drive/v3/files/g1/export")

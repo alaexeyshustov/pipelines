@@ -26,6 +26,13 @@ module Emails
         def self.new: (id: String, name: String, mime_type: String, md5: String?, modified_time: String?, web_view_link: String?) -> instance
       end
 
+      class Scan
+        attr_reader entries: Array[Entry]
+        attr_reader empty_folder_ids: Array[String]
+
+        def self.new: (entries: Array[Entry], empty_folder_ids: Array[String]) -> instance
+      end
+
       FOLDER_MIME: String
       GOOGLE_DOC_MIME: String
       DOCX_MIME: String
@@ -42,11 +49,12 @@ module Emails
       def fetch: (String file_id) -> File
       def export: (String file_id) -> String
       def scan: (Array[String] folder_ids) -> Array[Entry]
+      def scan_folders: (Array[String] folder_ids) -> Scan
 
       private
 
       def request: (URI::Generic uri) -> Net::HTTPResponse
-      def collect: (String folder_id, Set[String] seen, Hash[String, Entry] entries) -> void
+      def collect: (String folder_id, Set[String] seen, Hash[String, Entry] entries) -> Integer
       def list_children: (String folder_id) -> Array[Entry]
       def list_page: (String folder_id, String? page_token) -> String
       def entry: (Hash[String, String?] attrs) -> Entry

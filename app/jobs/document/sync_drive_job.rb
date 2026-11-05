@@ -13,6 +13,10 @@
 # Document is kept as is (no OCR, no second Document); the Drive file has no Document of its own, so it is downloaded
 # again on each scan (cheap) but never re-extracted. Documents of Drive files that no longer appear in the scan are
 # deleted; a failed scan raises before anything is deleted, and a failing file is logged and keeps its Document.
+# Drive answers a revoked or mistyped folder id with an empty listing, not an error, so when any whitelisted folder
+# yields no file at all nothing is deleted in that scan ("empty_folders" counts them, and they are logged): the
+# Documents are not attributed to a folder (a file can sit under several), so this is the safe, simple rule; the
+# price is that deletions wait while a whitelisted folder is genuinely empty.
 # An empty whitelist is a no-op. Orchestrates services here because services must not call each other.
 class Document::SyncDriveJob < ApplicationJob
   SETTING_KEY = "drive_folder_ids".freeze
@@ -35,15 +39,16 @@ class Document::SyncDriveJob < ApplicationJob
   private
 
   def summary
-    @summary ||= { "created" => 0, "updated" => 0, "unchanged" => 0, "deleted" => 0, "failed" => 0, "requeued" => 0 }
+    @summary ||= { "created" => 0, "updated" => 0, "unchanged" => 0, "deleted" => 0, "failed" => 0, "requeued" => 0, "empty_folders" => 0 }
   end
 
   def sync_all(fetcher, folder_ids)
-    entries = fetcher.scan(folder_ids)
+    scan = fetcher.scan_folders(folder_ids)
+    entries = scan.entries
     existing = Document.where(source: "drive").index_by { |document| document.source_ref["drive_file_id"] }
 
     entries.each { |entry| sync(fetcher, entry, existing[entry.id]) }
-    delete_missing(existing, entries)
+    delete_missing(existing, entries, scan.empty_folder_ids)
     requeue_untagged
   end
 
@@ -116,7 +121,10 @@ class Document::SyncDriveJob < ApplicationJob
     }
   end
 
-  def delete_missing(existing, entries)
+  def delete_missing(existing, entries, empty_folder_ids)
+    summary["empty_folders"] = empty_folder_ids.size
+    return warn_empty(empty_folder_ids) if empty_folder_ids.any?
+
     present = entries.to_set(&:id)
     existing.each do |drive_file_id, document|
       next if present.include?(drive_file_id)
@@ -124,6 +132,10 @@ class Document::SyncDriveJob < ApplicationJob
       document.destroy!
       summary["deleted"] += 1
     end
+  end
+
+  def warn_empty(folder_ids)
+    Rails.logger.warn("Drive folder(s) #{folder_ids.join(', ')} listed no files; deleting no Documents this scan")
   end
 
   def requeue_untagged
