@@ -3,6 +3,8 @@ module Emails
     class ImapBodyParser
       def self.decode_header: (String? value) -> String?
 
+      def self.strip_html: (String html) -> String
+
       @mail: Mail::Message
 
       def initialize: (Mail::Message mail) -> void

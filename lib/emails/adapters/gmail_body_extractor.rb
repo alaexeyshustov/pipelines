@@ -5,6 +5,8 @@ module Emails
         @payload = payload
       end
 
+      # Plain text: text/plain parts when present, otherwise the HTML stripped
+      # to text (same approach as ImapBodyParser). Use #html for the raw markup.
       def body
         extract_body(@payload)
       end
@@ -28,7 +30,8 @@ module Emails
         if parts&.any?
           extract_from_multipart(payload, parts)
         elsif (body_data = payload.body&.data) && !body_data.empty?
-          decode_body(body_data)
+          decoded = decode_body(body_data)
+          payload.mime_type == "text/html" ? strip_html(decoded) : decoded
         else
           ""
         end
@@ -39,7 +42,7 @@ module Emails
         return text_parts.join("\n\n") unless text_parts.empty?
 
         html_parts = collect_parts(payload, "text/html")
-        return html_parts.join("\n\n") unless html_parts.empty?
+        return strip_html(html_parts.join("\n\n")) unless html_parts.empty?
 
         parts.filter_map { |part|
           extracted = extract_body(part)
@@ -62,6 +65,10 @@ module Emails
         else
           nested
         end
+      end
+
+      def strip_html(html)
+        ImapBodyParser.strip_html(html)
       end
 
       def decode_body(data)
