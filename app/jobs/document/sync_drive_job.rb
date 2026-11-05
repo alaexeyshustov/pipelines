@@ -2,6 +2,10 @@
 # commas/whitespace, scanned recursively). Each supported file becomes a tagged Document keyed by
 # source_ref["drive_file_id"]; Google Docs are exported as docx. Returns a summary of counts.
 #
+# Tagging is not done here: a new or changed Document is queued for embedding and for Document::TagJob, and a
+# changed one gets tagged_at cleared so it is tagged again. Tagging that failed leaves tagged_at NULL, so every scan
+# also queues Document::TagJob for the Drive Documents still untagged after Document::TagJob::REQUEUE_AFTER ("requeued").
+#
 # Document#checksum is always the SHA256 of the bytes (like email attachments), so the same file from email and Drive
 # is one Document. Drive's md5Checksum is kept in source_ref["md5"] only to detect changes: a file is unchanged (not
 # fetched, extracted or tagged again) when its md5 matches source_ref["md5"] or, for Google Docs which have no md5,
@@ -31,7 +35,7 @@ class Document::SyncDriveJob < ApplicationJob
   private
 
   def summary
-    @summary ||= { "created" => 0, "updated" => 0, "unchanged" => 0, "deleted" => 0, "failed" => 0 }
+    @summary ||= { "created" => 0, "updated" => 0, "unchanged" => 0, "deleted" => 0, "failed" => 0, "requeued" => 0 }
   end
 
   def sync_all(fetcher, folder_ids)
@@ -40,6 +44,7 @@ class Document::SyncDriveJob < ApplicationJob
 
     entries.each { |entry| sync(fetcher, entry, existing[entry.id]) }
     delete_missing(existing, entries)
+    requeue_untagged
   end
 
   def sync(fetcher, entry, document)
@@ -73,11 +78,11 @@ class Document::SyncDriveJob < ApplicationJob
     return if document.nil? && Document.exists?(checksum:)
 
     text = Document::TextExtractor.call(data: file.data, mime_type: file.mime_type, filename: entry.name)
-    document = store(attributes_for(entry, file, text, checksum), document)
-    Tags::Classifier.call(document) if document
+    store(attributes_for(entry, file, text, checksum), document)
   end
 
-  # The changed or newly created Document, or nil when identical content already exists as another Document.
+  # Stores the changed or new Document and queues its processing; nothing for identical content that already
+  # exists as another Document.
   def store(attributes, document)
     if document
       document.update!(attributes)
@@ -91,13 +96,22 @@ class Document::SyncDriveJob < ApplicationJob
   def stored(document, outcome)
     summary[outcome] += 1
     Document::EmbedJob.perform_later(document.id)
-    document
+    queue_tagging(document.id)
+  end
+
+  def queue_tagging(document_id)
+    queued_tagging << document_id
+    Document::TagJob.perform_later(document_id)
+  end
+
+  def queued_tagging
+    @queued_tagging ||= []
   end
 
   def attributes_for(entry, file, text, checksum)
     {
       title: entry.name, mime_type: file.mime_type, text:, checksum:,
-      source: "drive", source_url: entry.web_view_link,
+      source: "drive", source_url: entry.web_view_link, tagged_at: nil,
       source_ref: { provider: "drive", drive_file_id: entry.id, md5: entry.md5, modified_time: entry.modified_time }
     }
   end
@@ -110,5 +124,12 @@ class Document::SyncDriveJob < ApplicationJob
       document.destroy!
       summary["deleted"] += 1
     end
+  end
+
+  def requeue_untagged
+    stale = Document.awaiting_tagging(before: Document::TagJob::REQUEUE_AFTER.ago).where(source: "drive")
+                    .where.not(id: queued_tagging).pluck(:id)
+    stale.each { |document_id| Document::TagJob.perform_later(document_id) }
+    summary["requeued"] = stale.size
   end
 end
