@@ -15,7 +15,7 @@
 # same treatment: its stale Drive Document is destroyed and the other one kept ("merged"). Documents of Drive files that no longer appear in the scan are
 # deleted; a failed scan raises before anything is deleted, and a failing file is logged and keeps its Document.
 # Drive answers a revoked or mistyped folder id with an empty listing, not an error, so when any whitelisted folder
-# yields no file at all nothing is deleted in that scan ("empty_folders" counts them, and they are logged): the
+# lists nothing at its top level nothing is deleted in that scan ("empty_folders" counts them, and they are logged): the
 # Documents are not attributed to a folder (a file can sit under several), so this is the safe, simple rule; the
 # price is that deletions wait while a whitelisted folder is genuinely empty.
 # An empty whitelist is a no-op. Orchestrates services here because services must not call each other.
@@ -44,12 +44,11 @@ class Document::SyncDriveJob < ApplicationJob
   end
 
   def sync_all(fetcher, folder_ids)
-    scan = fetcher.scan_folders(folder_ids)
-    entries = scan.entries
+    entries = fetcher.scan(folder_ids)
     existing = Document.where(source: "drive").index_by { |document| document.source_ref["drive_file_id"] }
 
     entries.each { |entry| sync(fetcher, entry, existing[entry.id]) }
-    delete_missing(existing, entries, scan.empty_folder_ids)
+    delete_missing(existing, entries, fetcher.empty_folders(folder_ids))
     requeue_untagged
   end
 
