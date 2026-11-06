@@ -59,7 +59,7 @@ RSpec.describe Orchestration::Executors::EmailsSync do
     it "reports a provider without credentials as skipped and still syncs the other" do
       allow(Email::SyncInboxJob).to receive(:perform_now).with("gmail").and_return(sync_result)
       allow(Email::SyncInboxJob).to receive(:perform_now).with("yahoo")
-        .and_raise(RuntimeError, "Missing Yahoo credentials. Please set YAHOO_USERNAME and YAHOO_APP_PASSWORD environment variables.")
+        .and_raise(Emails::NotConfigured, "Missing Yahoo credentials.")
 
       output = described_class.call
 
@@ -69,7 +69,7 @@ RSpec.describe Orchestration::Executors::EmailsSync do
 
     it "skips gmail when its credentials file is missing" do
       allow(Email::SyncInboxJob).to receive(:perform_now).with("gmail")
-        .and_raise(RuntimeError, "Missing Gmail credentials file. Please create credentials.json with your Google API credentials.")
+        .and_raise(Emails::NotConfigured, "Missing Gmail credentials file.")
       allow(Email::SyncInboxJob).to receive(:perform_now).with("yahoo").and_return(sync_result)
 
       expect(described_class.call.fetch("gmail")).to eq("skipped" => true, "reason" => "no credentials")

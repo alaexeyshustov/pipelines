@@ -50,7 +50,7 @@ module Emails
         credentials_path = opts[:credentials_path] || ENV.fetch("GMAIL_CREDENTIALS_PATH", root.join("credentials.json").to_s)
         token_path       = opts[:token_path]       || ENV.fetch("GMAIL_TOKEN_PATH", root.join("token.yaml").to_s)
         unless File.exist?(credentials_path)
-          raise "Missing Gmail credentials file. Please create #{credentials_path} with your Google API credentials."
+          raise Emails::NotConfigured, "Missing Gmail credentials file. Please create #{credentials_path} with your Google API credentials."
         end
         adapter = GmailAdapter.new(credentials_path: credentials_path, token_path: token_path)
         adapter.on_init
