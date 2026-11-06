@@ -12,8 +12,6 @@ module Emails
 
       File = Data.define(:data, :filename, :mime_type)
       Entry = Data.define(:id, :name, :mime_type, :md5, :modified_time, :web_view_link)
-      # +empty_folder_ids+: the requested folders under which no file was found at all (see #scan_folders).
-      Scan = Data.define(:entries, :empty_folder_ids)
 
       FOLDER_MIME = "application/vnd.google-apps.folder".freeze
       GOOGLE_DOC_MIME = "application/vnd.google-apps.document".freeze
@@ -62,28 +60,26 @@ module Emails
 
       # Every non-folder file under the given folders, recursively; a file reachable twice is returned once.
       def scan(folder_ids)
-        scan_folders(folder_ids).entries
+        seen = Set.new # : Set[String]
+        entries = {} # : Hash[String, Entry]
+        folder_ids.each { |folder_id| collect(folder_id, seen, entries) }
+        entries.values
       end
 
-      # Like #scan, plus the folders that yielded no file. Drive answers a revoked, deleted or mistyped folder id
-      # with an empty listing rather than an error, so the caller cannot tell it from a truly empty folder except by
-      # being careful about what an empty folder implies. A file found under several folders counts for each of
-      # them, so every folder is walked with its own visited set.
-      def scan_folders(folder_ids)
-        entries = {} # : Hash[String, Entry]
-        empty = folder_ids.select { |folder_id| collect(folder_id, Set.new, entries).zero? }
-        Scan.new(entries: entries.values, empty_folder_ids: empty)
+      # The given folders whose own listing is empty. Drive answers a revoked, deleted or mistyped folder id with an
+      # empty listing rather than an error, so only this tells such an id from a folder that has content.
+      def empty_folders(folder_ids)
+        folder_ids.select { |folder_id| list_children(folder_id).empty? }
       end
 
       private
 
-      # Adds the files under +folder_id+ to +entries+; returns how many files it found (already known ones included).
       def collect(folder_id, seen, entries)
-        return 0 unless seen.add?(folder_id)
+        return unless seen.add?(folder_id)
 
         folders, files = list_children(folder_id).partition { |entry| entry.mime_type == FOLDER_MIME }
         files.each { |entry| entries[entry.id] ||= entry }
-        folders.sum(files.size) { |folder| collect(folder.id, seen, entries) }
+        folders.each { |folder| collect(folder.id, seen, entries) }
       end
 
       def list_children(folder_id)

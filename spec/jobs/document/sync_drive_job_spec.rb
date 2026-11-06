@@ -29,9 +29,8 @@ RSpec.describe Document::SyncDriveJob do
   before do
     Setting.set("drive_folder_ids", "root1, https://drive.google.com/drive/folders/root2?usp=sharing")
     allow(Emails::Adapters::DriveFileFetcher).to receive(:from_env).and_return(fetcher)
-    allow(fetcher).to receive(:scan_folders).with(%w[root1 root2]) do
-      Emails::Adapters::DriveFileFetcher::Scan.new(entries: entries, empty_folder_ids: empty_folders)
-    end
+    allow(fetcher).to receive(:scan).with(%w[root1 root2]) { entries }
+    allow(fetcher).to receive(:empty_folders).with(%w[root1 root2]) { empty_folders }
     allow(fetcher).to receive(:fetch).with("f1").and_return(drive_file("%PDF", "cv.pdf", "application/pdf"))
     allow(fetcher).to receive(:fetch).with("g1").and_return(drive_file("docx-bytes", "Notes", docx))
     allow(Document::TextExtractor).to receive(:call).and_return("extracted")
@@ -236,13 +235,13 @@ RSpec.describe Document::SyncDriveJob do
 
     described_class.perform_now
 
-    expect(fetcher).not_to have_received(:scan_folders)
+    expect(fetcher).not_to have_received(:scan)
     expect(Document.exists?(keep.id)).to be(true)
   end
 
   it "deletes nothing when the scan fails" do
     keep = drive_document("f1")
-    allow(fetcher).to receive(:scan_folders).and_raise(Emails::Adapters::DriveFileFetcher::Error, "Drive request failed (500)")
+    allow(fetcher).to receive(:scan).and_raise(Emails::Adapters::DriveFileFetcher::Error, "Drive request failed (500)")
 
     expect { described_class.perform_now }.to raise_error(Emails::Adapters::DriveFileFetcher::Error)
     expect(Document.exists?(keep.id)).to be(true)
