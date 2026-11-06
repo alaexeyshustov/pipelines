@@ -23,7 +23,6 @@ module Orchestration
       include Orchestration::Executable
 
       PROVIDERS = %w[gmail yahoo].freeze
-      MISSING_CREDENTIALS = /\AMissing (Gmail|Yahoo) credentials/
       REQUEUE_AFTER = 1.hour
       SKIPPED = { "skipped" => true, "reason" => "no credentials" }.freeze
 
@@ -44,9 +43,9 @@ module Orchestration
         counts = result.counts
         failures[provider] = "#{counts.fetch('failed')} message(s) failed" if counts.fetch("failed").positive?
         counts.merge(enqueue_processing(result.email_ids, stale_ids))
+      rescue Emails::NotConfigured
+        SKIPPED.dup
       rescue StandardError => error
-        return SKIPPED.dup if MISSING_CREDENTIALS.match?(error.message)
-
         failures[provider] = "#{error.class}: #{error.message}"
         { "failed" => true }
       end

@@ -28,7 +28,7 @@ module Emails
         password = opts[:password] || ENV["YAHOO_APP_PASSWORD"]
         host     = opts[:host]     || ENV.fetch("YAHOO_IMAP_HOST", "imap.mail.yahoo.com")
         port     = opts[:port]     || ENV.fetch("YAHOO_IMAP_PORT", "993").to_i
-        raise "Missing Yahoo credentials. Please set YAHOO_USERNAME and YAHOO_APP_PASSWORD environment variables." unless username && password
+        raise Emails::NotConfigured, "Missing Yahoo credentials. Set YAHOO_USERNAME and YAHOO_APP_PASSWORD." unless username && password
 
         new(host:, port:, username:, password:)
       end

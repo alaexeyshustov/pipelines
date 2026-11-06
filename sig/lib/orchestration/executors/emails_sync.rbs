@@ -5,7 +5,6 @@ module Orchestration
 
       PROVIDERS: Array[String]
       REQUEUE_AFTER: ActiveSupport::Duration
-      MISSING_CREDENTIALS: Regexp
       SKIPPED: Hash[String, String | bool]
 
       class ProviderFailure < StandardError
