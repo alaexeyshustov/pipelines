@@ -158,7 +158,7 @@ CREATE TRIGGER emails_fts_ad AFTER DELETE ON emails BEGIN
   INSERT INTO emails_fts(emails_fts, rowid, subject, body, from_address)
   VALUES ('delete', old.id, old.subject, old.body, old.from_address);
 END;
-CREATE TRIGGER emails_fts_au AFTER UPDATE ON emails BEGIN
+CREATE TRIGGER emails_fts_au AFTER UPDATE OF subject, body, from_address ON emails BEGIN
   INSERT INTO emails_fts(emails_fts, rowid, subject, body, from_address)
   VALUES ('delete', old.id, old.subject, old.body, old.from_address);
   INSERT INTO emails_fts(rowid, subject, body, from_address)
@@ -199,7 +199,7 @@ CREATE TRIGGER documents_fts_ad AFTER DELETE ON documents BEGIN
   INSERT INTO documents_fts(documents_fts, rowid, title, text)
   VALUES ('delete', old.id, old.title, old.text);
 END;
-CREATE TRIGGER documents_fts_au AFTER UPDATE ON documents BEGIN
+CREATE TRIGGER documents_fts_au AFTER UPDATE OF title, text ON documents BEGIN
   INSERT INTO documents_fts(documents_fts, rowid, title, text)
   VALUES ('delete', old.id, old.title, old.text);
   INSERT INTO documents_fts(rowid, title, text) VALUES (new.id, new.title, new.text);

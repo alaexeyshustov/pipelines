@@ -37,7 +37,7 @@ class CreateEmails < ActiveRecord::Migration[8.1]
       END;
     SQL
     execute <<~SQL
-      CREATE TRIGGER emails_fts_au AFTER UPDATE ON emails BEGIN
+      CREATE TRIGGER emails_fts_au AFTER UPDATE OF subject, body, from_address ON emails BEGIN
         INSERT INTO emails_fts(emails_fts, rowid, subject, body, from_address)
         VALUES ('delete', old.id, old.subject, old.body, old.from_address);
         INSERT INTO emails_fts(rowid, subject, body, from_address)

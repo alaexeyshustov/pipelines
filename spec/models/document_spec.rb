@@ -82,6 +82,12 @@ RSpec.describe Document do
       expect(indexed("invoice")).to be_empty
     end
 
+    it "keeps the index intact when only tagged_at changes" do
+      document = create(:document, title: "Lease agreement")
+      document.update!(tagged_at: Time.current)
+      expect(indexed("lease")).to eq([ document.id ])
+    end
+
     it "stays consistent through bulk writes" do
       create(:document, title: "Lease agreement")
       described_class.update_all(title: "Declined")

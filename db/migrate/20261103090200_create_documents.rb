@@ -32,7 +32,7 @@ class CreateDocuments < ActiveRecord::Migration[8.1]
       END;
     SQL
     execute <<~SQL
-      CREATE TRIGGER documents_fts_au AFTER UPDATE ON documents BEGIN
+      CREATE TRIGGER documents_fts_au AFTER UPDATE OF title, text ON documents BEGIN
         INSERT INTO documents_fts(documents_fts, rowid, title, text)
         VALUES ('delete', old.id, old.title, old.text);
         INSERT INTO documents_fts(rowid, title, text) VALUES (new.id, new.title, new.text);
