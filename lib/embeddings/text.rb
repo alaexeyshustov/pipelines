@@ -4,8 +4,6 @@ module Embeddings
   module Text
     MAX_CHARS = 16_000
     SIGNATURE_DELIMITER = /^-- ?$/
-    HTML_NOISE = %r{<(style|script|head)\b.*?</\1>}mi
-    ENTITIES = { "&nbsp;" => " ", "&amp;" => "&", "&lt;" => "<", "&gt;" => ">", "&quot;" => '"', "&#39;" => "'" }.freeze
 
     module_function
 
@@ -20,8 +18,7 @@ module Embeddings
     end
 
     def html_to_text(html)
-      text = html.gsub(HTML_NOISE, "").gsub(%r{</(p|div|li|tr|h\d)>|<br\s*/?>}i, "\n").gsub(/<[^>]+>/, "")
-      text.gsub(/&(?:nbsp|amp|lt|gt|quot|#39);/, ENTITIES).lines.map(&:strip).compact_blank.join("\n")
+      Emails::HtmlText.to_text(html)
     end
 
     def without_quotes_and_signature(text)

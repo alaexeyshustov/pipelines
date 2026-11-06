@@ -1,0 +1,8 @@
+module Emails
+  module HtmlText
+    NOISE: Regexp
+    ENTITIES: Hash[String, String]
+
+    def self?.to_text: (String html) -> String
+  end
+end
