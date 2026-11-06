@@ -43,7 +43,6 @@ module Emails
   def self.inbox_message_ids_since: (String provider_name, String history_id) -> Array[String]
   def self.inbox_message_ids_after: (String provider_name, Date date) -> Array[String]
   def self.account: (String provider_name) -> String
-  def self.inbox_uid_validity: (String provider_name) -> Integer
   def self.inbox_status: (String provider_name) -> Adapters::ImapInboxReader::Status
   def self.inbox_uids_after: (String provider_name, Integer last_uid) -> Array[Integer]
   def self.inbox_uids_since: (String provider_name, Date date) -> Array[Integer]
