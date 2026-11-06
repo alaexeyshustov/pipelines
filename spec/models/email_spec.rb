@@ -86,6 +86,14 @@ RSpec.describe Email do
       expect(indexed("rejection")).to eq([ email.id ])
     end
 
+    it "keeps the index intact when only tagged_at changes" do
+      email = create(:email, subject: "Interview invitation")
+      email.update!(tagged_at: Time.current)
+      expect(indexed("interview")).to eq([ email.id ])
+      expect { described_class.connection.execute("INSERT INTO emails_fts(emails_fts, rank) VALUES('integrity-check', 1)") }
+        .not_to raise_error
+    end
+
     it "removes from the index on destroy" do
       email = create(:email, subject: "Interview invitation")
       email.destroy!

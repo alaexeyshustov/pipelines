@@ -25,4 +25,10 @@ RSpec.describe "db/structure.sql" do # rubocop:disable RSpec/DescribeClass
     triggers = db.execute("SELECT name FROM sqlite_master WHERE type = 'trigger'").flatten
     expect(triggers).to include("emails_fts_ai", "emails_fts_au", "emails_fts_ad", "documents_fts_ai", "documents_fts_au", "documents_fts_ad")
   end
+
+  it "re-indexes only when an indexed column changes, not on tagged_at or interview_id updates" do
+    sql = db.execute("SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND name LIKE '%_fts_au'").to_h
+    expect(sql.fetch("emails_fts_au")).to match(/AFTER UPDATE OF subject, body, from_address ON emails/)
+    expect(sql.fetch("documents_fts_au")).to match(/AFTER UPDATE OF title, text ON documents/)
+  end
 end
