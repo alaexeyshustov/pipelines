@@ -3,8 +3,6 @@ module Emails
     class ImapBodyParser
       def self.decode_header: (String? value) -> String?
 
-      def self.strip_html: (String html) -> String
-
       @mail: Mail::Message
 
       def initialize: (Mail::Message mail) -> void
@@ -17,7 +15,6 @@ module Emails
       def extract_body: (Mail::Message | Mail::Part mail) -> String
       def extract_multipart_body: (Mail::Message | Mail::Part mail) -> String
       def decode_part: ((Mail::Message | Mail::Part)? part) -> String
-      def strip_html: (String html) -> String
     end
   end
 end

@@ -44,6 +44,17 @@ RSpec.describe Emails::Adapters::GmailBodyExtractor do
       end
     end
 
+    context 'when an HTML-only payload has a style block and entities' do
+      let(:payload) do
+        make_payload(mime_type: 'text/html',
+                     data: '<style>p { color: red; }</style><p>Fish &amp; chips</p><p>Second line</p>')
+      end
+
+      it 'returns the text without CSS, with entities decoded' do
+        expect(extractor.body).to eq("Fish & chips\nSecond line")
+      end
+    end
+
     context 'when payload has empty body and no parts' do
       let(:payload) { make_payload(data: '') }
 

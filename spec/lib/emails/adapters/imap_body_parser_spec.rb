@@ -52,6 +52,14 @@ RSpec.describe Emails::Adapters::ImapBodyParser do
       end
     end
 
+    context 'when an HTML-only mail has a style block' do
+      let(:mail) { Mail.new("Content-Type: text/html\r\n\r\n<style>p { color: red; }</style><p>Hello</p>") }
+
+      it 'returns the text without CSS' do
+        expect(parser.body).to eq('Hello')
+      end
+    end
+
     context 'when mail is multipart with text/plain and text/html' do
       let(:plain_part) { make_part(mime_type: 'text/plain', decoded: 'Plain text') }
       let(:html_part)  { make_part(mime_type: 'text/html',  decoded: '<b>HTML</b>') }

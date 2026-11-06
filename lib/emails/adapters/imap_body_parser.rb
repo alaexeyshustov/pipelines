@@ -9,12 +9,6 @@ module Emails
         value.to_s
       end
 
-      # Plain text from an HTML body; shared with GmailBodyExtractor so both
-      # providers hand the tagger text, never markup.
-      def self.strip_html(html)
-        html.gsub(/<[^>]+>/, " ").gsub(/\s+/, " ").strip
-      end
-
       def initialize(mail)
         @mail = mail
       end
@@ -47,7 +41,7 @@ module Emails
           extract_multipart_body(mail)
         else
           mail_mime = mail.mime_type # : String?
-          mail_mime == "text/html" ? strip_html(decode_part(mail)) : decode_part(mail)
+          mail_mime == "text/html" ? HtmlText.to_text(decode_part(mail)) : decode_part(mail)
         end
       end
 
@@ -57,7 +51,7 @@ module Emails
         return decode_part(plain) if plain
 
         html = parts.find { |part| part.mime_type == "text/html" } # : Mail::Part?
-        return strip_html(decode_part(html)) if html
+        return HtmlText.to_text(decode_part(html)) if html
 
         parts.filter_map { |part| extract_body(part) }.reject(&:empty?).join("\n\n")
       end
@@ -74,10 +68,6 @@ module Emails
         body.to_s.encode("UTF-8", invalid: :replace, undef: :replace, replace: "?").strip
       rescue StandardError
         ""
-      end
-
-      def strip_html(html)
-        self.class.strip_html(html)
       end
     end
   end
