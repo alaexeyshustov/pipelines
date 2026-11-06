@@ -75,7 +75,7 @@ Where the last sync of one mailbox stopped (ADR 0013). `Email::SyncCursor`; one 
 | last_uid | BIGINT | YES | IMAP only |
 | last_synced_at | DATETIME | YES | |
 | last_rescan_at | DATETIME | YES | |
-| failed_attempts | JSON | NO | `provider_message_id => failed runs`, default `{}`; after `MAX_FAILED_ATTEMPTS` (3) the sync skips the message instead of holding the cursor; cleared by `advance!`/`reset!` |
+| failed_runs | INTEGER | NO | Consecutive runs with failed messages (default `0`); such a run holds the cursor, and at `MAX_FAILED_RUNS` (3) the cursor moves on anyway; cleared by `advance!`/`reset!` |
 | created_at, updated_at | DATETIME | NO | |
 
 ```ruby

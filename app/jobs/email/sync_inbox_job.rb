@@ -18,12 +18,11 @@
 # Emails already stored (unique on provider + provider_message_id) are counted as duplicates; a message that cannot
 # be fetched or stored is logged, counted as failed and skipped, and holds the cursor: with any failed message the
 # cursor is neither advanced nor reset (a rescan included), so the next run re-reads the same range (the stored
-# messages are cheap duplicates). Failed attempts are counted per message on the cursor
-# (Email::SyncCursor#failed_attempts); after Email::SyncCursor::MAX_FAILED_ATTEMPTS failed runs the message is
-# logged and counted as "skipped" instead of being fetched again, so a permanently failing message releases the
-# cursor on the following run (for both providers) instead of holding it, and failing the step, forever. A cursor
-# that has no position yet (first backfill) is still saved to keep those counts. Returns a Result: the counts for
-# the StepRun output and the ids of the newly stored emails, for the caller to enqueue their processing.
+# messages are cheap duplicates). Each such run is counted on the cursor (Email::SyncCursor#failed_runs); at the
+# Email::SyncCursor::MAX_FAILED_RUNS-th the cursor moves on anyway, as after a clean run, and the ids of the failed
+# messages are logged at warn level, so a permanently failing message cannot hold the cursor forever. A cursor that
+# has no position yet (first backfill) is still saved to keep that count. Returns a Result: the counts for the
+# StepRun output and the ids of the newly stored emails, for the caller to enqueue their processing.
 class Email::SyncInboxJob < ApplicationJob
   Result = Data.define(:counts, :email_ids)
 
@@ -42,8 +41,8 @@ class Email::SyncInboxJob < ApplicationJob
     cursor = Email::SyncCursor.for(provider: "gmail", account: profile.fetch(:email_address))
     mode, ids = gmail_message_ids(cursor)
 
-    result = store_all("gmail", mode, ids, cursor)
-    return result if failures?(result)
+    result, failed_ids = store_all("gmail", mode, ids)
+    return result if hold_cursor?("gmail", cursor, failed_ids)
 
     mode == "incremental" ? cursor.advance!(history_id: profile.fetch(:history_id)) : cursor.reset!(history_id: profile.fetch(:history_id))
     result
@@ -55,8 +54,8 @@ class Email::SyncInboxJob < ApplicationJob
     uid_validity = status.uid_validity
     mode, uids = yahoo_uids(cursor, uid_validity)
 
-    result = store_all("yahoo", mode, uids.map { |uid| "#{uid_validity}:#{uid}" }, cursor)
-    return result if failures?(result)
+    result, failed_ids = store_all("yahoo", mode, uids.map { |uid| "#{uid_validity}:#{uid}" })
+    return result if hold_cursor?("yahoo", cursor, failed_ids)
 
     save_yahoo_cursor(cursor, mode, uid_validity, mode == "incremental" ? uids.max : status.last_uid)
     result
@@ -93,42 +92,44 @@ class Email::SyncInboxJob < ApplicationJob
     Emails.inbox_message_ids_after("gmail", Date.current - Email.backfill_days)
   end
 
-  def failures?(result)
-    result.counts.fetch("failed").positive?
+  # True when a failed message keeps the cursor where it is: counts the failed run, and gives up (false, with a
+  # warning) once it was the MAX_FAILED_RUNS-th, so the caller advances or resets the cursor, which clears the count.
+  def hold_cursor?(provider, cursor, failed_ids)
+    return false if failed_ids.empty?
+
+    cursor.failed_runs += 1
+    if cursor.failed_runs >= Email::SyncCursor::MAX_FAILED_RUNS
+      Rails.logger.warn("#{provider} sync moves the cursor past #{cursor.failed_runs} failed runs; failed messages: #{failed_ids.join(', ')}")
+      return false
+    end
+
+    cursor.save!
+    true
   end
 
-  def store_all(provider, mode, ids, cursor)
-    counts = { "mode" => mode, "fetched" => ids.size, "stored" => 0, "duplicates" => 0, "failed" => 0, "skipped" => 0 }
-    email_ids = []
+  # [Result, ids of the messages that failed]
+  def store_all(provider, mode, ids)
     known = Email.where(provider: provider, provider_message_id: ids).pluck(:provider_message_id).to_set
-    ids.each do |message_id|
-      outcome, email = store(provider, message_id, known, cursor)
-      counts[outcome] += 1
-      email_ids << email.id if email
-    end
-    cursor.save! if counts.fetch("failed").positive?
-    Result.new(counts: counts, email_ids: email_ids)
+    outcomes = ids.map { |message_id| [ message_id, *store(provider, message_id, known) ] }
+    failed_ids = outcomes.select { |(_id, outcome, _email)| outcome == "failed" }.map(&:first)
+    [ Result.new(counts: counts_for(mode, ids.size, outcomes), email_ids: outcomes.filter_map { |(*, email)| email&.id }), failed_ids ]
+  end
+
+  def counts_for(mode, fetched, outcomes)
+    { "mode" => mode, "fetched" => fetched, "stored" => 0, "duplicates" => 0, "failed" => 0 }
+      .merge(outcomes.map { |(_id, outcome, _email)| outcome }.tally)
   end
 
   # [counts key, new Email or nil]
-  def store(provider, message_id, known, cursor)
+  def store(provider, message_id, known)
     return [ "duplicates", nil ] if known.include?(message_id)
-    return [ "skipped", nil ] if give_up?(provider, message_id, cursor)
 
     [ "stored", Email.create!(attributes_for(provider, Emails.fetch_message(provider, message_id))) ]
   rescue ActiveRecord::RecordNotUnique
     [ "duplicates", nil ]
   rescue StandardError => error
     Rails.logger.error("Email #{provider}/#{message_id} failed: #{error.class}: #{error.message}")
-    cursor.record_failure(message_id)
     [ "failed", nil ]
-  end
-
-  def give_up?(provider, message_id, cursor)
-    return false unless cursor.gave_up_on?(message_id)
-
-    Rails.logger.warn("Email #{provider}/#{message_id} skipped after #{Email::SyncCursor::MAX_FAILED_ATTEMPTS} failed attempts")
-    true
   end
 
   def attributes_for(provider, message)

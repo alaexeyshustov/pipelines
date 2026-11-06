@@ -4,10 +4,8 @@ class Email
 
     def self.for: (provider: String, account: String, ?mailbox: String) -> SyncCursor
 
-    MAX_FAILED_ATTEMPTS: Integer
+    MAX_FAILED_RUNS: Integer
 
-    def gave_up_on?: (String message_id) -> bool
-    def record_failure: (String message_id) -> Hash[String, Integer]
     def advance!: (?history_id: String?, ?uid_validity: Integer?, ?last_uid: Integer?) -> void
     def reset!: (?history_id: String?, ?uid_validity: Integer?, ?last_uid: Integer?) -> void
 
@@ -23,8 +21,8 @@ class Email
     def uid_validity=: (Integer?) -> Integer?
     def last_uid: () -> Integer?
     def last_uid=: (Integer?) -> Integer?
-    def failed_attempts: () -> Hash[String, Integer]
-    def failed_attempts=: (Hash[String, Integer]) -> Hash[String, Integer]
+    def failed_runs: () -> Integer
+    def failed_runs=: (Integer) -> Integer
     def last_synced_at: () -> Time?
     def last_synced_at=: (Time?) -> Time?
     def last_rescan_at: () -> Time?

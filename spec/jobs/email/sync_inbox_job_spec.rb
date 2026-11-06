@@ -50,7 +50,7 @@ RSpec.describe Email::SyncInboxJob do
     it "backfills the last 90 days, stores the emails and returns counts with the new ids" do
       result = described_class.perform_now("gmail")
 
-      expect(result.counts).to eq("mode" => "backfill", "fetched" => 2, "stored" => 2, "duplicates" => 0, "failed" => 0, "skipped" => 0)
+      expect(result.counts).to eq("mode" => "backfill", "fetched" => 2, "stored" => 2, "duplicates" => 0, "failed" => 0)
       expect(result.email_ids).to match_array(Email.pluck(:id))
       expect(Email.order(:provider_message_id)).to contain_exactly(
         have_attributes(provider: "gmail", provider_message_id: "m1", subject: "Subject m1",
@@ -85,7 +85,7 @@ RSpec.describe Email::SyncInboxJob do
 
       result = described_class.perform_now("gmail")
 
-      expect(result.counts).to eq("mode" => "incremental", "fetched" => 2, "stored" => 1, "duplicates" => 1, "failed" => 0, "skipped" => 0)
+      expect(result.counts).to eq("mode" => "incremental", "fetched" => 2, "stored" => 1, "duplicates" => 1, "failed" => 0)
       expect(result.email_ids).to eq([ Email.find_by!(provider_message_id: "new1").id ])
       expect(cursor.history_id).to eq("500")
     end
@@ -118,7 +118,7 @@ RSpec.describe Email::SyncInboxJob do
       result = nil
       expect { result = described_class.perform_now("gmail") }.to change(Email, :count).by(1)
 
-      expect(result.counts).to eq("mode" => "rescan", "fetched" => 2, "stored" => 1, "duplicates" => 1, "failed" => 0, "skipped" => 0)
+      expect(result.counts).to eq("mode" => "rescan", "fetched" => 2, "stored" => 1, "duplicates" => 1, "failed" => 0)
       expect(cursor).to have_attributes(history_id: "500", last_rescan_at: be_present)
     end
 
@@ -168,7 +168,7 @@ RSpec.describe Email::SyncInboxJob do
     end
   end
 
-  it "stores no position when a backfill message failed, only the failed attempt" do
+  it "stores no position when a backfill message failed, only the failed run" do
     allow(Rails.logger).to receive(:error)
     stub_window("bad", "good")
     stub_request(:get, %r{#{base}/messages/bad\?format=full}).to_return(status: 500, headers: json, body: "{}")
@@ -177,14 +177,11 @@ RSpec.describe Email::SyncInboxJob do
     result = described_class.perform_now("gmail")
 
     expect(result.counts).to include("stored" => 1, "failed" => 1)
-    expect(cursor).to have_attributes(history_id: nil, last_synced_at: nil, failed_attempts: { "bad" => 1 })
+    expect(cursor).to have_attributes(history_id: nil, last_synced_at: nil, failed_runs: 1)
   end
 
   describe "a message that keeps failing" do
-    let(:max) { Email::SyncCursor::MAX_FAILED_ATTEMPTS }
-    let!(:bad_request) do
-      stub_request(:get, %r{#{base}/messages/bad\?format=full}).to_return(status: 500, headers: json, body: "{}")
-    end
+    let(:max) { Email::SyncCursor::MAX_FAILED_RUNS }
 
     # The same range is re-read on purpose, run after run.
     def run_failing_syncs(times)
@@ -192,6 +189,7 @@ RSpec.describe Email::SyncInboxJob do
     end
 
     before do
+      stub_request(:get, %r{#{base}/messages/bad\?format=full}).to_return(status: 500, headers: json, body: "{}")
       allow(Rails.logger).to receive(:error)
       allow(Rails.logger).to receive(:warn)
       Email::SyncCursor.for(provider: "gmail", account: account).advance!(history_id: "100")
@@ -199,38 +197,26 @@ RSpec.describe Email::SyncInboxJob do
       stub_message("good")
     end
 
-    it "holds the cursor for MAX_FAILED_ATTEMPTS runs" do
-      run_failing_syncs(max)
+    it "holds the cursor and counts the failed run until MAX_FAILED_RUNS" do
+      run_failing_syncs(max - 1)
 
-      expect(cursor).to have_attributes(history_id: "100", failed_attempts: { "bad" => max })
+      expect(cursor).to have_attributes(history_id: "100", failed_runs: max - 1)
+      expect(Rails.logger).not_to have_received(:warn)
     end
 
-    it "is then skipped without a fetch, so the cursor advances and the failure count is forgotten" do
+    it "moves the cursor on at the MAX_FAILED_RUNS-th failed run, resets the count and logs the failed ids" do
       run_failing_syncs(max)
 
-      result = Prosopite.pause { described_class.perform_now("gmail") }
-
-      expect(result.counts).to include("failed" => 0, "skipped" => 1, "duplicates" => 1)
-      expect(bad_request).to have_been_requested.times(max)
-      expect(cursor).to have_attributes(history_id: "500", failed_attempts: {})
+      expect(cursor).to have_attributes(history_id: "500", failed_runs: 0)
+      expect(Rails.logger).to have_received(:warn).with(/gmail.*bad/)
     end
 
-    it "logs the skipped message" do
-      run_failing_syncs(max)
-      Prosopite.pause { described_class.perform_now("gmail") }
-
-      expect(Rails.logger).to have_received(:warn).with(/gmail\/bad.*#{max}/)
-    end
-
-    it "is released during a rescan as well" do
+    it "moves on during a rescan as well" do
       stub_history(status: 404)
       stub_window("bad", "good")
       run_failing_syncs(max)
 
-      result = Prosopite.pause { described_class.perform_now("gmail") }
-
-      expect(result.counts).to include("mode" => "rescan", "failed" => 0, "skipped" => 1)
-      expect(cursor).to have_attributes(history_id: "500", last_rescan_at: be_present, failed_attempts: {})
+      expect(cursor).to have_attributes(history_id: "500", last_rescan_at: be_present, failed_runs: 0)
     end
   end
 

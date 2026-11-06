@@ -54,7 +54,7 @@ RSpec.describe Email::SyncInboxJob, "#perform" do
     it "backfills the last 90 days, stores emails under <uid_validity>:<uid> and returns counts with the new ids" do
       result = described_class.perform_now("yahoo")
 
-      expect(result.counts).to eq("mode" => "backfill", "fetched" => 2, "stored" => 2, "duplicates" => 0, "failed" => 0, "skipped" => 0)
+      expect(result.counts).to eq("mode" => "backfill", "fetched" => 2, "stored" => 2, "duplicates" => 0, "failed" => 0)
       expect(result.email_ids).to match_array(Email.pluck(:id))
       expect(Email.order(:provider_message_id)).to contain_exactly(
         have_attributes(provider: "yahoo", provider_message_id: "777:3", subject: "Subject 3", body: "Body 3",
@@ -91,7 +91,7 @@ RSpec.describe Email::SyncInboxJob, "#perform" do
 
       result = described_class.perform_now("yahoo")
 
-      expect(result.counts).to eq("mode" => "incremental", "fetched" => 2, "stored" => 2, "duplicates" => 0, "failed" => 0, "skipped" => 0)
+      expect(result.counts).to eq("mode" => "incremental", "fetched" => 2, "stored" => 2, "duplicates" => 0, "failed" => 0)
       expect(Email.pluck(:provider_message_id)).to include("777:11", "777:12")
       expect(cursor).to have_attributes(uid_validity: 777, last_uid: 12)
     end
@@ -141,7 +141,7 @@ RSpec.describe Email::SyncInboxJob, "#perform" do
       result = nil
       expect { result = described_class.perform_now("yahoo") }.to change(Email, :count).by(1)
 
-      expect(result.counts).to eq("mode" => "rescan", "fetched" => 2, "stored" => 1, "duplicates" => 1, "failed" => 0, "skipped" => 0)
+      expect(result.counts).to eq("mode" => "rescan", "fetched" => 2, "stored" => 1, "duplicates" => 1, "failed" => 0)
       expect(Email.where(provider: "yahoo").pluck(:provider_message_id)).to include("111:3", "777:3", "777:5")
     end
 
@@ -161,18 +161,18 @@ RSpec.describe Email::SyncInboxJob, "#perform" do
     end
   end
 
-  it "stores no position when a backfill message failed, only the failed attempt" do
+  it "stores no position when a backfill message failed, only the failed run" do
     allow(Rails.logger).to receive(:error)
     stub_window(3)
     stub_failing_message(3)
 
     described_class.perform_now("yahoo")
 
-    expect(cursor).to have_attributes(uid_validity: nil, last_uid: nil, failed_attempts: { "777:3" => 1 })
+    expect(cursor).to have_attributes(uid_validity: nil, last_uid: nil, failed_runs: 1)
   end
 
   describe "a message that keeps failing" do
-    let(:max) { Email::SyncCursor::MAX_FAILED_ATTEMPTS }
+    let(:max) { Email::SyncCursor::MAX_FAILED_RUNS }
 
     # The same range is re-read on purpose, run after run.
     def run_failing_syncs(times)
@@ -188,27 +188,17 @@ RSpec.describe Email::SyncInboxJob, "#perform" do
       stub_message(12)
     end
 
-    it "holds the cursor for MAX_FAILED_ATTEMPTS runs" do
-      run_failing_syncs(max)
+    it "holds the cursor and counts the failed run until MAX_FAILED_RUNS" do
+      run_failing_syncs(max - 1)
 
-      expect(cursor).to have_attributes(last_uid: 10, failed_attempts: { "777:11" => max })
+      expect(cursor).to have_attributes(last_uid: 10, failed_runs: max - 1)
     end
 
-    it "is then skipped without a fetch, so the cursor advances past it" do
+    it "moves the cursor on at the MAX_FAILED_RUNS-th failed run, resets the count and logs the failed ids" do
       run_failing_syncs(max)
 
-      result = Prosopite.pause { described_class.perform_now("yahoo") }
-
-      expect(result.counts).to include("failed" => 0, "skipped" => 1, "duplicates" => 1)
-      expect(imap).to have_received(:uid_fetch).with(11, anything).exactly(max).times
-      expect(cursor).to have_attributes(last_uid: 12, failed_attempts: {})
-    end
-
-    it "logs the skipped message" do
-      run_failing_syncs(max)
-      Prosopite.pause { described_class.perform_now("yahoo") }
-
-      expect(Rails.logger).to have_received(:warn).with(/yahoo\/777:11.*#{max}/)
+      expect(cursor).to have_attributes(last_uid: 12, failed_runs: 0)
+      expect(Rails.logger).to have_received(:warn).with(/yahoo.*777:11/)
     end
   end
 end

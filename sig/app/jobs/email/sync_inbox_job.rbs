@@ -20,10 +20,10 @@ class Email
     def yahoo_window_uids: () -> Array[Integer]
     def gmail_message_ids: (SyncCursor cursor) -> [String, Array[String]]
     def window_ids: () -> Array[String]
-    def failures?: (Result result) -> bool
-    def store_all: (String provider, String mode, Array[String] ids, SyncCursor cursor) -> Result
-    def store: (String provider, String message_id, Set[String] known, SyncCursor cursor) -> [String, Email?]
-    def give_up?: (String provider, String message_id, SyncCursor cursor) -> bool
+    def hold_cursor?: (String provider, SyncCursor cursor, Array[String] failed_ids) -> bool
+    def store_all: (String provider, String mode, Array[String] ids) -> [Result, Array[String]]
+    def counts_for: (String mode, Integer fetched, Array[[String, String, Email?]] outcomes) -> counts
+    def store: (String provider, String message_id, Set[String] known) -> [String, Email?]
     def attributes_for: (String provider, Emails::full_message message) -> Hash[Symbol, String | Time | nil]
   end
 end
