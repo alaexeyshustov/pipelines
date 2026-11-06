@@ -1,6 +1,8 @@
 module TagPages
   # The emails and documents carrying +tag+, narrowed by a FilterForm (subtag, type, date range, FTS query).
-  # With a query, rows are ordered best match first; otherwise newest first. Each kind is capped at LIMIT.
+  # With a query on a single kind, rows are ordered best match first. Otherwise (no query, or emails and documents
+  # together, whose bm25 ranks come from two FTS indexes and cannot be compared) newest first. Each kind is capped at
+  # LIMIT.
   class Search
     LIMIT = 50
 
@@ -21,10 +23,14 @@ module TagPages
       rows = [] # : Array[Row]
       rows.concat(email_rows) if @filter.include_emails?
       rows.concat(document_rows) if @filter.include_documents?
-      @filter.query ? rows.sort_by { |row| row.rank.to_f } : rows.sort_by(&:date).reverse
+      ranked? ? rows.sort_by { |row| row.rank.to_f } : rows.sort_by(&:date).reverse
     end
 
     private
+
+    def ranked?
+      @filter.query.present? && !(@filter.include_emails? && @filter.include_documents?)
+    end
 
     def email_rows
       emails = Email.preload(:interview, taggings: :subtag).where(id: tagged_ids("Email")).where(date: date_range)

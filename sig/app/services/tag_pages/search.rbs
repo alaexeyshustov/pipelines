@@ -25,6 +25,7 @@ module TagPages
 
     private
 
+    def ranked?: () -> bool
     def email_rows: () -> Array[Row]
     def document_rows: () -> Array[Row]
     def records: [T < ApplicationRecord] (ActiveRecord::Relation relation) -> Array[[ T, String?, Float? ]]
