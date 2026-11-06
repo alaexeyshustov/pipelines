@@ -31,10 +31,8 @@ reading for `#previous_sibling` in this sandbox via timeout-under-contention, th
 noise `.omc/plans/fix-mutation-testing-ci.md`'s Risks section flags for the nightly job). Rows not
 yet re-verified this way should be treated as directional, not exact.
 
-Two items from this list have already been closed (see the equivalent-mutant and coverage work
+One item from this list has already been closed (see the equivalent-mutant and coverage work
 landed alongside this doc):
-- `SqliteVecExtension#configure_connection` (`config/initializers/sqlite_vec.rb:6`, 27 alive,
-  0 tests) — closed via `spec/initializers/sqlite_vec_extension_spec.rb`.
 - `Interview.as_rows`'s order-tiebreak mutation was investigated and reclassified as a genuine
   **equivalent mutant** (a composite DB index) — documented inline, not fixable by
   any test, and excluded from this backlog.

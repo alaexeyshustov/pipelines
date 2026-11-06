@@ -35,7 +35,6 @@ matcher:
     - Records*
     - Orchestration*
     - Interview*
-    - SqliteVecExtension*
     - Evaluation::ActivePromptResolver*
   ignore:
     # Value-object DTOs (Data.define) and the null-object resolver carry no
