@@ -14,7 +14,7 @@ RSpec.describe "Seeds: agent config backfill" do # rubocop:disable RSpec/Describ
   {
     "Orchestration::Agents::EmailsClassifier"   => { model: "mistral-large-latest", tools: [ "Records::TempFileTool" ] },
     "Orchestration::Agents::RecordsNormalizer" => { model: "gpt-5.1",              tools: [ "Records::ListRowsTool", "Records::ReadRowsTool", "Records::UpdateRowsTool",
-                                                                            "Records::ReadSchemaTool" ] },
+                                                                            "Records::ReadSchemaTool", "Records::SearchSimilarTool" ] },
     "Orchestration::Agents::RecordsFiller"      => { model: "gpt-5.1",              tools: [ "Records::UpdateRowsTool", "Emails::GetTool" ] }
   }.each do |agent_name, expected|
     describe agent_name do

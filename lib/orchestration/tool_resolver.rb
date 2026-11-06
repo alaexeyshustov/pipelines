@@ -12,6 +12,7 @@ module Orchestration
       "Records::ListRowsTool"      => Records::ListRowsTool,
       "Records::ReadRowsTool"      => Records::ReadRowsTool,
       "Records::ReadSchemaTool"    => Records::ReadSchemaTool,
+      "Records::SearchSimilarTool" => Records::SearchSimilarTool,
       "Records::TempFileTool"      => Records::TempFileTool,
       "Records::UpdateRowsTool"    => Records::UpdateRowsTool
     }.freeze
