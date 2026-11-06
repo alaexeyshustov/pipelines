@@ -39,39 +39,21 @@ RSpec.describe Email::SyncCursor do
     end
   end
 
-  describe "failed attempts" do
-    let(:cursor) { create(:email_sync_cursor, provider: "yahoo") }
+  describe "failed_runs" do
+    let(:cursor) { create(:email_sync_cursor, provider: "yahoo", failed_runs: 2) }
 
-    it "starts empty" do
-      expect(cursor.failed_attempts).to eq({})
-      expect(cursor.gave_up_on?("1:5")).to be(false)
+    it "starts at 0" do
+      expect(create(:email_sync_cursor, provider: "yahoo").failed_runs).to eq(0)
     end
 
-    it "counts attempts per message and gives up after MAX_FAILED_ATTEMPTS" do
-      (described_class::MAX_FAILED_ATTEMPTS - 1).times { cursor.record_failure("1:5") }
-      expect(cursor.gave_up_on?("1:5")).to be(false)
-
-      cursor.record_failure("1:5")
-      expect(cursor.gave_up_on?("1:5")).to be(true)
-      expect(cursor.gave_up_on?("1:6")).to be(false)
-    end
-
-    it "persists the counts" do
-      cursor.record_failure("1:5")
-      cursor.save!
-      expect(cursor.reload.failed_attempts).to eq("1:5" => 1)
-    end
-
-    it "forgets them when the cursor advances" do
-      cursor.record_failure("1:5")
+    it "is cleared when the cursor advances" do
       cursor.advance!(uid_validity: 1, last_uid: 9)
-      expect(cursor.reload.failed_attempts).to eq({})
+      expect(cursor.reload.failed_runs).to eq(0)
     end
 
-    it "forgets them when the cursor is reset" do
-      cursor.record_failure("1:5")
+    it "is cleared when the cursor is reset" do
       cursor.reset!(uid_validity: 1, last_uid: 9)
-      expect(cursor.reload.failed_attempts).to eq({})
+      expect(cursor.reload.failed_runs).to eq(0)
     end
   end
 
