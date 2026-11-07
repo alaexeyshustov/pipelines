@@ -1,0 +1,15 @@
+<%= render UI::PageHeaderComponent.new(
+      title: @email.subject.presence || "(no subject)",
+      notice: notice, alert: alert
+    ) %>
+
+<p class="mb-4 text-sm text-gray-600">
+  From <%= @email.from_address %> · <%= l(@email.date, format: :short) %> · <%= @email.provider %>
+</p>
+
+<div class="mb-6">
+  <%= render ::Tags::TaggingsComponent.new(taggings: @taggings, tags: @tags, base_url: email_taggings_path(@email),
+                                         errors: @form_errors) %>
+</div>
+
+<pre class="whitespace-pre-wrap text-sm text-gray-800"><%= @email.body %></pre>

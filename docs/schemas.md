@@ -1,38 +1,6 @@
 # Schemas — AI Agent Quick Reference
 
-Schema format is `:sql` (not `:ruby`) because sqlite-vec `vec0` virtual tables cannot be expressed in the Ruby DSL. Source of truth: `db/structure.sql`.
-
----
-
-## application_mails
-
-One row per unique job-related email received.
-
-| Column | Type | Null | Default | Notes |
-|---|---|---|---|---|
-| id | INTEGER | NO | autoincrement | PK |
-| date | DATE | NO | — | Date the email was received |
-| provider | STRING | NO | — | `"gmail"` or `"yahoo"` |
-| email_id | STRING | NO | — | Provider-assigned message ID; globally unique |
-| company | STRING | YES | — | Extracted by LLM; nil if unknown |
-| job_title | STRING | YES | — | Extracted by LLM; nil if unknown |
-| action | STRING | YES | — | Extracted by LLM; e.g. `"applied"`, `"rejected"` |
-| created_at | DATETIME | NO | — | |
-| updated_at | DATETIME | NO | — | |
-
-**Indexes:** `email_id` (unique), `date`
-
-**Model constants:**
-```ruby
-ApplicationMail::COLUMN_NAMES
-# => ["date", "provider", "email_id", "company", "job_title", "action"]
-```
-
-**Key method:**
-```ruby
-ApplicationMail.as_rows          # => Array of plain hashes, ordered by date asc
-ApplicationMail.as_rows(scope)   # accepts a custom ActiveRecord scope
-```
+Schema format is `:sql` (not `:ruby`) because FTS5 virtual tables and their triggers cannot be expressed in the Ruby DSL. Source of truth: `db/structure.sql`.
 
 ---
 
@@ -57,6 +25,8 @@ One row per company + job_title pair; tracks the full interview lifecycle.
 
 **Indexes:** `[company, job_title]` (unique)
 
+Upserted from `job_application`-tagged emails by `Interviews::EmailExtractor` (match on company + job title, case-insensitive; status only moves forward); `Interview has_many :emails`.
+
 **Model constants:**
 ```ruby
 Interview::STATUSES
@@ -76,23 +46,194 @@ Interview.as_rows(scope)  # accepts a custom ActiveRecord scope
 
 ---
 
-## email_vectors
+## emails
 
-sqlite-vec `vec0` virtual table. Stores 1536-dim float embeddings for RAG. **Not yet wired into the main workflow — reserved for future use.**
+One row per INBOX email, full body kept.
+### Email columns added for ingestion
 
-| Column | Type | Notes |
-|---|---|---|
-| email_id | TEXT (PK) | Matches `application_mails.email_id` |
-| embedding | FLOAT[1536] | OpenAI-compatible 1536-dim vector |
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| tagged_at | DATETIME | YES | Set by the per-email processing job after a successful classification; `NULL` = untagged backlog |
+| interview_id | INTEGER | YES | FK `interviews.id` (`ON DELETE SET NULL`, indexed). Set by `Interviews::EmailExtractor` (job `Interview::ExtractJob`): the Interview this `job_application` email fed. `Email belongs_to :interview, optional: true` / `Interview has_many :emails` |
 
-**Model methods:**
+`Email.backfill_days` reads Setting `email_backfill_days` (then ENV `EMAIL_BACKFILL_DAYS`, default 90): the window for a first sync or rescan.
+
+---
+
+## email_sync_cursors
+
+Where the last sync of one mailbox stopped (ADR 0013). `Email::SyncCursor`; one row per `[provider, account, mailbox]` (unique index).
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| id | INTEGER | NO | PK |
+| provider | STRING | NO | `gmail` / `yahoo` |
+| account | STRING | NO | Mailbox owner (Gmail address, Yahoo username) |
+| mailbox | STRING | NO | Default `INBOX` |
+| history_id | STRING | YES | Gmail only |
+| uid_validity | BIGINT | YES | IMAP only |
+| last_uid | BIGINT | YES | IMAP only |
+| last_synced_at | DATETIME | YES | |
+| last_rescan_at | DATETIME | YES | |
+| failed_runs | INTEGER | NO | Consecutive runs with failed messages (default `0`); such a run holds the cursor, and at `MAX_FAILED_RUNS` (3) the cursor moves on anyway; cleared by `advance!`/`reset!` |
+| created_at, updated_at | DATETIME | NO | |
+
 ```ruby
-EmailVector.upsert_embedding(email_id: id, embedding: float_array)
-EmailVector.search(float_array, limit: 5)
-# => [{ email_id: "...", distance: 0.12 }, ...]
+cursor = Email::SyncCursor.for(provider: "gmail", account: "me@example.com")  # find or build (unsaved = backfill)
+cursor.advance!(history_id: "123")   # forward only; stamps last_synced_at
+cursor.reset!(history_id: "456")     # after a rescan; may move backwards; stamps last_rescan_at
 ```
 
-The sqlite-vec extension is loaded on every connection by `config/initializers/sqlite_vec.rb`.
+---
+
+## documents
+
+A pdf/doc(x)/image reduced to extracted text (markdown). Only the text is stored; the original is re-fetched live. `Document`; extraction/ingestion is separate. Taggable (like `Email`, via `Taggable`).
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| id | INTEGER | NO | PK |
+| title | STRING | NO | |
+| mime_type | STRING | NO | |
+| text | TEXT | NO | Extracted markdown, default `""` |
+| checksum | STRING | NO | Unique; dedup key |
+| source | STRING | NO | `"email_attachment"` or `"drive"` |
+| source_url | STRING | YES | Drive `webViewLink` / Gmail message link |
+| source_ref | JSON | NO | `provider` + `message_id`/`attachment_id` (gmail) or `drive_file_id` (drive) |
+| email_id | FK | YES | `emails.id`, nulled when the email is deleted |
+| tagged_at | DATETIME | YES | Set by `Document::TagJob` after a successful classification; `NULL` = untagged backlog, re-queued by `EmailsSync` (attachments) / `Document::SyncDriveJob` (Drive) |
+| created_at, updated_at | DATETIME | NO | |
+
+```ruby
+Document.ingest!(attrs)               # idempotent on checksum: returns the existing Document on re-ingest
+Document::Download.call(document)     # => File(data:, filename:, mime_type:), fetched live via source_ref
+```
+
+`GET /documents/:id/download` streams it. Gmail uses `Emails.attachment`; Drive uses `Emails::Adapters::DriveFileFetcher` (minimal Net::HTTP client for Drive v3, `drive.readonly` token from `DRIVE_TOKEN_PATH`, raises `NotConfigured` otherwise).
+
+### documents_fts
+
+FTS5 external-content virtual table over `title`, `text` (rowid = `documents.id`), triggers `documents_fts_ai/_au/_ad`; shadow tables stripped from `structure.sql` on dump.
+
+```ruby
+Document::SearchQuery.call("lease rent", limit: 20)
+# => [#<data Hit document: Document, rank: -1.2, snippet: "... [[rent]] ...">]  (bm25, best first)
+```
+
+Shares sanitising and ranking with `Email::SearchQuery` through `FtsSearchable#fts_search`.
+
+## embeddings
+
+One vector per Email or Document and embedding model (ADR 0014, GH #226). Qwen3-Embedding-0.6B via Ollama, 1024 dims, cosine distance, no chunking (`Embeddings::Text` embeds subject/title plus cleaned text, cut at 16k chars).
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| id | INTEGER | NO | PK |
+| embeddable_type, embeddable_id | STRING, INTEGER | NO | `Email` or `Document`; unique together with `model` |
+| model | STRING | NO | e.g. `qwen3-embedding:0.6b` (`LlmModels.embedding`) |
+| dimensions | INTEGER | NO | 1024 (`Embeddings::Client::DIMENSIONS`) |
+| content_digest | STRING | NO | SHA256 of the embedded text; unchanged text is not re-embedded |
+| embedded_at | DATETIME | NO | |
+| vector | BLOB | NO | float32 x 1024, read and queried through the [neighbor](https://github.com/ankane/neighbor) gem (`has_neighbors :vector`) |
+
+KNN (`Embedding.nearest`; duplicates use the record method `nearest_neighbors`): `where(embeddable_type:, model:).nearest_neighbors(:vector, vector, distance: "cosine")` orders by sqlite-vec's `vec_distance_cosine` (brute force; `config/initializers/neighbor.rb` loads the extension on every connection). (Earlier versions kept vectors in a vec0 table, `embedding_vectors`.)
+
+```ruby
+Embeddings::Embed.call([email, document])        # batched, skips unchanged digests; run by Email::EmbedJob / Document::EmbedJob
+Email::SearchQuery.call("rent contract", mode: :semantic)  # or :hybrid (FTS5 + KNN, reciprocal rank fusion)
+```
+
+Setup: `ollama pull qwen3-embedding:0.6b`; `OLLAMA_API_BASE` (default `http://localhost:11434/v1`), `EMBEDDING_MODEL` or Setting `embedding_model`. Backfill or model change: `rake embeddings:reembed[new-model]` (embeds everything, switches the setting, drops old vectors).
+
+## document_duplicates
+
+Near-duplicate candidate pairs of Documents (GH #227), one row per pair in canonical order (`document_id` < `duplicate_id`).
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| id | INTEGER | NO | PK |
+| document_id, duplicate_id | INTEGER | NO | FK to `documents`; unique together |
+| similarity | FLOAT | NO | cosine similarity (1 - distance) at detection |
+| status | STRING | NO | `pending` (default), `confirmed`, `dismissed` (Rails enum); a dismissed pair is never re-flagged |
+
+```ruby
+Document::DetectDuplicates.call(document)  # flags embedded Documents with similarity >= Document::DetectDuplicates.threshold
+```
+
+Threshold: Setting `document_dedup_threshold`, then ENV `DOCUMENT_DEDUP_THRESHOLD`, default 0.95. Backfill or after changing it: `rake documents:detect_duplicates`.
+
+## tags
+
+Fixed top-level tags (not editable in the UI); seeded by `Tag.seed_defaults!`.
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| id | INTEGER | NO | PK |
+| provider | STRING | NO | `"gmail"` or `"yahoo"` |
+| provider_message_id | STRING | NO | Unique together with `provider` |
+| from_address | STRING | NO | |
+| to_address | STRING | YES | |
+| subject | STRING | YES | |
+| date | DATETIME | NO | Indexed |
+| body | TEXT | YES | Plain text |
+| html_body | TEXT | YES | |
+| source_url | STRING | YES | Gmail web link |
+| created_at, updated_at | DATETIME | NO | |
+
+### emails_fts
+
+FTS5 external-content virtual table over `subject`, `body`, `from_address` (rowid = `emails.id`). Insert/update/delete triggers (`emails_fts_ai/_au/_ad`) keep it in sync, including `update_all`/`delete_all`. The FTS5 shadow tables are stripped from `structure.sql` on dump (`lib/tasks/structure.rake`).
+
+```ruby
+Email::SearchQuery.call("interview acme", limit: 20)
+# => [#<data Hit email: Email, rank: -1.2, snippet: "... [[interview]] ...">]  (bm25, best first)
+```
+
+Input is split into quoted terms ANDed together, so operators and quotes are plain text.
+| name | STRING | NO | One of `Tag::NAMES`: medical, job_application, child, subscription, bureaucracy, finance |
+| created_at / updated_at | DATETIME | NO | |
+
+**Indexes:** `name` (unique)
+
+---
+
+## subtags
+
+User-extendable subtags of a tag (starter set in `Tag::STARTER_SUBTAGS`); added from the Tags page (`/tags`).
+
+| Column | Type | Null | Notes |
+|---|---|---|---|
+| id | INTEGER | NO | PK |
+| tag_id | INTEGER | NO | FK to `tags` |
+| name | STRING | NO | Unique within its tag (`invoice` may exist under several tags) |
+| created_at / updated_at | DATETIME | NO | |
+
+**Indexes:** `[tag_id, name]` (unique), `tag_id`
+
+---
+
+## taggings
+
+Polymorphic join: `taggable` (Email or Document) gets tags. Untagged items have no rows.
+
+| Column | Type | Null | Default | Notes |
+|---|---|---|---|---|
+| id | INTEGER | NO | autoincrement | PK |
+| taggable_type / taggable_id | STRING / INTEGER | NO | — | Polymorphic owner |
+| tag_id | INTEGER | NO | — | FK to `tags` |
+| subtag_id | INTEGER | YES | — | FK to `subtags`; must belong to `tag_id` (validation) |
+| source | STRING | NO | `"llm"` | `"llm"` or `"manual"` (`Tagging::SOURCES`) |
+| confidence | FLOAT | YES | — | LLM tag probability; nil for manual |
+| created_at / updated_at | DATETIME | NO | — | |
+
+**Writers:** `Tags::Classifier.call(item)` writes `source: llm` rows (probability as `confidence`) and replaces the item's previous llm rows; `Tags::ManualTaggingForm` writes `source: manual` rows (an llm row for the same tag becomes manual). Manual rows are never changed or removed by the classifier, and a tag that already has one is not judged.
+
+```ruby
+Tags::Classifier.call(email_or_document)   # => #<data Result taggings: [Tagging, ...]>
+Tags::Classifier.threshold                 # 0.35; Setting "tagging_threshold" > ENV TAGGING_THRESHOLD > default
+```
+
+**Indexes:** `[taggable_type, taggable_id, tag_id]` (unique: one tag per taggable), `tag_id`, `subtag_id`
 
 ---
 
@@ -361,9 +502,8 @@ RubyLLM's usage ledger. `owner_type`/`owner_id` point at the `Evaluation::Experi
 
 ## Quick perks
 
-- `ApplicationMail.as_rows` and `Interview.as_rows` return `Array<Hash<String, String|nil>>` — safe to pass directly to LLM tool responses.
+- `Interview.as_rows` returns `Array<Hash<String, String|nil>>` — safe to pass directly to LLM tool responses.
 - All `STATUSES` / `TRIGGERED_BY` constants are frozen arrays — use them for validation or display without querying the DB.
-- `email_vectors` KNN search returns results sorted by distance ascending (nearest first).
 - Orchestration objects cascade on destroy: `Pipeline → Steps → StepActions`; `PipelineRun → ActionRuns`. Actions block deletion if any `StepAction` references them.
 - `Chat` → `Message` (has_many), `Message` → `ToolCall` (has_many) — load with `Chat.includes(messages: :tool_calls)` to avoid N+1.
 - Schema is loaded via `db/structure.sql`, not `db/schema.rb` — run `rails db:schema:load` (not `rails db:migrate`) on a fresh database.

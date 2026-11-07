@@ -13,8 +13,9 @@ RSpec.describe Emails::Adapters::GmailBodyExtractor do
     )
   end
 
-  def make_payload(parts: nil, data: nil)
+  def make_payload(parts: nil, data: nil, mime_type: nil)
     Google::Apis::GmailV1::MessagePart.new(
+      mime_type: mime_type,
       parts: parts,
       body:  make_body(data)
     )
@@ -28,6 +29,29 @@ RSpec.describe Emails::Adapters::GmailBodyExtractor do
 
       it 'returns the body data' do
         expect(extractor.body).to eq('Thank you for applying')
+      end
+    end
+
+    context 'when payload is a single text/html part' do
+      let(:payload) { make_payload(mime_type: 'text/html', data: '<p>Hello <b>there</b></p>') }
+
+      it 'returns the HTML stripped to plain text' do
+        expect(extractor.body).to eq('Hello there')
+      end
+
+      it 'keeps the raw HTML in #html' do
+        expect(extractor.html).to eq('<p>Hello <b>there</b></p>')
+      end
+    end
+
+    context 'when an HTML-only payload has a style block and entities' do
+      let(:payload) do
+        make_payload(mime_type: 'text/html',
+                     data: '<style>p { color: red; }</style><p>Fish &amp; chips</p><p>Second line</p>')
+      end
+
+      it 'returns the text without CSS, with entities decoded' do
+        expect(extractor.body).to eq("Fish & chips\nSecond line")
       end
     end
 
@@ -53,8 +77,12 @@ RSpec.describe Emails::Adapters::GmailBodyExtractor do
       let(:html_part) { make_part(mime_type: 'text/html', data: '<b>HTML body</b>') }
       let(:payload)   { make_payload(parts: [ html_part ]) }
 
-      it 'returns the HTML body' do
-        expect(extractor.body).to eq('<b>HTML body</b>')
+      it 'returns the HTML stripped to plain text' do
+        expect(extractor.body).to eq('HTML body')
+      end
+
+      it 'keeps the raw HTML in #html' do
+        expect(extractor.html).to eq('<b>HTML body</b>')
       end
     end
 

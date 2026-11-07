@@ -1,0 +1,17 @@
+<section class="mb-6 space-y-2" aria-label="Possible duplicates">
+  <h2 class="text-lg font-semibold text-gray-900">Possible duplicates</h2>
+  <ul class="space-y-2">
+    <% duplicates.each do |duplicate| %>
+      <li class="flex flex-wrap items-center gap-3 text-sm text-gray-700">
+        <%= link_to duplicate.other(document).title, document_path(duplicate.other(document)), class: "text-blue-600" %>
+        <span class="text-xs text-gray-500"><%= similarity(duplicate) %> similar</span>
+        <% if duplicate.confirmed? %>
+          <span class="px-2 py-1 bg-gray-100 rounded text-xs">Confirmed duplicate</span>
+        <% else %>
+          <%= button_to "Confirm", url(duplicate, :confirm), method: :patch, form: { class: "inline" }, class: "text-xs text-green-700 cursor-pointer" %>
+        <% end %>
+        <%= button_to "Dismiss", url(duplicate, :dismiss), method: :patch, form: { class: "inline" }, class: "text-xs text-red-600 cursor-pointer" %>
+      </li>
+    <% end %>
+  </ul>
+</section>

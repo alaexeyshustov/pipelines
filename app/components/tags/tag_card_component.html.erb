@@ -1,0 +1,20 @@
+<div class="bg-white shadow rounded-lg p-6 space-y-4">
+  <h2 class="text-lg font-semibold text-gray-900"><%= tag_record.name.humanize %> <span class="text-xs font-normal text-gray-500">(<%= tag_record.name %>)</span></h2>
+
+  <% if subtags.any? %>
+    <ul class="flex flex-wrap gap-2">
+      <% subtags.each do |subtag| %>
+        <li class="px-2 py-1 bg-gray-100 rounded text-sm text-gray-700"><%= subtag.name %></li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="text-sm text-gray-500">No subtags yet.</p>
+  <% end %>
+
+  <%= render UI::ErrorMessagesComponent.new(errors: errors) if errors %>
+
+  <%= form_with(url: form_url, scope: :subtag, class: "flex gap-2") do |f| %>
+    <%= f.text_field :name, placeholder: "New subtag", required: true, "aria-label": "New subtag name for #{tag_record.name}", class: "block w-full rounded-md border-gray-300 shadow-sm sm:text-sm" %>
+    <%= f.submit "Add", class: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer" %>
+  <% end %>
+</div>

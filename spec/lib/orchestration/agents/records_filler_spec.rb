@@ -7,7 +7,7 @@ RSpec.describe Orchestration::Agents::RecordsFiller, type: :model do
 
   before do
     stub_openai_agent_response(content: '{"rows_updated":0}')
-    agent.ask('{"emails":[],"destination_table":"application_mails"}')
+    agent.ask('{"emails":[],"destination_table":"interviews"}')
   end
 
   it 'sends gpt-5.1 as the model' do

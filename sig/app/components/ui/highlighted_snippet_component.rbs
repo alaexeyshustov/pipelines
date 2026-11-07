@@ -1,0 +1,16 @@
+module UI
+  class HighlightedSnippetComponent < ViewComponent::Base
+    class Segment
+      attr_reader text: String
+      attr_reader hit: bool
+
+      def self.new: (text: String, hit: bool) -> instance
+    end
+
+    @snippet: String?
+
+    def initialize: (snippet: String?) -> void
+    def render?: () -> bool
+    def segments: () -> Array[Segment]
+  end
+end

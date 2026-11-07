@@ -7,7 +7,7 @@ RSpec.describe Orchestration::Agents::RecordsNormalizer, type: :model do
 
   before do
     stub_openai_agent_response(content: '{"rows_updated":0}')
-    agent.ask('{"records_to_normalize":[],"destination_table":"application_mails","columns_to_normalize":["company"]}')
+    agent.ask('{"records_to_normalize":[],"destination_table":"interviews","columns_to_normalize":["company"]}')
   end
 
   it 'sends gpt-5.1 as the model' do

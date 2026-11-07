@@ -41,12 +41,8 @@ namespace :evaluation do
   task migrate_prompts: :environment do
     agent_classes = %w[
       Orchestration::Agents::EmailsClassifier
-      Orchestration::Agents::EmailsFilter
-      Orchestration::Agents::EmailsMapper
       Orchestration::Agents::RecordsFiller
       Orchestration::Agents::RecordsNormalizer
-      Orchestration::Agents::RecordsStorer
-      Orchestration::Agents::RecordsReconciler
     ].freeze
 
     agent_classes.each do |agent_class|

@@ -1,0 +1,15 @@
+module Emails
+  module Adapters
+    module YahooInboxSync
+      @account: String
+      @inbox: ImapInboxReader
+
+      def account: () -> String
+      def inbox_uid_validity: () -> Integer
+      def inbox_status: () -> ImapInboxReader::Status
+      def inbox_uids_after: (Integer last_uid) -> Array[Integer]
+      def inbox_uids_since: (Date date) -> Array[Integer]
+      def fetch_message: (String | Integer message_id) -> full_message
+    end
+  end
+end

@@ -1,0 +1,4 @@
+module TagPages
+  class MedicalController < BaseController
+  end
+end

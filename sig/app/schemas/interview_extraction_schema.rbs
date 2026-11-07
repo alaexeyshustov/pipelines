@@ -1,0 +1,3 @@
+class InterviewExtractionSchema < Schematist::Schema
+  ACTIONS: Array[String]
+end

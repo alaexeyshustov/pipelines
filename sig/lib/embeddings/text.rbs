@@ -1,0 +1,11 @@
+module Embeddings
+  module Text
+    MAX_CHARS: Integer
+    SIGNATURE_DELIMITER: Regexp
+
+    def self?.for: (Email | Document record) -> String
+    def self?.email_body: (Email email) -> String
+    def self?.html_to_text: (String html) -> String
+    def self?.without_quotes_and_signature: (String text) -> String
+  end
+end

@@ -1,9 +1,0 @@
-<%= render UI::PageHeaderComponent.new(
-  title: "New Email Record",
-  parent: { label: "Application Emails", url: application_mails_path }
-) %>
-
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
-  <h1 class="text-xl font-bold text-gray-900 mb-6">New Email Record</h1>
-  <%= render "form", mail: @mail %>
-</div>

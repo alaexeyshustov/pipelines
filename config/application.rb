@@ -39,7 +39,7 @@ module ApplicationPipeline
     # Don't generate system test files.
     config.generators.system_tests = nil
 
-    # Use SQL schema format so sqlite-vec virtual tables are preserved correctly.
+    # Use SQL schema format so FTS5 virtual tables and triggers are preserved correctly.
     config.active_record.schema_format = :sql
 
     config.active_job.queue_adapter = :solid_queue

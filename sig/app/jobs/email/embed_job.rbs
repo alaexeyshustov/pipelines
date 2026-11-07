@@ -1,0 +1,5 @@
+class Email
+  class EmbedJob < ApplicationJob
+    def perform: (Integer email_id) -> void
+  end
+end

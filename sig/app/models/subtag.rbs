@@ -1,0 +1,8 @@
+class Subtag < ApplicationRecord
+  def name: () -> String?
+  def name=: (String?) -> String?
+  def tag_id: () -> Integer?
+  def tag: () -> Tag
+  def tag=: (Tag) -> Tag
+  def taggings: () -> ActiveRecord::Associations::CollectionProxy
+end

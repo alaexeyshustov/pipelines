@@ -1,0 +1,25 @@
+<section class="space-y-3" aria-label="Tags">
+  <h2 class="text-lg font-semibold text-gray-900">Tags</h2>
+
+  <% if taggings.any? %>
+    <ul class="flex flex-wrap gap-2">
+      <% taggings.each do |tagging| %>
+        <li class="flex items-center gap-2 px-2 py-1 bg-gray-100 rounded text-sm text-gray-700">
+          <span><%= label(tagging) %></span>
+          <span class="text-xs text-gray-500"><%= origin(tagging) %></span>
+          <%= button_to "Remove", remove_url(tagging), method: :delete, form: { class: "inline" }, class: "text-xs text-red-600 cursor-pointer", "aria-label": "Remove #{label(tagging)}" %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="text-sm text-gray-500">No tags yet.</p>
+  <% end %>
+
+  <%= render UI::ErrorMessagesComponent.new(errors: errors) if errors %>
+
+  <%= form_with(url: base_url, scope: :tagging, class: "flex flex-wrap gap-2") do |f| %>
+    <%= f.select :tag_id, tag_options, { prompt: "Tag" }, required: true, "aria-label": "Tag", class: "rounded-md border-gray-300 shadow-sm sm:text-sm" %>
+    <%= f.select :subtag_id, subtag_options, { include_blank: "No subtag" }, "aria-label": "Subtag", class: "rounded-md border-gray-300 shadow-sm sm:text-sm" %>
+    <%= f.submit "Add tag", class: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer" %>
+  <% end %>
+</section>

@@ -179,7 +179,7 @@ RSpec.describe Emails::Adapters::GmailAdapter do
   describe '.from_env' do
     it 'raises when the credentials file is missing' do
       expect { described_class.from_env(credentials_path: '/nonexistent/path.json', token_path: GmailHelpers.token_path) }
-        .to raise_error(/Missing Gmail credentials/)
+        .to raise_error(Emails::NotConfigured, /Missing Gmail credentials/)
     end
   end
 

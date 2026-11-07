@@ -1,0 +1,10 @@
+class SubtagsController < ApplicationController
+  @tags: ActiveRecord::Relation
+  @form_errors: Hash[Integer, ActiveModel::Errors]
+
+  def create: () -> void
+
+  private
+
+  def subtag_params: () -> ActionController::Parameters
+end

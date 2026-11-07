@@ -1,3 +1,0 @@
-module ApplicationMailsHelper
-  def application_mail_batch_actions: () -> Array[Hash[Symbol, primitive]]
-end

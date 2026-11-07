@@ -1,0 +1,17 @@
+module Tags
+  class TagCardComponent < ViewComponent::Base
+    @tag_record: Tag
+    @subtags: Array[Subtag]
+    @form_url: String
+    @errors: ActiveModel::Errors?
+
+    def initialize: (tag: Tag, subtags: Array[Subtag], form_url: String, ?errors: ActiveModel::Errors?) -> void
+
+    private
+
+    attr_reader tag_record: Tag
+    attr_reader subtags: Array[Subtag]
+    attr_reader form_url: String
+    attr_reader errors: ActiveModel::Errors?
+  end
+end

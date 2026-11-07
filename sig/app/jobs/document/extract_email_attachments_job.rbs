@@ -1,0 +1,12 @@
+class Document
+  class ExtractEmailAttachmentsJob < ApplicationJob
+    def perform: (Integer email_id) -> void
+
+    private
+
+    def eligible?: (Email email) -> bool
+    def ingest: (Email email, Emails::attachment attachment, String data, String text) -> Document
+    def source_ref: (Email email, Emails::attachment attachment) -> Hash[Symbol, String]
+    def process: (Email email, Emails::attachment attachment) -> void
+  end
+end

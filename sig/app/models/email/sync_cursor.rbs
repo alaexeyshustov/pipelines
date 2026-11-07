@@ -1,0 +1,38 @@
+class Email
+  class SyncCursor < ApplicationRecord
+    DEFAULT_MAILBOX: String
+
+    def self.for: (provider: String, account: String, ?mailbox: String) -> SyncCursor
+
+    MAX_FAILED_RUNS: Integer
+
+    def advance!: (?history_id: String?, ?uid_validity: Integer?, ?last_uid: Integer?) -> void
+    def reset!: (?history_id: String?, ?uid_validity: Integer?, ?last_uid: Integer?) -> void
+
+    def provider: () -> String
+    def provider=: (String) -> String
+    def account: () -> String
+    def account=: (String) -> String
+    def mailbox: () -> String
+    def mailbox=: (String) -> String
+    def history_id: () -> String?
+    def history_id=: (String?) -> String?
+    def uid_validity: () -> Integer?
+    def uid_validity=: (Integer?) -> Integer?
+    def last_uid: () -> Integer?
+    def last_uid=: (Integer?) -> Integer?
+    def failed_runs: () -> Integer
+    def failed_runs=: (Integer) -> Integer
+    def last_synced_at: () -> Time?
+    def last_synced_at=: (Time?) -> Time?
+    def last_rescan_at: () -> Time?
+    def last_rescan_at=: (Time?) -> Time?
+
+    private
+
+    def newer_history_id?: (String candidate) -> bool
+    def newer_uid?: (Integer candidate) -> bool
+    def uid_validity_changed?: () -> bool
+    def uid_validity_was: () -> Integer?
+  end
+end

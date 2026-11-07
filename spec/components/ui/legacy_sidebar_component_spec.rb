@@ -27,10 +27,16 @@ RSpec.describe UI::LegacySidebarComponent, type: :component do
     expect(links).to include("Chats", "Models", "Monitoring", "Evaluation", "Prompts")
   end
 
+  it "renders one nav link per tag page" do
+    details = rendered.css("details")[1]
+    links = details.css("a").map { |a| a.text.strip }
+    expect(links).to include(*Tag::NAMES.map(&:humanize))
+  end
+
   it "renders Mails group links" do
     details = rendered.css("details")[1]
     links = details.css("a").map { |a| a.text.strip }
-    expect(links).to include("Application Emails", "Interviews")
+    expect(links).to include("Interviews", "Tags", "Search")
   end
 
   it "renders Orchestration group links" do
@@ -62,7 +68,7 @@ RSpec.describe UI::LegacySidebarComponent, type: :component do
   end
 
   context "when current_path is in Mails group" do
-    let(:component) { described_class.new(current_path: "/application_mails") }
+    let(:component) { described_class.new(current_path: "/interviews") }
 
     it "opens the Mails group" do
       mails_details = rendered.css("details")[1]

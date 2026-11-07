@@ -1,0 +1,18 @@
+module Emails
+  module Adapters
+    class YahooFullMessage
+      @uid_validity: Integer
+      @uid: Integer
+      @mail: Mail::Message
+      @parsed: message
+      @bodies: ImapBodyParser
+
+      def initialize: (Integer uid_validity, Integer uid, Mail::Message mail) -> void
+      def to_h: () -> full_message
+
+      private
+
+      def date: () -> Time
+    end
+  end
+end
