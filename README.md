@@ -1,6 +1,6 @@
-# Application Pipeline
+# Workflow Pipelines
 
-A Rails 8.1 multi-agent pipeline management system. Integration with Gmail and Yahoo Mail, classifies them with an LLM, labels them in the provider, and maintains a local SQLite database of job applications and interview progress.
+A Rails 8.1 multi-agent pipeline management system. Integration with Gmail and Yahoo Mail.
 
 ## Stack
 
