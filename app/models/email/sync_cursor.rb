@@ -19,24 +19,55 @@ class Email::SyncCursor < ApplicationRecord
     find_or_initialize_by(provider: provider, account: account, mailbox: mailbox)
   end
 
-  # Moves the position forward only (a stale or overlapping run cannot rewind it) and stamps +last_synced_at+.
+  # Moves the position forward only and stamps +last_synced_at+. The comparison runs on the row as it is now, under
+  # a write lock (the row is reloaded first, discarding unsaved changes), so a stale or overlapping run cannot rewind it.
   def advance!(history_id: nil, uid_validity: nil, last_uid: nil)
-    self.history_id = history_id if history_id && newer_history_id?(history_id)
-    self.uid_validity = uid_validity if uid_validity
-    self.last_uid = last_uid if last_uid && newer_uid?(last_uid)
-    self.last_synced_at = Time.current
-    self.failed_runs = 0
-    save!
+    with_current_row do
+      self.history_id = history_id if history_id && newer_history_id?(history_id)
+      self.uid_validity = uid_validity if uid_validity
+      self.last_uid = last_uid if last_uid && newer_uid?(last_uid)
+      self.last_synced_at = Time.current
+      self.failed_runs = 0
+      save!
+    end
   end
 
-  # Replaces the position (possibly backwards or empty) after a rescan and stamps +last_rescan_at+.
+  # Replaces the position (possibly empty, or of a new UIDVALIDITY) after a rescan and stamps +last_rescan_at+. A
+  # position older than the stored one within the same epoch (a run that read the row before another advanced it)
+  # is not applied: the stored one stays.
   def reset!(history_id: nil, uid_validity: nil, last_uid: nil)
-    now = Time.current
-    update!(history_id: history_id, uid_validity: uid_validity, last_uid: last_uid,
-            last_synced_at: now, last_rescan_at: now, failed_runs: 0)
+    with_current_row do
+      now = Time.current
+      self.last_synced_at = now
+      self.last_rescan_at = now
+      self.failed_runs = 0
+      assign_attributes(history_id:, uid_validity:, last_uid:) unless rewinds?(history_id, uid_validity, last_uid)
+      save!
+    end
   end
 
   private
+
+  def with_current_row(&)
+    transaction do
+      reload(lock: true) if persisted?
+      yield
+    end
+  end
+
+  def rewinds?(candidate_history_id, candidate_uid_validity, candidate_last_uid)
+    older_history?(candidate_history_id) || older_uid?(candidate_uid_validity, candidate_last_uid)
+  end
+
+  def older_history?(candidate)
+    !candidate.nil? && !history_id.nil? && candidate.to_i < history_id.to_i
+  end
+
+  def older_uid?(candidate_uid_validity, candidate)
+    return false if candidate.nil? || last_uid.nil?
+
+    candidate_uid_validity == uid_validity && candidate < last_uid
+  end
 
   def newer_history_id?(candidate)
     current = self.history_id

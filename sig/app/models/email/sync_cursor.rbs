@@ -30,6 +30,10 @@ class Email
 
     private
 
+    def with_current_row: [T] () { () -> T } -> T
+    def rewinds?: (String? candidate_history_id, Integer? candidate_uid_validity, Integer? candidate_last_uid) -> bool
+    def older_history?: (String? candidate) -> bool
+    def older_uid?: (Integer? candidate_uid_validity, Integer? candidate) -> bool
     def newer_history_id?: (String candidate) -> bool
     def newer_uid?: (Integer candidate) -> bool
     def uid_validity_changed?: () -> bool

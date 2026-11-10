@@ -106,6 +106,45 @@ RSpec.describe Email::SyncCursor do
     end
   end
 
+  describe "overlapping runs" do
+    let!(:stored) { create(:email_sync_cursor, provider: "gmail", account: "me@example.com", history_id: "100") }
+
+    it "does not let a run holding a stale copy rewind an advance made meanwhile" do
+      stale = described_class.find(stored.id)
+      described_class.find(stored.id).advance!(history_id: "200")
+
+      stale.advance!(history_id: "150")
+
+      expect(stored.reload.history_id).to eq("200")
+    end
+
+    it "does not let a stale reset! rewind the position within the same epoch, but still stamps the rescan" do
+      stale = described_class.find(stored.id)
+      described_class.find(stored.id).advance!(history_id: "200")
+
+      stale.reset!(history_id: "150")
+
+      expect(stored.reload).to have_attributes(history_id: "200", failed_runs: 0)
+      expect(stored.last_rescan_at).not_to be_nil
+    end
+
+    it "keeps a stale IMAP last_uid from rewinding in reset! while the uid_validity is unchanged" do
+      imap = create(:email_sync_cursor, provider: "yahoo", uid_validity: 5, last_uid: 10)
+      stale = described_class.find(imap.id)
+      described_class.find(imap.id).advance!(uid_validity: 5, last_uid: 40)
+
+      stale.reset!(uid_validity: 5, last_uid: 20)
+
+      expect(imap.reload.last_uid).to eq(40)
+    end
+
+    it "advances a cursor that carries an unsaved failed_runs increment" do
+      stored.failed_runs += 1
+      stored.advance!(history_id: "300")
+      expect(stored.reload).to have_attributes(history_id: "300", failed_runs: 0)
+    end
+  end
+
   describe "#reset!" do
     it "moves to the given position even backwards and stamps last_rescan_at" do
       cursor = create(:email_sync_cursor, provider: "yahoo", uid_validity: 5, last_uid: 40)
