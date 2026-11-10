@@ -218,6 +218,7 @@ FOREIGN KEY ("duplicate_id")
 CREATE INDEX "index_document_duplicates_on_duplicate_id" ON "document_duplicates" ("duplicate_id");
 CREATE UNIQUE INDEX "index_document_duplicates_on_document_id_and_duplicate_id" ON "document_duplicates" ("document_id", "duplicate_id");
 INSERT INTO "schema_migrations" (version) VALUES
+('20261104090000'),
 ('20261103120000'),
 ('20261103090700'),
 ('20261103090300'),
