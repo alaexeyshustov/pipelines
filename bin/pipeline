@@ -12,7 +12,7 @@ module PipelineCLI
     class TestProviders < Dry::CLI::Command
       desc "Test connectivity to configured mail providers"
 
-      option :providers, default: ENV.fetch("MAIL_PROVIDERS", Emails::PROVIDER_NAMES.join(",")).split(","),
+      option :providers, type: :array, default: ENV.fetch("MAIL_PROVIDERS", Emails::PROVIDER_NAMES.join(",")).split(","),
                           desc: "Comma-separated list of providers to test (e.g. gmail,yahoo)"
 
       def call(providers: [], **)
@@ -43,7 +43,7 @@ module PipelineCLI
     class SetupProviders < Dry::CLI::Command
       desc "Guide to setting up mail providers"
 
-      option :providers, default: ENV.fetch("MAIL_PROVIDERS", Emails::PROVIDER_NAMES.join(",")).split(","),
+      option :providers, type: :array, default: ENV.fetch("MAIL_PROVIDERS", Emails::PROVIDER_NAMES.join(",")).split(","),
                           desc: "Comma-separated list of providers to set up (e.g. gmail,yahoo)"
 
       def call(providers: [], **)
