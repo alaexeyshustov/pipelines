@@ -18,6 +18,7 @@ jobs: 4
 includes:
   - app/agents
   - app/controllers
+  - app/forms
   - app/helpers
   - app/jobs
   - app/models
@@ -32,6 +33,20 @@ matcher:
   subjects:
     - Application*
     - Emails*
+    - Email*
+    - Document*
+    - DocumentDuplicate*
+    - Embedding*
+    - Embeddings*
+    - Tag*
+    - Tags*
+    - TagPages*
+    - Subtag*
+    - Tagging*
+    - Taggable*
+    - FtsSearchable*
+    - Embeddable*
+    - Interviews*
     - Records*
     - Orchestration*
     - Interview*
@@ -51,6 +66,7 @@ matcher:
     # GmailAdapter/YahooAdapter wrap Google::Apis/Net::IMAP calls; GmailAuth opens a raw TCPServer/HTTP OAuth callback listener.
     - Emails::Adapters::GmailAdapter*
     - Emails::Adapters::YahooAdapter*
+    - Emails::Adapters::DriveFileFetcher*
     - Emails::GmailAuth*
     # ImapBodyParser, GmailBodyExtractor, GmailPaginator, GmailMessageParser, YahooMessageParser were
     # previously (and incorrectly) ignored as "network noise" -- they are pure MIME/header-parsing and
