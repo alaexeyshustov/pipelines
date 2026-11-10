@@ -118,5 +118,97 @@ RSpec.describe Emails::Adapters::ImapBodyParser do
         expect(parser.body).to eq('')
       end
     end
+
+    context 'when mail is multipart/mixed with multipart/alternative and a PDF attachment' do
+      let(:mail) do
+        Mail.new(<<~EML.gsub("\n", "\r\n"))
+          From: a@example.com
+          To: b@example.com
+          Subject: Offer
+          MIME-Version: 1.0
+          Content-Type: multipart/mixed; boundary="outer"
+
+          --outer
+          Content-Type: multipart/alternative; boundary="inner"
+
+          --inner
+          Content-Type: text/plain; charset=UTF-8
+
+          Hello plain
+          --inner
+          Content-Type: text/html; charset=UTF-8
+
+          <p>Hello html</p>
+          --inner--
+
+          --outer
+          Content-Type: application/pdf; name="offer.pdf"
+          Content-Disposition: attachment; filename="offer.pdf"
+          Content-Transfer-Encoding: 7bit
+
+          %PDF-1.4 raw pdf bytes
+          --outer--
+        EML
+      end
+
+      it 'returns only the text of the readable part' do
+        expect(parser.body).to eq('Hello plain')
+      end
+    end
+
+    context 'when the only text part is an attachment' do
+      let(:mail) do
+        Mail.new(<<~EML.gsub("\n", "\r\n"))
+          Content-Type: multipart/mixed; boundary="outer"
+
+          --outer
+          Content-Type: text/plain; name="notes.txt"
+          Content-Disposition: attachment; filename="notes.txt"
+
+          attached notes
+          --outer--
+        EML
+      end
+
+      it 'does not use it as the body' do
+        expect(parser.body).to eq('')
+      end
+    end
+
+    context 'when a single non-text message has a PDF body' do
+      let(:mail) { Mail.new("Content-Type: application/pdf\r\n\r\n%PDF-1.4 bytes") }
+
+      it 'returns an empty string' do
+        expect(parser.body).to eq('')
+      end
+    end
+
+    context 'when text/html sits in a nested multipart next to an attachment' do
+      let(:mail) do
+        Mail.new(<<~EML.gsub("\n", "\r\n"))
+          Content-Type: multipart/mixed; boundary="outer"
+
+          --outer
+          Content-Type: multipart/related; boundary="rel"
+
+          --rel
+          Content-Type: text/html
+
+          <p>Only html</p>
+          --rel--
+
+          --outer
+          Content-Type: application/pdf
+          Content-Disposition: attachment; filename="a.pdf"
+
+          %PDF raw
+          --outer--
+        EML
+      end
+
+      it 'strips the html and ignores the attachment' do
+        expect(parser.body).to eq('Only html')
+      end
+    end
   end
 end

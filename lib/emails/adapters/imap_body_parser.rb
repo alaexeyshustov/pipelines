@@ -36,24 +36,22 @@ module Emails
         nil
       end
 
+      # text/plain parts joined; else the text/html parts stripped to text. Attachments and non-text parts (a PDF,
+      # an image) are never read, at any nesting depth.
       def extract_body(mail)
-        if mail.multipart?
-          extract_multipart_body(mail)
-        else
-          mail_mime = mail.mime_type # : String?
-          mail_mime == "text/html" ? HtmlText.to_text(decode_part(mail)) : decode_part(mail)
-        end
+        plain = text_parts(mail, "text/plain")
+        return plain.map { |part| decode_part(part) }.join("\n\n") unless plain.empty?
+
+        html = text_parts(mail, "text/html")
+        html.map { |part| HtmlText.to_text(decode_part(part)) }.join("\n\n")
       end
 
-      def extract_multipart_body(mail)
-        parts = mail.parts # : Array[Mail::Part]
-        plain = parts.find { |part| part.mime_type == "text/plain" } # : Mail::Part?
-        return decode_part(plain) if plain
+      # Leaf parts of +mime_type+ that are not attachments; the message itself counts when it is not multipart.
+      def text_parts(mail, mime_type)
+        return mail.parts.reject(&:attachment?).flat_map { |part| text_parts(part, mime_type) } if mail.multipart?
 
-        html = parts.find { |part| part.mime_type == "text/html" } # : Mail::Part?
-        return HtmlText.to_text(decode_part(html)) if html
-
-        parts.filter_map { |part| extract_body(part) }.reject(&:empty?).join("\n\n")
+        leaf_type = mail.mime_type || "text/plain" # : String
+        leaf_type == mime_type ? [ mail ] : []
       end
 
       def decode_part(part)

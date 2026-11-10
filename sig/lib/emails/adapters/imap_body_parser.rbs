@@ -13,7 +13,7 @@ module Emails
 
       def find_html: (Mail::Message | Mail::Part mail) -> (Mail::Message | Mail::Part)?
       def extract_body: (Mail::Message | Mail::Part mail) -> String
-      def extract_multipart_body: (Mail::Message | Mail::Part mail) -> String
+      def text_parts: ((Mail::Message | Mail::Part) mail, String mime_type) -> Array[Mail::Message | Mail::Part]
       def decode_part: ((Mail::Message | Mail::Part)? part) -> String
     end
   end
