@@ -15,14 +15,14 @@ module FtsSearchable
       return [] if match.empty?
 
       rows = connection.select_rows(fts_statement(match, limit))
-      records = where(id: rows.map(&:first)).index_by(&:id)
-      rows.map { |id, rank, snippet| Match.new(record: records.fetch(id), rank: rank, snippet: snippet) }
+      records = unscope(:select).where(id: rows.map(&:first)).index_by(&:id)
+      rows.filter_map { |id, rank, snippet| records[id]&.then { |record| Match.new(record:, rank:, snippet:) } } # an index row can outlive its record
     end
 
     private
 
     def fts_match(query)
-      query.to_s.scan(/[[:alnum:]_]+/).map { |term| %("#{term}") }.join(" ")
+      query.to_s.scrub.unicode_normalize(:nfc).scan(/[\p{L}\p{N}\p{M}_]+/).map { |term| %("#{term}") }.join(" ")
     end
 
     def fts_statement(match, limit)
@@ -34,7 +34,7 @@ module FtsSearchable
     def scope_clause
       return "" unless current_scope
 
-      ids = current_scope.unscope(:order, :limit, :offset, :includes, :preload).select(:id)
+      ids = current_scope.unscope(:order, :limit, :offset, :includes, :preload).reselect(:id)
       "AND #{table_name}.id IN (#{ids.to_sql})"
     end
 
