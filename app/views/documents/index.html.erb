@@ -12,10 +12,12 @@
       <li>
         <%= link_to hit.document.title, document_path(hit.document), class: "font-medium text-blue-600" %>
         <span class="text-xs text-gray-500"><%= hit.document.mime_type %></span>
-        <% if hit.snippet.present? %>
-          <p class="text-sm text-gray-600"><%= hit.snippet %></p>
-        <% end %>
+        <%= render UI::HighlightedSnippetComponent.new(snippet: hit.snippet) %>
       </li>
     <% end %>
   </ul>
+<% end %>
+
+<% if @pagy %>
+  <%= render UI::PaginationComponent.new(current_page: @pagy.page, total_pages: @pagy.last, url: ->(page) { documents_path(page: page) }, class: "mt-4") %>
 <% end %>

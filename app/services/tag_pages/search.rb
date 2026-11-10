@@ -1,10 +1,11 @@
 module TagPages
   # The emails and documents carrying +tag+, narrowed by a FilterForm (subtag, type, date range, FTS query).
   # With a query on a single kind, rows are ordered best match first. Otherwise (no query, or emails and documents
-  # together, whose bm25 ranks come from two FTS indexes and cannot be compared) newest first. Each kind is capped at
-  # LIMIT.
+  # together, whose bm25 ranks come from two FTS indexes and cannot be compared) newest first. The result is capped at
+  # LIMIT rows in all (each kind is fetched up to LIMIT, then the merged list is cut); the page shows them in a
+  # client-paginated table, so LIMIT is generous and older rows are reached by narrowing the date range or the search.
   class Search
-    LIMIT = 50
+    LIMIT = 500
 
     Row = Data.define(:kind, :record, :title, :date, :subtag, :interview, :snippet, :rank)
 
@@ -23,7 +24,7 @@ module TagPages
       rows = [] # : Array[Row]
       rows.concat(email_rows) if @filter.include_emails?
       rows.concat(document_rows) if @filter.include_documents?
-      ranked? ? rows.sort_by { |row| row.rank.to_f } : rows.sort_by(&:date).reverse
+      (ranked? ? rows.sort_by { |row| row.rank.to_f } : rows.sort_by(&:date).reverse).first(LIMIT)
     end
 
     private

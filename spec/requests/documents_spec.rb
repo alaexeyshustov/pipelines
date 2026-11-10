@@ -10,6 +10,19 @@ RSpec.describe "Documents" do
       expect(response.body).not_to include("Offer")
     end
 
+    it "renders pagination when there is more than one page" do
+      create_list(:document, 25)
+      get documents_path
+      expect(response.body).to include('aria-label="Pagination"', "page=2")
+    end
+
+    it "highlights snippet hits and escapes the rest" do
+      create(:document, title: "Lease", text: "monthly rent <script>alert(1)</script>")
+      get documents_path, params: { q: "rent" }
+      expect(response.body).to include("<mark>rent</mark>")
+      expect(response.body).not_to include("<script>alert(1)")
+    end
+
     it "lists everything without a query" do
       create(:document, title: "Lease")
       get documents_path
