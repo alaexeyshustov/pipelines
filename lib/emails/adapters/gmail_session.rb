@@ -18,7 +18,7 @@ module Emails
 
           Clearing any existing token and launching OAuth authorization flow...
         INSTRUCTIONS
-        from_env(opts).authorize
+        new(**paths_from_env(opts)).authorize(interactive: true)
         Rails.logger.debug "✓ Gmail OAuth token saved."
       end
 
@@ -46,28 +46,35 @@ module Emails
       end
 
       def self.from_env(opts = {})
+        adapter = GmailAdapter.new(**paths_from_env(opts))
+        adapter.on_init
+        adapter
+      end
+
+      def self.paths_from_env(opts)
         root             = Rails.root
         credentials_path = opts[:credentials_path] || ENV.fetch("GMAIL_CREDENTIALS_PATH", root.join("credentials.json").to_s)
         token_path       = opts[:token_path]       || ENV.fetch("GMAIL_TOKEN_PATH", root.join("token.yaml").to_s)
         unless File.exist?(credentials_path)
           raise Emails::NotConfigured, "Missing Gmail credentials file. Please create #{credentials_path} with your Google API credentials."
         end
-        adapter = GmailAdapter.new(credentials_path: credentials_path, token_path: token_path)
-        adapter.on_init
-        adapter
+
+        { credentials_path:, token_path: }
       end
+      private_class_method :paths_from_env
 
       def initialize(credentials_path:, token_path:)
         @credentials_path = credentials_path
         @token_path       = token_path
       end
 
-      def authorize
+      # Stored credentials; raises Emails::NotConfigured without a token. Only the CLI setup passes interactive: true.
+      def authorize(interactive: false)
         GmailAuth.new(
           credentials_path: @credentials_path,
           token_path:       @token_path,
           scope:            SCOPE
-        ).credentials
+        ).credentials(interactive:)
       end
     end
   end

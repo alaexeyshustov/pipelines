@@ -39,8 +39,23 @@ RSpec.describe Emails::GmailAuth do
       allow(auth).to receive(:system)
     end
 
+    it "raises NotConfigured without opening a socket or a browser when there is no stored token" do
+      expect { auth.credentials }.to raise_error(Emails::NotConfigured, /token\.yaml/)
+
+      expect(TCPServer).not_to have_received(:new)
+      expect(auth).not_to have_received(:system)
+    end
+
+    it "returns the stored credentials without opening a socket" do
+      stored = Google::Auth::UserRefreshCredentials.allocate
+      allow(authorizer).to receive(:get_credentials).with(described_class::USER_ID).and_return(stored)
+
+      expect(auth.credentials).to eq(stored)
+      expect(TCPServer).not_to have_received(:new)
+    end
+
     it "raises without opening a browser when interactive auth would be required in test" do
-      expect { auth.credentials }
+      expect { auth.credentials(interactive: true) }
         .to raise_error(described_class::InteractiveAuthorizationRequired, /#{Regexp.escape(auth_url)}/)
 
       expect(auth).not_to have_received(:system)
