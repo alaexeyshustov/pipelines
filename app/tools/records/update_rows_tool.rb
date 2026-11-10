@@ -32,8 +32,14 @@ module Records
       return { status: "invalid_attributes" } if attrs.empty?
 
       attrs = attrs.transform_keys(&:to_s).slice(*model.tool_column_names)
-      record.update(attrs) unless attrs.empty?
+      update!(record, attrs) unless attrs.empty?
       { status: "row_updated" }
+    end
+
+    # save! (not update) so a failed validation raises RecordInvalid and execute reports update_failed.
+    def update!(record, attrs)
+      record.assign_attributes(attrs)
+      record.save!
     end
   end
 end

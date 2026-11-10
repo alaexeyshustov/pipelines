@@ -17,6 +17,16 @@ RSpec.describe Records::UpdateRowsTool do
       expect(result).to eq(status: 'row_updated')
     end
 
+    it 'reports update_failed instead of row_updated when validation fails' do
+      create(:interview, company: 'Globex', job_title: 'Designer')
+
+      result = tool.execute(table: 'interviews', id: interview.id.to_s, data: '{"job_title":"Designer"}')
+
+      expect(result[:status]).to eq('update_failed')
+      expect(result[:error]).to match(/Job title has already been taken/)
+      expect(interview.reload.job_title).to eq('Developer')
+    end
+
     it 'returns update_failed when record is not found' do
       result = tool.execute(table: 'interviews', id: '999999', data: '{"company":"X"}')
       expect(result[:status]).to eq('update_failed')
