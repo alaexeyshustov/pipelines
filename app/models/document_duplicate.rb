@@ -28,6 +28,26 @@ class DocumentDuplicate < ApplicationRecord
     retry
   end
 
+  # flag! for many neighbours of +document+ at once: +matches+ are [other document, similarity] pairs. The existing
+  # pairs are loaded in one query instead of one lookup per neighbour.
+  def self.flag_all!(document, matches)
+    existing = involving(document).index_by { |pair| [ pair.document_id, pair.duplicate_id ] }
+    matches.map do |other, similarity|
+      flag_known!(existing, document, other, similarity)
+    rescue ActiveRecord::RecordNotUnique
+      flag!(document, other, similarity:)
+    end
+  end
+
+  def self.flag_known!(existing, document, other, similarity)
+    low, high = [ document, other ].sort_by(&:id)
+    record = existing[[ low.id, high.id ]] || new(document: low, duplicate: high)
+    record.similarity = similarity if record.new_record? || record.pending?
+    record.save!
+    record
+  end
+  private_class_method :flag_known!
+
   # The document on the other side of the pair.
   def other(from)
     from.id == document_id ? duplicate : document

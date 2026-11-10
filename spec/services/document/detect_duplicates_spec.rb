@@ -26,6 +26,26 @@ RSpec.describe Document::DetectDuplicates do
     expect(flagged.similarity).to be_within(0.001).of(0.97)
   end
 
+  it "flags several neighbours without a query per neighbour" do
+    others = create_list(:document, 4).each { |other| embed_as(other, vector_at(0, 0.97)) }
+
+    expect(described_class.call(document).flagged).to eq(others.size)
+    expect(DocumentDuplicate.count).to eq(others.size)
+  end
+
+  it "keeps dismissed pairs and refreshes pending ones when flagging several neighbours" do
+    dismissed = create(:document).tap { |other| embed_as(other, vector_at(0, 0.97)) }
+    pending = create(:document).tap { |other| embed_as(other, vector_at(0, 0.98)) }
+    DocumentDuplicate.flag!(document, dismissed, similarity: 0.5).dismissed!
+    DocumentDuplicate.flag!(document, pending, similarity: 0.5)
+
+    described_class.call(document)
+
+    pairs = DocumentDuplicate.includes(:document, :duplicate).index_by { |pair| pair.other(document) }
+    expect(pairs[dismissed]).to have_attributes(status: "dismissed", similarity: 0.5)
+    expect(pairs[pending].similarity).to be_within(0.001).of(0.98)
+  end
+
   it "ignores documents below the threshold, itself and other models" do
     embed_as(create(:document), vector_at(0, 0.90))
     embed_as(create(:document), vector_at(0, 0.99), model: "other-model")

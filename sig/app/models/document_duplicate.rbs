@@ -16,6 +16,8 @@ class DocumentDuplicate < ApplicationRecord
 
   def self.involving: (Document document) -> ActiveRecord::Relation
   def self.candidates_for: (Document document) -> ActiveRecord::Relation
+  def self.flag_all!: (Document document, Array[[ Document, Float ]] matches) -> Array[DocumentDuplicate]
+  def self.flag_known!: (Hash[[ Integer, Integer ], DocumentDuplicate] existing, Document document, Document other, Float similarity) -> DocumentDuplicate
   def self.flag!: (Document first, Document second, similarity: Float) -> DocumentDuplicate
 
   def other: (Document from) -> Document

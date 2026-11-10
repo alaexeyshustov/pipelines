@@ -30,8 +30,6 @@ Prosopite.allow_stack_paths = [
   /Batchable::ClassMethods#destroy_by_ids/,
   # A rare admin action over a small file; lookups per imported record.
   /PipelineImporter#import_pipeline/,
-  # One KNN lookup (and pair upsert) per scanned document; the rake task walks every document.
-  /Document::DetectDuplicates#call/,
   # A Drive file's checksum is known only after its download, so the content lookup runs per changed file.
   /Document::SyncDriveJob#process/,
   # An attachment's checksum is known only after its download, so the content lookup runs per attachment.

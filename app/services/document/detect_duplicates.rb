@@ -29,10 +29,11 @@ class Document::DetectDuplicates
     return Result.new(flagged: 0) unless embedding
 
     matches = neighbours(embedding)
-    matches.each do |match|
+    pairs = matches.map do |match| # : Array[[Document, Float]]
       other = match.embeddable # : Document
-      DocumentDuplicate.flag!(@document, other, similarity: 1 - match.neighbor_distance)
+      [ other, 1 - match.neighbor_distance ]
     end
+    DocumentDuplicate.flag_all!(@document, pairs)
     Result.new(flagged: matches.size)
   end
 
