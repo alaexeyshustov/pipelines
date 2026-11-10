@@ -87,6 +87,13 @@ A browser window opens for authorization. The token is saved to `token.yaml` (gi
 
 ---
 
+## Google Drive setup
+
+Drive sync needs its own `drive.readonly` authorization (kept in `drive_token.yaml`, apart from the Gmail `token.yaml`).
+With `credentials.json` in place, run `bin/pipeline setup --providers=drive`; override the file with `DRIVE_TOKEN_PATH`.
+
+---
+
 ## CLI
 
 The pipeline is driven from `bin/pipeline`.

@@ -33,6 +33,9 @@ module Emails
       SCOPE: Array[String]
       BASE_URL: String
 
+      def self.credentials_path: () -> String
+      def self.token_path: () -> String
+      def self.setup: () -> String
       def self.from_env: () -> DriveFileFetcher
       def self.token_provider: (GmailAuth auth) -> ^() -> String
 

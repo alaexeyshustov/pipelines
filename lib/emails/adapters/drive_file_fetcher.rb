@@ -21,9 +21,32 @@ module Emails
       SCOPE = [ "https://www.googleapis.com/auth/drive.readonly" ].freeze
       BASE_URL = "https://www.googleapis.com/drive/v3/files".freeze
 
+      def self.credentials_path
+        ENV.fetch("GMAIL_CREDENTIALS_PATH", Rails.root.join("credentials.json").to_s)
+      end
+      private_class_method :credentials_path
+
+      # Its own file: GmailAuth stores a token under one fixed user id, so sharing the Gmail token.yaml would
+      # overwrite the Gmail grant with the Drive one.
+      def self.token_path
+        ENV.fetch("DRIVE_TOKEN_PATH", Rails.root.join("drive_token.yaml").to_s)
+      end
+      private_class_method :token_path
+
+      # CLI setup (bin/pipeline setup --providers=drive): the interactive drive.readonly authorization, which writes
+      # the token file from_env expects. Returns the token path.
+      def self.setup
+        unless ::File.exist?(credentials_path)
+          raise NotConfigured, "Google credentials file missing: save the OAuth client as #{credentials_path}"
+        end
+
+        GmailAuth.new(credentials_path:, token_path:, scope: SCOPE).credentials(interactive: true)
+        token_path
+      end
+
       def self.from_env
-        credentials_path = ENV.fetch("GMAIL_CREDENTIALS_PATH", Rails.root.join("credentials.json").to_s)
-        token_path       = ENV.fetch("DRIVE_TOKEN_PATH", Rails.root.join("drive_token.yaml").to_s)
+        credentials_path = self.credentials_path
+        token_path       = self.token_path
         unless ::File.exist?(credentials_path) && ::File.exist?(token_path)
           raise NotConfigured, "Google Drive is not configured: authorize drive.readonly " \
                                "(expected #{credentials_path} and #{token_path})"

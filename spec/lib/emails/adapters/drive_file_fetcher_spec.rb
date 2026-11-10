@@ -101,4 +101,34 @@ RSpec.describe Emails::Adapters::DriveFileFetcher do
     stub_const("ENV", ENV.to_h.merge("GMAIL_CREDENTIALS_PATH" => "/nonexistent.json"))
     expect { described_class.from_env.fetch("f1") }.to raise_error(described_class::NotConfigured, /not configured/i)
   end
+
+  describe ".setup" do
+    let(:auth) { Emails::GmailAuth.allocate }
+
+    before do
+      allow(auth).to receive(:credentials)
+      allow(Emails::GmailAuth).to receive(:new).and_return(auth)
+    end
+
+    it "authorizes interactively with the Drive scope into the separate drive token file" do
+      stub_const("ENV", ENV.to_h.merge("GMAIL_CREDENTIALS_PATH" => GmailHelpers::CREDENTIALS_PATH,
+                                       "DRIVE_TOKEN_PATH" => "/tmp/drive_token_spec.yaml"))
+
+      path = described_class.setup
+
+      expect(path).to eq("/tmp/drive_token_spec.yaml")
+      expect(Emails::GmailAuth).to have_received(:new)
+        .with(credentials_path: GmailHelpers::CREDENTIALS_PATH, token_path: "/tmp/drive_token_spec.yaml", scope: described_class::SCOPE)
+      expect(auth).to have_received(:credentials).with(interactive: true)
+    end
+
+    it "keeps the token apart from the Gmail one, which shares GmailAuth::USER_ID" do
+      expect(described_class.send(:token_path)).not_to eq(Emails::Adapters::GmailSession.send(:paths_from_env, credentials_path: GmailHelpers::CREDENTIALS_PATH)[:token_path])
+    end
+
+    it "raises NotConfigured without the credentials file" do
+      stub_const("ENV", ENV.to_h.merge("GMAIL_CREDENTIALS_PATH" => "/nonexistent.json"))
+      expect { described_class.setup }.to raise_error(described_class::NotConfigured, /credentials/)
+    end
+  end
 end

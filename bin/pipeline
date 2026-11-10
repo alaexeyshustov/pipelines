@@ -44,7 +44,7 @@ module PipelineCLI
       desc "Guide to setting up mail providers"
 
       option :providers, type: :array, default: ENV.fetch("MAIL_PROVIDERS", Emails::PROVIDER_NAMES.join(",")).split(","),
-                          desc: "Comma-separated list of providers to set up (e.g. gmail,yahoo)"
+                          desc: "Comma-separated list of providers to set up (gmail, yahoo, or drive for Google Drive)"
 
       def call(providers: [], **)
         providers.map(&:strip).reject(&:empty?).each do |provider|
@@ -62,6 +62,8 @@ module PipelineCLI
           Emails::Adapters::GmailAdapter.setup
         when Emails::YAHOO
           Emails::Adapters::YahooAdapter.setup
+        when Document::DRIVE
+          puts "Drive token saved to #{Emails::Adapters::DriveFileFetcher.setup}"
         else
           puts "No setup instructions for '#{provider}'. Please refer to provider documentation."
         end
