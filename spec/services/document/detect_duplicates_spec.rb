@@ -34,6 +34,14 @@ RSpec.describe Document::DetectDuplicates do
     expect(DocumentDuplicate.count).to eq(0)
   end
 
+  it "skips embeddings of Documents that no longer exist" do
+    orphan = create(:document)
+    embed_as(orphan, vector_at(0, 0.99))
+    Document.where(id: orphan.id).delete_all
+
+    expect(described_class.call(document).flagged).to eq(0)
+  end
+
   it "ignores emails" do
     embed_as(create(:email), vector_at(0, 0.99))
 

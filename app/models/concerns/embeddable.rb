@@ -12,11 +12,13 @@ module Embeddable
   class_methods do
     # The +limit+ records nearest in meaning to +query+ under the configured embedding model, nearest first, as
     # Embeddings (+neighbor_distance+ is cosine distance, 0 = same direction). Embeds the query with one model call.
+    # Called on a relation (+Email.where(...).semantic_search(q)+) it only considers records inside that relation;
+    # embeddings of deleted records are never returned.
     def semantic_search(query, limit: 20)
       return [] if query.blank?
 
       model = LlmModels.embedding
-      Embedding.nearest(Embeddings::Client.query(query.to_s, model:), type: polymorphic_name, model:, limit:)
+      Embedding.nearest(Embeddings::Client.query(query.to_s, model:), type: polymorphic_name, model:, scope: all, limit:)
     end
 
     # FTS5 matches (FtsSearchable) and semantic neighbours fused by reciprocal rank (Neighbor::Reranking.rrf), best first.

@@ -46,6 +46,12 @@ RSpec.describe Embedding do
       expect(described_class.count).to eq(0)
     end
 
+    it "rejects an all-zero vector, whose cosine distance is NULL and would sort first" do
+      zero = Array.new(Embeddings::Client::DIMENSIONS, 0.0)
+      expect { store(create(:email), zero) }.to raise_error(ActiveRecord::RecordInvalid, /zero/)
+      expect(described_class.count).to eq(0)
+    end
+
     it "rejects non-finite values" do
       expect { store(create(:email), unit(0).tap { |v| v[0] = Float::NAN }) }.to raise_error(ActiveRecord::RecordInvalid, /finite/)
     end

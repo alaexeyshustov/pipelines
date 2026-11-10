@@ -40,7 +40,7 @@ class Document::DetectDuplicates
 
   def neighbours(embedding)
     embedding.nearest_neighbors(:vector, distance: "cosine", threshold: 1 - @threshold)
-             .where(embeddable_type: Document.polymorphic_name, model: @model)
+             .where(embeddable_type: Document.polymorphic_name, model: @model, embeddable_id: Document.select(:id)) # steep:ignore
              .limit(NEIGHBORS)
              .includes(:embeddable)
   end

@@ -7,6 +7,7 @@ class Embedding < ApplicationRecord
   has_neighbors :vector, dimensions: Embeddings::Client::DIMENSIONS
 
   validates :model, :content_digest, presence: true
+  validate :vector_not_zero
 
   class << self
     # Creates or replaces the embedding of +embeddable+ under +model+ (one upsert, no lookup, so storing a batch is
@@ -21,13 +22,22 @@ class Embedding < ApplicationRecord
 
     # The +limit+ embeddings of +type+ nearest to +vector+ under +model+, nearest first; +neighbor_distance+ is the cosine
     # distance (0 = same direction). The embeddables are preloaded.
-    def nearest(vector, type:, model:, limit: 20)
+    # Only embeddings of records in +scope+ (a relation of the embeddable class, default all of +type+) count, which also leaves out
+    # embeddings whose record is gone.
+    def nearest(vector, type:, model:, scope: type.constantize.all, limit: 20)
       # select before nearest_neighbors, or neighbor selects every column (the 4 KB vectors included)
-      where(embeddable_type: type, model:)
+      where(embeddable_type: type, model:, embeddable_id: scope.unscope(:order, :limit, :offset, :includes, :preload).reselect(:id))
         .select(:id, :embeddable_type, :embeddable_id)
         .nearest_neighbors(:vector, vector, distance: "cosine")
         .limit(limit)
         .includes(:embeddable)
     end
+  end
+
+  private
+
+  # vec_distance_cosine of an all-zero vector is NULL, and NULL sorts first, so it would top every search.
+  def vector_not_zero
+    errors.add(:vector, "must not be all zeros") if vector&.all?(&:zero?)
   end
 end
