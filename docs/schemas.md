@@ -49,14 +49,35 @@ Interview.as_rows(scope)  # accepts a custom ActiveRecord scope
 ## emails
 
 One row per INBOX email, full body kept.
-### Email columns added for ingestion
 
 | Column | Type | Null | Notes |
 |---|---|---|---|
+| id | INTEGER | NO | PK |
+| provider | STRING | NO | `"gmail"` or `"yahoo"` |
+| provider_message_id | STRING | NO | Unique together with `provider` |
+| from_address | STRING | NO | |
+| to_address | STRING | YES | |
+| subject | STRING | YES | |
+| date | DATETIME | NO | Indexed |
+| body | TEXT | YES | Plain text |
+| html_body | TEXT | YES | |
+| source_url | STRING | YES | Gmail web link |
+| created_at, updated_at | DATETIME | NO | |
 | tagged_at | DATETIME | YES | Set by the per-email processing job after a successful classification; `NULL` = untagged backlog |
 | interview_id | INTEGER | YES | FK `interviews.id` (`ON DELETE SET NULL`, indexed). Set by `Interviews::EmailExtractor` (job `Interview::ExtractJob`): the Interview this `job_application` email fed. `Email belongs_to :interview, optional: true` / `Interview has_many :emails` |
 
 `Email.backfill_days` reads Setting `email_backfill_days` (then ENV `EMAIL_BACKFILL_DAYS`, default 90): the window for a first sync or rescan.
+
+### emails_fts
+
+FTS5 external-content virtual table over `subject`, `body`, `from_address` (rowid = `emails.id`). Insert/update/delete triggers (`emails_fts_ai/_au/_ad`) keep it in sync, including `update_all`/`delete_all`. The FTS5 shadow tables are stripped from `structure.sql` on dump (`lib/tasks/structure.rake`).
+
+```ruby
+Email::SearchQuery.call("interview acme", limit: 20)
+# => [#<data Hit email: Email, rank: -1.2, snippet: "... [[interview]] ...">]  (bm25, best first)
+```
+
+Input is split into quoted terms ANDed together, so operators and quotes are plain text.
 
 ---
 
@@ -169,27 +190,6 @@ Fixed top-level tags (not editable in the UI); seeded by `Tag.seed_defaults!`.
 | Column | Type | Null | Notes |
 |---|---|---|---|
 | id | INTEGER | NO | PK |
-| provider | STRING | NO | `"gmail"` or `"yahoo"` |
-| provider_message_id | STRING | NO | Unique together with `provider` |
-| from_address | STRING | NO | |
-| to_address | STRING | YES | |
-| subject | STRING | YES | |
-| date | DATETIME | NO | Indexed |
-| body | TEXT | YES | Plain text |
-| html_body | TEXT | YES | |
-| source_url | STRING | YES | Gmail web link |
-| created_at, updated_at | DATETIME | NO | |
-
-### emails_fts
-
-FTS5 external-content virtual table over `subject`, `body`, `from_address` (rowid = `emails.id`). Insert/update/delete triggers (`emails_fts_ai/_au/_ad`) keep it in sync, including `update_all`/`delete_all`. The FTS5 shadow tables are stripped from `structure.sql` on dump (`lib/tasks/structure.rake`).
-
-```ruby
-Email::SearchQuery.call("interview acme", limit: 20)
-# => [#<data Hit email: Email, rank: -1.2, snippet: "... [[interview]] ...">]  (bm25, best first)
-```
-
-Input is split into quoted terms ANDed together, so operators and quotes are plain text.
 | name | STRING | NO | One of `Tag::NAMES`: medical, job_application, child, subscription, bureaucracy, finance |
 | created_at / updated_at | DATETIME | NO | |
 
