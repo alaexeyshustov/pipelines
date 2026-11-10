@@ -50,6 +50,22 @@ RSpec.describe Interviews::EmailExtractor do
     end
   end
 
+  describe "matching non-ASCII names" do
+    let!(:interview) { create(:interview, company: "ÖBB", job_title: "Dev") }
+
+    it "reuses the Interview when the extraction repeats the name exactly" do
+      extraction.merge!("company" => "ÖBB", "job_title" => "Dev")
+      expect { result }.not_to change(Interview, :count)
+      expect(email.reload.interview).to eq(interview)
+    end
+
+    it "matches case-insensitively beyond ASCII" do
+      extraction.merge!("company" => "öbb", "job_title" => "DEV")
+      expect { result }.not_to change(Interview, :count)
+      expect(email.reload.interview).to eq(interview)
+    end
+  end
+
   describe "status transitions" do
     let!(:interview) { create(:interview, company: "Acme", job_title: "Ruby Developer", status: "pending_reply", applied_at: Date.new(2026, 5, 1)) }
 

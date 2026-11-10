@@ -85,8 +85,16 @@ class Interviews::EmailExtractor
   end
 
   def find_or_create(company, job_title)
-    Interview.find_by("lower(company) = ? AND lower(job_title) = ?", company.downcase, job_title.downcase) ||
-      Interview.new(company:, job_title:, status: Interview::STATUSES.first)
+    existing_interview(company, job_title) || Interview.new(company:, job_title:, status: Interview::STATUSES.first)
+  end
+
+  # SQLite's lower() only folds ASCII, so "ÖBB" would never match "öbb" in SQL: try the exact (indexed) pair first,
+  # then compare Unicode-downcased keys in Ruby.
+  def existing_interview(company, job_title)
+    Interview.find_by(company:, job_title:) || begin
+      key = [ company.downcase, job_title.downcase ]
+      Interview.all.to_a.find { |interview| [ interview.company.downcase, interview.job_title.downcase ] == key }
+    end
   end
 
   def apply(interview, action)
