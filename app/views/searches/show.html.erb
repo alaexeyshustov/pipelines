@@ -14,8 +14,7 @@
     <ul class="space-y-3">
       <% @email_hits.each do |hit| %>
         <li>
-          <%# Emails have no show page yet, so results are not linked. %>
-          <span class="font-medium"><%= hit.email.subject %></span>
+          <%= link_to hit.email.subject, email_path(hit.email), class: "font-medium text-blue-600" %>
           <span class="text-xs text-gray-500"><%= hit.email.from_address %></span>
           <%= render UI::HighlightedSnippetComponent.new(snippet: hit.snippet) %>
         </li>

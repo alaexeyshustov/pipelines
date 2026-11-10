@@ -40,7 +40,7 @@
 ] %>
 <% columns += [ { key: :company, label: "Company" }, { key: :status, label: "Status" } ] if interview_columns? %>
 <% table_rows = @rows.map do |row|
-     title = row.kind == :document ? link_to(row.title, document_path(row.record), class: "font-medium text-blue-600") : content_tag(:span, row.title, class: "font-medium")
+     title = link_to(row.title, row.kind == :document ? document_path(row.record) : email_path(row.record), class: "font-medium text-blue-600")
      cells = { kind: row.kind.to_s.humanize, title: safe_join([ title, render(UI::HighlightedSnippetComponent.new(snippet: row.snippet)) ]),
                subtag: row.subtag&.name.to_s, date: l(row.date.to_date) }
      if interview_columns?

@@ -31,6 +31,12 @@ RSpec.describe "Tag pages (base controller)" do
     expect(response.body).not_to include("Dentist reminder", "Untagged mail")
   end
 
+  it "links an email title to its page" do
+    email = tag_email(subject: "Bank statement")
+    get tag_pages_finance_path
+    expect(response.body).to include(%(href="#{email_path(email)}"))
+  end
+
   it "renders the rows in the client-paginated data table, with the document title as a link" do
     document = tag_document(title: "Tax <b>form</b>")
 

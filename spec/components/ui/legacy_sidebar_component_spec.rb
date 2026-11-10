@@ -36,7 +36,7 @@ RSpec.describe UI::LegacySidebarComponent, type: :component do
   it "renders Mails group links" do
     details = rendered.css("details")[1]
     links = details.css("a").map { |a| a.text.strip }
-    expect(links).to include("Interviews", "Tags", "Search")
+    expect(links).to include("Interviews", "Tags", "Search", "Documents")
   end
 
   it "renders Orchestration group links" do

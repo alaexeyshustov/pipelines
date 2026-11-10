@@ -42,6 +42,7 @@ module UI
         NavItem.new(label: "Interviews", path: ma.interviews_path),
         NavItem.new(label: "Tags",       path: ma.tags_path),
         NavItem.new(label: "Search",     path: ma.search_path),
+        NavItem.new(label: "Documents",  path: ma.documents_path),
         *tag_page_items
       ])
     end

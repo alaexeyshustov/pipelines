@@ -7,7 +7,13 @@ RSpec.describe "Searches" do
       create(:document, title: "Lease", text: "salary appendix")
       get search_path, params: { q: "salary" }
       expect(response.body).to include("Emails", "Documents", "Offer from Acme", "Lease", "<mark>salary</mark>")
-      expect(response.body.index("Emails")).to be < response.body.index("Documents")
+      expect(response.body.index(">Emails<")).to be < response.body.index(">Documents<", response.body.index(">Emails<"))
+    end
+
+    it "links emails to their page" do
+      email = create(:email, subject: "Offer from Acme", body: "salary details")
+      get search_path, params: { q: "salary" }
+      expect(response.body).to include(%(href="#{email_path(email)}"))
     end
 
     it "links documents" do
