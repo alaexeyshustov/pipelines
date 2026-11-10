@@ -5,6 +5,10 @@ class Document
 
     DOCX: String
     OCR_MODEL: String
+    DOCX_XML: String
+    WHITESPACE_NODES: Hash[String, String]
+    MAX_OCR_BYTES: Integer
+    MAX_DOCX_XML_BYTES: Integer
     WORD_NS: Hash[String, String]
 
     def self.call: (data: String, mime_type: String, filename: String) -> String
@@ -20,5 +24,7 @@ class Document
 
     def ocr_text: () -> String
     def docx_text: () -> String
+    def docx_xml: () -> String
+    def paragraph_text: (Nokogiri::XML::Node paragraph) -> String
   end
 end

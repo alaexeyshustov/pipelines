@@ -17,10 +17,10 @@ RSpec.describe Document::FileType do
   end
 
   describe ".supported?" do
-    it "accepts pdf, docx, plain text and images only" do
-      supported = [ "application/pdf", Document::FileType::DOCX, "text/plain", "image/jpeg" ]
+    it "accepts pdf, docx, plain text and the raster images OCR reads" do
+      supported = [ "application/pdf", Document::FileType::DOCX, "text/plain", "image/jpeg", "image/png", "image/tiff" ]
       expect(supported.map { |type| described_class.supported?(type) }).to all(be(true))
-      expect([ "application/zip", "application/octet-stream", nil ].map { |type| described_class.supported?(type) }).to all(be(false))
+      expect([ "application/zip", "application/octet-stream", "image/svg+xml", "image/heic", nil ].map { |type| described_class.supported?(type) }).to all(be(false))
     end
   end
 end

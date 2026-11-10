@@ -1,6 +1,8 @@
 # Which file types Document::TextExtractor can read, and the type of a file whose sender left it generic.
 class Document::FileType
   DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document".freeze
+  # Raster formats the Mistral OCR API accepts as images.
+  IMAGES = %w[image/png image/jpeg image/webp image/gif image/avif image/bmp image/tiff].freeze
   GENERIC = [ "application/octet-stream", "binary/octet-stream" ].freeze
 
   # +mime_type+, or - when it is blank or generic (mail clients and Drive often send application/octet-stream) -
@@ -13,6 +15,6 @@ class Document::FileType
   end
 
   def self.supported?(mime_type)
-    mime_type == DOCX || mime_type == "text/plain" || mime_type == "application/pdf" || mime_type.to_s.start_with?("image/")
+    [ DOCX, "text/plain", "application/pdf", *IMAGES ].include?(mime_type)
   end
 end

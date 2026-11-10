@@ -62,4 +62,39 @@ RSpec.describe Document::TextExtractor do
     expect { described_class.call(data: "x", mime_type: "application/octet-stream", filename: "blob") }
       .to raise_error(Document::TextExtractor::Unsupported)
   end
+
+  it "does not send unsupported image formats (svg, heic) to OCR" do
+    stub = stub_ocr
+    expect { described_class.call(data: "<svg/>", mime_type: "image/svg+xml", filename: "a.svg") }
+      .to raise_error(Document::TextExtractor::Unsupported)
+    expect(stub).not_to have_been_requested
+  end
+
+  it "OCRs every raster format Mistral accepts" do
+    stub_ocr
+    types = %w[image/png image/jpeg image/webp image/gif image/avif image/bmp image/tiff]
+    expect(types.map { |type| described_class.call(data: "x", mime_type: type, filename: "a") }).to all(eq("# Page one\n\nPage two"))
+  end
+
+  it "refuses files above the OCR size limit without calling OCR" do
+    stub = stub_ocr
+    stub_const("#{described_class}::MAX_OCR_BYTES", 4)
+    expect { described_class.call(data: "%PDF-1.4", mime_type: "application/pdf", filename: "big.pdf") }
+      .to raise_error(Document::TextExtractor::Unsupported, /too large/)
+    expect(stub).not_to have_been_requested
+  end
+
+  it "refuses a docx whose word/document.xml declares a size above the limit" do
+    stub_const("#{described_class}::MAX_DOCX_XML_BYTES", 10)
+    expect { described_class.call(data: docx([ "Hello World, long enough" ]), mime_type: described_class::DOCX, filename: "a.docx") }
+      .to raise_error(Document::TextExtractor::Unsupported, /too large/)
+  end
+
+  it "separates text across line breaks, tabs and paragraphs in docx" do
+    xml = %(<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>) +
+          %(<w:p><w:r><w:t>One</w:t><w:br/><w:t>Two</w:t><w:tab/><w:t>Three</w:t></w:r></w:p><w:p><w:r><w:t>Four</w:t></w:r></w:p></w:body></w:document>)
+    data = Zip::OutputStream.write_buffer { |zip| zip.put_next_entry("word/document.xml"); zip.write(xml) }.string
+
+    expect(described_class.call(data:, mime_type: described_class::DOCX, filename: "a.docx")).to eq("One\nTwo\tThree\n\nFour")
+  end
 end

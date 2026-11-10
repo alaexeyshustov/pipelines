@@ -1,6 +1,7 @@
 class Document
   class FileType
     DOCX: String
+    IMAGES: Array[String]
     GENERIC: Array[String]
 
     def self.resolve: (String? mime_type, String? filename) -> String?
