@@ -22,6 +22,11 @@ class Document < ApplicationRecord
   validates :checksum, uniqueness: true
   validates :source, inclusion: { in: SOURCES }
 
+  # Title and text, the text Embeddings::Text embeds.
+  def embedding_parts
+    [ title, text ]
+  end
+
   # The parsed +source_url+ when it is a well-formed http(s) URL a link may point at, else nil (a URL with spaces,
   # a javascript: URL or a blank one).
   def openable_source_uri

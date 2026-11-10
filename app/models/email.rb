@@ -16,6 +16,11 @@ class Email < ApplicationRecord
 
   # How far back the first sync of a mailbox (or a rescan) looks: Setting "email_backfill_days", then
   # ENV EMAIL_BACKFILL_DAYS, then 90.
+  # Subject and cleaned body, the text Embeddings::Text embeds.
+  def embedding_parts
+    [ subject, Embeddings::Text.email_body(body, html_body) ]
+  end
+
   def self.backfill_days
     Integer(Setting.fetch("email_backfill_days") || ENV.fetch("EMAIL_BACKFILL_DAYS", DEFAULT_BACKFILL_DAYS))
   end

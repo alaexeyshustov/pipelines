@@ -1,4 +1,5 @@
-# Records that get a vector per embedding model (see +Embedding+); the vectors are removed with the record.
+# Records that get a vector per embedding model (see +Embedding+); the vectors are removed with the record. The
+# including model defines +embedding_parts+, the strings (title, body, ...) Embeddings::Text joins into the embedded text.
 module Embeddable
   extend ActiveSupport::Concern
 

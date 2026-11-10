@@ -1,10 +1,14 @@
 module Embeddings
+  interface _Embeddable
+    def embedding_parts: () -> Array[String?]
+  end
+
   module Text
     MAX_CHARS: Integer
     SIGNATURE_DELIMITER: Regexp
 
-    def self?.for: (Email | Document record) -> String
-    def self?.email_body: (Email email) -> String
+    def self?.for: (_Embeddable record) -> String
+    def self?.email_body: (String? body, String? html_body) -> String
     def self?.html_to_text: (String html) -> String
     def self?.without_quotes_and_signature: (String text) -> String
   end

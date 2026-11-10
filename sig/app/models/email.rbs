@@ -34,4 +34,5 @@ class Email < ApplicationRecord
   def interview_id=: (Integer?) -> Integer?
   def interview: () -> Interview?
   def interview=: (Interview?) -> Interview?
+  def embedding_parts: () -> Array[String?]
 end
