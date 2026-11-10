@@ -19,8 +19,13 @@ RSpec.describe Interview::ExtractJob do
   context "when the extractor raises a RubyLLM::Error" do
     before { allow(Interviews::EmailExtractor).to receive(:call).and_raise(RubyLLM::Error, "overloaded") }
 
-    it "does not raise, so the job is not retried" do
-      expect { described_class.perform_now(email.id) }.not_to raise_error
+    it "retries, as the email already has tagged_at and nothing else would queue the extraction again" do
+      perform_enqueued_jobs(only: described_class) { described_class.perform_later(email.id) }
+      expect(Interviews::EmailExtractor).to have_received(:call).exactly(3).times
+    end
+
+    it "does not raise once retries are exhausted" do
+      expect { perform_enqueued_jobs(only: described_class) { described_class.perform_later(email.id) } }.not_to raise_error
     end
   end
 

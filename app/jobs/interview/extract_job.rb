@@ -1,8 +1,9 @@
 # Interview stage of the per-email processing chain (ADR 0013): upserts the Interview a job_application email belongs
 # to (Interviews::EmailExtractor). Enqueued by Email::ProcessJob. Re-runs are idempotent.
 #
-# Retries mirror Email::ProcessJob: RubyLLM already retries HTTP-level failures, so a RubyLLM::Error reaching this
-# job is final for this run (logged, nothing written); raw transport errors get one outer retry.
+# Email::ProcessJob has already stamped +tagged_at+ when this is queued, and nothing queues it again, so a provider
+# error (RubyLLM::Error, after RubyLLM's own HTTP retries) is retried here with a growing wait before it is logged
+# as final; raw transport errors get one outer retry.
 class Interview::ExtractJob < ApplicationJob
   queue_as :default
 
@@ -12,9 +13,11 @@ class Interview::ExtractJob < ApplicationJob
     Rails.logger.error("[Interview::ExtractJob] email #{job.arguments.first} transport error after retries: #{error.message}")
   end
 
+  retry_on RubyLLM::Error, wait: :polynomially_longer, attempts: 3 do |job, error|
+    Rails.logger.error("[Interview::ExtractJob] extracting email #{job.arguments.first} failed after retries: #{error.message}")
+  end
+
   def perform(email_id)
     Interviews::EmailExtractor.call(Email.find(email_id))
-  rescue RubyLLM::Error => error
-    Rails.logger.error("[Interview::ExtractJob] extracting email #{email_id} failed: #{error.message}")
   end
 end
