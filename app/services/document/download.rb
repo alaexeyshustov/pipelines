@@ -26,12 +26,12 @@ class Document::Download
   private
 
   def from_gmail(ref)
-    data = Emails.attachment(Emails::GMAIL, ref.fetch("message_id"), ref.fetch("attachment_id"))
+    data = Emails.attachment(Emails::GMAIL, ref.fetch("message_id").to_s, ref.fetch("attachment_id").to_s)
     File.new(data:, filename: filename(@document.title, @document.mime_type), mime_type: @document.mime_type)
   end
 
   def from_drive(ref)
-    file = Emails::Adapters::DriveFileFetcher.from_env.fetch(ref.fetch("drive_file_id"))
+    file = Emails::Adapters::DriveFileFetcher.from_env.fetch(ref.fetch("drive_file_id").to_s)
     File.new(data: file.data, filename: filename(file.filename, file.mime_type), mime_type: file.mime_type)
   end
 

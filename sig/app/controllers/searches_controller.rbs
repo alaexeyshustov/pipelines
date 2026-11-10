@@ -1,0 +1,7 @@
+class SearchesController < ApplicationController
+  @query: String
+  @email_hits: Array[Email::SearchQuery::Hit]
+  @document_hits: Array[Document::SearchQuery::Hit]
+
+  def show: () -> void
+end

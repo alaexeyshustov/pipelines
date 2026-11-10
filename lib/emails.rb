@@ -33,43 +33,43 @@ module Emails
   end
 
   def self.attachment(provider_name, message_id, attachment_id)
-    fetch(provider_name).attachment(message_id, attachment_id) # steep:ignore
+    fetch(provider_name).attachment(message_id, attachment_id)
   end
 
   def self.attachments(provider_name, message_id)
-    fetch(provider_name).attachments(message_id) # steep:ignore
+    fetch(provider_name).attachments(message_id)
   end
 
   def self.profile(provider_name)
-    fetch(provider_name).profile # steep:ignore
+    fetch(provider_name).profile
   end
 
   def self.inbox_message_ids_since(provider_name, history_id)
-    fetch(provider_name).inbox_message_ids_since(history_id) # steep:ignore
+    fetch(provider_name).inbox_message_ids_since(history_id)
   end
 
   def self.inbox_message_ids_after(provider_name, date)
-    fetch(provider_name).inbox_message_ids_after(date) # steep:ignore
+    fetch(provider_name).inbox_message_ids_after(date)
   end
 
   def self.account(provider_name)
-    fetch(provider_name).account # steep:ignore
+    fetch(provider_name).account
   end
 
   def self.inbox_status(provider_name)
-    fetch(provider_name).inbox_status # steep:ignore
+    fetch(provider_name).inbox_status
   end
 
   def self.inbox_uids_after(provider_name, last_uid)
-    fetch(provider_name).inbox_uids_after(last_uid) # steep:ignore
+    fetch(provider_name).inbox_uids_after(last_uid)
   end
 
   def self.inbox_uids_since(provider_name, date)
-    fetch(provider_name).inbox_uids_since(date) # steep:ignore
+    fetch(provider_name).inbox_uids_since(date)
   end
 
   def self.fetch_message(provider_name, message_id)
-    fetch(provider_name).fetch_message(message_id) # steep:ignore
+    fetch(provider_name).fetch_message(message_id)
   end
 
   def self.get_labels(provider_name)

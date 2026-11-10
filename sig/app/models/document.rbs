@@ -22,8 +22,8 @@ class Document < ApplicationRecord
   def source=: (String) -> String
   def source_url: () -> String?
   def source_url=: (String?) -> String?
-  def source_ref: () -> Hash[String, String]
-  def source_ref=: (Hash[String, String]) -> Hash[String, String]
+  def source_ref: () -> Hash[String, String | Integer | bool | nil]
+  def source_ref=: (Hash[String | Symbol, String | Integer | bool | nil]) -> Hash[String, String | Integer | bool | nil]
   def tagged_at: () -> Time?
   def tagged_at=: (Time?) -> Time?
   def email: () -> Email?
