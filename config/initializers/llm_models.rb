@@ -25,8 +25,8 @@ module LlmModels
 
     def judge         = Setting.fetch("judge_llm_model")      || ENV.fetch("JUDGE_LLM_MODEL",     "gpt-6-luna")
 
-    # Embedding model served by Ollama (ADR 0014); its vectors are stored per model name, so switching it means
-    # running `rake embeddings:reembed`. Must produce Embeddings::Client::DIMENSIONS-sized vectors.
+    # Embedding model served by Ollama (ADR 0014); its vectors are stored per model name, so switching it leaves
+    # existing records unembedded under the new model. Must produce Embeddings::Client::DIMENSIONS-sized vectors.
     def embedding     = Setting.fetch("embedding_model")      || ENV.fetch("EMBEDDING_MODEL",     "qwen3-embedding:0.6b")
   end
 end

@@ -29,10 +29,5 @@ class Embedding < ApplicationRecord
         .limit(limit)
         .includes(:embeddable)
     end
-
-    # Deletes the embeddings of every model but +model+ (after a re-embed).
-    def purge_except!(model)
-      where.not(model:).delete_all
-    end
   end
 end

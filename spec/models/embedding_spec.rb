@@ -93,16 +93,4 @@ RSpec.describe Embedding do
       expect(described_class.count).to eq(0)
     end
   end
-
-  describe ".purge_except!" do
-    it "drops the embeddings of every other model" do
-      email = create(:email)
-      store(email, unit(0), model: "old")
-      kept = store(email, unit(0), model: "new")
-
-      described_class.purge_except!("new")
-
-      expect(described_class.all).to eq([ kept ])
-    end
-  end
 end

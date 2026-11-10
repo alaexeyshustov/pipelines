@@ -40,7 +40,7 @@ OPENAI_API_KEY=
 GEMINI_API_KEY=
 ANTHROPIC_API_KEY=
 
-# Vector search (Ollama; `ollama pull qwen3-embedding:0.6b`, then `rake embeddings:reembed` to backfill)
+# Vector search (Ollama; `ollama pull qwen3-embedding:0.6b`)
 OLLAMA_API_BASE=http://localhost:11434/v1
 EMBEDDING_MODEL=qwen3-embedding:0.6b
 

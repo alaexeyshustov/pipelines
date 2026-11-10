@@ -1,7 +1,6 @@
 class Embedding < ApplicationRecord
   def self.store!: (ApplicationRecord embeddable, model: String, content_digest: String, vector: Array[Float]) -> Embedding
   def self.nearest: (Array[Float] vector, type: String, model: String, ?limit: Integer) -> ActiveRecord::Relation
-  def self.purge_except!: (String model) -> void
 
   def neighbor_distance: () -> Float
   def nearest_neighbors: (Symbol attribute, distance: String, ?threshold: Float) -> ActiveRecord::Relation

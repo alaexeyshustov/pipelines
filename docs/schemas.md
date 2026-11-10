@@ -143,7 +143,7 @@ Embeddings::Embed.call([email, document])        # batched, skips unchanged dige
 Email::SearchQuery.call("rent contract", mode: :semantic)  # or :hybrid (FTS5 + KNN, reciprocal rank fusion)
 ```
 
-Setup: `ollama pull qwen3-embedding:0.6b`; `OLLAMA_API_BASE` (default `http://localhost:11434/v1`), `EMBEDDING_MODEL` or Setting `embedding_model`. Backfill or model change: `rake embeddings:reembed[new-model]` (embeds everything, switches the setting, drops old vectors).
+Setup: `ollama pull qwen3-embedding:0.6b`; `OLLAMA_API_BASE` (default `http://localhost:11434/v1`), `EMBEDDING_MODEL` or Setting `embedding_model`.
 
 ## document_duplicates
 
@@ -160,7 +160,7 @@ Near-duplicate candidate pairs of Documents (GH #227), one row per pair in canon
 Document::DetectDuplicates.call(document)  # flags embedded Documents with similarity >= Document::DetectDuplicates.threshold
 ```
 
-Threshold: Setting `document_dedup_threshold`, then ENV `DOCUMENT_DEDUP_THRESHOLD`, default 0.95. Backfill or after changing it: `rake documents:detect_duplicates`.
+Threshold: Setting `document_dedup_threshold`, then ENV `DOCUMENT_DEDUP_THRESHOLD`, default 0.95.
 
 ## tags
 
