@@ -22,6 +22,15 @@ class Document < ApplicationRecord
   validates :checksum, uniqueness: true
   validates :source, inclusion: { in: SOURCES }
 
+  # The parsed +source_url+ when it is a well-formed http(s) URL a link may point at, else nil (a URL with spaces,
+  # a javascript: URL or a blank one).
+  def openable_source_uri
+    uri = URI.parse(source_url.to_s)
+    uri if uri.is_a?(URI::HTTP) && uri.host.present?
+  rescue URI::InvalidURIError
+    nil
+  end
+
   # Idempotent on checksum: re-ingesting the same file returns the existing Document.
   def self.ingest!(attributes)
     attributes = attributes.to_h.with_indifferent_access

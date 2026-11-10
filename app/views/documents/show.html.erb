@@ -6,8 +6,8 @@
 
 <p class="mb-4 text-sm">
   <%= link_to "Download original", download_document_path(@document), class: "text-blue-600" %>
-  <% if @document.source_url.to_s.match?(%r{\Ahttps?://}) %>
-    · <%= link_to "Open source", URI.parse(@document.source_url).to_s, class: "text-blue-600" %>
+  <% if (source_uri = @document.openable_source_uri) %>
+    · <%= link_to "Open source", source_uri.to_s, class: "text-blue-600", target: "_blank", rel: "noopener noreferrer" %>
   <% end %>
 </p>
 

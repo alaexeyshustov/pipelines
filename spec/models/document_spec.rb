@@ -5,6 +5,18 @@ RSpec.describe Document do
     described_class.connection.select_values("SELECT rowid FROM documents_fts WHERE documents_fts MATCH '#{term}'")
   end
 
+  describe "#openable_source_uri" do
+    it "returns an http(s) URL" do
+      expect(build(:document, source_url: "https://drive.google.com/file/d/1/view").openable_source_uri.to_s)
+        .to eq("https://drive.google.com/file/d/1/view")
+    end
+
+    it "returns nil for a blank, non-http or malformed URL" do
+      urls = [ nil, "", "javascript:alert(1)", "ftp://example.com/x", "https://example.com/a b" ]
+      expect(urls.map { |url| build(:document, source_url: url).openable_source_uri }).to all(be_nil)
+    end
+  end
+
   describe ".awaiting_tagging" do
     it "returns untagged Documents stored before the cutoff" do
       stale = create(:document, created_at: 2.hours.ago, tagged_at: nil)

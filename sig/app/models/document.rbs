@@ -31,6 +31,8 @@ class Document < ApplicationRecord
   def document_duplicates: () -> ActiveRecord::Relation
   def reverse_document_duplicates: () -> ActiveRecord::Relation
 
+  def openable_source_uri: () -> URI::HTTP?
+
   def self.awaiting_tagging: (before: Time | ActiveSupport::TimeWithZone) -> ActiveRecord::Relation
   def self.ingest!: (Hash[Symbol | String, String | Hash[String, String] | Email | nil] attributes) -> Document
 end

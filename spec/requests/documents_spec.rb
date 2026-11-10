@@ -25,6 +25,21 @@ RSpec.describe "Documents" do
     end
   end
 
+  describe "GET /documents/:id source link" do
+    it "links an http source with noopener noreferrer" do
+      document = create(:document, source_url: "https://mail.google.com/mail/u/0/#inbox/abc")
+      get document_path(document)
+      expect(response.body).to include('href="https://mail.google.com/mail/u/0/#inbox/abc"', 'rel="noopener noreferrer"')
+    end
+
+    it "renders the page without a link when the source URL is not a valid URI" do
+      document = create(:document, source_url: "https://example.com/a b")
+      get document_path(document)
+      expect(response).to be_successful
+      expect(response.body).not_to include("Open source")
+    end
+  end
+
   describe "GET /documents/:id/download" do
     let(:document) { create(:document, title: "Offer letter") }
 
