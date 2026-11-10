@@ -13,16 +13,21 @@ class Document::ExtractEmailAttachmentsJob < ApplicationJob
     email = Email.find(email_id)
     return unless eligible?(email)
 
-    Emails.attachments(email.provider, email.provider_message_id).each do |attachment|
-      next unless Document::TextExtractor.supported?(attachment[:mime_type])
-
-      process(email, attachment)
-    rescue StandardError => error
-      Rails.logger.error("Attachment #{attachment[:filename].inspect} of email #{email.id} failed: #{error.class}: #{error.message}")
-    end
+    Emails.attachments(email.provider, email.provider_message_id).each { |attachment| handle(email, attachment) }
   end
 
   private
+
+  def handle(email, attachment)
+    resolved = with_resolved_type(attachment)
+    process(email, resolved) if Document::FileType.supported?(resolved[:mime_type])
+  rescue StandardError => error
+    Rails.logger.error("Attachment #{attachment[:filename].inspect} of email #{email.id} failed: #{error.class}: #{error.message}")
+  end
+
+  def with_resolved_type(attachment)
+    attachment.merge(mime_type: Document::FileType.resolve(attachment[:mime_type], attachment[:filename]))
+  end
 
   def eligible?(email)
     email.provider == Emails::GMAIL && email.taggings.exists?

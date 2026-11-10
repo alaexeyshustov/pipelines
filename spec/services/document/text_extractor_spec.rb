@@ -51,8 +51,15 @@ RSpec.describe Document::TextExtractor do
       .to raise_error(Document::TextExtractor::Unsupported)
   end
 
-  it "reports supported types" do
-    expect(described_class.supported?("image/jpeg")).to be(true)
-    expect(described_class.supported?("application/zip")).to be(false)
+  it "infers a generic application/octet-stream type from the filename" do
+    stub_ocr(pages: [ { "index" => 0, "markdown" => "scan" } ])
+
+    expect(described_class.call(data: "%PDF-1.4", mime_type: "application/octet-stream", filename: "cv.pdf")).to eq("scan")
+    expect(described_class.call(data: docx([ "Hello" ]), mime_type: "application/octet-stream", filename: "a.docx")).to eq("Hello")
+  end
+
+  it "stays unsupported when a generic type has no recognisable extension" do
+    expect { described_class.call(data: "x", mime_type: "application/octet-stream", filename: "blob") }
+      .to raise_error(Document::TextExtractor::Unsupported)
   end
 end

@@ -5,11 +5,12 @@ require "zip"
 #   Document::TextExtractor.call(data: bytes, mime_type: "application/pdf", filename: "cv.pdf")  # => "# CV ..."
 #
 # PDFs and images go through Mistral OCR (RubyLLM.ocr, key from MISTRAL_API_KEY); docx is read locally from
-# word/document.xml; text/plain passes through. Anything else raises Unsupported; provider errors propagate.
+# word/document.xml; text/plain passes through. A generic application/octet-stream type is
+# inferred from the filename (Document::FileType). Anything else raises Unsupported; provider errors propagate.
 class Document::TextExtractor
   class Unsupported < StandardError; end
 
-  DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document".freeze
+  DOCX = Document::FileType::DOCX
   OCR_MODEL = "mistral-ocr-latest".freeze
   WORD_NS = { "w" => "http://schemas.openxmlformats.org/wordprocessingml/2006/main" }.freeze
 
@@ -17,18 +18,14 @@ class Document::TextExtractor
     new(data:, mime_type:, filename:).call
   end
 
-  def self.supported?(mime_type)
-    mime_type == DOCX || mime_type == "text/plain" || mime_type == "application/pdf" || mime_type.to_s.start_with?("image/")
-  end
-
   def initialize(data:, mime_type:, filename:)
     @data = data
-    @mime_type = mime_type
+    @mime_type = Document::FileType.resolve(mime_type, filename)
     @filename = filename
   end
 
   def call
-    raise Unsupported, "Cannot extract text from #{@mime_type.inspect}" unless self.class.supported?(@mime_type)
+    raise Unsupported, "Cannot extract text from #{@mime_type.inspect}" unless Document::FileType.supported?(@mime_type)
 
     case @mime_type
     when "text/plain" then @data.dup.force_encoding(Encoding::UTF_8).scrub

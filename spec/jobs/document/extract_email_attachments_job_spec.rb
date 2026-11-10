@@ -33,6 +33,15 @@ RSpec.describe Document::ExtractEmailAttachmentsJob do
       expect(Document::TagJob).to have_been_enqueued.with(doc.id)
     end
 
+    it "infers the type of an application/octet-stream attachment from its filename" do
+      allow(Emails).to receive(:attachments).with("gmail", "m1")
+        .and_return([ { id: "a1", filename: "cv.pdf", mime_type: "application/octet-stream", size: 10 },
+                      { id: "a2", filename: "blob.bin", mime_type: "application/octet-stream", size: 10 } ])
+
+      expect { described_class.perform_now(email.id) }.to change(Document, :count).by(1)
+      expect(Document.last).to have_attributes(title: "cv.pdf", mime_type: "application/pdf")
+    end
+
     it "queues the embedding before the tagging, so a tagging failure cannot lose it" do
       described_class.perform_now(email.id)
       classes = enqueued_jobs.pluck("job_class")

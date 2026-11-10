@@ -5,6 +5,8 @@ class Document
     private
 
     def eligible?: (Email email) -> bool
+    def handle: (Email email, Emails::attachment attachment) -> void
+    def with_resolved_type: (Emails::attachment attachment) -> Emails::attachment
     def ingest: (Email email, Emails::attachment attachment, String data, String text) -> Document
     def source_ref: (Email email, Emails::attachment attachment) -> Hash[Symbol, String]
     def process: (Email email, Emails::attachment attachment) -> void

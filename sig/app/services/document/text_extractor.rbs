@@ -8,10 +8,9 @@ class Document
     WORD_NS: Hash[String, String]
 
     def self.call: (data: String, mime_type: String, filename: String) -> String
-    def self.supported?: (String? mime_type) -> bool
 
     @data: String
-    @mime_type: String
+    @mime_type: String?
     @filename: String
 
     def initialize: (data: String, mime_type: String, filename: String) -> void

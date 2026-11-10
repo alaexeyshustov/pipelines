@@ -53,7 +53,7 @@ class Document::SyncDriveJob < ApplicationJob
   end
 
   def sync(fetcher, entry, document)
-    return unless Document::TextExtractor.supported?(mime_type_of(entry))
+    return unless Document::FileType.supported?(mime_type_of(entry))
 
     if document && unchanged?(entry, document)
       summary["unchanged"] += 1
@@ -66,7 +66,9 @@ class Document::SyncDriveJob < ApplicationJob
   end
 
   def mime_type_of(entry)
-    entry.mime_type == Emails::Adapters::DriveFileFetcher::GOOGLE_DOC_MIME ? Document::TextExtractor::DOCX : entry.mime_type
+    return Document::FileType::DOCX if entry.mime_type == Emails::Adapters::DriveFileFetcher::GOOGLE_DOC_MIME
+
+    Document::FileType.resolve(entry.mime_type, entry.name)
   end
 
   def unchanged?(entry, document)
@@ -124,7 +126,7 @@ class Document::SyncDriveJob < ApplicationJob
 
   def attributes_for(entry, file, text, checksum)
     {
-      title: entry.name, mime_type: file.mime_type, text:, checksum:,
+      title: entry.name, mime_type: Document::FileType.resolve(file.mime_type, entry.name), text:, checksum:,
       source: Document::DRIVE, source_url: entry.web_view_link, tagged_at: nil,
       source_ref: { provider: Document::DRIVE_REF_PROVIDER, drive_file_id: entry.id, md5: entry.md5, modified_time: entry.modified_time }
     }

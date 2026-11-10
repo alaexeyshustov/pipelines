@@ -1,0 +1,9 @@
+class Document
+  class FileType
+    DOCX: String
+    GENERIC: Array[String]
+
+    def self.resolve: (String? mime_type, String? filename) -> String?
+    def self.supported?: (String? mime_type) -> bool
+  end
+end
