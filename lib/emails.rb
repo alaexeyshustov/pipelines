@@ -1,7 +1,11 @@
 module Emails
+  GMAIL = "gmail".freeze
+  YAHOO = "yahoo".freeze
+  PROVIDER_NAMES = [ GMAIL, YAHOO ].freeze
+
   PROVIDERS = {
-    "gmail" => Emails::Adapters::GmailAdapter,
-    "yahoo" => Emails::Adapters::YahooAdapter
+    GMAIL => Emails::Adapters::GmailAdapter,
+    YAHOO => Emails::Adapters::YahooAdapter
   }.freeze
 
   def self.configure(**providers_config)

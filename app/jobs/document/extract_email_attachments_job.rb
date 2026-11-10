@@ -25,7 +25,7 @@ class Document::ExtractEmailAttachmentsJob < ApplicationJob
   private
 
   def eligible?(email)
-    email.provider == "gmail" && email.taggings.exists?
+    email.provider == Emails::GMAIL && email.taggings.exists?
   end
 
   def process(email, attachment)
@@ -44,7 +44,7 @@ class Document::ExtractEmailAttachmentsJob < ApplicationJob
   def ingest(email, attachment, checksum, text)
     Document.ingest!(
       title: attachment[:filename], mime_type: attachment[:mime_type], text:, checksum:,
-      source: "email_attachment", source_url: email.source_url, email_id: email.id,
+      source: Document::EMAIL_ATTACHMENT, source_url: email.source_url, email_id: email.id,
       source_ref: source_ref(email, attachment)
     )
   end

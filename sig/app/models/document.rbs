@@ -1,4 +1,8 @@
 class Document < ApplicationRecord
+  EMAIL_ATTACHMENT: String
+  DRIVE: String
+  DRIVE_REF_PROVIDER: String
+
   include Taggable
   include Embeddable
   extend FtsSearchable::ClassMethods

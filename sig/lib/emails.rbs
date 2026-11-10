@@ -29,6 +29,9 @@ module Emails
   type label = { id: String, name: String, type: String }
   type modify_result = { message_id: Integer | String, added: Array[String], removed: Array[String] } | { id: Integer | String, labels: Array[String] }
 
+  GMAIL: String
+  YAHOO: String
+  PROVIDER_NAMES: Array[String]
   PROVIDERS: Hash[String, singleton(Adapters::BaseAdapter)]
 
   self.@provider_registry: ProviderRegistry?

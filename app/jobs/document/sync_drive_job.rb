@@ -45,7 +45,7 @@ class Document::SyncDriveJob < ApplicationJob
 
   def sync_all(fetcher, folder_ids)
     entries = fetcher.scan(folder_ids)
-    existing = Document.where(source: "drive").index_by { |document| document.source_ref["drive_file_id"] }
+    existing = Document.where(source: Document::DRIVE).index_by { |document| document.source_ref["drive_file_id"] }
 
     entries.each { |entry| sync(fetcher, entry, existing[entry.id]) }
     delete_missing(existing, entries, fetcher.empty_folders(folder_ids))
@@ -125,8 +125,8 @@ class Document::SyncDriveJob < ApplicationJob
   def attributes_for(entry, file, text, checksum)
     {
       title: entry.name, mime_type: file.mime_type, text:, checksum:,
-      source: "drive", source_url: entry.web_view_link, tagged_at: nil,
-      source_ref: { provider: "drive", drive_file_id: entry.id, md5: entry.md5, modified_time: entry.modified_time }
+      source: Document::DRIVE, source_url: entry.web_view_link, tagged_at: nil,
+      source_ref: { provider: Document::DRIVE_REF_PROVIDER, drive_file_id: entry.id, md5: entry.md5, modified_time: entry.modified_time }
     }
   end
 
@@ -148,7 +148,7 @@ class Document::SyncDriveJob < ApplicationJob
   end
 
   def requeue_untagged
-    stale = Document.awaiting_tagging(before: Document::TagJob::REQUEUE_AFTER.ago).where(source: "drive")
+    stale = Document.awaiting_tagging(before: Document::TagJob::REQUEUE_AFTER.ago).where(source: Document::DRIVE)
                     .where.not(id: queued_tagging).pluck(:id)
     stale.each { |document_id| Document::TagJob.perform_later(document_id) }
     summary["requeued"] = stale.size

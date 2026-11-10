@@ -17,8 +17,8 @@ class Document::Download
   def call
     ref = @document.source_ref
     case ref["provider"]
-    when "gmail" then from_gmail(ref)
-    when "drive" then from_drive(ref)
+    when Emails::GMAIL then from_gmail(ref)
+    when Document::DRIVE_REF_PROVIDER then from_drive(ref)
     else raise Unsupported, "Cannot download from #{ref['provider'].inspect}"
     end
   end
@@ -26,7 +26,7 @@ class Document::Download
   private
 
   def from_gmail(ref)
-    data = Emails.attachment("gmail", ref.fetch("message_id"), ref.fetch("attachment_id"))
+    data = Emails.attachment(Emails::GMAIL, ref.fetch("message_id"), ref.fetch("attachment_id"))
     File.new(data:, filename: filename, mime_type: @document.mime_type)
   end
 

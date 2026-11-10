@@ -22,7 +22,7 @@ module Orchestration
     class EmailsSync
       include Orchestration::Executable
 
-      PROVIDERS = %w[gmail yahoo].freeze
+      PROVIDERS = Emails::PROVIDER_NAMES
       REQUEUE_AFTER = 1.hour
       SKIPPED = { "skipped" => true, "reason" => "no credentials" }.freeze
 

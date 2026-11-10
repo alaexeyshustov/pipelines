@@ -6,7 +6,11 @@ class Document < ApplicationRecord
   include FtsSearchable
   include Embeddable
 
-  SOURCES = %w[email_attachment drive].freeze
+  EMAIL_ATTACHMENT = "email_attachment".freeze
+  DRIVE = "drive".freeze
+  SOURCES = [ EMAIL_ATTACHMENT, DRIVE ].freeze
+  # source_ref["provider"] of a Drive Document (not an email provider).
+  DRIVE_REF_PROVIDER = "drive".freeze
 
   belongs_to :email, optional: true
   has_many :document_duplicates, dependent: :destroy

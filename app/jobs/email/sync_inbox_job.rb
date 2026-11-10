@@ -1,4 +1,4 @@
-# Pulls new INBOX mail of one provider into +Email+ rows (ADR 0013). "gmail" and "yahoo" are supported; another
+# Pulls new INBOX mail of one provider into +Email+ rows (ADR 0013). "gmail" and "yahoo" (Emails::PROVIDER_NAMES) are supported; another
 # provider adds a +sync_<provider>+ method and a branch in +perform+.
 #
 # Gmail: the cursor account is the mailbox address from the Gmail profile. With no cursor the last
@@ -28,8 +28,8 @@ class Email::SyncInboxJob < ApplicationJob
 
   def perform(provider)
     case provider
-    when "gmail" then sync_gmail
-    when "yahoo" then sync_yahoo
+    when Emails::GMAIL then sync_gmail
+    when Emails::YAHOO then sync_yahoo
     else raise ArgumentError, "Unsupported email provider: #{provider}"
     end
   end
@@ -37,25 +37,25 @@ class Email::SyncInboxJob < ApplicationJob
   private
 
   def sync_gmail
-    profile = Emails.profile("gmail")
-    cursor = Email::SyncCursor.for(provider: "gmail", account: profile.fetch(:email_address))
+    profile = Emails.profile(Emails::GMAIL)
+    cursor = Email::SyncCursor.for(provider: Emails::GMAIL, account: profile.fetch(:email_address))
     mode, ids = gmail_message_ids(cursor)
 
-    result, failed_ids = store_all("gmail", mode, ids)
-    return result if hold_cursor?("gmail", cursor, failed_ids)
+    result, failed_ids = store_all(Emails::GMAIL, mode, ids)
+    return result if hold_cursor?(Emails::GMAIL, cursor, failed_ids)
 
     mode == "incremental" ? cursor.advance!(history_id: profile.fetch(:history_id)) : cursor.reset!(history_id: profile.fetch(:history_id))
     result
   end
 
   def sync_yahoo
-    cursor = Email::SyncCursor.for(provider: "yahoo", account: Emails.account("yahoo"))
-    status = Emails.inbox_status("yahoo")
+    cursor = Email::SyncCursor.for(provider: Emails::YAHOO, account: Emails.account(Emails::YAHOO))
+    status = Emails.inbox_status(Emails::YAHOO)
     uid_validity = status.uid_validity
     mode, uids = yahoo_uids(cursor, uid_validity)
 
-    result, failed_ids = store_all("yahoo", mode, uids.map { |uid| "#{uid_validity}:#{uid}" })
-    return result if hold_cursor?("yahoo", cursor, failed_ids)
+    result, failed_ids = store_all(Emails::YAHOO, mode, uids.map { |uid| "#{uid_validity}:#{uid}" })
+    return result if hold_cursor?(Emails::YAHOO, cursor, failed_ids)
 
     save_yahoo_cursor(cursor, mode, uid_validity, mode == "incremental" ? uids.max : status.last_uid)
     result
@@ -73,23 +73,23 @@ class Email::SyncInboxJob < ApplicationJob
     return [ "backfill", yahoo_window_uids ] if cursor.uid_validity.nil?
     return [ "rescan", yahoo_window_uids ] if cursor.uid_validity != uid_validity
 
-    [ "incremental", Emails.inbox_uids_after("yahoo", cursor.last_uid.to_i) ]
+    [ "incremental", Emails.inbox_uids_after(Emails::YAHOO, cursor.last_uid.to_i) ]
   end
 
   def yahoo_window_uids
-    Emails.inbox_uids_since("yahoo", Date.current - Email.backfill_days)
+    Emails.inbox_uids_since(Emails::YAHOO, Date.current - Email.backfill_days)
   end
 
   def gmail_message_ids(cursor)
     return [ "backfill", window_ids ] if cursor.history_id.blank?
 
-    [ "incremental", Emails.inbox_message_ids_since("gmail", cursor.history_id.to_s) ]
+    [ "incremental", Emails.inbox_message_ids_since(Emails::GMAIL, cursor.history_id.to_s) ]
   rescue Emails::HistoryExpiredError
     [ "rescan", window_ids ]
   end
 
   def window_ids
-    Emails.inbox_message_ids_after("gmail", Date.current - Email.backfill_days)
+    Emails.inbox_message_ids_after(Emails::GMAIL, Date.current - Email.backfill_days)
   end
 
   # True when a failed message keeps the cursor where it is: counts the failed run, and gives up (false, with a

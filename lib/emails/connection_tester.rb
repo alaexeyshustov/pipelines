@@ -24,8 +24,8 @@ module Emails
 
     def run_provider_check(adapter_class)
       case @provider
-      when "gmail" then connect_gmail_adapter(adapter_class)
-      when "yahoo" then connect_yahoo_adapter(adapter_class)
+      when Emails::GMAIL then connect_gmail_adapter(adapter_class)
+      when Emails::YAHOO then connect_yahoo_adapter(adapter_class)
       end
     end
 

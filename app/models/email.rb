@@ -1,6 +1,6 @@
 # A fetched INBOX email with its full body. +emails_fts+ (FTS5, external content) is kept in sync by DB triggers.
 class Email < ApplicationRecord
-  PROVIDERS = %w[gmail yahoo].freeze
+  PROVIDERS = Emails::PROVIDER_NAMES
   DEFAULT_BACKFILL_DAYS = 90
 
   include Taggable
