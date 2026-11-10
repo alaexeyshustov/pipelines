@@ -22,6 +22,6 @@ class Document
 
     def from_gmail: (Hash[String, String] ref) -> File
     def from_drive: (Hash[String, String] ref) -> File
-    def filename: () -> String
+    def filename: (String name, String? mime_type) -> String
   end
 end

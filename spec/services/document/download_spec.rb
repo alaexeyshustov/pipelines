@@ -36,6 +36,18 @@ RSpec.describe Document::Download do
     expect(described_class.call(document).data).to eq("bytes")
   end
 
+  it "gives a Drive file without an extension one from its mime type" do
+    stub_request(:get, %r{drive/v3/files/f1\?fields}).to_return(
+      status: 200, body: { name: "Resume", mimeType: "application/pdf" }.to_json
+    )
+    stub_request(:get, %r{drive/v3/files/f1\?alt=media}).to_return(status: 200, body: "bytes")
+    allow(Emails::Adapters::DriveFileFetcher).to receive(:from_env)
+      .and_return(Emails::Adapters::DriveFileFetcher.new(access_token: -> { "tok" }))
+    document = create(:document, title: "Resume", source: "drive", source_ref: { "provider" => "drive", "drive_file_id" => "f1" })
+
+    expect(described_class.call(document).filename).to eq("Resume.pdf")
+  end
+
   it "raises for an unsupported source_ref" do
     document = create(:document, source_ref: { "provider" => "yahoo" })
     expect { described_class.call(document) }.to raise_error(described_class::Unsupported)

@@ -73,7 +73,7 @@ module Emails
         mime_type = meta.fetch("mimeType") # steep:ignore
         return File.new(data: get(file_id, alt: "media"), filename: name, mime_type: mime_type) unless mime_type == GOOGLE_DOC_MIME
 
-        File.new(data: export(file_id), filename: name, mime_type: DOCX_MIME)
+        File.new(data: export(file_id), filename: docx_name(name), mime_type: DOCX_MIME)
       end
 
       # A Google Doc exported as docx (native Docs have no bytes of their own).
@@ -96,6 +96,11 @@ module Emails
       end
 
       private
+
+      # A native Google Doc is named without an extension, but what is returned is a docx.
+      def docx_name(name)
+        name.downcase.end_with?(".docx") ? name : "#{name}.docx"
+      end
 
       def collect(folder_id, seen, entries)
         return unless seen.add?(folder_id)

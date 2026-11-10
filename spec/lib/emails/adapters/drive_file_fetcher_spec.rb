@@ -92,7 +92,7 @@ RSpec.describe Emails::Adapters::DriveFileFetcher do
 
       expect(fetcher.export("g1")).to eq("docx-bytes")
       file = fetcher.fetch("g1")
-      expect([ file.data, file.filename, file.mime_type ]).to eq([ "docx-bytes", "Notes", described_class::DOCX_MIME ])
+      expect([ file.data, file.filename, file.mime_type ]).to eq([ "docx-bytes", "Notes.docx", described_class::DOCX_MIME ])
       expect(export).to have_been_requested.twice
     end
   end

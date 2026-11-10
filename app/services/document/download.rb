@@ -27,19 +27,18 @@ class Document::Download
 
   def from_gmail(ref)
     data = Emails.attachment(Emails::GMAIL, ref.fetch("message_id"), ref.fetch("attachment_id"))
-    File.new(data:, filename: filename, mime_type: @document.mime_type)
+    File.new(data:, filename: filename(@document.title, @document.mime_type), mime_type: @document.mime_type)
   end
 
   def from_drive(ref)
     file = Emails::Adapters::DriveFileFetcher.from_env.fetch(ref.fetch("drive_file_id"))
-    File.new(data: file.data, filename: file.filename, mime_type: file.mime_type)
+    File.new(data: file.data, filename: filename(file.filename, file.mime_type), mime_type: file.mime_type)
   end
 
-  def filename
-    title = @document.title
-    return title unless ::File.extname(title).empty?
+  def filename(name, mime_type)
+    return name unless ::File.extname(name).empty?
 
-    extension = Rack::Mime::MIME_TYPES.key(@document.mime_type)
-    "#{title}#{extension}"
+    extension = Rack::Mime::MIME_TYPES.key(mime_type.to_s)
+    "#{name}#{extension}"
   end
 end

@@ -49,6 +49,7 @@ module Emails
 
       private
 
+      def docx_name: (String name) -> String
       def request: (URI::Generic uri) -> Net::HTTPResponse
       def collect: (String folder_id, Set[String] seen, Hash[String, Entry] entries) -> void
       def list_children: (String folder_id) -> Array[Entry]
