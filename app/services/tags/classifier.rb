@@ -1,6 +1,6 @@
 # Tags an Email or Document with the fixed tags using the native RubyLLM::Judge (decisions API, see ADR 0012).
 #
-# - One multi-label call: a probability question per tag; every tag at or above +threshold+ is kept.
+# - One multi-label call: a probability question per tag; every tag at or above Tag.threshold is kept.
 # - One choice call for all kept tags at once: a question per tag over its existing subtags plus a "none" option
 #   (skipped when no kept tag has subtags). A tag whose answer is "none" gets no subtag. Nothing is ever created.
 # - Writes +source: llm+ taggings (confidence = tag probability). Re-tagging replaces the item's previous llm
@@ -9,16 +9,11 @@
 class Tags::Classifier
   Result = Data.define(:taggings)
 
-  DEFAULT_THRESHOLD = 0.35
   MAX_CHARS = 4_000
   NO_SUBTAG = "none_of_the_above".freeze
 
   def self.call(item)
     new(item).call
-  end
-
-  def self.threshold
-    Float(Setting.fetch("tagging_threshold") || ENV.fetch("TAGGING_THRESHOLD", DEFAULT_THRESHOLD))
   end
 
   def initialize(item)
@@ -43,7 +38,7 @@ class Tags::Classifier
   end
 
   def kept(tags)
-    threshold = self.class.threshold
+    threshold = Tag.threshold
     questions = tags.to_h { |tag| [ tag.name.to_s, tag_question(tag) ] }
     judgment = judge(questions)
     tags.filter_map do |tag|

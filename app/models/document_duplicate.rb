@@ -2,6 +2,8 @@
 # (+document+ has the lower id), so detection is idempotent. Nothing is merged or hidden: the user confirms or
 # dismisses the pair, and a dismissed pair is never flagged again.
 class DocumentDuplicate < ApplicationRecord
+  DEFAULT_THRESHOLD = 0.95
+
   belongs_to :document
   belongs_to :duplicate, class_name: "Document"
 
@@ -11,6 +13,12 @@ class DocumentDuplicate < ApplicationRecord
   validate :distinct_documents
 
   scope :involving, ->(document) { where(document:).or(where(duplicate: document)) }
+
+  # Minimum cosine similarity for a pair: Setting "document_dedup_threshold", then ENV DOCUMENT_DEDUP_THRESHOLD,
+  # then 0.95.
+  def self.threshold
+    Float(Setting.fetch("document_dedup_threshold") || ENV.fetch("DOCUMENT_DEDUP_THRESHOLD", DEFAULT_THRESHOLD))
+  end
 
   # The pairs of +document+ still worth showing (everything but dismissed), with both documents loaded.
   def self.candidates_for(document)

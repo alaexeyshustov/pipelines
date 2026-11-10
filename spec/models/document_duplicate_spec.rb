@@ -54,4 +54,25 @@ RSpec.describe DocumentDuplicate do
 
     expect { newer.destroy! }.to change(described_class, :count).by(-1)
   end
+
+  describe ".threshold" do
+    it "defaults to 0.95" do
+      expect(described_class.threshold).to eq(0.95)
+    end
+
+    it "reads the Setting before ENV" do
+      Setting.set("document_dedup_threshold", "0.99")
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with("DOCUMENT_DEDUP_THRESHOLD", anything).and_return("0.5")
+
+      expect(described_class.threshold).to eq(0.99)
+    end
+
+    it "falls back to ENV" do
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with("DOCUMENT_DEDUP_THRESHOLD", anything).and_return("0.99")
+
+      expect(described_class.threshold).to eq(0.99)
+    end
+  end
 end

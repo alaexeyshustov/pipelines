@@ -178,7 +178,7 @@ Near-duplicate candidate pairs of Documents (GH #227), one row per pair in canon
 | status | STRING | NO | `pending` (default), `confirmed`, `dismissed` (Rails enum); a dismissed pair is never re-flagged |
 
 ```ruby
-Document::DetectDuplicates.call(document)  # flags embedded Documents with similarity >= Document::DetectDuplicates.threshold
+Document::DetectDuplicates.call(document)  # flags embedded Documents with similarity >= DocumentDuplicate.threshold
 ```
 
 Threshold: Setting `document_dedup_threshold`, then ENV `DOCUMENT_DEDUP_THRESHOLD`, default 0.95.
@@ -230,7 +230,7 @@ Polymorphic join: `taggable` (Email or Document) gets tags. Untagged items have 
 
 ```ruby
 Tags::Classifier.call(email_or_document)   # => #<data Result taggings: [Tagging, ...]>
-Tags::Classifier.threshold                 # 0.35; Setting "tagging_threshold" > ENV TAGGING_THRESHOLD > default
+Tag.threshold                              # 0.35; Setting "tagging_threshold" > ENV TAGGING_THRESHOLD > default
 ```
 
 **Indexes:** `[taggable_type, taggable_id, tag_id]` (unique: one tag per taggable), `tag_id`, `subtag_id`

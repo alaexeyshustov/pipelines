@@ -10,10 +10,18 @@ class Tag < ApplicationRecord
     "finance"         => %w[bank invoice tax insurance salary]
   }.freeze
 
+  DEFAULT_THRESHOLD = 0.35
+
   has_many :subtags, dependent: :destroy
   has_many :taggings, dependent: :restrict_with_error
 
   validates :name, presence: true, uniqueness: true
+
+  # Minimum probability for Tags::Classifier to keep a tag: Setting "tagging_threshold", then ENV TAGGING_THRESHOLD,
+  # then 0.35.
+  def self.threshold
+    Float(Setting.fetch("tagging_threshold") || ENV.fetch("TAGGING_THRESHOLD", DEFAULT_THRESHOLD))
+  end
 
   # Idempotent: creates the fixed tags and starter subtags if missing.
   def self.seed_defaults!

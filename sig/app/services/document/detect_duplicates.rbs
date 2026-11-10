@@ -6,7 +6,6 @@ class Document
       def self.new: (flagged: Integer) -> instance
     end
 
-    DEFAULT_THRESHOLD: Float
     NEIGHBORS: Integer
 
     @document: Document
@@ -14,7 +13,6 @@ class Document
     @threshold: Float
 
     def self.call: (Document document, ?model: String, ?threshold: Float) -> Result
-    def self.threshold: () -> Float
     def initialize: (Document document, model: String, threshold: Float) -> void
     def call: () -> Result
 

@@ -31,4 +31,25 @@ RSpec.describe Tag do
       expect { described_class.seed_defaults! }.not_to(change { [ described_class.count, Subtag.count ] })
     end
   end
+
+  describe ".threshold" do
+    it "defaults to 0.35" do
+      expect(described_class.threshold).to eq(0.35)
+    end
+
+    it "reads the Setting before ENV" do
+      Setting.set("tagging_threshold", "0.8")
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with("TAGGING_THRESHOLD", anything).and_return("0.5")
+
+      expect(described_class.threshold).to eq(0.8)
+    end
+
+    it "falls back to ENV" do
+      allow(ENV).to receive(:fetch).and_call_original
+      allow(ENV).to receive(:fetch).with("TAGGING_THRESHOLD", anything).and_return("0.6")
+
+      expect(described_class.threshold).to eq(0.6)
+    end
+  end
 end

@@ -6,14 +6,12 @@ module Tags
       def self.new: (taggings: Array[Tagging]) -> instance
     end
 
-    DEFAULT_THRESHOLD: Float
     MAX_CHARS: Integer
     NO_SUBTAG: String
 
     type taggable = Email | Document
 
     def self.call: (taggable item) -> Result
-    def self.threshold: () -> Float
 
     @item: taggable
 

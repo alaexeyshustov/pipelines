@@ -6,16 +6,10 @@
 class Document::DetectDuplicates
   Result = Data.define(:flagged)
 
-  DEFAULT_THRESHOLD = 0.95
   NEIGHBORS = 20
 
-  def self.call(document, model: LlmModels.embedding, threshold: self.threshold)
+  def self.call(document, model: LlmModels.embedding, threshold: DocumentDuplicate.threshold)
     new(document, model:, threshold:).call
-  end
-
-  # Minimum cosine similarity: Setting "document_dedup_threshold", then ENV DOCUMENT_DEDUP_THRESHOLD, then 0.95.
-  def self.threshold
-    Float(Setting.fetch("document_dedup_threshold") || ENV.fetch("DOCUMENT_DEDUP_THRESHOLD", DEFAULT_THRESHOLD))
   end
 
   def initialize(document, model:, threshold:)
