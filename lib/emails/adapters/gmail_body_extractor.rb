@@ -21,7 +21,7 @@ module Emails
 
       def html_parts(part)
         data = part.body&.data
-        own = part.mime_type == "text/html" && data ? [ decode_body(data) ] : Array.new
+        own = part.mime_type == "text/html" && data ? [ decode_body(data, part) ] : Array.new
         own + Array(part.parts).flat_map { |child| html_parts(child) }
       end
 
@@ -30,7 +30,7 @@ module Emails
         if parts&.any?
           extract_from_multipart(payload, parts)
         elsif (body_data = payload.body&.data) && !body_data.empty?
-          decoded = decode_body(body_data)
+          decoded = decode_body(body_data, payload)
           payload.mime_type == "text/html" ? HtmlText.to_text(decoded) : decoded
         else
           ""
@@ -61,18 +61,30 @@ module Emails
         nested = collect_parts(part, mime_type)
         body_data = part.body&.data
         if part.respond_to?(:mime_type) && part.mime_type == mime_type && body_data
-          [ decode_body(body_data) ] + nested
+          [ decode_body(body_data, part) ] + nested
         else
           nested
         end
       end
 
-      def decode_body(data)
+      # Gmail hands the body over as raw bytes (ASCII-8BIT): label them with the charset of the part's Content-Type
+      # header (UTF-8 when absent or unknown), then transcode to UTF-8 and scrub what is still invalid.
+      def decode_body(data, part)
         return "" if data.blank?
 
-        data.encode("UTF-8", invalid: :replace, undef: :replace, replace: "?")
+        text = data.dup.force_encoding(charset_of(part))
+        text = text.encode("UTF-8", invalid: :replace, undef: :replace) unless text.encoding == Encoding::UTF_8
+        text.scrub
       rescue StandardError
         ""
+      end
+
+      def charset_of(part)
+        header = Array(part.headers).find { |candidate| candidate.name.to_s.casecmp?("Content-Type") }
+        name = header&.value.to_s[/charset\s*=\s*"?([^";\s]+)/i, 1]
+        (name && Encoding.find(name)) || Encoding::UTF_8
+      rescue ArgumentError
+        Encoding::UTF_8
       end
     end
   end
