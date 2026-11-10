@@ -8,7 +8,7 @@ RSpec.describe Tags::Classifier do
   let!(:finance) { create(:tag, name: "finance") }
   let!(:rejection) { create(:subtag, tag: job, name: "rejection") }
   let(:probabilities) { { "job_application" => 0.9, "finance" => 0.2 } }
-  let(:choices) { { "subtag" => "interview_invite" } }
+  let(:choices) { { "job_application" => "interview_invite" } }
   let(:bodies) { [] }
 
   before do
@@ -22,14 +22,16 @@ RSpec.describe Tags::Classifier do
     end
   end
 
+  def option_names(question)
+    question.fetch("choices", question["options"]).map { |o| o.is_a?(Hash) ? (o["name"] || o["value"]) : o }
+  end
+
   def answer_for(question)
     if question["type"] == "predicate"
       { "probability" => probabilities.fetch(question["name"]) }
     else
-      pick = choices.fetch("subtag")
-      options = question.fetch("choices", question["options"]).map { |o| o.is_a?(Hash) ? (o["name"] || o["value"]) : o }
-      { "choice" => pick, "confidence" => 0.8,
-        "probabilities" => options.map { |name| { "value" => name, "probability" => name == pick ? 0.7 : 0.3 } } }
+      pick = choices.fetch(question["name"])
+      { "choice" => pick, "confidence" => 0.8, "probabilities" => option_names(question).map { |name| { "value" => name, "probability" => name == pick ? 0.7 : 0.3 } } }
     end
   end
 
@@ -44,6 +46,25 @@ RSpec.describe Tags::Classifier do
     expect(result.taggings.map { |t| t.tag.name }).to contain_exactly("job_application", "finance")
     expect(bodies.size).to eq(2) # one multi-label call + one choice call (finance has no subtags)
     expect(item.taggings.find_by(tag: finance).subtag).to be_nil
+  end
+
+  it "leaves the subtag empty when the judge picks none of the options" do
+    choices["job_application"] = described_class::NO_SUBTAG
+    expect(result.taggings.map { |t| [ t.tag.name, t.subtag ] }).to eq([ [ "job_application", nil ] ])
+  end
+
+  it "offers a none option next to the subtags" do
+    result
+    expect(option_names(bodies.last["questions"].first)).to include(described_class::NO_SUBTAG, "interview_invite", "rejection")
+  end
+
+  it "asks the subtag questions of all kept tags in one call" do
+    create(:subtag, tag: finance, name: "bank")
+    probabilities["finance"] = 0.9
+    choices["finance"] = "bank"
+    expect(result.taggings.map { |t| [ t.tag.name, t.subtag&.name ] })
+      .to contain_exactly([ "job_application", "interview_invite" ], [ "finance", "bank" ])
+    expect(bodies.size).to eq(2)
   end
 
   it "leaves the item untagged when no tag reaches the threshold" do

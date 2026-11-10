@@ -8,6 +8,7 @@ module Tags
 
     DEFAULT_THRESHOLD: Float
     MAX_CHARS: Integer
+    NO_SUBTAG: String
 
     type taggable = Email | Document
 
@@ -25,7 +26,9 @@ module Tags
     def kept: (Array[Tag] tags) -> Array[[ Tag, Float ]]
     def tag_question: (Tag tag) -> RubyLLM::Judge::question
     def subtag_question: (Tag tag, Array[Subtag] subtags) -> RubyLLM::Judge::question
-    def subtag_for: (Tag tag) -> Subtag?
+    def chosen_subtag: (Tag tag, RubyLLM::answer answer) -> Subtag?
+    def subtag_questions: (Array[Tag] tags) -> Hash[String, RubyLLM::Judge::question]
+    def subtags_for: (Array[Tag] tags) -> Hash[Tag, Subtag?]
     def judge: (Hash[String, RubyLLM::Judge::question] questions) -> RubyLLM::Judgment
     def input: () -> json_object
     def replace_llm_taggings: (Array[[ Tag, Float, Subtag? ]] assignments) -> Array[Tagging]
