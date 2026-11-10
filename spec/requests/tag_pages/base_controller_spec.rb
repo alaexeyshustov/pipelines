@@ -31,6 +31,16 @@ RSpec.describe "Tag pages (base controller)" do
     expect(response.body).not_to include("Dentist reminder", "Untagged mail")
   end
 
+  it "renders the rows in the client-paginated data table, with the document title as a link" do
+    document = tag_document(title: "Tax <b>form</b>")
+
+    get tag_pages_finance_path
+
+    expect(response.body).to include('data-controller="data-table"')
+    expect(response.body).to include(%(href="#{document_path(document)}"))
+    expect(response.body).not_to include("Tax <b>form</b>")
+  end
+
   it "renders an empty page when the tag row does not exist" do
     Tag.where(name: "child").destroy_all
     get tag_pages_child_path
