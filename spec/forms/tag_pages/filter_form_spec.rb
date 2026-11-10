@@ -18,6 +18,15 @@ RSpec.describe TagPages::FilterForm do
     expect(described_class.new(to: "nope").to_date).to be_nil
   end
 
+  it "defaults from relative to an old to date, so the range is never inverted" do
+    form = described_class.new(to: "2026-01-31")
+    expect([ form.from_date, form.to_date ]).to eq([ Date.new(2025, 11, 2), Date.new(2026, 1, 31) ])
+  end
+
+  it "defaults from to 90 days before any to date" do
+    expect(described_class.new(to: "2026-10-01").from_date).to eq(Date.new(2026, 7, 3))
+  end
+
   it "reads the type filter, treating anything unknown as both" do
     expect(described_class.new(type: "email")).to have_attributes(include_emails?: true, include_documents?: false)
     expect(described_class.new(type: "document")).to have_attributes(include_emails?: false, include_documents?: true)

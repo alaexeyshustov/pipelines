@@ -1,6 +1,7 @@
 module TagPages
   # The preset filters of a tag page (query string params): subtag chip, type, date range, FTS query.
-  # Unparseable dates fall back to the defaults instead of failing the page.
+  # Unparseable dates fall back to the defaults instead of failing the page. A missing from is DEFAULT_DAYS before
+  # to (or before today without a to), so an old to date never gives an inverted range.
   class FilterForm < ::BaseForm
     DEFAULT_DAYS = 90
     TYPES = %w[email document].freeze
@@ -20,7 +21,7 @@ module TagPages
     end
 
     def from_date
-      from || (Time.zone.today - DEFAULT_DAYS)
+      from || ((to || Time.zone.today) - DEFAULT_DAYS)
     end
 
     def to_date
