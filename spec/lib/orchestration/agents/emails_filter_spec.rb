@@ -1,7 +1,8 @@
 require 'rails_helper'
 
-RSpec.describe Orchestration::Agents::EmailsFilter, type: :model do
-  let(:mistral_url) { 'https://api.mistral.ai/v1/chat/completions' }
+RSpec.describe Orchestration::Agents::EmailsFilter, :llm, type: :model do
+  # LLM_TEST_BACKEND=ollama sends the requests to the local model instead of the stub.
+  let(:mistral_url) { LlmTestBackend.completions_url_for('https://api.mistral.ai/v1/chat/completions') }
   let(:agent) { described_class.create }
 
   before do
@@ -21,9 +22,9 @@ RSpec.describe Orchestration::Agents::EmailsFilter, type: :model do
     agent.ask('{"topic":"job applications","emails":[]}')
   end
 
-  it 'sends mistral-large-latest as the model' do
+  it 'sends the emails agent model (mistral-large-latest by default)' do
     expect(
-      a_request(:post, mistral_url).with { |req| JSON.parse(req.body)['model'] == 'mistral-large-latest' }
+      a_request(:post, mistral_url).with { |req| JSON.parse(req.body)['model'] == LlmTestBackend.request_model_for('mistral-large-latest') }
     ).to have_been_made
   end
 

@@ -13,6 +13,10 @@ RSpec.describe Evaluation::Judge::ModelChoice do
     expect(described_class.call("no-such-model")).to eq(LlmModels.judge)
   end
 
+  it "falls back for a local model the registry has not synced as a decision model" do
+    expect(described_class.call("ollama/qwen3")).to eq(LlmModels.judge)
+  end
+
   it "uses LlmModels.judge when nothing is preferred" do
     expect(described_class.call(nil)).to eq(LlmModels.judge)
   end

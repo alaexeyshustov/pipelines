@@ -22,6 +22,15 @@ VCR.configure do |config|
 
   config.ignore_localhost = true
 
+  # LLM_TEST_BACKEND=ollama (spec/support/llm_test_backend.rb): Ollama calls are live, and a hosted LLM request
+  # must fail rather than replay or record a cassette.
+  if LlmTestBackend.ollama?
+    config.ignore_hosts LlmTestBackend.host
+    config.before_http_request(->(request) { LlmTestBackend.hosted_llm_request?(request.uri) }) do |request|
+      raise "LLM_TEST_BACKEND=ollama: hosted LLM request to #{request.uri}; route the model to LlmTestBackend.model"
+    end
+  end
+
   config.default_cassette_options = {
     record: :new_episodes,
     match_requests_on: [ :method, :uri ]

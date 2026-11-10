@@ -116,8 +116,8 @@ module Orchestration
 
     def provider_name
       @provider_name ||= begin
-        name = model_name
-        RubyLLM.models.find(name).provider if name.present?
+        ref = LlmModels.ref(model_name)
+        ref.provider&.to_s || (RubyLLM.models.find(ref.model).provider if ref.model.present?)
       rescue StandardError
         nil
       end

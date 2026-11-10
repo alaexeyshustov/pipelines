@@ -1,5 +1,7 @@
 require "rails_helper"
 
+# `:llm` examples run against a local model with LLM_TEST_BACKEND=ollama; the rest pin the hosted request body or
+# stub specific (invalid) outputs.
 RSpec.describe Evaluation::MetricSuggester do
   subject(:suggester) { described_class.new(agent_name: agent_name) }
 
@@ -31,8 +33,8 @@ RSpec.describe Evaluation::MetricSuggester do
   end
 
   describe ".call" do
-    it "delegates to a new instance" do
-      expect(described_class.call(agent_name: agent_name).size).to eq(3)
+    it "delegates to a new instance", :llm do
+      expect(described_class.call(agent_name: agent_name).size).to(LlmTestBackend.live? ? be_an(Integer) : eq(3))
     end
   end
 
@@ -49,7 +51,7 @@ RSpec.describe Evaluation::MetricSuggester do
       )
     end
 
-    it "yields attributes that build valid Metric rows" do
+    it "yields attributes that build valid Metric rows", :llm do
       suggester.call.each do |attrs|
         expect(Evaluation::Metric.new(attrs.merge(agent_name: agent_name))).to be_valid
       end
@@ -65,7 +67,7 @@ RSpec.describe Evaluation::MetricSuggester do
       })
     end
 
-    it "does not persist any metrics" do
+    it "does not persist any metrics", :llm do
       expect { suggester.call }.not_to change(Evaluation::Metric, :count)
     end
 

@@ -52,6 +52,18 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
       end
     end
 
+    context "when a provider HTTP error comes from a provider/model id the registry does not list" do
+      let(:model) { "ollama/qwen3" }
+      let(:response) { Faraday::Response.new(status: 501, body: { "error" => { "message" => "unsupported" } }.to_json) }
+      let(:error) { RubyLLM::Error.new("unsupported", response: response) }
+
+      it "names the pinned provider" do
+        result = described_class.new(error:, action_run:, raw_content: nil).normalize
+
+        expect(result.summary).to eq("ollama API error (501): unsupported")
+      end
+    end
+
     context "when a provider HTTP error has a nested error.message (no top-level message)" do
       let(:response) do
         Data.define(:status, :body).new(

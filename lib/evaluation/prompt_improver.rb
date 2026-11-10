@@ -8,7 +8,7 @@ module Evaluation
 
     def initialize(experiment:, model:)
       @experiment = experiment
-      @model = model
+      @model_ref = LlmModels.ref(model)
     end
 
     def call
@@ -87,8 +87,7 @@ module Evaluation
     end
 
     def build_agent
-      agent = Evaluation::Improvement::Agent.create
-      agent.with_model(@model)
+      agent = @model_ref.apply_to(Evaluation::Improvement::Agent.create)
       agent.after_fallback { |fallback| log_fallback(fallback) }
       agent
     end
@@ -99,7 +98,7 @@ module Evaluation
 
     def log_actual_model(response)
       actual = response.model
-      Rails.logger.info("[PromptImprover] experiment #{@experiment.id} answered by #{actual}") if actual.to_s != @model.to_s
+      Rails.logger.info("[PromptImprover] experiment #{@experiment.id} answered by #{actual}") if actual.to_s != @model_ref.model
     end
 
     def parse_response(response)

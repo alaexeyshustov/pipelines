@@ -25,9 +25,10 @@ RSpec.describe Evaluation::UsageScope do
     expect(RubyLLM::ActiveRecord::Usage.where(owner: experiment).pluck(:input_tokens, :output_tokens)).to eq([ [ 10, 5 ] ])
   end
 
-  it "owns usage rows of plain chats" do
+  it "owns usage rows of plain chats", :llm do
     stub_openai
-    described_class.call(experiment) { RubyLLM.chat(model: "gpt-5.4").ask("hello") }
+    chat_options = LlmModels.ref(LlmTestBackend.model_for("gpt-5.4")).chat_options
+    described_class.call(experiment) { RubyLLM.chat(**chat_options).ask("hello") }
 
     expect(RubyLLM::ActiveRecord::Usage.where(owner: experiment).count).to eq(1)
   end

@@ -3,7 +3,7 @@ module Orchestration
     class RecordsFiller < RubyLLM::Agent
       chat_model Chat
       tools Records::UpdateRowsTool, Emails::GetTool
-      model LlmModels.records_agent
+      LlmModels.ref(LlmModels.records_agent).declare_on(self)
 
       schema do
         integer :rows_updated, description: "The number of rows updated in the database"
