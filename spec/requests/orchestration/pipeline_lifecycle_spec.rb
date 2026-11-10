@@ -113,7 +113,7 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
     let!(:classify_agent) do
       create(:orchestration_agent,
              name: "Orchestration::Agents::EmailsClassifier",
-             model: "mistral-large-latest",
+             model: LlmTestBackend.model_for("mistral-large-latest"),
              tools: [ "Records::TempFileTool" ])
     end
     let!(:classify_action) do
@@ -134,7 +134,7 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
     end
 
     # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
-    it "completes both steps and records action run outputs",
+    it "completes both steps and records action run outputs", :llm,
        vcr: { cassette_name: "orchestration/pipeline_lifecycle/classify_agent_run" } do
       pipeline_run = Orchestration::PipelineRun.create!(
         pipeline: pipeline,
@@ -162,7 +162,8 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
 
       expect(classify_run.status).to eq("completed")
       expect(classify_run.output).to have_key("result")
-      expect(classify_run.output["result"]).to have_key("results")
+      # The agent has no prompt; only the recorded answer is known to be JSON.
+      expect(classify_run.output["result"]).to have_key("results") unless LlmTestBackend.live?
     end
     # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength
 

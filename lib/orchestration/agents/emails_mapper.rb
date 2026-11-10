@@ -2,7 +2,7 @@ module Orchestration
   module Agents
     class EmailsMapper < RubyLLM::Agent
       chat_model Chat
-      model LlmModels.emails_agent
+      LlmModels.ref(LlmModels.emails_agent).declare_on(self)
       tools Emails::GetTool, Records::TempFileTool
 
       instructions <<~INSTRUCTIONS

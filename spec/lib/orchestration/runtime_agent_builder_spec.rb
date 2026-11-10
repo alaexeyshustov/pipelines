@@ -28,7 +28,17 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
     it 'applies the policy model to the agent' do
       allow(chat).to receive(:with_model).and_return(chat)
       builder.build
-      expect(chat).to have_received(:with_model).with("mistral-large-latest")
+      expect(chat).to have_received(:with_model).with("mistral-large-latest", provider: nil, assume_model_exists: false)
+    end
+
+    context 'with a provider/model policy model' do
+      let(:policy) do
+        Orchestration::AgentResolutionPolicy::Result.new(model: "ollama/qwen3", prompt: nil, tools: [], output_schema: nil)
+      end
+
+      it 'pins the provider and resolves the local model without a registry entry' do
+        expect(builder.build.chat.reload.model).to have_attributes(model_id: "qwen3", provider: "ollama")
+      end
     end
 
     it 'applies the policy tools to the agent' do
