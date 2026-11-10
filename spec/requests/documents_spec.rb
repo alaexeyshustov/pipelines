@@ -39,11 +39,24 @@ RSpec.describe "Documents" do
       expect(response.headers["Content-Disposition"]).to include("attachment", "Offer letter.pdf")
     end
 
-    it "redirects back with an alert when the original cannot be fetched" do
-      allow(Document::Download).to receive(:call).and_raise(Emails::Adapters::DriveFileFetcher::NotConfigured, "not configured")
+    it "redirects back with a generic alert that leaks no detail when the original cannot be fetched" do
+      allow(Document::Download).to receive(:call)
+        .and_raise(Emails::Adapters::DriveFileFetcher::NotConfigured, "expected /srv/app/credentials.json")
       get download_document_path(document)
       expect(response).to redirect_to(document_path(document))
-      expect(flash[:alert]).to include("not configured")
+      expect(flash[:alert]).to eq("Could not fetch the original file.")
+    end
+
+    it "logs the failure detail" do
+      allow(Document::Download).to receive(:call).and_raise(StandardError, "secret detail")
+      allow(Rails.logger).to receive(:error)
+      get download_document_path(document)
+      expect(Rails.logger).to have_received(:error).with(/secret detail/)
+    end
+
+    it "answers 404 for an unknown document" do
+      get download_document_path(id: 0)
+      expect(response).to have_http_status(:not_found)
     end
   end
 end
