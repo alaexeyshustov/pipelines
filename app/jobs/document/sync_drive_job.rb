@@ -80,12 +80,16 @@ class Document::SyncDriveJob < ApplicationJob
   end
 
   def process(fetcher, entry, document)
-    file = fetcher.fetch(entry.id)
+    file = fetch_file(fetcher, entry)
     checksum = Digest::SHA256.hexdigest(file.data)
     return merge_into_existing(document) if Document.where.not(id: document&.id).exists?(checksum:)
 
     text = Document::TextExtractor.call(data: file.data, mime_type: file.mime_type, filename: entry.name)
     store(attributes_for(entry, file, text, checksum), document)
+  end
+
+  def fetch_file(fetcher, entry)
+    fetcher.fetch(entry.id, name: entry.name, mime_type: entry.mime_type)
   end
 
   # The bytes already exist as another Document, which is kept. A changed file that had a Drive Document of its own

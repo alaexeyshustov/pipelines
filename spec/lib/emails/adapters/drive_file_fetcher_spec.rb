@@ -15,9 +15,42 @@ RSpec.describe Emails::Adapters::DriveFileFetcher do
     expect([ file.data, file.filename, file.mime_type ]).to eq([ "%PDF-", "cv.pdf", "application/pdf" ])
   end
 
-  it "raises a clear error on a failed request" do
-    stub_request(:get, %r{drive/v3/files/gone}).to_return(status: 404, body: "{}")
-    expect { fetcher.fetch("gone") }.to raise_error(described_class::Error, /404/)
+  it "raises a clear error on a failed request, with the response body" do
+    stub_request(:get, %r{drive/v3/files/gone}).to_return(status: 404, body: '{"error":{"message":"File not found: gone"}}')
+    expect { fetcher.fetch("gone") }.to raise_error(described_class::Error, /404.*File not found: gone/)
+  end
+
+  it "skips the metadata request when the name and mime type are already known from the scan" do
+    media = stub_request(:get, "https://www.googleapis.com/drive/v3/files/f1?alt=media&supportsAllDrives=true")
+      .to_return(status: 200, body: "%PDF-")
+
+    file = fetcher.fetch("f1", name: "cv.pdf", mime_type: "application/pdf")
+
+    expect([ file.data, file.filename, file.mime_type ]).to eq([ "%PDF-", "cv.pdf", "application/pdf" ])
+    expect(media).to have_been_requested
+    expect(WebMock).not_to have_requested(:get, /fields=name/)
+  end
+
+  it "refuses a folder id that could break out of the query, without a request" do
+    expect { fetcher.scan([ "root' or name contains 'x" ]) }.to raise_error(described_class::Error, /folder id/i)
+    expect(WebMock).not_to have_requested(:get, "https://www.googleapis.com/drive/v3/files")
+  end
+
+  describe ".token_provider" do
+    it "builds the credentials once and refreshes them only when expired" do
+      creds = Struct.new(:refreshed, :access_token) do
+        def expired? = true
+        def fetch_access_token! = (self.refreshed = true)
+      end.new(false, "tok")
+      auth = Emails::GmailAuth.allocate
+      allow(auth).to receive(:credentials).and_return(creds)
+
+      provider = described_class.token_provider(auth)
+
+      expect([ provider.call, provider.call ]).to eq(%w[tok tok])
+      expect(auth).to have_received(:credentials).once
+      expect(creds.refreshed).to be(true)
+    end
   end
 
   describe "#scan" do
@@ -85,7 +118,7 @@ RSpec.describe Emails::Adapters::DriveFileFetcher do
   describe "Google Docs" do
     it "exports a native document as docx, both via #export and #fetch" do
       export = stub_request(:get, "https://www.googleapis.com/drive/v3/files/g1/export")
-        .with(query: { mimeType: described_class::DOCX_MIME, supportsAllDrives: true }, headers: { "Authorization" => "Bearer tok" })
+        .with(query: { mimeType: described_class::DOCX_MIME }, headers: { "Authorization" => "Bearer tok" })
         .to_return(status: 200, body: "docx-bytes")
       stub_request(:get, "https://www.googleapis.com/drive/v3/files/g1?fields=name,mimeType&supportsAllDrives=true")
         .to_return(status: 200, body: { name: "Notes", mimeType: described_class::GOOGLE_DOC_MIME }.to_json)

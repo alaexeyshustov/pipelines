@@ -18,20 +18,17 @@ module Emails
       DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document".freeze
       LIST_FIELDS = "nextPageToken,files(id,name,mimeType,md5Checksum,modifiedTime,webViewLink)".freeze
 
+      FOLDER_ID = /\A[\w-]+\z/
+
       SCOPE = [ "https://www.googleapis.com/auth/drive.readonly" ].freeze
       BASE_URL = "https://www.googleapis.com/drive/v3/files".freeze
 
-      def self.credentials_path
-        ENV.fetch("GMAIL_CREDENTIALS_PATH", Rails.root.join("credentials.json").to_s)
-      end
-      private_class_method :credentials_path
+      def self.credentials_path = ENV.fetch("GMAIL_CREDENTIALS_PATH", Rails.root.join("credentials.json").to_s)
 
       # Its own file: GmailAuth stores a token under one fixed user id, so sharing the Gmail token.yaml would
       # overwrite the Gmail grant with the Drive one.
-      def self.token_path
-        ENV.fetch("DRIVE_TOKEN_PATH", Rails.root.join("drive_token.yaml").to_s)
-      end
-      private_class_method :token_path
+      def self.token_path = ENV.fetch("DRIVE_TOKEN_PATH", Rails.root.join("drive_token.yaml").to_s)
+      private_class_method :credentials_path, :token_path
 
       # CLI setup (bin/pipeline setup --providers=drive): the interactive drive.readonly authorization, which writes
       # the token file from_env expects. Returns the token path.
@@ -56,8 +53,9 @@ module Emails
       end
 
       def self.token_provider(auth)
+        creds = nil # built on the first request only: GmailAuth#credentials re-reads the token file each time
         lambda {
-          creds = auth.credentials # steep:ignore
+          creds ||= auth.credentials # steep:ignore
           creds.fetch_access_token! if creds.expired? # steep:ignore
           creds.access_token # steep:ignore
         }
@@ -67,13 +65,16 @@ module Emails
         @access_token = access_token
       end
 
-      def fetch(file_id)
-        meta = JSON.parse(get(file_id, fields: "name,mimeType"))
-        name = meta.fetch("name") # steep:ignore
-        mime_type = meta.fetch("mimeType") # steep:ignore
+      # +name+ and +mime_type+ are known from #scan; given both, the metadata request is skipped.
+      def fetch(file_id, name: nil, mime_type: nil)
+        unless name && mime_type
+          meta = JSON.parse(get(file_id, fields: "name,mimeType"))
+          name = meta.fetch("name") # steep:ignore
+          mime_type = meta.fetch("mimeType") # steep:ignore
+        end
         return File.new(data: get(file_id, alt: "media"), filename: name, mime_type: mime_type) unless mime_type == GOOGLE_DOC_MIME
 
-        File.new(data: export(file_id), filename: docx_name(name), mime_type: DOCX_MIME)
+        File.new(data: export(file_id), filename: name.downcase.end_with?(".docx") ? name : "#{name}.docx", mime_type: DOCX_MIME)
       end
 
       # A Google Doc exported as docx (native Docs have no bytes of their own).
@@ -97,11 +98,6 @@ module Emails
 
       private
 
-      # A native Google Doc is named without an extension, but what is returned is a docx.
-      def docx_name(name)
-        name.downcase.end_with?(".docx") ? name : "#{name}.docx"
-      end
-
       def collect(folder_id, seen, entries)
         return unless seen.add?(folder_id)
 
@@ -122,6 +118,8 @@ module Emails
       end
 
       def list_page(folder_id, page_token)
+        raise Error, "Invalid Drive folder id: #{folder_id.inspect}" unless folder_id.match?(FOLDER_ID)
+
         params = { q: "'#{folder_id}' in parents and trashed=false", fields: LIST_FIELDS, pageSize: 1000,
                    includeItemsFromAllDrives: true }
         params[:pageToken] = page_token if page_token
@@ -135,9 +133,13 @@ module Emails
 
       def get(file_id, action = nil, **params)
         uri = URI([ BASE_URL, file_id && URI.encode_uri_component(file_id), action ].compact.join("/"))
-        uri.query = URI.encode_www_form(params.merge(supportsAllDrives: true))
+        # files.export declares only fileId and mimeType; every other call takes supportsAllDrives.
+        params = params.merge(supportsAllDrives: true) unless action == "export"
+        uri.query = URI.encode_www_form(params)
         response = request(uri)
-        raise Error, "Drive request failed (#{response.code})" unless response.is_a?(Net::HTTPSuccess)
+        unless response.is_a?(Net::HTTPSuccess)
+          raise Error, "Drive request failed (#{response.code}): #{response.body.to_s.truncate(500)}"
+        end
 
         response.body.to_s
       end

@@ -30,6 +30,7 @@ module Emails
       GOOGLE_DOC_MIME: String
       DOCX_MIME: String
       LIST_FIELDS: String
+      FOLDER_ID: Regexp
       SCOPE: Array[String]
       BASE_URL: String
 
@@ -42,14 +43,13 @@ module Emails
       @access_token: ^() -> String
 
       def initialize: (access_token: ^() -> String) -> void
-      def fetch: (String file_id) -> File
+      def fetch: (String file_id, ?name: String?, ?mime_type: String?) -> File
       def export: (String file_id) -> String
       def scan: (Array[String] folder_ids) -> Array[Entry]
       def empty_folders: (Array[String] folder_ids) -> Array[String]
 
       private
 
-      def docx_name: (String name) -> String
       def request: (URI::Generic uri) -> Net::HTTPResponse
       def collect: (String folder_id, Set[String] seen, Hash[String, Entry] entries) -> void
       def list_children: (String folder_id) -> Array[Entry]

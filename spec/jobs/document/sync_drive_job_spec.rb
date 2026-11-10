@@ -31,8 +31,8 @@ RSpec.describe Document::SyncDriveJob do
     allow(Emails::Adapters::DriveFileFetcher).to receive(:from_env).and_return(fetcher)
     allow(fetcher).to receive(:scan).with(%w[root1 root2]) { entries }
     allow(fetcher).to receive(:empty_folders).with(%w[root1 root2]) { empty_folders }
-    allow(fetcher).to receive(:fetch).with("f1").and_return(drive_file("%PDF", "cv.pdf", "application/pdf"))
-    allow(fetcher).to receive(:fetch).with("g1").and_return(drive_file("docx-bytes", "Notes", docx))
+    allow(fetcher).to receive(:fetch).with("f1", name: "cv.pdf", mime_type: "application/pdf").and_return(drive_file("%PDF", "cv.pdf", "application/pdf"))
+    allow(fetcher).to receive(:fetch).with("g1", name: "Notes", mime_type: Emails::Adapters::DriveFileFetcher::GOOGLE_DOC_MIME).and_return(drive_file("docx-bytes", "Notes", docx))
     allow(Document::TextExtractor).to receive(:call).and_return("extracted")
   end
 
