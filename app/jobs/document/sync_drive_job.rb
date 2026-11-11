@@ -14,12 +14,15 @@
 # again on each scan (cheap) but never re-extracted. A changed file whose new bytes equal another Document's gets the
 # same treatment: its stale Drive Document is destroyed and the other one kept ("merged"). Documents of Drive files that no longer appear in the scan are
 # deleted; a failed scan raises before anything is deleted, and a failing file is logged and keeps its Document.
+# A file deleted and re-uploaded (or replaced) between scans shows up as a gone file plus a new one with the same bytes:
+# the gone file's Document is moved to the new file id ("relinked") instead of being deleted, so its tags and
+# duplicate decisions survive.
 # Drive answers a revoked or mistyped folder id with an empty listing, not an error, so when any whitelisted folder
 # lists nothing at its top level nothing is deleted in that scan ("empty_folders" counts them, and they are logged): the
 # Documents are not attributed to a folder (a file can sit under several), so this is the safe, simple rule; the
 # price is that deletions wait while a whitelisted folder is genuinely empty.
 # An empty whitelist is a no-op. Orchestrates services here because services must not call each other.
-class Document::SyncDriveJob < ApplicationJob
+class Document::SyncDriveJob < ApplicationJob # rubocop:disable Metrics/ClassLength -- one scan's create/update/merge/relink/delete decisions belong together
   SETTING_KEY = "drive_folder_ids".freeze
 
   def perform
@@ -40,25 +43,35 @@ class Document::SyncDriveJob < ApplicationJob
   private
 
   def summary
-    @summary ||= { "created" => 0, "updated" => 0, "unchanged" => 0, "deleted" => 0, "failed" => 0, "requeued" => 0, "empty_folders" => 0, "merged" => 0 }
+    @summary ||= { "created" => 0, "updated" => 0, "unchanged" => 0, "deleted" => 0, "failed" => 0, "requeued" => 0, "empty_folders" => 0, "merged" => 0, "relinked" => 0 }
   end
 
   def sync_all(fetcher, folder_ids)
     entries = fetcher.scan(folder_ids)
+    empty_folder_ids = fetcher.empty_folders(folder_ids)
     existing = Document.where(source: Document::DRIVE).index_by { |document| document.source_ref["drive_file_id"] }
+    gone = gone_documents(existing, entries, empty_folder_ids)
 
-    entries.each { |entry| sync(fetcher, entry, existing[entry.id]) }
-    delete_missing(existing, entries, fetcher.empty_folders(folder_ids))
+    entries.each { |entry| sync(fetcher, entry, existing[entry.id], gone) }
+    delete_missing(gone, empty_folder_ids)
     requeue_untagged
   end
 
-  def sync(fetcher, entry, document)
+  # The Documents this scan deletes, by checksum: those of files no longer listed, unless a folder listed nothing.
+  def gone_documents(existing, entries, empty_folder_ids)
+    return {} if empty_folder_ids.any?
+
+    existing.except(*entries.map(&:id)).values.index_by(&:checksum)
+  end
+
+  # +gone+ is gone_documents; process takes out the ones it relinks.
+  def sync(fetcher, entry, document, gone)
     return unless Document::FileType.supported?(mime_type_of(entry))
 
     if document && unchanged?(entry, document)
       summary["unchanged"] += 1
     else
-      process(fetcher, entry, document)
+      process(fetcher, entry, document, gone)
     end
   rescue StandardError => error
     summary["failed"] += 1
@@ -79,10 +92,10 @@ class Document::SyncDriveJob < ApplicationJob
     end
   end
 
-  def process(fetcher, entry, document)
+  def process(fetcher, entry, document, gone)
     file = fetch_file(fetcher, entry)
     checksum = Digest::SHA256.hexdigest(file.data)
-    return merge_into_existing(document) if Document.where.not(id: document&.id).exists?(checksum:)
+    return if known_bytes?(checksum, entry, document, gone)
 
     text = Document::TextExtractor.call(data: file.data, mime_type: file.mime_type, filename: entry.name)
     store(attributes_for(entry, file, text, checksum), document)
@@ -92,13 +105,29 @@ class Document::SyncDriveJob < ApplicationJob
     fetcher.fetch(entry.id, name: entry.name, mime_type: entry.mime_type)
   end
 
-  # The bytes already exist as another Document, which is kept. A changed file that had a Drive Document of its own
-  # loses it (it would break checksum uniqueness), so it is in the same state as a new Drive file with known bytes.
+  # Bytes that already exist as another Document are not extracted again. When that Document belongs to a Drive file
+  # gone from the scan, it now stands for this file ("relinked"); otherwise it is kept as is. A changed file that had
+  # a Drive Document of its own loses it (it would break checksum uniqueness), so it is in the same state as a new
+  # Drive file with known bytes.
+  def known_bytes?(checksum, entry, document, gone)
+    relinked = gone.delete(checksum)
+    return false unless relinked || Document.where.not(id: document&.id).exists?(checksum:)
+
+    merge_into_existing(document)
+    relink(relinked, entry) if relinked
+    true
+  end
+
   def merge_into_existing(document)
     return unless document
 
     document.destroy!
     summary["merged"] += 1
+  end
+
+  def relink(document, entry)
+    document.update!(title: entry.name, source_url: entry.web_view_link, source_ref: source_ref_for(entry))
+    summary["relinked"] += 1
   end
 
   # Stores the changed or new Document and queues its processing; nothing for identical content that already
@@ -132,18 +161,19 @@ class Document::SyncDriveJob < ApplicationJob
     {
       title: entry.name, mime_type: Document::FileType.resolve(file.mime_type, entry.name), text:, checksum:,
       source: Document::DRIVE, source_url: entry.web_view_link, tagged_at: nil,
-      source_ref: { provider: Document::DRIVE_REF_PROVIDER, drive_file_id: entry.id, md5: entry.md5, modified_time: entry.modified_time }
+      source_ref: source_ref_for(entry)
     }
   end
 
-  def delete_missing(existing, entries, empty_folder_ids)
+  def source_ref_for(entry)
+    { provider: Document::DRIVE_REF_PROVIDER, drive_file_id: entry.id, md5: entry.md5, modified_time: entry.modified_time }
+  end
+
+  def delete_missing(gone, empty_folder_ids)
     summary["empty_folders"] = empty_folder_ids.size
     return warn_empty(empty_folder_ids) if empty_folder_ids.any?
 
-    present = entries.to_set(&:id)
-    existing.each do |drive_file_id, document|
-      next if present.include?(drive_file_id)
-
+    gone.each_value do |document|
       document.destroy!
       summary["deleted"] += 1
     end

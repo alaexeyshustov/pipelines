@@ -206,6 +206,57 @@ RSpec.describe Document::SyncDriveJob do
     end
   end
 
+  context "when a gone file was re-uploaded under a new id with the same bytes" do
+    let!(:old) { drive_document("old", md5: "md5-1", checksum: Digest::SHA256.hexdigest("%PDF"), tagged_at: 1.day.ago) }
+
+    before { entries.replace([ pdf_entry ]) }
+
+    it "moves the gone file's Document to the new file id instead of deleting it" do
+      expect { described_class.perform_now }.not_to change(Document, :count)
+
+      expect(old.reload).to have_attributes(
+        title: "cv.pdf", source_url: "https://drive.google.com/file/d/f1/view",
+        source_ref: hash_including("drive_file_id" => "f1", "md5" => "md5-1")
+      )
+    end
+
+    it "keeps its tagging and does not extract it again" do
+      described_class.perform_now
+
+      expect(old.reload.tagged_at).to be_present
+      expect(Document::TextExtractor).not_to have_received(:call)
+    end
+
+    it "counts it as relinked, not deleted" do
+      expect(described_class.perform_now).to include("relinked" => 1, "deleted" => 0, "created" => 0)
+    end
+
+    it "is stable on the next scan" do
+      described_class.perform_now
+
+      expect(described_class.perform_now).to include("unchanged" => 1, "relinked" => 0)
+    end
+
+    it "relinks it in place of a changed file's stale Document" do
+      stale = drive_document("f1", md5: "stale-md5")
+
+      expect(described_class.perform_now).to include("relinked" => 1, "merged" => 1, "deleted" => 0)
+      expect(Document.exists?(stale.id)).to be(false)
+      expect(old.reload.source_ref).to include("drive_file_id" => "f1")
+    end
+
+    context "when a whitelisted folder lists nothing" do
+      let(:empty_folders) { [ "root2" ] }
+
+      before { allow(Rails.logger).to receive(:warn) }
+
+      it "leaves the gone file's Document alone, as it is not deleted either" do
+        expect(described_class.perform_now).to include("relinked" => 0, "deleted" => 0)
+        expect(old.reload.source_ref).to include("drive_file_id" => "old")
+      end
+    end
+  end
+
   it "skips unsupported file types without fetching them" do
     entries << entry("z1", "a.zip", "application/zip", md5: "md5-z")
 
@@ -250,7 +301,7 @@ RSpec.describe Document::SyncDriveJob do
   it "returns a summary of what changed" do
     drive_document("old")
     expect(described_class.perform_now).to eq(
-      { "created" => 2, "updated" => 0, "unchanged" => 0, "deleted" => 1, "failed" => 0, "requeued" => 0, "empty_folders" => 0, "merged" => 0 }
+      { "created" => 2, "updated" => 0, "unchanged" => 0, "deleted" => 1, "failed" => 0, "requeued" => 0, "empty_folders" => 0, "merged" => 0, "relinked" => 0 }
     )
   end
 end
