@@ -211,4 +211,62 @@ RSpec.describe Emails::Adapters::ImapBodyParser do
       end
     end
   end
+
+  describe '#html' do
+    subject(:parser) { described_class.new(mail) }
+
+    context 'when the message has an html body' do
+      let(:mail) { Mail.new("Content-Type: text/html\r\n\r\n<p>Hello</p>") }
+
+      it 'returns it as is' do
+        expect(parser.html).to eq('<p>Hello</p>')
+      end
+    end
+
+    context 'when the only text/html part is an attachment' do
+      let(:mail) do
+        Mail.new(<<~EML.gsub("\n", "\r\n"))
+          Content-Type: multipart/mixed; boundary="outer"
+
+          --outer
+          Content-Type: text/plain
+
+          See the attached page.
+          --outer
+          Content-Type: text/html
+          Content-Disposition: attachment; filename="page.html"
+
+          <p>Attached page</p>
+          --outer--
+        EML
+      end
+
+      it 'returns nil' do
+        expect(parser.html).to be_nil
+      end
+    end
+
+    context 'when an html body sits next to an html attachment' do
+      let(:mail) do
+        Mail.new(<<~EML.gsub("\n", "\r\n"))
+          Content-Type: multipart/mixed; boundary="outer"
+
+          --outer
+          Content-Type: text/html
+          Content-Disposition: attachment; filename="page.html"
+
+          <p>Attached page</p>
+          --outer
+          Content-Type: text/html
+
+          <p>Body</p>
+          --outer--
+        EML
+      end
+
+      it 'returns the body, not the attachment' do
+        expect(parser.html).to eq('<p>Body</p>')
+      end
+    end
+  end
 end
