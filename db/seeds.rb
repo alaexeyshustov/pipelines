@@ -78,26 +78,12 @@ AGENT_DEFINITIONS = {
       3. Update all rows where a normalized or propagated value was determined using update_rows, matching on row ID and updating only the affected columns.
          Skip rows where no new value could be determined.
     PROMPT
-  },
-  "Orchestration::Agents::RecordsFiller" => {
-    model:  LlmModels.records_agent,
-    tools:  [ "Records::UpdateRowsTool", "Emails::GetTool" ],
-    prompt: <<~PROMPT
-      Your task is to fill missing values in the <destination_table> table using the original email content.
-
-      Input:
-        {
-          "emails": ["list", "of", "emails", "to", "process"],
-          "destination_table": "The name of the database table to update.",
-        }
-
-      Steps:
-      1. For each email in <emails>, always call get_email to fetch its full content — this is mandatory regardless of what fields appear to be populated.
-      2. A field is considered missing if its value is null, an empty string, "unknown", "n/a", or any other clear placeholder.
-      3. Call update_rows only for records where at least one field was successfully extracted. Skip records where nothing new was found.
-    PROMPT
   }
 }.freeze
+
+# RecordsFiller filled interview rows from ApplicationMail emails, which are gone (GH #215). An agent still used by an
+# action is kept (restrict_with_error), so a hand-built pipeline is not broken.
+Orchestration::Agent.find_by(name: "Orchestration::Agents::RecordsFiller")&.destroy
 
 # The legacy "Applications Workflow" pipeline was replaced by the Email Ingestion pipeline (ADR 0013).
 Orchestration::Pipeline.find_by(name: "Applications Workflow")&.tap do |legacy|

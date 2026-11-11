@@ -14,8 +14,7 @@ RSpec.describe "Seeds: agent config backfill" do # rubocop:disable RSpec/Describ
   {
     "Orchestration::Agents::EmailsClassifier"   => { model: "mistral-large-latest", tools: [ "Records::TempFileTool" ] },
     "Orchestration::Agents::RecordsNormalizer" => { model: "gpt-5.1",              tools: [ "Records::ListRowsTool", "Records::ReadRowsTool", "Records::UpdateRowsTool",
-                                                                            "Records::ReadSchemaTool", "Records::SearchSimilarTool" ] },
-    "Orchestration::Agents::RecordsFiller"      => { model: "gpt-5.1",              tools: [ "Records::UpdateRowsTool", "Emails::GetTool" ] }
+                                                                            "Records::ReadSchemaTool", "Records::SearchSimilarTool" ] }
   }.each do |agent_name, expected|
     describe agent_name do
       subject(:agent) { Orchestration::Agent.find_by!(name: agent_name) }
@@ -60,5 +59,12 @@ RSpec.describe "Seeds: agent config backfill" do # rubocop:disable RSpec/Describ
 
   it "does not seed the legacy Applications Workflow pipeline" do
     expect(Orchestration::Pipeline.find_by(name: "Applications Workflow")).to be_nil
+  end
+
+  it "removes the obsolete RecordsFiller agent" do
+    create(:orchestration_agent, name: "Orchestration::Agents::RecordsFiller")
+    Prosopite.pause { load Rails.root.join("db/seeds.rb") }
+
+    expect(Orchestration::Agent.exists?(name: "Orchestration::Agents::RecordsFiller")).to be(false)
   end
 end
