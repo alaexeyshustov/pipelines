@@ -50,4 +50,16 @@ RSpec.describe Emails::Adapters::BaseAdapter do
       expect { adapter.create_label(name: 'label') }.to raise_error(NotImplementedError, /create_label is not implemented/)
     end
   end
+
+  {
+    attachment: [ 'm1', 'a1' ], attachments: [ 'm1' ], profile: [], inbox_message_ids_since: [ 'h1' ],
+    inbox_message_ids_after: [ Date.new(2026, 1, 1) ], account: [], inbox_status: [], inbox_uids_after: [ 1 ],
+    inbox_uids_since: [ Date.new(2026, 1, 1) ], fetch_message: [ 'm1' ]
+  }.each do |method_name, args|
+    describe "##{method_name}" do
+      it 'raises NotImplementedError' do
+        expect { adapter.public_send(method_name, *args) }.to raise_error(NotImplementedError, /#{method_name} is not implemented/)
+      end
+    end
+  end
 end

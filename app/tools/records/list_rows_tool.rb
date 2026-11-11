@@ -6,7 +6,7 @@ module Records
 
     description "List rows in a database table."
 
-    parameter :table,  type: :string,  description: "Table name: application_mails or interviews", required: true
+    parameter :table,  type: :string,  description: "Table name: interviews", required: true
     parameter :limit,  type: :integer, description: "Maximum number of rows to return, default is 50"
     parameter :offset, type: :integer, description: "Number of rows to skip before starting to return rows, default is 0"
 

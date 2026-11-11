@@ -1,0 +1,22 @@
+module FtsSearchable
+  SCOPE_MARKER: String
+
+  class Match
+    attr_reader record: ApplicationRecord
+    attr_reader rank: Float
+    attr_reader snippet: String
+
+    def self.new: (record: ApplicationRecord, rank: Float, snippet: String) -> instance
+  end
+
+  module ClassMethods
+    def fts_search: (String? query, ?limit: Integer) -> Array[Match]
+
+    private
+
+    def fts_match: (String? query) -> String
+    def fts_statement: (String match, Integer limit) -> String
+    def scope_clause: () -> String
+    def fts_sql: () -> String
+  end
+end

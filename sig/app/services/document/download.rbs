@@ -1,0 +1,27 @@
+class Document
+  class Download
+    class File
+      attr_reader data: String
+      attr_reader filename: String
+      attr_reader mime_type: String
+
+      def self.new: (data: String, filename: String, mime_type: String) -> instance
+    end
+
+    class Unsupported < StandardError
+    end
+
+    def self.call: (Document document) -> File
+
+    @document: Document
+
+    def initialize: (Document document) -> void
+    def call: () -> File
+
+    private
+
+    def from_gmail: (Hash[String, String | Integer | bool | nil] ref) -> File
+    def from_drive: (Hash[String, String | Integer | bool | nil] ref) -> File
+    def filename: (String name, String? mime_type) -> String
+  end
+end

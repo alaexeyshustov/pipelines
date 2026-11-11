@@ -1,0 +1,38 @@
+module TagPages
+  class Search
+    LIMIT: Integer
+
+    class Row
+      attr_reader kind: Symbol
+      attr_reader record: Email | Document
+      attr_reader title: String
+      attr_reader date: Time
+      attr_reader subtag: Subtag?
+      attr_reader interview: Interview?
+      attr_reader snippet: String?
+      attr_reader rank: Float?
+
+      def self.new: (kind: Symbol, record: Email | Document, title: String, date: Time, subtag: Subtag?, interview: Interview?, snippet: String?, rank: Float?) -> instance
+    end
+
+    def self.call: (tag: Tag?, filter: FilterForm) -> Array[Row]
+
+    @tag: Tag
+    @filter: FilterForm
+
+    def initialize: (tag: Tag, filter: FilterForm) -> void
+    def call: () -> Array[Row]
+
+    private
+
+    def ranked?: () -> bool
+    def email_rows: () -> Array[Row]
+    def document_rows: () -> Array[Row]
+    def records: [T < ApplicationRecord] (ActiveRecord::Relation relation) -> Array[[ T, String?, Float? ]]
+    def date_column: (ActiveRecord::Relation relation) -> Symbol
+    def tagged_ids: (String type) -> ActiveRecord::Relation
+    def subtag_ids: () -> ActiveRecord::Relation
+    def date_range: () -> Range[ActiveSupport::TimeWithZone?]
+    def subtag_of: (Email | Document record) -> Subtag?
+  end
+end

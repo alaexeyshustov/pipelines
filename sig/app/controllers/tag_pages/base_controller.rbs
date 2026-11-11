@@ -1,0 +1,18 @@
+module TagPages
+  class BaseController < ApplicationController
+    def self.tag_name: () -> String?
+    def self.tag_name=: (String?) -> String?
+    def tag_name: () -> String?
+
+    @tag: Tag?
+    @filter: FilterForm
+    @subtags: Array[Subtag] | ActiveRecord::Relation
+    @rows: Array[Search::Row]
+
+    def show: () -> void
+
+    private
+
+    def interview_columns?: () -> bool
+  end
+end

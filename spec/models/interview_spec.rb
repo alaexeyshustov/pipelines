@@ -1,6 +1,54 @@
 require 'rails_helper'
 
 RSpec.describe Interview do
+  describe 'deleting an interview' do
+    let!(:interview) { create(:interview) }
+    let!(:email) { create(:email, interview: interview) }
+
+    it 'nulls emails.interview_id through the foreign key and keeps the emails' do
+      interview.destroy!
+
+      expect(email.reload.interview_id).to be_nil
+    end
+
+    it 'issues no UPDATE of its own on emails, as the foreign key does the nulling' do
+      updates = []
+      callback = ->(*, payload) { updates << payload[:sql] if payload[:sql].start_with?('UPDATE "emails"') }
+
+      ActiveSupport::Notifications.subscribed(callback, 'sql.active_record') { interview.destroy! }
+
+      expect(updates).to be_empty
+    end
+  end
+
+  describe '.normalize_name' do
+    {
+      'Senior Backend Engineer (m/w/d)'            => 'Senior Backend Engineer',
+      'Senior Backend Engineer (f/m/x)'            => 'Senior Backend Engineer',
+      'Senior Backend Engineer (M/F/D)'            => 'Senior Backend Engineer',
+      'Senior Backend Engineer (all genders)'      => 'Senior Backend Engineer',
+      'Senior Backend Engineer - m/w/d'            => 'Senior Backend Engineer',
+      'Senior Backend Engineer m/w/d'              => 'Senior Backend Engineer',
+      '(m/w/d) Ruby Developer'                     => 'Ruby Developer',
+      'Senior Backend Engineer [f/m/x]'            => 'Senior Backend Engineer',
+      'Senior Backend Engineer (gn)'               => 'Senior Backend Engineer',
+      'Engineer (Backend) (m/w/d)'                 => 'Engineer (Backend)',
+      'Engineer (Backend)'                         => 'Engineer (Backend)',
+      'Engineer (Frontend)'                        => 'Engineer (Frontend)',
+      'Acme GmbH (Germany)'                        => 'Acme GmbH (Germany)',
+      "  Senior \t Backend\n Engineer  "           => 'Senior Backend Engineer',
+      'Engineer (Backend) Team'                    => 'Engineer (Backend) Team',
+      'Senior Backend Engineer'                    => 'Senior Backend Engineer',
+      'Platform Engineer (DevOps/SRE)'             => 'Platform Engineer (DevOps/SRE)',
+      '(Remote)'                                   => '(Remote)',
+      nil                                          => ''
+    }.each do |input, expected|
+      it "turns #{input.inspect} into #{expected.inspect}" do
+        expect(described_class.normalize_name(input)).to eq(expected)
+      end
+    end
+  end
+
   describe 'validations' do
     it 'is valid with required attributes' do
       interview = build(:interview)

@@ -1,6 +1,0 @@
-module Orchestration
-  module Agents
-    class RecordsStorer < RubyLLM::Agent
-    end
-  end
-end

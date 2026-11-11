@@ -1,6 +1,9 @@
 class Interview < ApplicationRecord
   include Searchable
   include Batchable
+  # No dependent: callback; emails.interview_id is nulled by the foreign key (on_delete: :nullify) in the database.
+  has_many :emails, dependent: nil
+
   validates :company, :job_title, presence: true
   validates :job_title, uniqueness: { scope: :company }
 
@@ -9,6 +12,23 @@ class Interview < ApplicationRecord
     id company job_title status applied_at rejected_at
     first_interview_at second_interview_at third_interview_at fourth_interview_at
   ].freeze
+
+  # Gender markers job ads append to titles: "(m/w/d)", "[f/m/x]", "(all genders)", "(gn)" and the bare "- m/w/d".
+  GENDER_MARKER = %r{
+    \s*[(\[]\s*(?:(?:[mwfdxi]\s*/\s*){1,2}[mwfdxi][*+]?|all\s+genders?|alle\s+geschlechter|gn)\s*[)\]]
+    | (?<![\w/])(?:[mwfdxi]/){1,2}[mwfdxi](?![\w/])
+  }xi
+  TRAILING_SEPARATORS = /[\s\-\u2013\u2014,:|]+\z/
+
+  # Company and job title as the LLM reports them vary ("Backend Engineer (m/w/d)" vs "Backend Engineer"), which
+  # would split one application into several Interviews. This drops gender markers, trims dangling separators and
+  # squishes whitespace. Other parenthesised text ("Engineer (Backend)") is kept: it distinguishes real postings. A
+  # value that would become empty is only squished.
+  def self.normalize_name(value)
+    squished = value.to_s.squish
+    name = squished.gsub(GENDER_MARKER, " ").sub(TRAILING_SEPARATORS, "").squish
+    name.empty? ? squished : name
+  end
 
   def self.tool_column_names = COLUMN_NAMES
 

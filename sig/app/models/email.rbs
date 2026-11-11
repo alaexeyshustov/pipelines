@@ -1,0 +1,38 @@
+class Email < ApplicationRecord
+  include Taggable
+  include Embeddable
+  extend FtsSearchable::ClassMethods
+  extend Embeddable::ClassMethods
+
+  PROVIDERS: Array[String]
+  DEFAULT_BACKFILL_DAYS: Integer
+
+  def self.awaiting_tagging: (before: Time | ActiveSupport::TimeWithZone) -> ActiveRecord::Relation
+  def self.backfill_days: () -> Integer
+
+  def provider: () -> String
+  def provider=: (String) -> String
+  def provider_message_id: () -> String
+  def provider_message_id=: (String) -> String
+  def from_address: () -> String
+  def from_address=: (String) -> String
+  def to_address: () -> String?
+  def to_address=: (String?) -> String?
+  def subject: () -> String?
+  def subject=: (String?) -> String?
+  def date: () -> Time
+  def date=: (Time) -> Time
+  def body: () -> String?
+  def body=: (String?) -> String?
+  def html_body: () -> String?
+  def html_body=: (String?) -> String?
+  def source_url: () -> String?
+  def source_url=: (String?) -> String?
+  def tagged_at: () -> Time?
+  def tagged_at=: (Time?) -> Time?
+  def interview_id: () -> Integer?
+  def interview_id=: (Integer?) -> Integer?
+  def interview: () -> Interview?
+  def interview=: (Interview?) -> Interview?
+  def embedding_parts: () -> Array[String?]
+end

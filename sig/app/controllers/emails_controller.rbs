@@ -1,0 +1,7 @@
+class EmailsController < ApplicationController
+  @email: Email
+  @taggings: ActiveRecord::Relation
+  @tags: ActiveRecord::Relation
+
+  def show: () -> void
+end

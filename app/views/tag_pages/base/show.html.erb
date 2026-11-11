@@ -1,0 +1,55 @@
+<%= render UI::PageHeaderComponent.new(title: @tag&.name&.humanize || controller.tag_name.to_s.humanize) %>
+
+<% base_path = url_for(only_path: true) %>
+<% chip_params = ->(extra) { @filter.to_params.except(:subtag).merge(extra) } %>
+
+<div class="flex flex-wrap gap-2 mb-4" data-testid="subtag-chips">
+  <%= render UI::FilterChipComponent.new(label: "All", href: "#{base_path}?#{chip_params.call({}).to_query}", active: @filter.subtag_name.nil?) %>
+  <% @subtags.each do |subtag| %>
+    <%= render UI::FilterChipComponent.new(label: subtag.name, href: "#{base_path}?#{chip_params.call(subtag: subtag.name).to_query}", active: @filter.subtag_name == subtag.name) %>
+  <% end %>
+</div>
+
+<%= form_with url: base_path, method: :get, class: "mb-4 flex flex-wrap items-end gap-3" do |f| %>
+  <%= f.hidden_field :subtag, value: @filter.subtag_name if @filter.subtag_name %>
+  <div>
+    <%= f.label :q, "Search", class: "block text-xs text-gray-500" %>
+    <%= f.search_field :q, value: @filter.query, placeholder: "Search within #{controller.tag_name.to_s.humanize.downcase}", class: "w-64 px-3 py-1.5 text-sm border border-gray-300 rounded-lg" %>
+  </div>
+  <div>
+    <%= f.label :type, "Type", class: "block text-xs text-gray-500" %>
+    <%= f.select :type, [ [ "All", "" ], [ "Emails", "email" ], [ "Documents", "document" ] ], { selected: @filter.to_params[:type] }, class: "px-3 py-1.5 text-sm border border-gray-300 rounded-lg" %>
+  </div>
+  <div>
+    <%= f.label :from, "From", class: "block text-xs text-gray-500" %>
+    <%= f.date_field :from, value: @filter.from_date, class: "px-3 py-1.5 text-sm border border-gray-300 rounded-lg" %>
+  </div>
+  <div>
+    <%= f.label :to, "To", class: "block text-xs text-gray-500" %>
+    <%= f.date_field :to, value: @filter.to_date, class: "px-3 py-1.5 text-sm border border-gray-300 rounded-lg" %>
+  </div>
+  <%= f.submit "Filter", class: "px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 cursor-pointer" %>
+  <%= link_to "Reset", base_path, class: "text-sm text-gray-500 hover:text-gray-700" %>
+<% end %>
+
+<% columns = [
+  { key: :kind, label: "Type" },
+  { key: :title, label: "Title" },
+  { key: :subtag, label: "Subtag" },
+  { key: :date, label: "Date" }
+] %>
+<% columns += [ { key: :company, label: "Company" }, { key: :status, label: "Status" } ] if interview_columns? %>
+<% table_rows = @rows.map do |row|
+     title = link_to(row.title, row.kind == :document ? document_path(row.record) : email_path(row.record), class: "font-medium text-blue-600")
+     cells = { kind: row.kind.to_s.humanize, title: safe_join([ title, render(UI::HighlightedSnippetComponent.new(snippet: row.snippet)) ]),
+               subtag: row.subtag&.name.to_s, date: l(row.date.to_date) }
+     if interview_columns?
+       cells[:company] = row.interview&.company.to_s
+       cells[:status] = row.interview ? render(Interviews::StatusBadgeComponent.new(status: row.interview.status)) : ""
+     end
+     cells
+   end %>
+<% if table_rows.empty? %>
+  <p class="mb-3 text-sm text-gray-500">Nothing tagged <%= controller.tag_name.to_s.humanize.downcase %> in this range.</p>
+<% end %>
+<%= render UI::DataTableComponent.new(columns:, rows: table_rows, per_page: 25) %>

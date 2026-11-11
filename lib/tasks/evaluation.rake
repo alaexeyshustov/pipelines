@@ -36,32 +36,4 @@ namespace :evaluation do
     end
     puts "Seeded metrics for #{agent_name}: #{created} created, #{updated} updated."
   end
-
-  desc "Migrate hardcoded agent instructions into Evaluation::Prompt records"
-  task migrate_prompts: :environment do
-    agent_classes = %w[
-      Orchestration::Agents::EmailsClassifier
-      Orchestration::Agents::EmailsFilter
-      Orchestration::Agents::EmailsMapper
-      Orchestration::Agents::RecordsFiller
-      Orchestration::Agents::RecordsNormalizer
-      Orchestration::Agents::RecordsStorer
-      Orchestration::Agents::RecordsReconciler
-    ].freeze
-
-    agent_classes.each do |agent_class|
-      klass = agent_class.constantize
-      instructions = klass.instructions.map { |declaration| declaration[:value] }.grep(String).join("\n")
-      raise "#{agent_class} has no instructions" if instructions.blank?
-
-      existing = Evaluation::Prompt.find_by(name: agent_class)
-      if existing
-        # user_prompt is intentionally preserved on re-runs to avoid clobbering manual edits
-        existing.update!(system_prompt: instructions, user_prompt: existing.user_prompt.presence || "{{input}}")
-      else
-        Evaluation::PromptCreator.call(name: agent_class, system_prompt: instructions, user_prompt: "{{input}}")
-      end
-    end
-    Rails.logger.info "Migrated #{agent_classes.size} agent prompts to Evaluation::Prompt."
-  end
 end

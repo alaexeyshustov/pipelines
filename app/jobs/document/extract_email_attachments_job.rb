@@ -1,0 +1,60 @@
+# Turns the supported attachments (pdf, docx, images, text) of a tagged Gmail email into tagged Documents.
+#
+# Untagged emails and providers without attachment listing (Yahoo/IMAP) are skipped. Documents dedupe on the
+# SHA256 of the bytes, so the same attachment on two emails yields one Document (linked to the first email,
+# tagged once); the checksum is checked before the text extraction, so a recurring attachment is never OCR'd again.
+# A failing attachment is logged and does not block the email's other attachments.
+#
+# A new Document is queued for embedding and then for tagging (Document::TagJob), each its own job so a failing
+# classifier cannot lose the embedding; an untagged Document is re-queued by EmailsSync (tagged_at stays NULL).
+# Orchestrates services here because services must not call each other (App/ServiceMustNotCallService).
+class Document::ExtractEmailAttachmentsJob < ApplicationJob
+  def perform(email_id)
+    email = Email.find(email_id)
+    return unless eligible?(email)
+
+    Emails.attachments(email.provider, email.provider_message_id).each { |attachment| handle(email, attachment) }
+  end
+
+  private
+
+  def handle(email, attachment)
+    resolved = with_resolved_type(attachment)
+    process(email, resolved) if Document::FileType.supported?(resolved[:mime_type])
+  rescue StandardError => error
+    Rails.logger.error("Attachment #{attachment[:filename].inspect} of email #{email.id} failed: #{error.class}: #{error.message}")
+  end
+
+  def with_resolved_type(attachment)
+    attachment.merge(mime_type: Document::FileType.resolve(attachment[:mime_type], attachment[:filename]))
+  end
+
+  def eligible?(email)
+    email.provider == Emails::GMAIL && email.taggings.exists?
+  end
+
+  def process(email, attachment)
+    data = Emails.attachment(email.provider, email.provider_message_id, attachment[:id])
+    checksum = Digest::SHA256.hexdigest(data)
+    return if Document.exists?(checksum:)
+
+    text = Document::TextExtractor.call(data:, mime_type: attachment[:mime_type], filename: attachment[:filename])
+    document = ingest(email, attachment, checksum, text)
+    return unless document.previously_new_record?
+
+    Document::EmbedJob.perform_later(document.id)
+    Document::TagJob.perform_later(document.id)
+  end
+
+  def ingest(email, attachment, checksum, text)
+    Document.ingest!(
+      title: attachment[:filename], mime_type: attachment[:mime_type], text:, checksum:,
+      source: Document::EMAIL_ATTACHMENT, source_url: email.source_url, email_id: email.id,
+      source_ref: source_ref(email, attachment)
+    )
+  end
+
+  def source_ref(email, attachment)
+    { provider: email.provider, message_id: email.provider_message_id, attachment_id: attachment[:id] }
+  end
+end

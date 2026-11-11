@@ -8,6 +8,7 @@ module Records
 
     private
 
+    def update!: (ApplicationRecord record, Hash[String, json_object_value] attrs) -> void
     def apply_update: (ApplicationRecord record, _HasColumnNames model, String data) -> { ?error: String, status: String }
   end
 end

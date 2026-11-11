@@ -4,7 +4,7 @@ module Orchestration
       include Orchestration::Executable
 
       DEFAULT_DATE        = Time.zone.today.to_s
-      DEFAULT_PROVIDERS   = %w[gmail yahoo].freeze
+      DEFAULT_PROVIDERS   = Emails::PROVIDER_NAMES
       DEFAULT_MAX_RESULTS = 10
 
       input_schema(

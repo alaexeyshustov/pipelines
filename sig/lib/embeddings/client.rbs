@@ -1,0 +1,9 @@
+module Embeddings
+  module Client
+    DIMENSIONS: Integer
+    QUERY_INSTRUCTION: String
+
+    def self?.documents: (Array[String] texts, ?model: String) -> Array[Array[Float]]
+    def self?.query: (String text, ?model: String) -> Array[Float]
+  end
+end

@@ -4,10 +4,10 @@ todo "archspec_todo.yml"
 architecture :layered, layers: {
   interface:   %w[app/controllers/**/*.rb app/components/**/*.rb app/helpers/**/*.rb],
   application: %w[app/services/**/*.rb app/forms/**/*.rb app/jobs/**/*.rb
-                  lib/orchestration/**/*.rb lib/evaluation/**/*.rb lib/pipeline/**/*.rb],
+                  lib/orchestration/**/*.rb lib/evaluation/**/*.rb],
   tools:       "app/tools/**/*.rb",
   domain:      "app/models/**/*.rb",
-  infra:       "lib/emails/**/*.rb"
+  infra:       %w[lib/emails/**/*.rb lib/embeddings/**/*.rb]
 }
 architecture :ruby_conventions
 

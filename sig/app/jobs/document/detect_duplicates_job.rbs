@@ -1,0 +1,5 @@
+class Document
+  class DetectDuplicatesJob < ApplicationJob
+    def perform: (Integer document_id) -> void
+  end
+end

@@ -1,0 +1,39 @@
+class Document < ApplicationRecord
+  EMAIL_ATTACHMENT: String
+  DRIVE: String
+  DRIVE_REF_PROVIDER: String
+
+  include Taggable
+  include Embeddable
+  extend FtsSearchable::ClassMethods
+  extend Embeddable::ClassMethods
+
+  SOURCES: Array[String]
+
+  def title: () -> String
+  def title=: (String) -> String
+  def mime_type: () -> String
+  def mime_type=: (String) -> String
+  def text: () -> String
+  def text=: (String) -> String
+  def checksum: () -> String
+  def checksum=: (String) -> String
+  def source: () -> String
+  def source=: (String) -> String
+  def source_url: () -> String?
+  def source_url=: (String?) -> String?
+  def source_ref: () -> Hash[String, String | Integer | bool | nil]
+  def source_ref=: (Hash[String | Symbol, String | Integer | bool | nil]) -> Hash[String, String | Integer | bool | nil]
+  def tagged_at: () -> Time?
+  def tagged_at=: (Time?) -> Time?
+  def email: () -> Email?
+  def email=: (Email?) -> Email?
+  def document_duplicates: () -> ActiveRecord::Relation
+  def reverse_document_duplicates: () -> ActiveRecord::Relation
+
+  def openable_source_uri: () -> URI::HTTP?
+  def embedding_parts: () -> Array[String?]
+
+  def self.awaiting_tagging: (before: Time | ActiveSupport::TimeWithZone) -> ActiveRecord::Relation
+  def self.ingest!: (Hash[Symbol | String, String | Hash[String, String] | Email | nil] attributes) -> Document
+end

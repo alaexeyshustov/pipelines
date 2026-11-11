@@ -1,0 +1,61 @@
+module Emails
+  module Adapters
+    class DriveFileFetcher
+      class Error < StandardError
+      end
+
+      class NotConfigured < Error
+      end
+
+      class File
+        attr_reader data: String
+        attr_reader filename: String
+        attr_reader mime_type: String
+
+        def self.new: (data: String, filename: String, mime_type: String) -> instance
+      end
+
+      class Entry
+        attr_reader id: String
+        attr_reader name: String
+        attr_reader mime_type: String
+        attr_reader md5: String?
+        attr_reader modified_time: String?
+        attr_reader web_view_link: String?
+
+        def self.new: (id: String, name: String, mime_type: String, md5: String?, modified_time: String?, web_view_link: String?) -> instance
+      end
+
+      FOLDER_MIME: String
+      GOOGLE_DOC_MIME: String
+      DOCX_MIME: String
+      LIST_FIELDS: String
+      FOLDER_ID: Regexp
+      SCOPE: Array[String]
+      BASE_URL: String
+
+      def self.credentials_path: () -> String
+      def self.token_path: () -> String
+      def self.setup: () -> String
+      def self.from_env: () -> DriveFileFetcher
+      def self.token_provider: (GmailAuth auth) -> ^() -> String
+
+      @access_token: ^() -> String
+
+      def initialize: (access_token: ^() -> String) -> void
+      def fetch: (String file_id, ?name: String?, ?mime_type: String?) -> File
+      def export: (String file_id) -> String
+      def scan: (Array[String] folder_ids) -> Array[Entry]
+      def empty_folders: (Array[String] folder_ids) -> Array[String]
+
+      private
+
+      def request: (URI::Generic uri) -> Net::HTTPResponse
+      def collect: (String folder_id, Set[String] seen, Hash[String, Entry] entries) -> void
+      def list_children: (String folder_id) -> Array[Entry]
+      def list_page: (String folder_id, String? page_token) -> String
+      def entry: (Hash[String, String?] attrs) -> Entry
+      def get: (String? file_id, ?String? action, **String | bool | Integer params) -> String
+    end
+  end
+end

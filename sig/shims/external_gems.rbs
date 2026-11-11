@@ -96,6 +96,7 @@ end
 module Google
   module Apis
     class ClientError < StandardError
+      def status_code: () -> Integer?
     end
 
     module GmailV1
@@ -108,7 +109,8 @@ module Google
         def get_user_label: (String user_id, String label_id) -> LabelWithCount?
         def modify_message: (String user_id, String message_id, ModifyMessageRequest request) -> Message?
         def create_user_label: (String user_id, Label label) -> Label?
-        def get_user_profile: (String user_id) -> void
+        def get_user_profile: (String user_id) -> Profile?
+        def list_user_histories: (String user_id, ?history_types: Array[String]?, ?label_id: String?, ?max_results: Integer?, ?page_token: String?, ?start_history_id: String?) -> ListHistoryResponse?
       end
 
       class ClientOptions
@@ -130,7 +132,26 @@ module Google
         def type: () -> String?
       end
 
+      class Profile
+        def email_address: () -> String?
+        def history_id: () -> (Integer | String)?
+      end
+
+      class ListHistoryResponse
+        def history: () -> Array[History]?
+        def next_page_token: () -> String?
+      end
+
+      class History
+        def messages_added: () -> Array[HistoryMessageAdded]?
+      end
+
+      class HistoryMessageAdded
+        def message: () -> Message?
+      end
+
       class Message
+        def internal_date: () -> Integer?
         def id: () -> String?
         def payload: () -> MessagePart
         def label_ids: () -> Array[String]?
@@ -148,6 +169,7 @@ module Google
       class MessagePartBody
         def data: () -> String?
         def attachment_id: () -> String?
+        def size: () -> Integer?
       end
 
       class MessagePartHeader
@@ -228,3 +250,12 @@ module Arel
 end
 # rubocop:enable RBS/Lint/NoUntyped
 
+module Zip
+  class Error < StandardError
+  end
+
+  class File
+    def self.open_buffer: (StringIO io) { (File zip) -> void } -> void
+    def read: (String entry) -> String
+  end
+end
