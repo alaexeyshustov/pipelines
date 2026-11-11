@@ -4,8 +4,7 @@ module Evaluation
   # rate limit does not fail the call. The model that actually answered is on the response (`model_id`) and in
   # the ruby_llm_usages rows when run inside UsageScope.
   class AuxiliaryAgent < ::RubyLLM::Agent
-    LlmModels.ref(LlmModels.evaluation).declare_on(self)
-    fallback_refs = LlmModels.evaluation_fallbacks.map { |id| LlmModels.ref(id).fallback }
-    fallbacks(*fallback_refs) if fallback_refs.any?
+    model LlmModels.evaluation
+    fallbacks(*LlmModels.evaluation_fallbacks) if LlmModels.evaluation_fallbacks.any?
   end
 end

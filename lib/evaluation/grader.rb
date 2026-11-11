@@ -50,7 +50,7 @@ module Evaluation
       RubyLLM::Judge.new.judge(
         Judge::Input.call(sample: @sample, dataset_sample: @dataset_sample),
         questions: Judge::Questions.call(metrics),
-        **LlmModels.ref(Judge::ModelChoice.call(@experiment.evaluation_model)).chat_options,
+        model: Judge::ModelChoice.call(@experiment.evaluation_model),
         owner: @experiment,
         metadata: { experiment_id: @experiment.id, sample_id: @sample.id }
       )

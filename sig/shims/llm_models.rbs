@@ -1,21 +1,4 @@
 module LlmModels
-  class ModelRef
-    type chat_options = { model: String, provider: Symbol?, assume_model_exists: bool }
-
-    attr_reader model: String
-    attr_reader provider: Symbol?
-
-    def self.parse: (String? value) -> ModelRef
-    def self.id_for: (String model_id, String | Symbol provider) -> String
-    def initialize: (model: String, provider: Symbol?) -> void
-    def local?: () -> bool
-    def declare_on: (singleton(RubyLLM::Agent) agent_class) -> void
-    def apply_to: [T < RubyLLM::Agent] (T agent) -> T
-    def chat_options: () -> chat_options
-    def fallback: () -> (String | RubyLLM::Fallback)
-  end
-
-  def self.ref: (String? value) -> ModelRef
   def self.emails_agent: () -> String
   def self.records_agent: () -> String
   def self.evaluation: () -> String

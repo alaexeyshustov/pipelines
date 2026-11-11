@@ -2,13 +2,13 @@ module Pipeline
   class ApplicationsWorkflow
     class AgentSteps
       def initialize(model:)
-        @ref = LlmModels.ref(model)
+        @model = model
       end
 
       def classify_email(emails:)
         input = { emails: emails.map { |email| email.slice("id", "subject") } }.to_json
 
-        @ref.apply_to(Orchestration::Agents::EmailsClassifier.create).ask(input).parsed
+        Orchestration::Agents::EmailsClassifier.create.with_model(@model).ask(input).parsed
       end
 
       def filter_emails(emails:, tags:)
@@ -23,12 +23,13 @@ module Pipeline
         }.to_json
         # steep:ignore:end
 
-        @ref.apply_to(Orchestration::Agents::EmailsFilter.create).ask(input).parsed
+        Orchestration::Agents::EmailsFilter.create.with_model(@model).ask(input).parsed
       end
 
       def map_emails(emails:)
         input = { emails: emails }.to_json
-        content = @ref.apply_to(Orchestration::Agents::EmailsMapper.create)
+        content = Orchestration::Agents::EmailsMapper.create
+          .with_model(@model)
           .with_schema(ApplicationMailsSchema)
           .ask(input)
           .parsed
@@ -40,7 +41,7 @@ module Pipeline
 
       def store_mapped_emails(emails:)
         input = { table: "application_mails", label: "applications", emails: emails }.to_json
-        content = @ref.apply_to(Orchestration::Agents::RecordsStorer.create).ask(input).parsed
+        content = Orchestration::Agents::RecordsStorer.create.with_model(@model).ask(input).parsed
         return content.transform_keys(&:to_s) if content.is_a?(Hash)
 
         {}
@@ -53,7 +54,7 @@ module Pipeline
           columns_to_normalize: [ "company", "job_title" ]
         }.to_json
 
-        @ref.apply_to(Orchestration::Agents::RecordsNormalizer.create).ask(input).parsed
+        Orchestration::Agents::RecordsNormalizer.create.with_model(@model).ask(input).parsed
       end
 
       def reconcile_emails_to_interviews(emails: [])
@@ -67,7 +68,7 @@ module Pipeline
           statuses: [ "pending_reply", "having_interviews", "rejected", "offer_received" ],
           initial_status: "pending_reply"
         }.to_json
-        @ref.apply_to(Orchestration::Agents::RecordsReconciler.create).ask(input).parsed
+        Orchestration::Agents::RecordsReconciler.create.with_model(@model).ask(input).parsed
       end
     end
   end

@@ -28,20 +28,9 @@ RSpec.describe Evaluation::Grader do
     end
   end
 
-  # LLM_TEST_BACKEND=ollama judges with the local model, which Judge::ModelChoice accepts only when the registry
-  # lists it as a judgment model; otherwise the judge falls back to hosted jev-latest and the example skips.
-  context "with the configured judge", :llm do
-    let(:experiment) { create(:evaluation_experiment, evaluation_model: LlmTestBackend.model_for("gpt-6-luna")) }
-
-    before do
-      judge = Evaluation::Judge::ModelChoice.call(experiment.evaluation_model)
-      skip "the judge falls back to hosted #{judge}" if LlmTestBackend.ollama? && !LlmModels.ref(judge).local?
-    end
-
-    it "returns one normalized Grade per active metric" do
-      expect(grades.map(&:metric_name)).to eq(%w[accuracy quality])
-      expect(grades.map(&:score)).to(LlmTestBackend.live? ? all(be_between(0.0, 1.0)) : eq([ 0.9, 0.6 ]))
-    end
+  it "returns one normalized Grade per active metric" do
+    expect(grades.map(&:metric_name)).to eq(%w[accuracy quality])
+    expect(grades.map(&:score)).to eq([ 0.9, 0.6 ])
   end
 
   it "sends one typed question per metric with the sample payload" do

@@ -27,13 +27,13 @@ module RubyLLM
     def self.create: () -> instance
     def self.new: (?chat: Chat | ::Chat) -> instance
     def self.chat_model: (singleton(::Chat) chat_class) -> void
-    def self.model: (String model_id, ?provider: Symbol?, ?assume_model_exists: bool) -> void
+    def self.model: (String model_id) -> void
     def self.tools: (*singleton(Tool) tools) -> void
     def self.schema: () { () [self: ::Schematist::SchemaBuilder] -> void } -> void
     def self.instructions: (String text) -> void
     def self.string: (Symbol name, ?required: bool, ?description: String) -> void
 
-    def with_model: (String model, ?provider: Symbol?, ?assume_model_exists: bool) -> self
+    def with_model: (String model) -> self
     def with_schema: (singleton(::Schematist::Schema) | json_object schema) -> self
     def with_tools: (*singleton(Tool)? tools) -> self
     def chat: () -> Chat
@@ -57,20 +57,11 @@ module RubyLLM
     @models: Array[model]
 
     def all: () -> Array[model]
-    def find: (String model_id, ?provider: String | Symbol | nil) -> ModelInfo
+    def find: (String model_id, ?provider: String?) -> ModelInfo
   end
 
   def self.models: () -> Models
-  def self.chat: (?model: String?, ?provider: Symbol?, ?assume_model_exists: bool) -> Chat
-
-  class Fallback
-    def self.new: (id: String, provider: Symbol) -> Fallback
-  end
-
-  class Provider
-    def self.providers: () -> Hash[Symbol, singleton(Provider)]
-    def self.local?: () -> bool
-  end
+  def self.chat: (?model: String?) -> Chat
 end
 
 module Schematist

@@ -42,12 +42,11 @@ module Orchestration
       nil
     end
 
-    # Grouped by provider. Local provider models (Ollama) are offered as "provider/model" (see LlmModels::ModelRef).
     def self.available_models
       RubyLLM.models.all
         .select { |m| m.type.to_s == "chat" }
         .group_by { |m| m.provider.to_s }
-        .transform_values { |models| models.map { |m| LlmModels::ModelRef.id_for(m.id, m.provider) }.sort }
+        .transform_values { |models| models.map(&:id).sort }
         .sort_by { |provider, _| provider }
     end
 

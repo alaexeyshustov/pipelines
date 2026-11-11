@@ -1,7 +1,7 @@
 module Pipeline
   class ApplicationsWorkflow
     class AgentSteps
-      @ref: LlmModels::ModelRef
+      @model: String
 
       def initialize: (model: String) -> void
       def classify_email: (emails: Array[json_object]) -> json_object_value

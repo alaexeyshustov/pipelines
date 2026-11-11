@@ -2,7 +2,7 @@ module Orchestration
   module Agents
     class EmailsFilter < RubyLLM::Agent
       chat_model Chat
-      LlmModels.ref(LlmModels.emails_agent).declare_on(self)
+      model LlmModels.emails_agent
       tools Records::TempFileTool
 
       schema do

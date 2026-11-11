@@ -10,10 +10,8 @@ module Evaluation
         candidates.find { |id| judgment_model?(id) } || candidates.last.to_s
       end
 
-      # A local model ("ollama/<id>") qualifies only once a registry sync recorded Ollama's `decision` capability.
       def self.judgment_model?(id)
-        ref = LlmModels.ref(id)
-        model = RubyLLM.models.find(ref.model, provider: ref.provider)
+        model = RubyLLM.models.find(id)
         # gpt-6-luna is registered as type :chat with the `judgment` capability; jev-* have type :judgment.
         model.type == :judgment || model.capabilities.include?("judgment")
       rescue RubyLLM::ModelNotFoundError
