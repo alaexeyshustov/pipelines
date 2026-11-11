@@ -63,7 +63,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
       it 'applies the pipeline model, overriding the action model' do
         described_class.new(pipeline_run).run
-        expect(stub_agent).to have_received(:with_model).with('mistral-large-latest', provider: nil, assume_model_exists: false)
+        expect(stub_agent).to have_received(:with_model).with('mistral-large-latest')
       end
     end
 
@@ -77,7 +77,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
       it 'falls back to the action model' do
         described_class.new(pipeline_run).run
-        expect(stub_agent).to have_received(:with_model).with('openai-gpt4', provider: nil, assume_model_exists: false)
+        expect(stub_agent).to have_received(:with_model).with('openai-gpt4')
       end
     end
 

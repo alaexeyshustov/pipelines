@@ -54,6 +54,6 @@ module RubyLLM
   class Judge
     type question = Hash[Symbol, Symbol | json_object_value]
 
-    def judge: (json_object input, questions: Hash[String, question], ?model: String, ?provider: Symbol?, ?assume_model_exists: bool, ?owner: ActiveRecord::Base, ?metadata: Hash[Symbol, Integer]) -> Judgment
+    def judge: (json_object input, questions: Hash[String, question], ?model: String, ?owner: ActiveRecord::Base, ?metadata: Hash[Symbol, Integer]) -> Judgment
   end
 end

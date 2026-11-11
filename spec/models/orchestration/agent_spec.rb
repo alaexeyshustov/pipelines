@@ -131,31 +131,6 @@ RSpec.describe Orchestration::Agent do
     end
   end
 
-  describe ".available_models" do
-    before do
-      allow(RubyLLM.models).to receive(:all).and_return([
-        RubyLLM::Model.default("qwen3:8b", "ollama"),
-        RubyLLM::Model.default("anthropic/claude-haiku-4.5", "openrouter"),
-        RubyLLM::Model.default("gpt-5.4", "openai")
-      ])
-    end
-
-    it "offers hosted models as bare ids and local models as provider/model ids" do
-      expect(described_class.available_models).to eq([
-        [ "ollama", [ "ollama/qwen3:8b" ] ], [ "openai", [ "gpt-5.4" ] ], [ "openrouter", [ "anthropic/claude-haiku-4.5" ] ]
-      ])
-    end
-
-    it "offers ids that parse back to the model and its provider" do
-      ids = described_class.available_models.flat_map(&:last)
-      expect(ids.map { |id| LlmModels.ref(id).to_h }).to eq([
-        { model: "qwen3:8b", provider: :ollama },
-        { model: "gpt-5.4", provider: nil },
-        { model: "anthropic/claude-haiku-4.5", provider: nil }
-      ])
-    end
-  end
-
   describe "#destroy" do
     let!(:persisted_agent) { create(:orchestration_agent, name: "Emails::ClassifyAgent") }
 

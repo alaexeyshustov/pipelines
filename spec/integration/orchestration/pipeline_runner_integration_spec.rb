@@ -9,14 +9,12 @@
 # making cassette re-recording idempotent and safe after key rotation.
 # The `rm` step above is kept as belt-and-suspenders but is no longer load-bearing.
 #
-# LLM_TEST_BACKEND=ollama runs it against a local model instead of the cassette (see docs/local_models.md).
-#
 # KNOWN GAP: Multi-fiber fan-out (Sync + Async::Barrier with >1 fiber) is NOT tested here.
 # Single-step, single-action pipeline keeps Async::Barrier at degree-one.
 
 require "rails_helper"
 
-RSpec.describe Orchestration::PipelineRunner, :llm, type: :integration do
+RSpec.describe Orchestration::PipelineRunner, type: :integration do
   describe "classify single-step pipeline",
            vcr: {
              cassette_name: "orchestration/pipeline_runner/classify_only",
@@ -39,7 +37,7 @@ RSpec.describe Orchestration::PipelineRunner, :llm, type: :integration do
     let(:classify_agent_record) do
       create(:orchestration_agent,
              name: "Emails::ClassifyAgent",
-             model: LlmTestBackend.model_for("mistral-large-latest"),
+             model: "mistral-large-latest",
              output_schema: {
                "type" => "object",
                "properties" => {
@@ -95,8 +93,6 @@ RSpec.describe Orchestration::PipelineRunner, :llm, type: :integration do
     end
 
     it "has a committed cassette with at least one HTTP interaction" do
-      skip "no cassette is used against a live model" if LlmTestBackend.live?
-
       described_class.new(pipeline_run).run
       cassette_path = Rails.root.join(
         "spec/cassettes/orchestration/pipeline_runner/classify_only.yml"

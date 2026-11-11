@@ -4,7 +4,7 @@ module Evaluation
     end
 
     @experiment: Experiment
-    @model_ref: LlmModels::ModelRef
+    @model: String
 
     def self.call: (experiment: Experiment, ?model: String) -> Prompt
 

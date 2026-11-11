@@ -1,7 +1,5 @@
 require "rails_helper"
 
-# `:llm` examples run against a local model with LLM_TEST_BACKEND=ollama, which may not answer with a bare JSON
-# array; the rest pin the hosted request body or stub specific outputs.
 RSpec.describe Evaluation::SyntheticDatasetJob do
   let(:draft_token)   { "tok_xyz789" }
   let(:agent_name)    { "Emails::ClassifyAgent" }
@@ -69,17 +67,13 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
       end
     end
 
-    it "updates WizardDraft payload with complete status and dataset_id", :llm do
+    it "updates WizardDraft payload with complete status and dataset_id" do
       described_class.perform_now(**params)
 
       draft = wizard_draft.reload
       generation = draft.payload["dataset_generation"]
-      if LlmTestBackend.live? && generation["status"] == "error"
-        expect(generation["error_message"]).to be_present
-      else
-        expect(generation["status"]).to eq("complete")
-        expect(generation["dataset_id"]).to eq(Evaluation::Dataset.last.id)
-      end
+      expect(generation["status"]).to eq("complete")
+      expect(generation["dataset_id"]).to eq(Evaluation::Dataset.last.id)
     end
 
     it "sends agent instructions in the LLM request" do

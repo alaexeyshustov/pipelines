@@ -1,7 +1,5 @@
 require "rails_helper"
 
-# `:llm` examples run against a local model with LLM_TEST_BACKEND=ollama; the rest pin the hosted request body or
-# stub invalid output.
 RSpec.describe Evaluation::MetricExtractor do
   let(:agent_name) { "Emails::ClassifyAgent" }
   let(:instructions) { "You are an email classifier. Classify emails by subject." }
@@ -26,17 +24,14 @@ RSpec.describe Evaluation::MetricExtractor do
   end
 
   describe ".call" do
-    it "returns name/description hashes parsed from the structured output", :llm do
-      expected = if LlmTestBackend.live?
-        all(match("name" => be_a(String), "description" => be_a(String)))
-      else
-        eq([ { "name" => "classification_accuracy", "description" => "How accurately emails are classified" },
-             { "name" => "tag_relevance", "description" => "Whether suggested tags are relevant" } ])
-      end
-      expect(described_class.call(agent_name)).to expected
+    it "returns name/description hashes parsed from the structured output" do
+      expect(described_class.call(agent_name)).to eq(
+        [ { "name" => "classification_accuracy", "description" => "How accurately emails are classified" },
+          { "name" => "tag_relevance", "description" => "Whether suggested tags are relevant" } ]
+      )
     end
 
-    it "does not persist any metrics", :llm do
+    it "does not persist any metrics" do
       expect { described_class.call(agent_name) }.not_to change(Evaluation::Metric, :count)
     end
 
