@@ -1,5 +1,3 @@
-#!/usr/bin/env ruby
-
 begin
   gem 'dry-cli', '~> 1.1'
   gem 'sqlite3', '>= 2.1'
@@ -37,54 +35,58 @@ module DbHelper
   class Error < StandardError; end
 
   module Database
+    SCHEMA = <<~SQL
+      CREATE TABLE IF NOT EXISTS issues (
+        number INTEGER PRIMARY KEY,
+        title TEXT NOT NULL,
+        state TEXT NOT NULL,
+        branch TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS worktrees (
+        identifier TEXT PRIMARY KEY,
+        worktree_path TEXT NOT NULL,
+        ticket TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS index_worktrees_on_worktree_path
+        ON worktrees(worktree_path);
+
+      CREATE TABLE IF NOT EXISTS sandbox_containers (
+        identifier TEXT NOT NULL,
+        profile TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'created' CHECK(status IN ('created', 'active', 'finished')),
+        host_port INTEGER,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (identifier, profile)
+      );
+
+      CREATE INDEX IF NOT EXISTS index_sandbox_containers_on_identifier
+        ON sandbox_containers(identifier);
+
+      CREATE UNIQUE INDEX IF NOT EXISTS index_sandbox_containers_on_host_port
+        ON sandbox_containers(host_port) WHERE host_port IS NOT NULL;
+    SQL
+
     module_function
 
     def open
-      database_path = ENV.fetch(
+      database = SQLite3::Database.new(database_path)
+      database.busy_timeout = 5_000
+      database.execute_batch(SCHEMA)
+      database
+    end
+
+    def database_path
+      ENV.fetch(
         'DB_HELPER_DATABASE_PATH',
         File.join(File.dirname(File.realpath(__FILE__)), 'sandbox.sqlite')
       )
-
-      database = SQLite3::Database.new(database_path)
-      database.busy_timeout = 5_000
-      database.execute_batch(<<~SQL)
-        CREATE TABLE IF NOT EXISTS issues (
-          number INTEGER PRIMARY KEY,
-          title TEXT NOT NULL,
-          state TEXT NOT NULL,
-          branch TEXT NOT NULL,
-          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS worktrees (
-          identifier TEXT PRIMARY KEY,
-          worktree_path TEXT NOT NULL,
-          ticket TEXT,
-          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE INDEX IF NOT EXISTS index_worktrees_on_worktree_path
-          ON worktrees(worktree_path);
-
-        CREATE TABLE IF NOT EXISTS sandbox_containers (
-          identifier TEXT NOT NULL,
-          profile TEXT NOT NULL,
-          status TEXT NOT NULL DEFAULT 'created' CHECK(status IN ('created', 'active', 'finished')),
-          host_port INTEGER,
-          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          PRIMARY KEY (identifier, profile)
-        );
-
-        CREATE INDEX IF NOT EXISTS index_sandbox_containers_on_identifier
-          ON sandbox_containers(identifier);
-
-        CREATE UNIQUE INDEX IF NOT EXISTS index_sandbox_containers_on_host_port
-          ON sandbox_containers(host_port) WHERE host_port IS NOT NULL;
-      SQL
-      database
     end
   end
 
@@ -107,6 +109,10 @@ module DbHelper
       return status if CONTAINER_STATUSES.include?(status)
 
       raise Error, "Status must be one of: #{CONTAINER_STATUSES.join(', ')}."
+    end
+
+    def not_registered_error(identifier, profile)
+      Error.new("No sandbox container is registered for #{identifier} (#{profile}). Run init-worktree first.")
     end
   end
 
@@ -200,6 +206,16 @@ module DbHelper
     extend Dry::CLI::Registry
 
     class IssueToBranch < Dry::CLI::Command
+      UPSERT_ISSUE = <<~SQL
+        INSERT INTO issues (number, title, state, branch)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(number) DO UPDATE SET
+          title = excluded.title,
+          state = excluded.state,
+          branch = excluded.branch,
+          updated_at = CURRENT_TIMESTAMP;
+      SQL
+
       desc 'Resolve and cache a branch name for a GitHub issue'
 
       argument :issue, required: true, desc: 'Issue number, GH-<number>, or issue URL'
@@ -207,36 +223,38 @@ module DbHelper
       def call(issue:, **)
         number = Issue.number(Issue.normalize(issue))
         database = Database.open
-        cached_branch = database.get_first_value('SELECT branch FROM issues WHERE number = ? LIMIT 1;', [number])
+        puts cached_branch(database, number) || fetch_branch(database, number)
+      ensure
+        database&.close
+      end
 
-        if cached_branch&.match?(BRANCH_PATTERN)
-          puts cached_branch
-          return
-        end
+      private
 
+      def cached_branch(database, number)
+        branch = database.get_first_value('SELECT branch FROM issues WHERE number = ? LIMIT 1;', [ number ])
+        branch if branch&.match?(BRANCH_PATTERN)
+      end
+
+      def fetch_branch(database, number)
         details = Issue.fetch(number)
         branch = Issue.branch_for(details)
         raise Error, "Derived an invalid branch name: #{branch}" unless branch.match?(BRANCH_PATTERN)
 
-        database.execute(
-          <<~SQL,
-            INSERT INTO issues (number, title, state, branch)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(number) DO UPDATE SET
-              title = excluded.title,
-              state = excluded.state,
-              branch = excluded.branch,
-              updated_at = CURRENT_TIMESTAMP;
-          SQL
-          [number, details.fetch('title'), details.fetch('state'), branch]
-        )
-        puts branch
-      ensure
-        database&.close
+        database.execute(UPSERT_ISSUE, [ number, details.fetch('title'), details.fetch('state'), branch ])
+        branch
       end
     end
 
     class RegisterWorktree < Dry::CLI::Command
+      UPSERT_WORKTREE = <<~SQL
+        INSERT INTO worktrees (identifier, worktree_path, ticket)
+        VALUES (?, ?, ?)
+        ON CONFLICT(identifier) DO UPDATE SET
+          worktree_path = excluded.worktree_path,
+          ticket = excluded.ticket,
+          updated_at = CURRENT_TIMESTAMP;
+      SQL
+
       desc 'Register a sandbox worktree for an issue or scratch name, independent of any profile'
 
       argument :identifier, required: false, desc: 'GH-<number> or generated scratch name'
@@ -251,55 +269,42 @@ module DbHelper
           end
 
           remove_worktree_mapping(remove)
-          return
+        else
+          register_worktree_mapping(identifier, worktree_path, ticket)
         end
-
-        unless identifier && worktree_path
-          raise Error, 'Registration requires an identifier and a worktree path.'
-        end
-
-        identifier = Container.validate_identifier(identifier)
-        worktree_path = File.realpath(worktree_path)
-        if ticket && ticket != identifier
-          raise Error, 'Ticket must match the registry identifier.'
-        end
-
-        database = Database.open
-        database.execute(
-          <<~SQL,
-            INSERT INTO worktrees (identifier, worktree_path, ticket)
-            VALUES (?, ?, ?)
-            ON CONFLICT(identifier) DO UPDATE SET
-              worktree_path = excluded.worktree_path,
-              ticket = excluded.ticket,
-              updated_at = CURRENT_TIMESTAMP;
-          SQL
-          [identifier, worktree_path, ticket]
-        )
-      ensure
-        database&.close
       end
 
       private
 
-      def remove_worktree_mapping(worktree_path)
-        worktree_path = if File.exist?(worktree_path)
-                          File.realpath(worktree_path)
-                        else
-                          File.expand_path(worktree_path)
-                        end
+      def register_worktree_mapping(identifier, worktree_path, ticket)
+        raise Error, 'Registration requires an identifier and a worktree path.' unless identifier && worktree_path
+
+        identifier = Container.validate_identifier(identifier)
+        worktree_path = File.realpath(worktree_path)
+        raise Error, 'Ticket must match the registry identifier.' if ticket && ticket != identifier
+
         database = Database.open
-        identifiers = database.execute('SELECT identifier FROM worktrees WHERE worktree_path = ?;', [worktree_path]).flatten
+        database.execute(UPSERT_WORKTREE, [ identifier, worktree_path, ticket ])
+      ensure
+        database&.close
+      end
+
+      def remove_worktree_mapping(worktree_path)
+        worktree_path = File.exist?(worktree_path) ? File.realpath(worktree_path) : File.expand_path(worktree_path)
+        database = Database.open
+        identifiers = database.execute('SELECT identifier FROM worktrees WHERE worktree_path = ?;', [ worktree_path ]).flatten
         identifiers.each do |identifier|
-          database.execute('DELETE FROM sandbox_containers WHERE identifier = ?;', [identifier])
+          database.execute('DELETE FROM sandbox_containers WHERE identifier = ?;', [ identifier ])
         end
-        database.execute('DELETE FROM worktrees WHERE worktree_path = ?;', [worktree_path])
+        database.execute('DELETE FROM worktrees WHERE worktree_path = ?;', [ worktree_path ])
       ensure
         database&.close
       end
     end
 
     class GetWorktree < Dry::CLI::Command
+      SELECT_WORKTREE = "SELECT identifier, worktree_path, COALESCE(ticket, '') FROM worktrees"
+
       desc 'Get a registered sandbox worktree'
 
       argument :identifier, required: false, desc: 'GH-<number> or generated scratch name'
@@ -307,44 +312,43 @@ module DbHelper
       option :latest, type: :boolean, default: false, desc: 'Get the most recently registered worktree'
 
       def call(identifier: nil, worktree: nil, latest: false, **)
-        lookup_count = [identifier, worktree, latest].count { |lookup| lookup }
-        if lookup_count != 1
+        if [ identifier, worktree, latest ].count { |lookup| lookup } != 1
           raise Error, 'Provide exactly one of an identifier, --worktree, or --latest.'
         end
 
         database = Database.open
-        if identifier
-          identifier = Container.validate_identifier(identifier)
-          record = database.get_first_row(
-            "SELECT identifier, worktree_path, COALESCE(ticket, '') FROM worktrees WHERE identifier = ? LIMIT 1;",
-            [identifier]
-          )
-          missing_mapping = identifier
-        elsif worktree
-          worktree = File.realpath(worktree)
-          record = database.get_first_row(
-            "SELECT identifier, worktree_path, COALESCE(ticket, '') FROM worktrees WHERE worktree_path = ? LIMIT 1;",
-            [worktree]
-          )
-          missing_mapping = worktree
-        else
-          record = database.get_first_row(
-            "SELECT identifier, worktree_path, COALESCE(ticket, '') FROM worktrees " \
-              'ORDER BY updated_at DESC, rowid DESC LIMIT 1;'
-          )
-          missing_mapping = 'the latest worktree'
-        end
-        unless record
-          raise Error, "No sandbox worktree is registered for #{missing_mapping}. Run init-worktree first."
-        end
+        record, missing_mapping = find_record(database, identifier, worktree)
+        raise Error, "No sandbox worktree is registered for #{missing_mapping}. Run init-worktree first." unless record
 
         puts record.join("\t")
       ensure
         database&.close
       end
+
+      private
+
+      # Returns the matching row and how to describe the lookup when none matches.
+      def find_record(database, identifier, worktree)
+        if identifier
+          identifier = Container.validate_identifier(identifier)
+          [ database.get_first_row("#{SELECT_WORKTREE} WHERE identifier = ? LIMIT 1;", [ identifier ]), identifier ]
+        elsif worktree
+          worktree = File.realpath(worktree)
+          [ database.get_first_row("#{SELECT_WORKTREE} WHERE worktree_path = ? LIMIT 1;", [ worktree ]), worktree ]
+        else
+          latest = database.get_first_row("#{SELECT_WORKTREE} ORDER BY updated_at DESC, rowid DESC LIMIT 1;")
+          [ latest, 'the latest worktree' ]
+        end
+      end
     end
 
     class RegisterContainer < Dry::CLI::Command
+      UPSERT_CONTAINER = <<~SQL
+        INSERT INTO sandbox_containers (identifier, profile)
+        VALUES (?, ?)
+        ON CONFLICT(identifier, profile) DO UPDATE SET updated_at = CURRENT_TIMESTAMP;
+      SQL
+
       desc 'Register (or touch) the sandbox container lifecycle row for a worktree profile'
 
       argument :identifier, required: true, desc: 'GH-<number> or generated scratch name'
@@ -355,24 +359,19 @@ module DbHelper
         profile = Container.validate_profile(profile)
 
         database = Database.open
-        unless database.get_first_value('SELECT 1 FROM worktrees WHERE identifier = ? LIMIT 1;', [identifier])
+        unless database.get_first_value('SELECT 1 FROM worktrees WHERE identifier = ? LIMIT 1;', [ identifier ])
           raise Error, "No sandbox worktree is registered for #{identifier}. Run init-worktree first."
         end
 
-        database.execute(
-          <<~SQL,
-            INSERT INTO sandbox_containers (identifier, profile)
-            VALUES (?, ?)
-            ON CONFLICT(identifier, profile) DO UPDATE SET updated_at = CURRENT_TIMESTAMP;
-          SQL
-          [identifier, profile]
-        )
+        database.execute(UPSERT_CONTAINER, [ identifier, profile ])
       ensure
         database&.close
       end
     end
 
     class GetContainerStatus < Dry::CLI::Command
+      SELECT_STATUS = 'SELECT status FROM sandbox_containers WHERE identifier = ? AND profile = ? LIMIT 1;'
+
       desc 'Get the current lifecycle status for a sandbox container'
 
       argument :identifier, required: true, desc: 'GH-<number> or generated scratch name'
@@ -382,13 +381,8 @@ module DbHelper
         identifier = Container.validate_identifier(identifier)
         profile = Container.validate_profile(profile)
         database = Database.open
-        status = database.get_first_value(
-          'SELECT status FROM sandbox_containers WHERE identifier = ? AND profile = ? LIMIT 1;',
-          [identifier, profile]
-        )
-        unless status
-          raise Error, "No sandbox container is registered for #{identifier} (#{profile}). Run init-worktree first."
-        end
+        status = database.get_first_value(SELECT_STATUS, [ identifier, profile ])
+        raise Container.not_registered_error(identifier, profile) unless status
 
         puts status
       ensure
@@ -397,6 +391,9 @@ module DbHelper
     end
 
     class UpdateContainerStatus < Dry::CLI::Command
+      UPDATE_STATUS = 'UPDATE sandbox_containers SET status = ?, updated_at = CURRENT_TIMESTAMP ' \
+                      'WHERE identifier = ? AND profile = ?;'
+
       desc 'Update the lifecycle status for a sandbox container'
 
       argument :identifier, required: true, desc: 'GH-<number> or generated scratch name'
@@ -408,19 +405,16 @@ module DbHelper
         status = Container.validate_status(status)
         profile = Container.validate_profile(profile)
         database = Database.open
-        database.execute(
-          'UPDATE sandbox_containers SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE identifier = ? AND profile = ?;',
-          [status, identifier, profile]
-        )
-        if database.changes.zero?
-          raise Error, "No sandbox container is registered for #{identifier} (#{profile}). Run init-worktree first."
-        end
+        database.execute(UPDATE_STATUS, [ status, identifier, profile ])
+        raise Container.not_registered_error(identifier, profile) if database.changes.zero?
       ensure
         database&.close
       end
     end
 
     class ContainerPort < Dry::CLI::Command
+      SELECT_HOST_PORT = 'SELECT host_port FROM sandbox_containers WHERE identifier = ? AND profile = ? LIMIT 1;'
+
       desc 'Get the host port forwarded to a sandbox container, allocating one on first use'
 
       argument :identifier, required: true, desc: 'GH-<number> or generated scratch name'
@@ -430,31 +424,25 @@ module DbHelper
         identifier = Container.validate_identifier(identifier)
         profile = Container.validate_profile(profile)
         database = Database.open
+        record = database.get_first_row(SELECT_HOST_PORT, [ identifier, profile ])
+        raise Container.not_registered_error(identifier, profile) unless record
 
-        record = database.get_first_row(
-          'SELECT host_port FROM sandbox_containers WHERE identifier = ? AND profile = ? LIMIT 1;',
-          [identifier, profile]
-        )
-        unless record
-          raise Error, "No sandbox container is registered for #{identifier} (#{profile}). Run init-worktree first."
-        end
-
-        host_port = record.first
-        if host_port.nil?
-          host_port = allocate_port(database)
-          database.execute(
-            'UPDATE sandbox_containers SET host_port = ?, updated_at = CURRENT_TIMESTAMP ' \
-              'WHERE identifier = ? AND profile = ?;',
-            [host_port, identifier, profile]
-          )
-        end
-
-        puts host_port
+        puts record.first || assign_port(database, identifier, profile)
       ensure
         database&.close
       end
 
       private
+
+      def assign_port(database, identifier, profile)
+        host_port = allocate_port(database)
+        database.execute(
+          'UPDATE sandbox_containers SET host_port = ?, updated_at = CURRENT_TIMESTAMP ' \
+            'WHERE identifier = ? AND profile = ?;',
+          [ host_port, identifier, profile ]
+        )
+        host_port
+      end
 
       # The allocation is stored, so a container keeps the same port across
       # restarts and the URL stays stable.
@@ -463,15 +451,11 @@ module DbHelper
           'SELECT host_port FROM sandbox_containers WHERE host_port IS NOT NULL;'
         ).flatten
 
-        candidate = SANDBOX_PORT_RANGE.find do |port|
-          !reserved.include?(port) && bindable?(port)
-        end
-        unless candidate
-          raise Error, 'No free host port between ' \
-            "#{SANDBOX_PORT_RANGE.first} and #{SANDBOX_PORT_RANGE.last} for sandbox forwarding."
-        end
+        candidate = SANDBOX_PORT_RANGE.find { |port| !reserved.include?(port) && bindable?(port) }
+        return candidate if candidate
 
-        candidate
+        raise Error, 'No free host port between ' \
+          "#{SANDBOX_PORT_RANGE.first} and #{SANDBOX_PORT_RANGE.last} for sandbox forwarding."
       end
 
       # A port held by something outside this registry -- a host dev server,
@@ -488,59 +472,70 @@ module DbHelper
     end
 
     class CleanupFinished < Dry::CLI::Command
+      FINISHED_CONTAINERS = <<~SQL
+        SELECT sandbox_containers.identifier, sandbox_containers.profile, worktrees.worktree_path
+        FROM sandbox_containers
+        JOIN worktrees ON worktrees.identifier = sandbox_containers.identifier
+        WHERE sandbox_containers.status = 'finished'
+        ORDER BY sandbox_containers.updated_at, sandbox_containers.rowid;
+      SQL
+
+      ACTIVE_TICKETS = <<~SQL
+        SELECT sandbox_containers.identifier, sandbox_containers.profile, worktrees.ticket
+        FROM sandbox_containers
+        JOIN worktrees ON worktrees.identifier = sandbox_containers.identifier
+        WHERE sandbox_containers.status = 'active' AND worktrees.ticket IS NOT NULL
+        ORDER BY sandbox_containers.updated_at, sandbox_containers.rowid;
+      SQL
+
       desc 'Remove containers and worktrees whose lifecycle status is finished'
 
       def call(**)
         database = Database.open
         mark_closed_issues_finished(database)
-        records = database.execute(
-          <<~SQL
-            SELECT sandbox_containers.identifier, sandbox_containers.profile, worktrees.worktree_path
-            FROM sandbox_containers
-            JOIN worktrees ON worktrees.identifier = sandbox_containers.identifier
-            WHERE sandbox_containers.status = 'finished'
-            ORDER BY sandbox_containers.updated_at, sandbox_containers.rowid;
-          SQL
-        )
-
+        records = database.execute(FINISHED_CONTAINERS)
         if records.empty?
           puts 'No finished sandbox containers.'
-          return
+        else
+          cleanup_records(database, records)
         end
-
-        touched_identifiers = []
-        records.each do |identifier, profile, worktree_path|
-          container_name = container_name_for(profile, worktree_path)
-          cleanup_container(container_name)
-          database.execute(
-            'DELETE FROM sandbox_containers WHERE identifier = ? AND profile = ?;',
-            [identifier, profile]
-          )
-          touched_identifiers << identifier
-          puts "Cleaned up #{identifier} (#{profile})."
-        end
-
-        touched_identifiers.uniq.each do |identifier|
-          remaining = database.get_first_value(
-            'SELECT COUNT(*) FROM sandbox_containers WHERE identifier = ?;',
-            [identifier]
-          )
-          next unless remaining.zero?
-
-          worktree_path = database.get_first_value(
-            'SELECT worktree_path FROM worktrees WHERE identifier = ?;',
-            [identifier]
-          )
-          cleanup_worktree(worktree_path) if worktree_path
-          database.execute('DELETE FROM worktrees WHERE identifier = ?;', [identifier])
-          puts "Removed sandbox worktree for #{identifier}. Its Git branch was retained."
-        end
-        Worktree.prune
       ensure
         database&.close
       end
 
       private
+
+      def cleanup_records(database, records)
+        touched_identifiers = records.map do |identifier, profile, worktree_path|
+          cleanup_container_record(database, identifier, profile, worktree_path)
+        end
+        touched_identifiers.uniq.each { |identifier| cleanup_worktree_record(database, identifier) }
+        Worktree.prune
+      end
+
+      def cleanup_container_record(database, identifier, profile, worktree_path)
+        cleanup_container(container_name_for(profile, worktree_path))
+        database.execute(
+          'DELETE FROM sandbox_containers WHERE identifier = ? AND profile = ?;',
+          [ identifier, profile ]
+        )
+        puts "Cleaned up #{identifier} (#{profile})."
+        identifier
+      end
+
+      # Removes the worktree once none of its profiles' containers remain.
+      def cleanup_worktree_record(database, identifier)
+        remaining = database.get_first_value(
+          'SELECT COUNT(*) FROM sandbox_containers WHERE identifier = ?;',
+          [ identifier ]
+        )
+        return unless remaining.zero?
+
+        worktree_path = database.get_first_value('SELECT worktree_path FROM worktrees WHERE identifier = ?;', [ identifier ])
+        cleanup_worktree(worktree_path) if worktree_path
+        database.execute('DELETE FROM worktrees WHERE identifier = ?;', [ identifier ])
+        puts "Removed sandbox worktree for #{identifier}. Its Git branch was retained."
+      end
 
       def container_name_for(profile, worktree_path)
         "pipelines-#{profile}-#{File.basename(worktree_path)}"
@@ -549,31 +544,25 @@ module DbHelper
       # Refreshes the cached issue state from GitHub and finishes every active
       # container whose issue has been closed.
       def mark_closed_issues_finished(database)
-        active_tickets = database.execute(
-          <<~SQL
-            SELECT sandbox_containers.identifier, sandbox_containers.profile, worktrees.ticket
-            FROM sandbox_containers
-            JOIN worktrees ON worktrees.identifier = sandbox_containers.identifier
-            WHERE sandbox_containers.status = 'active' AND worktrees.ticket IS NOT NULL
-            ORDER BY sandbox_containers.updated_at, sandbox_containers.rowid;
-          SQL
-        )
+        active_tickets = database.execute(ACTIVE_TICKETS)
         return if active_tickets.empty?
 
-        closed_tickets = active_tickets.map { |_identifier, _profile, ticket| ticket }.uniq.select do |ticket|
+        closed_tickets = active_tickets.map(&:last).uniq.select do |ticket|
           refresh_issue_state(database, ticket) == 'CLOSED'
         end
 
         active_tickets.each do |identifier, profile, ticket|
-          next unless closed_tickets.include?(ticket)
-
-          database.execute(
-            "UPDATE sandbox_containers SET status = 'finished', updated_at = CURRENT_TIMESTAMP " \
-              'WHERE identifier = ? AND profile = ?;',
-            [identifier, profile]
-          )
-          puts "Marked #{identifier} (#{profile}) finished because its GitHub issue is closed."
+          mark_finished(database, identifier, profile) if closed_tickets.include?(ticket)
         end
+      end
+
+      def mark_finished(database, identifier, profile)
+        database.execute(
+          "UPDATE sandbox_containers SET status = 'finished', updated_at = CURRENT_TIMESTAMP " \
+            'WHERE identifier = ? AND profile = ?;',
+          [ identifier, profile ]
+        )
+        puts "Marked #{identifier} (#{profile}) finished because its GitHub issue is closed."
       end
 
       def refresh_issue_state(database, ticket)
@@ -581,7 +570,7 @@ module DbHelper
         state = Issue.fetch(number).fetch('state')
         database.execute(
           'UPDATE issues SET state = ?, updated_at = CURRENT_TIMESTAMP WHERE number = ?;',
-          [state, number]
+          [ state, number ]
         )
         state
       end

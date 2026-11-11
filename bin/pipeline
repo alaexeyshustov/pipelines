@@ -26,20 +26,39 @@ module PipelineCLI
       option :log_file,  desc: "Path to log file (default: log/pipeline.log)"
       option :date,      desc: "Date for the workflow (default: today)"
 
-      def call(pipeline:, model:, watch:, log_level: "info", log_file: nil, date: Date.today, **)
-        pipeline_class = case pipeline.downcase
-        when "applications", "jobs"
-                           Pipeline::ApplicationsWorkflow
-        when 'test'
-                           Pipeline::ApplicationsWorkflow # or define a proper test workflow
-        else
-                           raise ArgumentError, "Unknown pipeline: #{pipeline}"
-        end
+      # Dates and times are the machine's local ones, so "today" matches the user's calendar.
+      def call(pipeline:, model:, watch:, log_level: "info", log_file: nil, date: Time.now.getlocal.to_date, **)
+        pipeline_class = pipeline_class_for(pipeline)
+        logger = build_logger(log_level, log_file)
+        configure_ruby_llm(log_level, logger)
+        configure_mail_providers
 
+        loop do
+          run_once(pipeline_class, model: model, logger: logger, date: date)
+          break unless watch
+
+          wait_for_next_run(logger)
+        end
+      end
+
+      private
+
+      def pipeline_class_for(pipeline)
+        case pipeline.downcase
+        when "applications", "jobs", "test" # "test" has no workflow of its own yet
+          Pipeline::ApplicationsWorkflow
+        else
+          raise ArgumentError, "Unknown pipeline: #{pipeline}"
+        end
+      end
+
+      def build_logger(log_level, log_file)
         log_path = log_file || Rails.root.join("log/pipeline.log").to_s
         FileUtils.mkdir_p(File.dirname(log_path))
-        logger = Pipeline::Logger.new(level: log_level.to_sym, log_file: log_path)
+        Pipeline::Logger.new(level: log_level.to_sym, log_file: log_path)
+      end
 
+      def configure_ruby_llm(log_level, logger)
         RubyLLM.configure do |config|
           config.mistral_api_key   = ENV.fetch("MISTRAL_API_KEY", "")
           config.openai_api_key    = ENV.fetch("OPENAI_API_KEY", "")
@@ -48,21 +67,23 @@ module PipelineCLI
           config.log_level = log_level.to_sym
           config.logger    = logger
         end
+      end
 
+      def configure_mail_providers
         providers = ENV.fetch("MAIL_PROVIDERS", "gmail,yahoo").split(",").map(&:strip).reject(&:empty?)
         Emails.configure(**providers.to_h { |p| [ p.to_sym, {} ] })
+      end
 
-        loop do
-          logger.info "Starting pipeline (model: #{model})..."
-          result = pipeline_class.new(model: model, logger: logger, date: date).run
-          logger.info "Pipeline complete: #{result.inspect}"
+      def run_once(pipeline_class, model:, logger:, date:)
+        logger.info "Starting pipeline (model: #{model})..."
+        result = pipeline_class.new(model: model, logger: logger, date: date).run
+        logger.info "Pipeline complete: #{result.inspect}"
+      end
 
-          break unless watch
-
-          next_run = Time.now + WATCH_INTERVAL
-          logger.info "Watch mode: next run at #{next_run.strftime('%Y-%m-%d %H:%M:%S')}. Ctrl+C to stop."
-          sleep WATCH_INTERVAL
-        end
+      def wait_for_next_run(logger)
+        next_run = Time.now.getlocal + WATCH_INTERVAL
+        logger.info "Watch mode: next run at #{next_run.strftime('%Y-%m-%d %H:%M:%S')}. Ctrl+C to stop."
+        sleep WATCH_INTERVAL
       end
     end
 
@@ -73,20 +94,25 @@ module PipelineCLI
                           desc: "Comma-separated list of providers to test (e.g. gmail,yahoo)"
 
       def call(providers: [], **)
-        providers = providers.map(&:strip).reject(&:empty?)
+        providers.map(&:strip).reject(&:empty?).each { |provider| test_provider(provider) }
+      end
 
-        providers.each do |provider|
-          adapter_class = Emails::PROVIDERS.fetch(provider) do
-            puts "ERROR: Unknown provider '#{provider}'. Available: #{Emails::PROVIDERS.keys.join(', ')}"
-            exit 1
-          end
-          adapter_class.test_connection
-        rescue Google::Apis::AuthorizationError => e
-          puts "ERROR: Authorization failed for #{provider} - #{e.message}"
-          puts "  Try deleting the token file and re-running the test."
-          exit 1
-        rescue StandardError => e
-          puts "ERROR: Failed to connect to #{provider} - #{e.message}"
+      private
+
+      def test_provider(provider)
+        adapter_for(provider).test_connection
+      rescue Google::Apis::AuthorizationError => e
+        puts "ERROR: Authorization failed for #{provider} - #{e.message}"
+        puts "  Try deleting the token file and re-running the test."
+        exit 1
+      rescue StandardError => e
+        puts "ERROR: Failed to connect to #{provider} - #{e.message}"
+        exit 1
+      end
+
+      def adapter_for(provider)
+        Emails::PROVIDERS.fetch(provider) do
+          puts "ERROR: Unknown provider '#{provider}'. Available: #{Emails::PROVIDERS.keys.join(', ')}"
           exit 1
         end
       end
@@ -99,19 +125,23 @@ module PipelineCLI
                           desc: "Comma-separated list of providers to set up (e.g. gmail,yahoo)"
 
       def call(providers: [], **)
-        providers = providers.map(&:strip).reject(&:empty?)
-
-        providers.each do |provider|
-          case provider.downcase
-          when "gmail"
-            Emails::Adapters::GmailAdapter.reset
-            Emails::Adapters::GmailAdapter.setup
-          when "yahoo"
-            Emails::Adapters::YahooAdapter.setup
-          else
-            puts "No setup instructions for '#{provider}'. Please refer to provider documentation."
-          end
+        providers.map(&:strip).reject(&:empty?).each do |provider|
+          setup_provider(provider)
           puts
+        end
+      end
+
+      private
+
+      def setup_provider(provider)
+        case provider.downcase
+        when "gmail"
+          Emails::Adapters::GmailAdapter.reset
+          Emails::Adapters::GmailAdapter.setup
+        when "yahoo"
+          Emails::Adapters::YahooAdapter.setup
+        else
+          puts "No setup instructions for '#{provider}'. Please refer to provider documentation."
         end
       end
     end
@@ -124,29 +154,36 @@ module PipelineCLI
       option :filename, default: "interviews.csv", desc: "Filename inside the Gist"
 
       def call(token: nil, gist_id: nil, filename: "interviews.csv", **)
-        resolved_token = token || ENV["GITHUB_TOKEN"]
-        unless resolved_token
-          puts "ERROR: GitHub token required. Pass --token or set $GITHUB_TOKEN."
-          exit 1
-        end
-
-        rows    = Interview.as_rows
-        headers = Interview::COLUMN_NAMES
-        csv     = CSV.generate(headers: true) do |c|
-          c << headers
-          rows.each { |r| c << headers.map { |h| r[h] } }
-        end
-
+        resolved_token = require_token(token)
+        csv = interviews_csv
         uploader = GistUploader.new(
           token:    resolved_token,
           gist_id:  gist_id || ENV["GIST_ID"],
           filename: filename
         )
-        url = uploader.upload(csv)
-        puts "Uploaded: #{url}"
+        puts "Uploaded: #{uploader.upload(csv)}"
       rescue GistUploader::ApiError => e
         puts "Upload failed: #{e.message}"
         exit 1
+      end
+
+      private
+
+      def require_token(token)
+        resolved_token = token || ENV["GITHUB_TOKEN"]
+        return resolved_token if resolved_token
+
+        puts "ERROR: GitHub token required. Pass --token or set $GITHUB_TOKEN."
+        exit 1
+      end
+
+      def interviews_csv
+        headers = Interview::COLUMN_NAMES
+        rows    = Interview.as_rows
+        CSV.generate(headers: true) do |c|
+          c << headers
+          rows.each { |r| c << headers.map { |h| r[h] } }
+        end
       end
     end
 
