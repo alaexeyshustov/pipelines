@@ -19,7 +19,7 @@ A Rails 8.1 multi-agent pipeline management system. Integration with Gmail and Y
 
 - Ruby 4.0 (`rbenv install 4.0.9`)
 - SQLite 3 with dev headers (`brew install sqlite` / `apt-get install libsqlite3-dev`)
-- At least one LLM API key (Mistral is the default)
+- At least one LLM API key (Mistral is the default), or a local Ollama (see [docs/local_models.md](docs/local_models.md))
 
 ---
 
@@ -39,6 +39,7 @@ MISTRAL_API_KEY=
 OPENAI_API_KEY=
 GEMINI_API_KEY=
 ANTHROPIC_API_KEY=
+OLLAMA_API_BASE=          # optional local models, e.g. http://localhost:11434/v1; use ids like ollama/qwen3 (docs/local_models.md)
 
 # Vector search (Ollama; `ollama pull qwen3-embedding:0.6b`)
 OLLAMA_API_BASE=http://localhost:11434/v1
