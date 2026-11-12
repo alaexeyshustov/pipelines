@@ -2,10 +2,6 @@
 # development, test). The code here should be idempotent so that it can be executed at any point in every environment.
 # The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
 
-# == Applications Workflow Pipeline ==
-#
-# Mirrors Pipeline::ApplicationsWorkflow steps 1-8, plus two IngestionExecutor steps for fan-in joins.
-
 CLASSIFY_EMAILS_OUTPUT_SCHEMA = {
   "type"                 => "object",
   "additionalProperties" => false,
@@ -24,96 +20,6 @@ CLASSIFY_EMAILS_OUTPUT_SCHEMA = {
       }
     }
   }
-}.freeze
-
-FILTER_EMAILS_OUTPUT_SCHEMA = {
-  "type"                 => "object",
-  "additionalProperties" => false,
-  "required"             => [ "results" ],
-  "properties"           => {
-    "results" => {
-      "type"  => "array",
-      "items" => {
-        "type"                 => "object",
-        "additionalProperties" => false,
-        "required"             => [ "id", "tags" ],
-        "properties"           => {
-          "id"   => { "type" => "string" },
-          "tags" => { "type" => "array", "items" => { "type" => "string" } }
-        }
-      }
-    }
-  }
-}.freeze
-
-STORE_EMAILS_OUTPUT_SCHEMA = {
-  "type"                 => "object",
-  "additionalProperties" => false,
-  "required"             => [ "result" ],
-  "properties"           => {
-    "result" => {
-      "type"                 => "object",
-      "additionalProperties" => false,
-      "required"             => [ "rows_inserted", "ids" ],
-      "properties"           => {
-        "rows_inserted" => { "type" => "integer" },
-        "ids"           => { "type" => "array", "items" => { "type" => "integer" } }
-      }
-    }
-  }
-}.freeze
-
-FETCH_EMAILS_INPUT_MAPPING = {
-  "date"      => { "from" => "_initial", "path" => "date",      "optional" => true },
-  "providers" => { "from" => "_initial", "path" => "providers", "optional" => true }
-}.freeze
-
-CLASSIFY_EMAILS_INPUT_MAPPING = {
-  "emails" => { "from" => "fetch_emails", "path" => "emails" }
-}.freeze
-
-FILTER_EMAILS_INPUT_MAPPING = {
-  "topic"  => { "value" => "job applications" },
-  "emails" => { "from" => "classify_emails", "path" => "results" }
-}.freeze
-
-INGEST_EMAILS_INPUT_MAPPING = {
-  "emails"     => { "from" => "fetch_emails",  "path" => "emails" },
-  "results"    => { "from" => "filter_emails", "path" => "results" },
-  "operations" => { "value" => [
-    { "type" => "filter_by_ids", "source" => "emails", "ids_from" => "results", "output" => "emails" },
-    { "type" => "pick", "keys" => [ "emails" ] }
-  ] }
-}.freeze
-
-MAP_EMAILS_INPUT_MAPPING = {
-  "emails" => { "from" => "ingest_emails", "path" => "emails" }
-}.freeze
-
-STORE_EMAILS_INPUT_MAPPING = {
-  "label"  => { "value" => "applications" },
-  "table"  => { "value" => "application_mails" },
-  "emails" => { "from" => "map_emails", "path" => "result.emails" }
-}.freeze
-
-QUERY_EMAIL_RECORDS_INPUT_MAPPING = {
-  "table"         => { "value" => "application_mails" },
-  "column_name"   => { "value" => "id" },
-  "column_values" => { "from" => "store_emails", "path" => "result.ids" }
-}.freeze
-
-NORMALIZE_EMAILS_INPUT_MAPPING = {
-  "destination_table"    => { "value" => "application_mails" },
-  "columns_to_normalize" => { "value" => [ "company", "job_title" ] },
-  "records_to_normalize" => { "from" => "query_email_records", "path" => "application_mails" }
-}.freeze
-
-RECONCILE_EMAILS_INPUT_MAPPING = {
-  "destination_table"    => { "value" => "interviews" },
-  "matching_columns"     => { "value" => [ "company", "job_title" ] },
-  "statuses"             => { "value" => [ "pending_reply", "having_interviews", "rejected", "offer_received" ] },
-  "initial_status"       => { "value" => "pending_reply" },
-  "emails_to_reconcile"  => { "from" => "query_email_records", "path" => "application_mails" }
 }.freeze
 
 # Agent runtime configs — model, tools, and prompt.
@@ -144,73 +50,6 @@ AGENT_DEFINITIONS = {
         Tags should be concise and descriptive (e.g. "job", "application", "interview", "offer").
     PROMPT
   },
-  "Orchestration::Agents::EmailsFilter" => {
-    model:         LlmModels.emails_agent,
-    tools:         [ "Records::TempFileTool" ],
-    output_schema: FILTER_EMAILS_OUTPUT_SCHEMA,
-    prompt:        <<~PROMPT
-      You are an email filtering expert. Your job is to identify <emails> from a list related to a <topic>.
-
-      Input:
-      {
-        "topic": "The topic to filter by (e.g. 'job applications')",
-        "emails": [
-          {"id": "id of email", "subject": "Email subject line", "tags": ["list", "of", "classification", "tags"] }
-        ]
-      }
-
-      Steps:
-      3. Return ONLY emails tagged with ANY of tags related to the <topic>
-        (e.g. for "job applications" topic, tags might include "job", "application", "interview", "offer", etc.).
-
-      Always return a JSON object with a "results" key containing the filtered emails array:
-      {"results": [{"id": "id of email", ...}, ...]}
-
-      If no emails are related to the <topic>, return: {"results": []}
-    PROMPT
-  },
-  "Orchestration::Agents::EmailsMapper" => {
-    model:  LlmModels.emails_agent,
-    tools:  [ "Emails::GetTool", "Records::TempFileTool" ],
-    prompt: <<~PROMPT
-      Your task is to map raw email data to a structured format for database insertion.
-
-      Input:
-      {
-        "emails": ["list", "of", "emails", "to", "process"],
-      }
-
-      Steps:
-      1. For each email in <emails>, call get_email to fetch its full content — this is mandatory before mapping any field.
-      2. After reading the full email content, extract and map all required fields.
-      3. Base the "action" field strictly on the email body text, not just the subject line.
-    PROMPT
-  },
-  "Orchestration::Agents::RecordsStorer" => {
-    model:         LlmModels.emails_agent,
-    tools:         [ "Emails::GetLabelsTool", "Emails::CreateLabelTool", "Emails::AddLabelsTool",
-                    "Records::InsertRowsTool", "Records::ReadSchemaTool", "Emails::GetTool" ],
-    output_schema: STORE_EMAILS_OUTPUT_SCHEMA,
-    prompt:        <<~PROMPT
-      You are a emails processor. For each email you receive:
-
-      Input:
-      {
-        "label": "The label to add to the email in its provider (e.g. 'applications')",
-        "table": "The name of the database table to insert a row into (e.g. 'application_mails')",
-        "emails": [ "list", "of", "emails", "to", "process" ]
-      }
-
-      Steps:
-      1. Check if <label> already exists in the email provider using get_labels tool.
-        If not, create it using create_label tool.
-
-      2. Call add_labels to label the email in its provider:
-         If add_labels fails, skip labeling but continue processing.
-
-      3. Store a new row in the <table> with the mapped data using insert_rows.
-    PROMPT
-  },
   "Orchestration::Agents::RecordsNormalizer" => {
     model:  LlmModels.records_agent,
     tools:  [ "Records::ListRowsTool", "Records::ReadRowsTool", "Records::UpdateRowsTool",
@@ -239,149 +78,67 @@ AGENT_DEFINITIONS = {
       3. Update all rows where a normalized or propagated value was determined using update_rows, matching on row ID and updating only the affected columns.
          Skip rows where no new value could be determined.
     PROMPT
-  },
-  "Orchestration::Agents::RecordsReconciler" => {
-    model:  LlmModels.records_agent,
-    tools:  [ "Records::ReadSchemaTool", "Records::TempFileTool", "Records::SearchSimilarTool",
-              "Records::InsertRowsTool", "Records::UpdateRowsTool", "Records::ReadRowsTool" ],
-    prompt: <<~PROMPT
-      You are a job application lifecycle tracker. Update the <destination_table> records based on <emailsto_reconcile>.
-      For each of the given <emailsto_reconcile>.
-
-      Input:
-        {
-          "statuses": ["list", "of", "allowed", "status", "values"],
-          "initial_status"": "The status to set for new records",
-          "destination_table": "The name of the database table for normalization.",
-          "matching_columns": ["list", "of", "columns", "to", "match"] (e.g. ["company", "job_title"]),
-          "emailsto_reconcile": ["list", "of", "columns", "to", "normalize"] (e.g. ["company", "job_title"]),
-        }
-
-      Steps:
-      2. Read the schema of the <destination_table> to understand its structure.
-      3. Read the rows from <destination_table>.
-      4. Match <emailsto_reconcile> to existing records in <destination_table> based on the <matching_logic>.
-      5. Skip <emailsto_reconcile> that have already been processed.
-      6. Set 'unknown' for any blank or missing fields.
-      7. For each unique <matching_columns> in the new rows:
-
-          If NOT in <destination_table> → add_rows with:
-            status=<initial_status>.
-
-          If ALREADY in <destination_table> → update_rows (match on <matching_columns> via
-            column_name: "<matching_columns>", then use data to set fields in schema, and update status based on changes
-
-      Date fallback rule:
-        If applied_at is missing or blank for a record, but any other date column is set
-        (e.g. rejected_at, first_interview_at, second_interview_at, etc.), set applied_at
-        to the earliest non-null date among those columns.
-    PROMPT
-  },
-  "Orchestration::Agents::RecordsFiller" => {
-    model:  LlmModels.records_agent,
-    tools:  [ "Records::UpdateRowsTool", "Emails::GetTool" ],
-    prompt: <<~PROMPT
-      Your task is to fill missing values in the <destination_table> table using the original email content.
-
-      Input:
-        {
-          "emails": ["list", "of", "emails", "to", "process"],
-          "destination_table": "The name of the database table to update.",
-        }
-
-      Steps:
-      1. For each email in <emails>, always call get_email to fetch its full content — this is mandatory regardless of what fields appear to be populated.
-      2. A field is considered missing if its value is null, an empty string, "unknown", "n/a", or any other clear placeholder.
-      3. Call update_rows only for records where at least one field was successfully extracted. Skip records where nothing new was found.
-    PROMPT
   }
 }.freeze
 
-steps = [
-  { name: "Fetch Emails",                   kind: :service, agent_class: "Orchestration::Executors::EmailsFetcher",              sa_input_mapping: FETCH_EMAILS_INPUT_MAPPING    },
-  { name: "Classify Emails",                kind: :agent,   agent_name: "Orchestration::Agents::EmailsClassifier",               sa_input_mapping: CLASSIFY_EMAILS_INPUT_MAPPING },
-  { name: "Filter Emails",                  kind: :agent,   agent_name: "Orchestration::Agents::EmailsFilter",                 sa_input_mapping: FILTER_EMAILS_INPUT_MAPPING   },
-  { name: "Ingest Emails",                  kind: :service, agent_class: "Orchestration::Executors::Ingestion",   sa_input_mapping: INGEST_EMAILS_INPUT_MAPPING   },
-  { name: "Map Emails",                     kind: :agent,   agent_name: "Orchestration::Agents::EmailsMapper",                sa_input_mapping: MAP_EMAILS_INPUT_MAPPING      },
-  { name: "Store Emails",                   kind: :agent,   agent_name: "Orchestration::Agents::RecordsStorer",                 sa_input_mapping: STORE_EMAILS_INPUT_MAPPING    },
-  { name: "Query Email Records",            kind: :service, agent_class: "Orchestration::Executors::Query",       sa_input_mapping: QUERY_EMAIL_RECORDS_INPUT_MAPPING },
-  { name: "Normalize Emails",               kind: :agent,   agent_name: "Orchestration::Agents::RecordsNormalizer",             sa_input_mapping: NORMALIZE_EMAILS_INPUT_MAPPING },
-  { name: "Reconcile Emails to Interviews", kind: :agent,   agent_name: "Orchestration::Agents::RecordsReconciler",             sa_input_mapping: RECONCILE_EMAILS_INPUT_MAPPING },
-  { name: "Export to Gist",                 kind: :service, agent_class: "Orchestration::Executors::InterviewsGistExporter",     sa_input_mapping: {}                             }
-]
+# RecordsFiller filled interview rows from ApplicationMail emails, which are gone (GH #215). An agent still used by an
+# action is kept (restrict_with_error), so a hand-built pipeline is not broken.
+Orchestration::Agent.find_by(name: "Orchestration::Agents::RecordsFiller")&.destroy
 
-Orchestration::Action.where(name: "Merge Email Records").destroy_all
-
-action_records = steps.map do |attrs|
-  agent_record = if attrs[:kind] == :agent
-    agent_config = AGENT_DEFINITIONS[attrs[:agent_name]] || {}
-    Orchestration::Agent.find_or_initialize_by(name: attrs[:agent_name]).tap do |a|
-      a.model         = agent_config[:model]         if agent_config[:model].present?
-      a.tools         = agent_config[:tools]         if agent_config[:tools].present?
-      a.prompt        = agent_config[:prompt]        if agent_config[:prompt].present?
-      a.output_schema = agent_config[:output_schema] if agent_config.key?(:output_schema)
-      a.save!
-    end
-  end
-
-  Orchestration::Action.find_or_initialize_by(name: attrs[:name]).tap do |a|
-    a.kind        = attrs[:kind]
-    a.agent       = agent_record
-    a.agent_class = attrs[:agent_class]
-    a.save!
-  end
+# The legacy "Applications Workflow" pipeline was replaced by the Email Ingestion pipeline (ADR 0013).
+Orchestration::Pipeline.find_by(name: "Applications Workflow")&.tap do |legacy|
+  legacy.pipeline_runs.destroy_all
+  legacy.steps.destroy_all
+  legacy.destroy!
 end
 
-APPLICATIONS_WORKFLOW_INITIAL_INPUT_SCHEMA = {
-  "type"       => "object",
-  "required"   => [ "date", "providers" ],
-  "properties" => {
-    "date"      => { "type" => "string", "format" => "date" },
-    "providers" => {
-      "type"     => "array",
-      "minItems" => 1,
-      "items"    => { "type" => "string", "enum" => [ "gmail", "yahoo" ] }
-    }
-  }
-}.freeze
-
-pipeline = Orchestration::Pipeline.find_or_create_by!(name: "Applications Workflow") do |p|
-  p.description          = "Classifies, filters, maps, stores, normalizes and reconciles job-application emails."
-  p.enabled              = true
-  p.initial_input_schema = APPLICATIONS_WORKFLOW_INITIAL_INPUT_SCHEMA
+# Nightly full scan of the whitelisted Drive folders (Setting "drive_folder_ids") into tagged Documents.
+drive_action = Orchestration::Action.find_or_initialize_by(name: "Sync Drive Documents").tap do |a|
+  a.kind        = :service
+  a.agent_class = "Orchestration::Executors::DriveDocumentsSync"
+  a.save!
 end
 
-pipeline.update!(initial_input_schema: APPLICATIONS_WORKFLOW_INITIAL_INPUT_SCHEMA)
+drive_pipeline = Orchestration::Pipeline.find_or_create_by!(name: "Drive Documents Sync") do |p|
+  p.description     = "Scans the whitelisted Google Drive folders and turns new or changed files into tagged Documents."
+  p.enabled         = true
+  p.cron_expression = "0 3 * * *"
+end
 
-# Clear and recreate steps to ensure they match the list in db/seeds.rb
-# This is needed because the number and order of steps can change.
-# Pipeline runs must be cleared first — their action_runs reference step_actions (FK).
-pipeline.pipeline_runs.destroy_all
-pipeline.steps.destroy_all
-
-steps.each_with_index do |step_attrs, index|
-  action = action_records[index]
-  step = pipeline.steps.create!(
-    name:     action.name,
-    position: index + 1
-  )
-
+if drive_pipeline.steps.empty?
+  drive_step = drive_pipeline.steps.create!(name: drive_action.name, position: 1)
   Orchestration::StepAction.create!(
-    step:          step,
-    action:        action,
-    position:      1,
-    output_key:    action.name.parameterize(separator: "_"),
-    input_mapping: step_attrs[:sa_input_mapping]
+    step: drive_step, action: drive_action, position: 1, output_key: "sync_drive_documents", input_mapping: {}
   )
 end
 
-# Create agents not part of any pipeline step.
-%w[Orchestration::Agents::RecordsFiller].each do |name|
-  config = AGENT_DEFINITIONS.fetch(name)
+# Incremental INBOX sync of Gmail and Yahoo into Emails (ADR 0013); a provider without credentials is skipped.
+email_sync_action = Orchestration::Action.find_or_initialize_by(name: "Sync Inbox Emails").tap do |a|
+  a.kind        = :service
+  a.agent_class = "Orchestration::Executors::EmailsSync"
+  a.save!
+end
+
+email_pipeline = Orchestration::Pipeline.find_or_create_by!(name: "Email Ingestion") do |p|
+  p.description     = "Pulls new INBOX mail from Gmail and Yahoo into Emails."
+  p.enabled         = true
+  p.cron_expression = "*/30 * * * *"
+end
+
+if email_pipeline.steps.empty?
+  email_step = email_pipeline.steps.create!(name: email_sync_action.name, position: 1)
+  Orchestration::StepAction.create!(
+    step: email_step, action: email_sync_action, position: 1, output_key: "sync_inbox_emails", input_mapping: {}
+  )
+end
+
+# Agents are seeded independently of any pipeline.
+AGENT_DEFINITIONS.each do |name, config|
   Orchestration::Agent.find_or_initialize_by(name: name).tap do |a|
-    a.model  = config[:model]  if config[:model].present?
-    a.tools  = config[:tools]  if config[:tools].present?
-    a.prompt = config[:prompt] if config[:prompt].present?
+    a.model         = config[:model]         if config[:model].present?
+    a.tools         = config[:tools]         if config[:tools].present?
+    a.prompt        = config[:prompt]        if config[:prompt].present?
+    a.output_schema = config[:output_schema] if config.key?(:output_schema)
     a.save!
   end
 end
@@ -394,3 +151,7 @@ AGENT_DEFINITIONS.each_key do |agent_name|
   result = Evaluation::DatasetSeeder.call(agent_name: agent_name, sample_size: 20)
   Rails.logger.debug { "Dataset '#{result.agent_name}': #{result.created} created, #{result.skipped} skipped." }
 end
+
+# == Tags and Subtags ==
+
+Tag.seed_defaults!

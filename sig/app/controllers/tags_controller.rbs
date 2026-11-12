@@ -1,0 +1,6 @@
+class TagsController < ApplicationController
+  @tags: ActiveRecord::Relation
+  @form_errors: Hash[Integer, ActiveModel::Errors]
+
+  def index: () -> void
+end

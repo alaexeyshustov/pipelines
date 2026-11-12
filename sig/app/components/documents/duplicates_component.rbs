@@ -1,0 +1,17 @@
+module Documents
+  class DuplicatesComponent < ViewComponent::Base
+    @document: Document
+    @duplicates: Array[DocumentDuplicate] | ActiveRecord::Relation
+
+    def initialize: (document: Document, duplicates: Array[DocumentDuplicate] | ActiveRecord::Relation) -> void
+    def render?: () -> bool
+
+    private
+
+    attr_reader document: Document
+    attr_reader duplicates: Array[DocumentDuplicate] | ActiveRecord::Relation
+
+    def similarity: (DocumentDuplicate duplicate) -> String
+    def url: (DocumentDuplicate duplicate, Symbol action) -> String
+  end
+end

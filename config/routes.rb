@@ -13,16 +13,35 @@ Rails.application.routes.draw do
       post :batch
     end
   end
-  resources :application_mails do
-    collection do
-      post :batch
-    end
-  end
   resources :interviews do
     collection do
       post :batch
       post :export_gist
     end
+  end
+
+  resources :emails, only: [ :show ] do
+    resources :taggings, only: [ :create, :destroy ]
+  end
+
+  resources :documents, only: [ :index, :show ] do
+    get :download, on: :member
+    resources :duplicates, only: [], controller: "document_duplicates" do
+      member do
+        patch :confirm
+        patch :dismiss
+      end
+    end
+    resources :taggings, only: [ :create, :destroy ]
+  end
+
+  get "search", to: "searches#show"
+  # One page per fixed tag (Tag::NAMES): /tag_pages/job_application -> TagPages::JobApplicationController.
+  namespace :tag_pages do
+    Tag::NAMES.each { |name| get name, to: "#{name}#show", as: name }
+  end
+  resources :tags, only: [ :index ] do
+    resources :subtags, only: [ :create ]
   end
 
   namespace :evaluation do

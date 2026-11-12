@@ -1,0 +1,5 @@
+class Document
+  class EmbedJob < ApplicationJob
+    def perform: (Integer document_id) -> void
+  end
+end

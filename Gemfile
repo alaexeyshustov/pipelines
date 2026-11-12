@@ -3,6 +3,7 @@ source "https://rubygems.org"
 gem "rails", "~> 8.1.4"
 gem "sqlite3", ">= 2.1"
 gem "sqlite-vec"
+gem "neighbor"
 
 gem "aasm", "~> 5.5"
 gem "view_component", "~> 4.6"
@@ -86,3 +87,5 @@ end
 gem "view_primitives", "= 0.2.4"
 
 gem "tailwind_merge", "~> 1.5"
+
+gem "rubyzip", "~> 3.7"

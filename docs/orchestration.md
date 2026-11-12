@@ -29,6 +29,10 @@ Orchestration Agents (`Orchestration::Agent`) are restricted to specific tool na
 
 Tools must be valid Ruby classes that can be constantized.
 
+## Service steps
+
+Service actions (`kind: service`) run a class from `Orchestration::ServiceRegistry` (`lib/orchestration/executors/`). Example: "Email Ingestion" (cron `*/30 * * * *`) runs `Orchestration::Executors::EmailsSync`, which calls `Email::SyncInboxJob` for `gmail` and `yahoo`. The ActionRun output is `{ "gmail" => {mode, fetched, stored, duplicates, failed, enqueued}, "yahoo" => ... }` (`enqueued` is 0 until processing is wired in); a provider without credentials is `{ "skipped" => true, "reason" => "no credentials" }`. A failing provider does not stop the other; afterwards the step raises `ProviderFailure`. A failed ActionRun stores no output, only its error text, so that error carries the per-provider output as JSON.
+
 ## Configuration
 
 Pipelines and Actions can be configured via the Web UI:

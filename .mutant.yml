@@ -18,6 +18,7 @@ jobs: 4
 includes:
   - app/agents
   - app/controllers
+  - app/forms
   - app/helpers
   - app/jobs
   - app/models
@@ -32,15 +33,25 @@ matcher:
   subjects:
     - Application*
     - Emails*
+    - Email*
+    - Document*
+    - DocumentDuplicate*
+    - Embedding*
+    - Embeddings*
+    - Tag*
+    - Tags*
+    - TagPages*
+    - Subtag*
+    - Tagging*
+    - Taggable*
+    - FtsSearchable*
+    - Embeddable*
+    - Interviews*
     - Records*
     - Orchestration*
     - Interview*
-    - EmailVector*
-    - SqliteVecExtension*
     - Evaluation::ActivePromptResolver*
   ignore:
-    - ApplicationMailsSchema*
-    - Pipeline*
     # Value-object DTOs (Data.define) and the null-object resolver carry no
     # branching logic to protect -- mutant only surfaces equivalent mutants
     # here (e.g. flipping a field name in an accessor), so they're scoped out
@@ -55,6 +66,7 @@ matcher:
     # GmailAdapter/YahooAdapter wrap Google::Apis/Net::IMAP calls; GmailAuth opens a raw TCPServer/HTTP OAuth callback listener.
     - Emails::Adapters::GmailAdapter*
     - Emails::Adapters::YahooAdapter*
+    - Emails::Adapters::DriveFileFetcher*
     - Emails::GmailAuth*
     # ImapBodyParser, GmailBodyExtractor, GmailPaginator, GmailMessageParser, YahooMessageParser were
     # previously (and incorrectly) ignored as "network noise" -- they are pure MIME/header-parsing and
@@ -65,7 +77,6 @@ matcher:
     - Emails::ClassifyTool*
     # Controllers: UI routing layer, low mutation testing value
     - ApplicationController*
-    - ApplicationMailsController*
     - InterviewsController*
     - Orchestration::ActionsController*
     - Orchestration::AgentsController*

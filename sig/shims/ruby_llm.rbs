@@ -60,8 +60,24 @@ module RubyLLM
     def find: (String model_id, ?provider: String?) -> ModelInfo
   end
 
+  class Embedding
+    # One vector per text: callers here always embed an array of texts (a single String returns one flat vector).
+    def vectors: () -> Array[Array[Float]]
+  end
+
+  def self.embed: (String | Array[String] text, ?model: String?, ?provider: Symbol?, ?assume_model_exists: bool, ?dimensions: Integer?) -> Embedding
   def self.models: () -> Models
   def self.chat: (?model: String?) -> Chat
+
+  class Attachment
+    def self.new: (IO | StringIO | String source, ?filename: String?) -> instance
+  end
+
+  class OCR
+    def markdown: () -> String
+  end
+
+  def self.ocr: (Attachment | String file, ?model: String?, ?provider: Symbol?, ?assume_model_exists: bool) -> OCR
 end
 
 module Schematist

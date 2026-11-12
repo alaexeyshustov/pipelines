@@ -1,0 +1,37 @@
+<%= render UI::PageHeaderComponent.new(title: "Search") %>
+
+<%= form_with url: search_path, method: :get, class: "mb-4" do |f| %>
+  <%= f.search_field :q, value: @query, placeholder: "Search emails and documents", class: "border rounded px-3 py-1 w-full max-w-md" %>
+<% end %>
+
+<% if @query.blank? %>
+  <p class="text-gray-400 text-sm">Enter a search term to search emails and documents.</p>
+<% elsif @email_hits.empty? && @document_hits.empty? %>
+  <p class="text-gray-400 text-sm">No results for "<%= @query %>".</p>
+<% else %>
+  <% if @email_hits.any? %>
+    <h2 class="font-semibold mt-4 mb-2">Emails</h2>
+    <ul class="space-y-3">
+      <% @email_hits.each do |hit| %>
+        <li>
+          <%= link_to hit.email.subject, email_path(hit.email), class: "font-medium text-blue-600" %>
+          <span class="text-xs text-gray-500"><%= hit.email.from_address %></span>
+          <%= render UI::HighlightedSnippetComponent.new(snippet: hit.snippet) %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <% if @document_hits.any? %>
+    <h2 class="font-semibold mt-6 mb-2">Documents</h2>
+    <ul class="space-y-3">
+      <% @document_hits.each do |hit| %>
+        <li>
+          <%= link_to hit.document.title, document_path(hit.document), class: "font-medium text-blue-600" %>
+          <span class="text-xs text-gray-500"><%= hit.document.mime_type %></span>
+          <%= render UI::HighlightedSnippetComponent.new(snippet: hit.snippet) %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+<% end %>

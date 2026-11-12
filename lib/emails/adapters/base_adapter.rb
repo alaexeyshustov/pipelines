@@ -39,6 +39,48 @@ module Emails
       def create_label(name:)
         raise NotImplementedError, "#{self.class}#create_label is not implemented"
       end
+
+      # Inbox sync (Email::SyncInboxJob), attachments and mailbox identity. Gmail implements the history/id readers,
+      # attachments and #profile; Yahoo (IMAP) the UID readers and #account/#inbox_status.
+      def attachment(message_id, attachment_id)
+        raise NotImplementedError, "#{self.class}#attachment is not implemented"
+      end
+
+      def attachments(message_id)
+        raise NotImplementedError, "#{self.class}#attachments is not implemented"
+      end
+
+      def profile
+        raise NotImplementedError, "#{self.class}#profile is not implemented"
+      end
+
+      def inbox_message_ids_since(history_id)
+        raise NotImplementedError, "#{self.class}#inbox_message_ids_since is not implemented"
+      end
+
+      def inbox_message_ids_after(date)
+        raise NotImplementedError, "#{self.class}#inbox_message_ids_after is not implemented"
+      end
+
+      def account
+        raise NotImplementedError, "#{self.class}#account is not implemented"
+      end
+
+      def inbox_status
+        raise NotImplementedError, "#{self.class}#inbox_status is not implemented"
+      end
+
+      def inbox_uids_after(last_uid)
+        raise NotImplementedError, "#{self.class}#inbox_uids_after is not implemented"
+      end
+
+      def inbox_uids_since(date)
+        raise NotImplementedError, "#{self.class}#inbox_uids_since is not implemented"
+      end
+
+      def fetch_message(message_id)
+        raise NotImplementedError, "#{self.class}#fetch_message is not implemented"
+      end
     end
   end
 end

@@ -11,12 +11,14 @@ module Emails
     @output: IO
 
     def initialize: (credentials_path: String, token_path: String, scope: Array[String], ?output: IO) -> void
-    def credentials: () -> Signet::OAuth2::Client
+    def credentials: (?interactive: bool) -> Signet::OAuth2::Client
     def authorization_url: (callback_uri: String) -> String
     def exchange_code: (code: String, callback_uri: String) -> Signet::OAuth2::Client
 
     private
 
+    def stored_credentials: () -> Signet::OAuth2::Client
+    def interactive_credentials: () -> Signet::OAuth2::Client
     def setup_tcp_auth_context: () -> [ TCPServer, String, Google::Auth::UserAuthorizer ]
     def perform_interactive_auth: (Google::Auth::UserAuthorizer authorizer, TCPServer tcp_server, String callback_uri) -> Signet::OAuth2::Client
     def require_interactive_auth!: (TCPServer tcp_server, String url) -> void

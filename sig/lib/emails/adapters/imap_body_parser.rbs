@@ -7,13 +7,13 @@ module Emails
 
       def initialize: (Mail::Message mail) -> void
       def body: () -> String
+      def html: () -> String?
 
       private
 
       def extract_body: (Mail::Message | Mail::Part mail) -> String
-      def extract_multipart_body: (Mail::Message | Mail::Part mail) -> String
+      def text_parts: ((Mail::Message | Mail::Part) mail, String mime_type) -> Array[Mail::Message | Mail::Part]
       def decode_part: ((Mail::Message | Mail::Part)? part) -> String
-      def strip_html: (String html) -> String
     end
   end
 end

@@ -1,0 +1,16 @@
+class DocumentsController < ApplicationController
+  @pagy: Pagy
+  @hits: Array[Document::SearchQuery::Hit]
+  @document: Document
+  @taggings: ActiveRecord::Relation
+  @tags: ActiveRecord::Relation
+  @duplicates: ActiveRecord::Relation
+
+  def index: () -> void
+  def show: () -> void
+  def download: () -> void
+
+  private
+
+  def send_original: (Document document) -> void
+end

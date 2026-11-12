@@ -1,0 +1,36 @@
+module Interviews
+  class EmailExtractor
+    class Result
+      attr_reader interview: Interview?
+
+      def self.new: (interview: Interview?) -> instance
+    end
+
+    TAG: String
+    INSTRUCTIONS: String
+    MAX_CHARS: Integer
+    INTERVIEW_SLOTS: Array[Symbol]
+    STATUS_RANK: Hash[String, Integer]
+    ACTION_STATUS: Hash[String, String]
+
+    @email: Email
+
+    def self.call: (Email email) -> Result
+
+    def initialize: (Email email) -> void
+    def call: () -> Result
+
+    private
+
+    def extract_and_upsert: () -> Interview?
+    def extract: () -> json_object
+    def prompt: () -> String
+    def upsert: (String company, String job_title, String action) -> Interview
+    def find_or_create: (String company, String job_title) -> Interview
+    def existing_interview: (String company, String job_title) -> Interview?
+    def apply: (Interview interview, String action) -> void
+    def advance: (String? current, String? target) -> String?
+    def record_date: (Interview interview, String action, Date date) -> void
+    def add_interview_date: (Interview interview, Date date) -> void
+  end
+end

@@ -1,0 +1,16 @@
+class TaggingsController < ApplicationController
+  @taggable: Email | Document
+  @form_errors: ActiveModel::Errors
+  @taggings: ActiveRecord::Relation
+  @tags: ActiveRecord::Relation
+  @duplicates: ActiveRecord::Relation
+
+  def create: () -> void
+  def destroy: () -> void
+
+  private
+
+  def set_taggable: () -> void
+  def tagging_params: () -> ActionController::Parameters
+  def render_taggable_show: () -> void
+end

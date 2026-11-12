@@ -1,0 +1,31 @@
+class DocumentDuplicate < ApplicationRecord
+  DEFAULT_THRESHOLD: Float
+
+  def document: () -> Document
+  def document=: (Document) -> Document
+  def document_id: () -> Integer
+  def duplicate: () -> Document
+  def duplicate=: (Document) -> Document
+  def duplicate_id: () -> Integer
+  def similarity: () -> Float
+  def similarity=: (Float) -> Float
+  def status: () -> String
+  def pending?: () -> bool
+  def confirmed?: () -> bool
+  def dismissed?: () -> bool
+  def confirmed!: () -> bool
+  def dismissed!: () -> bool
+
+  def self.threshold: () -> Float
+  def self.involving: (Document document) -> ActiveRecord::Relation
+  def self.candidates_for: (Document document) -> ActiveRecord::Relation
+  def self.flag_all!: (Document document, Array[[ Document, Float ]] matches) -> Array[DocumentDuplicate]
+  def self.flag_known!: (Hash[[ Integer, Integer ], DocumentDuplicate] existing, Document document, Document other, Float similarity) -> DocumentDuplicate
+  def self.flag!: (Document first, Document second, similarity: Float) -> DocumentDuplicate
+
+  def other: (Document from) -> Document
+
+  private
+
+  def distinct_documents: () -> void
+end

@@ -307,7 +307,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
       allow(ENV).to receive(:[]).with('YAHOO_APP_PASSWORD').and_return(nil)
 
       expect { described_class.from_env(username: nil, password: nil) }
-        .to raise_error(/Missing Yahoo credentials/)
+        .to raise_error(Emails::NotConfigured, /Missing Yahoo credentials/)
     end
   end
 

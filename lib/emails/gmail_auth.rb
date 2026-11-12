@@ -17,17 +17,13 @@ module Emails
       @output           = output
     end
 
-    def credentials
-      tcp_server, callback_uri, authorizer = setup_tcp_auth_context
-      creds = authorizer.get_credentials(USER_ID)
+    # The stored credentials. With none stored this raises Emails::NotConfigured, so jobs and web requests never
+    # block on a browser flow. Only the CLI setup path passes interactive: true, which opens the browser and waits
+    # for the OAuth callback on a local socket.
+    def credentials(interactive: false)
+      return stored_credentials unless interactive
 
-      if creds.nil?
-        creds = perform_interactive_auth(authorizer, tcp_server, callback_uri)
-      else
-        tcp_server.close
-      end
-
-      creds
+      interactive_credentials
     end
 
     def authorization_url(callback_uri:)
@@ -41,6 +37,25 @@ module Emails
     end
 
     private
+
+    def stored_credentials
+      # The callback URI is only used by the authorization flow, which this path never starts.
+      build_authorizer(callback_uri: "http://localhost").get_credentials(USER_ID) ||
+        raise(Emails::NotConfigured, "No stored Google token at #{@token_path}: run `bin/pipeline setup` to authorize")
+    end
+
+    def interactive_credentials
+      tcp_server, callback_uri, authorizer = setup_tcp_auth_context
+      creds = authorizer.get_credentials(USER_ID)
+
+      if creds.nil?
+        creds = perform_interactive_auth(authorizer, tcp_server, callback_uri)
+      else
+        tcp_server.close
+      end
+
+      creds
+    end
 
     def setup_tcp_auth_context
       tcp_server   = TCPServer.new("localhost", 0)

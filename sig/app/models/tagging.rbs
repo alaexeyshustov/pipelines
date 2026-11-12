@@ -1,0 +1,19 @@
+class Tagging < ApplicationRecord
+  SOURCES: Array[String]
+
+  def source: () -> String?
+  def source=: (String?) -> String?
+  def confidence: () -> Float?
+  def confidence=: (Float?) -> Float?
+  def tag_id: () -> Integer?
+  def tag: () -> Tag
+  def tag=: (Tag) -> Tag
+  def subtag: () -> Subtag?
+  def subtag=: (Subtag?) -> Subtag?
+  def taggable: () -> ApplicationRecord
+  def taggable=: (ApplicationRecord) -> ApplicationRecord
+
+  private
+
+  def subtag_belongs_to_tag: () -> void
+end

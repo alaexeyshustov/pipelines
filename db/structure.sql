@@ -1,18 +1,7 @@
 CREATE TABLE IF NOT EXISTS "schema_migrations" ("version" varchar NOT NULL PRIMARY KEY);
 CREATE TABLE IF NOT EXISTS "ar_internal_metadata" ("key" varchar NOT NULL PRIMARY KEY, "value" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
-CREATE TABLE IF NOT EXISTS "application_mails" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "date" date NOT NULL, "provider" varchar NOT NULL, "email_id" varchar NOT NULL, "company" varchar, "job_title" varchar, "action" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
-CREATE UNIQUE INDEX "index_application_mails_on_email_id" ON "application_mails" ("email_id") /*application='ApplicationPipeline'*/;
-CREATE INDEX "index_application_mails_on_date" ON "application_mails" ("date") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "interviews" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "company" varchar NOT NULL, "job_title" varchar NOT NULL, "status" varchar DEFAULT 'pending_reply', "applied_at" date, "rejected_at" date, "first_interview_at" date, "second_interview_at" date, "third_interview_at" date, "fourth_interview_at" date, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_interviews_on_company_and_job_title" ON "interviews" ("company", "job_title") /*application='ApplicationPipeline'*/;
-CREATE VIRTUAL TABLE email_vectors USING vec0(
-  email_id TEXT PRIMARY KEY,
-  embedding FLOAT[1536]
-);
-CREATE TABLE IF NOT EXISTS "email_vectors_info" (key text primary key, value any);
-CREATE TABLE IF NOT EXISTS "email_vectors_chunks"(chunk_id INTEGER PRIMARY KEY AUTOINCREMENT,size INTEGER NOT NULL,validity BLOB NOT NULL,rowids BLOB NOT NULL);
-CREATE TABLE IF NOT EXISTS "email_vectors_rowids"(rowid INTEGER PRIMARY KEY AUTOINCREMENT,id TEXT UNIQUE NOT NULL,chunk_id INTEGER,chunk_offset INTEGER);
-CREATE TABLE IF NOT EXISTS "email_vectors_vector_chunks00"(rowid PRIMARY KEY,vectors BLOB NOT NULL);
 CREATE TABLE IF NOT EXISTS "ruby_llm_models" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "model_id" varchar NOT NULL, "name" varchar NOT NULL, "provider" varchar NOT NULL, "family" varchar, "model_created_at" datetime(6), "context_window" integer, "max_output_tokens" integer, "knowledge_cutoff" date, "modalities" json DEFAULT '{}', "capabilities" json DEFAULT '[]', "pricing" json DEFAULT '{}', "metadata" json DEFAULT '{}', "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "unlisted_at" datetime(6) /*application='ApplicationPipeline'*/);
 CREATE TABLE IF NOT EXISTS "orchestration_pipeline_runs" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "pipeline_id" integer NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "triggered_by" varchar, "started_at" datetime(6), "finished_at" datetime(6), "error" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "initial_input" json /*application='ApplicationPipeline'*/, CONSTRAINT "fk_rails_7774d88070"
 FOREIGN KEY ("pipeline_id")
@@ -150,7 +139,92 @@ CREATE INDEX "index_ruby_llm_usages_on_status" ON "ruby_llm_usages" ("status") /
 CREATE INDEX "index_ruby_llm_usages_on_owner" ON "ruby_llm_usages" ("owner_type", "owner_id") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "ruby_llm_provider_files" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "blob_key" varchar NOT NULL, "provider" varchar NOT NULL, "account" varchar NOT NULL, "file_id" text NOT NULL, "expires_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_ruby_llm_provider_files_uniqueness" ON "ruby_llm_provider_files" ("blob_key", "provider", "account") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "emails" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "provider" varchar NOT NULL, "provider_message_id" varchar NOT NULL, "from_address" varchar NOT NULL, "to_address" varchar, "subject" varchar, "date" datetime(6) NOT NULL, "body" text, "html_body" text, "source_url" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "tagged_at" datetime(6), "interview_id" integer, CONSTRAINT "fk_rails_cc1315310c"
+FOREIGN KEY ("interview_id")
+  REFERENCES "interviews" ("id")
+ ON DELETE SET NULL);
+CREATE UNIQUE INDEX "index_emails_on_provider_and_provider_message_id" ON "emails" ("provider", "provider_message_id") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_emails_on_date" ON "emails" ("date") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_emails_on_interview_id" ON "emails" ("interview_id") /*application='ApplicationPipeline'*/;
+CREATE VIRTUAL TABLE emails_fts USING fts5(
+  subject, body, from_address, content='emails', content_rowid='id'
+)
+/* emails_fts(subject,body,from_address) */;
+CREATE TRIGGER emails_fts_ai AFTER INSERT ON emails BEGIN
+  INSERT INTO emails_fts(rowid, subject, body, from_address)
+  VALUES (new.id, new.subject, new.body, new.from_address);
+END;
+CREATE TRIGGER emails_fts_ad AFTER DELETE ON emails BEGIN
+  INSERT INTO emails_fts(emails_fts, rowid, subject, body, from_address)
+  VALUES ('delete', old.id, old.subject, old.body, old.from_address);
+END;
+CREATE TRIGGER emails_fts_au AFTER UPDATE OF subject, body, from_address ON emails BEGIN
+  INSERT INTO emails_fts(emails_fts, rowid, subject, body, from_address)
+  VALUES ('delete', old.id, old.subject, old.body, old.from_address);
+  INSERT INTO emails_fts(rowid, subject, body, from_address)
+  VALUES (new.id, new.subject, new.body, new.from_address);
+END;
+CREATE TABLE IF NOT EXISTS "tags" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE UNIQUE INDEX "index_tags_on_name" ON "tags" ("name") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "subtags" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "tag_id" integer NOT NULL, "name" varchar NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_8f0a6d217b"
+FOREIGN KEY ("tag_id")
+  REFERENCES "tags" ("id")
+);
+CREATE INDEX "index_subtags_on_tag_id" ON "subtags" ("tag_id") /*application='ApplicationPipeline'*/;
+CREATE UNIQUE INDEX "index_subtags_on_tag_id_and_name" ON "subtags" ("tag_id", "name") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "taggings" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "taggable_type" varchar NOT NULL, "taggable_id" integer NOT NULL, "tag_id" integer NOT NULL, "subtag_id" integer, "source" varchar DEFAULT 'llm' NOT NULL, "confidence" float, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_9fcd2e236b"
+FOREIGN KEY ("tag_id")
+  REFERENCES "tags" ("id")
+, CONSTRAINT "fk_rails_bc23324ec4"
+FOREIGN KEY ("subtag_id")
+  REFERENCES "subtags" ("id")
+);
+CREATE INDEX "index_taggings_on_tag_id" ON "taggings" ("tag_id") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_taggings_on_subtag_id" ON "taggings" ("subtag_id") /*application='ApplicationPipeline'*/;
+CREATE UNIQUE INDEX "index_taggings_on_taggable_type_and_taggable_id_and_tag_id" ON "taggings" ("taggable_type", "taggable_id", "tag_id") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "documents" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "title" varchar NOT NULL, "mime_type" varchar NOT NULL, "text" text DEFAULT '' NOT NULL, "checksum" varchar NOT NULL, "source" varchar NOT NULL, "source_url" varchar, "source_ref" json DEFAULT '{}' NOT NULL, "email_id" integer, "tagged_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_5607550914"
+FOREIGN KEY ("email_id")
+  REFERENCES "emails" ("id")
+ ON DELETE SET NULL);
+CREATE INDEX "index_documents_on_email_id" ON "documents" ("email_id") /*application='ApplicationPipeline'*/;
+CREATE UNIQUE INDEX "index_documents_on_checksum" ON "documents" ("checksum") /*application='ApplicationPipeline'*/;
+CREATE VIRTUAL TABLE documents_fts USING fts5(
+  title, text, content='documents', content_rowid='id'
+)
+/* documents_fts(title,text) */;
+CREATE TRIGGER documents_fts_ai AFTER INSERT ON documents BEGIN
+  INSERT INTO documents_fts(rowid, title, text) VALUES (new.id, new.title, new.text);
+END;
+CREATE TRIGGER documents_fts_ad AFTER DELETE ON documents BEGIN
+  INSERT INTO documents_fts(documents_fts, rowid, title, text)
+  VALUES ('delete', old.id, old.title, old.text);
+END;
+CREATE TRIGGER documents_fts_au AFTER UPDATE OF title, text ON documents BEGIN
+  INSERT INTO documents_fts(documents_fts, rowid, title, text)
+  VALUES ('delete', old.id, old.title, old.text);
+  INSERT INTO documents_fts(rowid, title, text) VALUES (new.id, new.title, new.text);
+END;
+CREATE TABLE IF NOT EXISTS "email_sync_cursors" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "provider" varchar NOT NULL, "account" varchar NOT NULL, "mailbox" varchar DEFAULT 'INBOX' NOT NULL, "history_id" varchar, "uid_validity" bigint, "last_uid" bigint, "last_synced_at" datetime(6), "last_rescan_at" datetime(6), "failed_runs" integer DEFAULT 0 NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE UNIQUE INDEX "index_email_sync_cursors_on_provider_and_account_and_mailbox" ON "email_sync_cursors" ("provider", "account", "mailbox");
+CREATE TABLE IF NOT EXISTS "embeddings" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "embeddable_type" varchar NOT NULL, "embeddable_id" integer NOT NULL, "model" varchar NOT NULL, "dimensions" integer NOT NULL, "content_digest" varchar NOT NULL, "embedded_at" datetime(6) NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "vector" blob NOT NULL);
+CREATE UNIQUE INDEX "index_embeddings_on_embeddable_and_model" ON "embeddings" ("embeddable_type", "embeddable_id", "model");
+CREATE TABLE IF NOT EXISTS "document_duplicates" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "document_id" integer NOT NULL, "duplicate_id" integer NOT NULL, "similarity" float NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_635a9eabaa"
+FOREIGN KEY ("document_id")
+  REFERENCES "documents" ("id")
+, CONSTRAINT "fk_rails_722e1646e3"
+FOREIGN KEY ("duplicate_id")
+  REFERENCES "documents" ("id")
+);
+CREATE INDEX "index_document_duplicates_on_duplicate_id" ON "document_duplicates" ("duplicate_id");
+CREATE UNIQUE INDEX "index_document_duplicates_on_document_id_and_duplicate_id" ON "document_duplicates" ("document_id", "duplicate_id");
 INSERT INTO "schema_migrations" (version) VALUES
+('20261104090000'),
+('20261103120000'),
+('20261103090700'),
+('20261103090300'),
+('20261103090200'),
+('20261103090100'),
+('20261103090000'),
 ('20261029100000'),
 ('20261029090000'),
 ('20261027082205'),
@@ -233,7 +307,5 @@ INSERT INTO "schema_migrations" (version) VALUES
 ('20260316160146'),
 ('20260316160145'),
 ('20260316160144'),
-('20260316000003'),
-('20260316000002'),
-('20260316000001');
+('20260316000002');
 

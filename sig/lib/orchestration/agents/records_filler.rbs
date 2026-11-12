@@ -1,6 +1,0 @@
-module Orchestration
-  module Agents
-    class RecordsFiller < RubyLLM::Agent
-    end
-  end
-end

@@ -1,0 +1,4 @@
+module TagPages
+  class FinanceController < BaseController
+  end
+end

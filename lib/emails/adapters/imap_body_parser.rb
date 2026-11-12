@@ -17,26 +17,30 @@ module Emails
         extract_body(@mail)
       end
 
-      private
-
-      def extract_body(mail)
-        if mail.multipart?
-          extract_multipart_body(mail)
-        else
-          mail_mime = mail.mime_type # : String?
-          mail_mime == "text/html" ? strip_html(decode_part(mail)) : decode_part(mail)
-        end
+      # The first decoded text/html part that is not an attachment, or nil when the message has none.
+      def html
+        part = text_parts(@mail, "text/html").first
+        part ? decode_part(part) : nil
       end
 
-      def extract_multipart_body(mail)
-        parts = mail.parts # : Array[Mail::Part]
-        plain = parts.find { |part| part.mime_type == "text/plain" } # : Mail::Part?
-        return decode_part(plain) if plain
+      private
 
-        html = parts.find { |part| part.mime_type == "text/html" } # : Mail::Part?
-        return strip_html(decode_part(html)) if html
+      # text/plain parts joined; else the text/html parts stripped to text. Attachments and non-text parts (a PDF,
+      # an image) are never read, at any nesting depth.
+      def extract_body(mail)
+        plain = text_parts(mail, "text/plain")
+        return plain.map { |part| decode_part(part) }.join("\n\n") unless plain.empty?
 
-        parts.filter_map { |part| extract_body(part) }.reject(&:empty?).join("\n\n")
+        html = text_parts(mail, "text/html")
+        html.map { |part| HtmlText.to_text(decode_part(part)) }.join("\n\n")
+      end
+
+      # Leaf parts of +mime_type+ that are not attachments; the message itself counts when it is not multipart.
+      def text_parts(mail, mime_type)
+        return mail.parts.reject(&:attachment?).flat_map { |part| text_parts(part, mime_type) } if mail.multipart?
+
+        leaf_type = mail.mime_type || "text/plain" # : String
+        leaf_type == mime_type ? [ mail ] : []
       end
 
       def decode_part(part)
@@ -51,10 +55,6 @@ module Emails
         body.to_s.encode("UTF-8", invalid: :replace, undef: :replace, replace: "?").strip
       rescue StandardError
         ""
-      end
-
-      def strip_html(html)
-        html.gsub(/<[^>]+>/, " ").gsub(/\s+/, " ").strip
       end
     end
   end

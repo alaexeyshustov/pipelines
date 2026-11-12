@@ -1,0 +1,23 @@
+module Embeddable
+  class Hybrid
+    attr_reader record: ApplicationRecord
+    attr_reader score: Float
+    attr_reader snippet: String?
+
+    def self.new: (record: ApplicationRecord, score: Float, snippet: String?) -> instance
+  end
+
+  def embeddings: () -> ActiveRecord::Associations::CollectionProxy
+
+  module ClassMethods
+    def polymorphic_name: () -> String
+    def fts_search: (String? query, ?limit: Integer) -> Array[FtsSearchable::Match]
+    def semantic_search: (String? query, ?limit: Integer) -> Array[Embedding]
+    def hybrid_search: (String? query, ?limit: Integer) -> Array[Hybrid]
+
+    private
+
+    def fuse: (Hash[Integer, FtsSearchable::Match] matches, Hash[Integer, Embedding] neighbours) -> Array[Hybrid]
+    def fused_hit: (Float score, FtsSearchable::Match? match, Embedding? neighbour) -> Hybrid
+  end
+end

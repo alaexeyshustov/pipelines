@@ -52,6 +52,14 @@ RSpec.describe Emails::Adapters::ImapBodyParser do
       end
     end
 
+    context 'when an HTML-only mail has a style block' do
+      let(:mail) { Mail.new("Content-Type: text/html\r\n\r\n<style>p { color: red; }</style><p>Hello</p>") }
+
+      it 'returns the text without CSS' do
+        expect(parser.body).to eq('Hello')
+      end
+    end
+
     context 'when mail is multipart with text/plain and text/html' do
       let(:plain_part) { make_part(mime_type: 'text/plain', decoded: 'Plain text') }
       let(:html_part)  { make_part(mime_type: 'text/html',  decoded: '<b>HTML</b>') }
@@ -108,6 +116,156 @@ RSpec.describe Emails::Adapters::ImapBodyParser do
 
       it 'returns an empty string' do
         expect(parser.body).to eq('')
+      end
+    end
+
+    context 'when mail is multipart/mixed with multipart/alternative and a PDF attachment' do
+      let(:mail) do
+        Mail.new(<<~EML.gsub("\n", "\r\n"))
+          From: a@example.com
+          To: b@example.com
+          Subject: Offer
+          MIME-Version: 1.0
+          Content-Type: multipart/mixed; boundary="outer"
+
+          --outer
+          Content-Type: multipart/alternative; boundary="inner"
+
+          --inner
+          Content-Type: text/plain; charset=UTF-8
+
+          Hello plain
+          --inner
+          Content-Type: text/html; charset=UTF-8
+
+          <p>Hello html</p>
+          --inner--
+
+          --outer
+          Content-Type: application/pdf; name="offer.pdf"
+          Content-Disposition: attachment; filename="offer.pdf"
+          Content-Transfer-Encoding: 7bit
+
+          %PDF-1.4 raw pdf bytes
+          --outer--
+        EML
+      end
+
+      it 'returns only the text of the readable part' do
+        expect(parser.body).to eq('Hello plain')
+      end
+    end
+
+    context 'when the only text part is an attachment' do
+      let(:mail) do
+        Mail.new(<<~EML.gsub("\n", "\r\n"))
+          Content-Type: multipart/mixed; boundary="outer"
+
+          --outer
+          Content-Type: text/plain; name="notes.txt"
+          Content-Disposition: attachment; filename="notes.txt"
+
+          attached notes
+          --outer--
+        EML
+      end
+
+      it 'does not use it as the body' do
+        expect(parser.body).to eq('')
+      end
+    end
+
+    context 'when a single non-text message has a PDF body' do
+      let(:mail) { Mail.new("Content-Type: application/pdf\r\n\r\n%PDF-1.4 bytes") }
+
+      it 'returns an empty string' do
+        expect(parser.body).to eq('')
+      end
+    end
+
+    context 'when text/html sits in a nested multipart next to an attachment' do
+      let(:mail) do
+        Mail.new(<<~EML.gsub("\n", "\r\n"))
+          Content-Type: multipart/mixed; boundary="outer"
+
+          --outer
+          Content-Type: multipart/related; boundary="rel"
+
+          --rel
+          Content-Type: text/html
+
+          <p>Only html</p>
+          --rel--
+
+          --outer
+          Content-Type: application/pdf
+          Content-Disposition: attachment; filename="a.pdf"
+
+          %PDF raw
+          --outer--
+        EML
+      end
+
+      it 'strips the html and ignores the attachment' do
+        expect(parser.body).to eq('Only html')
+      end
+    end
+  end
+
+  describe '#html' do
+    subject(:parser) { described_class.new(mail) }
+
+    context 'when the message has an html body' do
+      let(:mail) { Mail.new("Content-Type: text/html\r\n\r\n<p>Hello</p>") }
+
+      it 'returns it as is' do
+        expect(parser.html).to eq('<p>Hello</p>')
+      end
+    end
+
+    context 'when the only text/html part is an attachment' do
+      let(:mail) do
+        Mail.new(<<~EML.gsub("\n", "\r\n"))
+          Content-Type: multipart/mixed; boundary="outer"
+
+          --outer
+          Content-Type: text/plain
+
+          See the attached page.
+          --outer
+          Content-Type: text/html
+          Content-Disposition: attachment; filename="page.html"
+
+          <p>Attached page</p>
+          --outer--
+        EML
+      end
+
+      it 'returns nil' do
+        expect(parser.html).to be_nil
+      end
+    end
+
+    context 'when an html body sits next to an html attachment' do
+      let(:mail) do
+        Mail.new(<<~EML.gsub("\n", "\r\n"))
+          Content-Type: multipart/mixed; boundary="outer"
+
+          --outer
+          Content-Type: text/html
+          Content-Disposition: attachment; filename="page.html"
+
+          <p>Attached page</p>
+          --outer
+          Content-Type: text/html
+
+          <p>Body</p>
+          --outer--
+        EML
+      end
+
+      it 'returns the body, not the attachment' do
+        expect(parser.html).to eq('<p>Body</p>')
       end
     end
   end

@@ -1,0 +1,17 @@
+module Emails
+  module Adapters
+    class GmailAttachmentReader
+      @service: Google::Apis::GmailV1::GmailService
+
+      def initialize: (Google::Apis::GmailV1::GmailService service) -> void
+      def data: (String | Integer message_id, String attachment_id) -> String
+      def list: (String | Integer message_id) -> Array[attachment]
+
+      private
+
+      def collect: (Google::Apis::GmailV1::MessagePart part) -> Array[attachment]
+      def inline?: (Google::Apis::GmailV1::MessagePart part) -> bool
+      def metadata: (Google::Apis::GmailV1::MessagePart part) -> Array[attachment]
+    end
+  end
+end

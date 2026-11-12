@@ -1,0 +1,34 @@
+module Tags
+  class Classifier
+    class Result
+      attr_reader taggings: Array[Tagging]
+
+      def self.new: (taggings: Array[Tagging]) -> instance
+    end
+
+    MAX_CHARS: Integer
+    NO_SUBTAG: String
+
+    type taggable = Email | Document
+
+    def self.call: (taggable item) -> Result
+
+    @item: taggable
+
+    def initialize: (taggable item) -> void
+    def call: () -> Result
+
+    private
+
+    def candidate_tags: () -> Array[Tag]
+    def kept: (Array[Tag] tags) -> Array[[ Tag, Float ]]
+    def tag_question: (Tag tag) -> RubyLLM::Judge::question
+    def subtag_question: (Tag tag, Array[Subtag] subtags) -> RubyLLM::Judge::question
+    def chosen_subtag: (Tag tag, RubyLLM::answer answer) -> Subtag?
+    def subtag_questions: (Array[Tag] tags) -> Hash[String, RubyLLM::Judge::question]
+    def subtags_for: (Array[Tag] tags) -> Hash[Tag, Subtag?]
+    def judge: (Hash[String, RubyLLM::Judge::question] questions) -> RubyLLM::Judgment
+    def input: () -> json_object
+    def replace_llm_taggings: (Array[[ Tag, Float, Subtag? ]] assignments) -> Array[Tagging]
+  end
+end

@@ -1,0 +1,25 @@
+module Orchestration
+  module Executors
+    class EmailsSync
+      type provider_output = Hash[String, String | Integer | bool]
+
+      PROVIDERS: Array[String]
+      REQUEUE_AFTER: ActiveSupport::Duration
+      SKIPPED: Hash[String, String | bool]
+
+      class ProviderFailure < StandardError
+      end
+
+      include Executable
+      extend Executable::ClassMethods
+
+      def self.call: (**json_object_value) -> Hash[String, provider_output | Integer]
+
+      def self.sync: (String provider, Hash[String, String] failures, Array[Integer] stale_ids) -> provider_output
+      def self.stale_email_ids: () -> Hash[String, Array[Integer]]
+      def self.requeue_documents: () -> Integer
+      def self.enqueue_processing: (Array[Integer] new_email_ids, Array[Integer] stale_ids) -> Hash[String, Integer]
+      def self.failure_message: (Hash[String, String] failures, Hash[String, provider_output | Integer] output) -> String
+    end
+  end
+end

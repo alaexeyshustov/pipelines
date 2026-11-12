@@ -1,0 +1,111 @@
+require "rails_helper"
+
+RSpec.describe Document do
+  def indexed(term)
+    described_class.connection.select_values("SELECT rowid FROM documents_fts WHERE documents_fts MATCH '#{term}'")
+  end
+
+  describe "#openable_source_uri" do
+    it "returns an http(s) URL" do
+      expect(build(:document, source_url: "https://drive.google.com/file/d/1/view").openable_source_uri.to_s)
+        .to eq("https://drive.google.com/file/d/1/view")
+    end
+
+    it "returns nil for a blank, non-http or malformed URL" do
+      urls = [ nil, "", "javascript:alert(1)", "ftp://example.com/x", "https://example.com/a b" ]
+      expect(urls.map { |url| build(:document, source_url: url).openable_source_uri }).to all(be_nil)
+    end
+  end
+
+  describe ".awaiting_tagging" do
+    it "returns untagged Documents stored before the cutoff" do
+      stale = create(:document, created_at: 2.hours.ago, tagged_at: nil)
+      create(:document, created_at: 2.hours.ago, tagged_at: 1.hour.ago)
+      create(:document, created_at: 10.minutes.ago, tagged_at: nil)
+
+      expect(described_class.awaiting_tagging(before: 1.hour.ago)).to eq([ stale ])
+    end
+  end
+
+  describe "validations" do
+    it "requires title, mime type, checksum and source" do
+      document = described_class.new
+      document.validate
+      expect(document.errors.attribute_names).to include(:title, :mime_type, :checksum, :source)
+    end
+
+    it "limits source to email_attachment and drive" do
+      expect(build(:document, source: "dropbox")).not_to be_valid
+      expect(build(:document, source: "drive", source_ref: { "provider" => "drive", "drive_file_id" => "f1" })).to be_valid
+    end
+
+    it "keeps the checksum unique, in the database too" do
+      create(:document, checksum: "abc")
+      expect(build(:document, checksum: "abc")).not_to be_valid
+      expect { build(:document, checksum: "abc").save!(validate: false) }.to raise_error(ActiveRecord::RecordNotUnique)
+    end
+
+    it "rejects a missing extracted text but allows an empty one" do
+      expect(build(:document, text: nil)).not_to be_valid
+      expect(build(:document, text: "")).to be_valid
+    end
+  end
+
+  describe "associations" do
+    it "optionally belongs to an email and survives its removal" do
+      email = create(:email)
+      document = create(:document, email:)
+      expect(document.email).to eq(email)
+      email.destroy!
+      expect(document.reload.email).to be_nil
+    end
+
+    it "is taggable" do
+      document = create(:document)
+      tag = create(:tag, name: "finance")
+      Tagging.create!(taggable: document, tag:, source: "manual")
+      expect(document.tags).to eq([ tag ])
+      expect { document.destroy! }.to change(Tagging, :count).by(-1)
+    end
+  end
+
+  describe ".ingest!" do
+    it "does not duplicate a re-ingested file" do
+      first = described_class.ingest!(attributes_for(:document, checksum: "same"))
+      second = described_class.ingest!(attributes_for(:document, checksum: "same", title: "Other"))
+      expect(second).to eq(first)
+      expect(described_class.count).to eq(1)
+    end
+  end
+
+  describe "FTS5 index" do
+    it "indexes title and text on insert" do
+      document = create(:document, title: "Lease agreement", text: "Monthly rent applies")
+      expect(indexed("lease")).to eq([ document.id ])
+      expect(indexed("rent")).to eq([ document.id ])
+    end
+
+    it "reindexes on update and removes on destroy" do
+      document = create(:document, title: "Lease agreement")
+      document.update!(title: "Invoice")
+      expect(indexed("lease")).to be_empty
+      expect(indexed("invoice")).to eq([ document.id ])
+      document.destroy!
+      expect(indexed("invoice")).to be_empty
+    end
+
+    it "keeps the index intact when only tagged_at changes" do
+      document = create(:document, title: "Lease agreement")
+      document.update!(tagged_at: Time.current)
+      expect(indexed("lease")).to eq([ document.id ])
+    end
+
+    it "stays consistent through bulk writes" do
+      create(:document, title: "Lease agreement")
+      described_class.update_all(title: "Declined")
+      expect(indexed("lease")).to be_empty
+      described_class.delete_all
+      expect(indexed("declined")).to be_empty
+    end
+  end
+end

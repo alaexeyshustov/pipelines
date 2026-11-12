@@ -1,0 +1,7 @@
+module TagPages
+  class JobApplicationController < BaseController
+    private
+
+    def interview_columns?: () -> bool
+  end
+end

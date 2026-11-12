@@ -9,6 +9,7 @@ module Orchestration
 
     STATUSES: Array[String]
     ACTIVE_STATUSES: Array[String]
+    TERMINAL_STATUSES: Array[String]
     TRIGGERED_BY: Array[String]
 
     def self.table_name: () -> String

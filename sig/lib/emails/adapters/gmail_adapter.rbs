@@ -5,6 +5,8 @@ module Emails
       @session: GmailSession
       @labels: Array[label]
       @service: Google::Apis::GmailV1::GmailService
+      @attachment_reader: GmailAttachmentReader
+      @inbox_lister: GmailInboxLister
       @label_manager: GmailLabelManager
 
       def self.from_env: (?gmail_options) -> GmailAdapter
@@ -15,7 +17,13 @@ module Emails
       def initialize: (credentials_path: String, token_path: String) -> void
       def authorize: () -> Signet::OAuth2::Client
       def modify_labels: (String message_id, ?add: Array[String], ?remove: Array[String], ?source_mailbox: String?) -> modify_result
+      def profile: () -> { email_address: String, history_id: String }
+      def inbox_message_ids_since: (String history_id) -> Array[String]
+      def inbox_message_ids_after: (Date date) -> Array[String]
+      def fetch_message: (String | Integer message_id) -> full_message
       def message: (String | Integer message_id, ?label: String?) -> message
+      def attachment: (String | Integer message_id, String attachment_id) -> String
+      def attachments: (String | Integer message_id) -> Array[attachment]
       def create_label: (name: String) -> label
 
       private

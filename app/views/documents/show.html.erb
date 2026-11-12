@@ -1,0 +1,21 @@
+<%= render UI::PageHeaderComponent.new(
+      title: @document.title,
+      parent: { label: "Documents", url: documents_path },
+      notice: notice, alert: alert
+    ) %>
+
+<p class="mb-4 text-sm">
+  <%= link_to "Download original", download_document_path(@document), class: "text-blue-600" %>
+  <% if (source_uri = @document.openable_source_uri) %>
+    · <%= link_to "Open source", source_uri.to_s, class: "text-blue-600", target: "_blank", rel: "noopener noreferrer" %>
+  <% end %>
+</p>
+
+<div class="mb-6">
+  <%= render ::Tags::TaggingsComponent.new(taggings: @taggings, tags: @tags, base_url: document_taggings_path(@document),
+                                         errors: @form_errors) %>
+</div>
+
+<%= render Documents::DuplicatesComponent.new(document: @document, duplicates: @duplicates) %>
+
+<pre class="whitespace-pre-wrap text-sm text-gray-800"><%= @document.text %></pre>

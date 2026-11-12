@@ -67,6 +67,27 @@ RSpec.describe SchedulerJob do
       end
     end
 
+    context "when a pipeline already has a pending run" do
+      it "does not enqueue another run" do
+        pipeline = create(:orchestration_pipeline, enabled: true, cron_expression: cron_expression)
+        pipeline.update_column(:created_at, 2.hours.ago)
+        create(:orchestration_pipeline_run, pipeline: pipeline, status: "pending")
+
+        expect { described_class.new.perform }.not_to change(Orchestration::PipelineRun, :count)
+        expect(PipelineRunJob).not_to have_received(:perform_later)
+      end
+    end
+
+    context "when the latest run failed and the next tick is in the future" do
+      it "does not re-run the pipeline" do
+        pipeline = create(:orchestration_pipeline, enabled: true, cron_expression: "0 0 * * *")
+        pipeline.update_column(:created_at, 3.days.ago)
+        create(:orchestration_pipeline_run, pipeline: pipeline, status: "failed", finished_at: Time.current)
+
+        expect { described_class.new.perform }.not_to change(Orchestration::PipelineRun, :count)
+      end
+    end
+
     context "with multiple due pipelines" do
       it "issues a fixed number of queries regardless of pipeline count" do
         3.times do
@@ -74,7 +95,7 @@ RSpec.describe SchedulerJob do
           p.update_column(:created_at, 2.hours.ago)
         end
 
-        # 3 constant read queries (running ids, latest completed, pipeline load)
+        # 3 constant read queries (active ids, latest finished, pipeline load)
         # + 1 INSERT per due pipeline — no per-pipeline read queries (no N+1)
         query_count = 0
         counter = ->(*, **) { query_count += 1 }

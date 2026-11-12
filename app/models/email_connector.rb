@@ -4,7 +4,7 @@ class EmailConnector < ApplicationRecord
   before_save :convert_configuration_to_hash
 
   validates :name, presence: true
-  validates :provider, presence: true, inclusion: { in: %w[gmail yahoo] }
+  validates :provider, presence: true, inclusion: { in: Emails::PROVIDER_NAMES }
 
   private
 

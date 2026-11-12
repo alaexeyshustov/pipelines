@@ -1,0 +1,17 @@
+module Tags
+  class ManualTaggingForm < ::BaseForm
+    @taggable: Email | Document
+
+    def tag_id: () -> Integer?
+    def tag_id=: (Integer?) -> Integer?
+    def subtag_id: () -> Integer?
+    def subtag_id=: (Integer?) -> Integer?
+
+    def initialize: (taggable: Email | Document, ?tag_id: Integer | String | nil, ?subtag_id: Integer | String | nil) -> void
+    def save: () -> bool
+
+    private
+
+    def fail_with: (Symbol attribute, String message) -> false
+  end
+end

@@ -1,0 +1,23 @@
+module Tags
+  class TaggingsComponent < ViewComponent::Base
+    @taggings: ActiveRecord::Relation
+    @tags: ActiveRecord::Relation
+    @base_url: String
+    @errors: ActiveModel::Errors?
+
+    def initialize: (taggings: ActiveRecord::Relation, tags: ActiveRecord::Relation, base_url: String, ?errors: ActiveModel::Errors?) -> void
+
+    private
+
+    attr_reader taggings: ActiveRecord::Relation
+    attr_reader tags: ActiveRecord::Relation
+    attr_reader base_url: String
+    attr_reader errors: ActiveModel::Errors?
+
+    def remove_url: (Tagging tagging) -> String
+    def label: (Tagging tagging) -> String
+    def origin: (Tagging tagging) -> String
+    def tag_options: () -> Array[[ String, Integer ]]
+    def subtag_options: () -> Array[[ String, Integer ]]
+  end
+end

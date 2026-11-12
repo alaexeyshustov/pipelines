@@ -1,0 +1,12 @@
+class Email
+  class ProcessJob < ApplicationJob
+    TRANSPORT_ERRORS: Array[singleton(StandardError)]
+
+    def perform: (Integer email_id) -> void
+
+    private
+
+    def enqueue_later_stages: (Email email) -> void
+    def enqueue_interview_extraction: (Email email) -> void
+  end
+end

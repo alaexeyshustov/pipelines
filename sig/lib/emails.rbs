@@ -12,9 +12,26 @@ module Emails
       ?thread_id: String | nil,
       labels: Array[String]
     }
+  type full_message = {
+      id: String,
+      provider: String,
+      subject: String,
+      from: String,
+      to: String,
+      date: Time,
+      body: String,
+      html_body: String?,
+      source_url: String?,
+      thread_id: String?,
+      labels: Array[String]
+    }
+  type attachment = { id: String, filename: String, mime_type: String, size: Integer }
   type label = { id: String, name: String, type: String }
   type modify_result = { message_id: Integer | String, added: Array[String], removed: Array[String] } | { id: Integer | String, labels: Array[String] }
 
+  GMAIL: String
+  YAHOO: String
+  PROVIDER_NAMES: Array[String]
   PROVIDERS: Hash[String, singleton(Adapters::BaseAdapter)]
 
   self.@provider_registry: ProviderRegistry?
@@ -23,6 +40,16 @@ module Emails
   def self.search_messages: (String provider_name, String query, ?max_results: Integer, ?offset: Integer, ?label: String?) -> Array[message]
   def self.list_messages: (String provider_name, ?max_results: Integer, ?after_date: Date?, ?before_date: Date?, ?offset: Integer, ?label: String?) -> Array[message]
   def self.message: (String provider_name, String | Integer message_id, ?label: String?) -> message
+  def self.attachment: (String provider_name, String | Integer message_id, String attachment_id) -> String
+  def self.attachments: (String provider_name, String | Integer message_id) -> Array[attachment]
+  def self.profile: (String provider_name) -> { email_address: String, history_id: String }
+  def self.inbox_message_ids_since: (String provider_name, String history_id) -> Array[String]
+  def self.inbox_message_ids_after: (String provider_name, Date date) -> Array[String]
+  def self.account: (String provider_name) -> String
+  def self.inbox_status: (String provider_name) -> Adapters::ImapInboxReader::Status
+  def self.inbox_uids_after: (String provider_name, Integer last_uid) -> Array[Integer]
+  def self.inbox_uids_since: (String provider_name, Date date) -> Array[Integer]
+  def self.fetch_message: (String provider_name, String | Integer message_id) -> full_message
   def self.labels: (String provider_name) -> Array[label]
   def self.unread_count: (String provider_name) -> Integer
   def self.modify_labels: (String provider_name, String | Integer message_id, ?add: Array[String], ?remove: Array[String], ?source_mailbox: String?) -> modify_result

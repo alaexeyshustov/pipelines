@@ -14,15 +14,22 @@ sources:
 - "**/app/models/**/*.rb"
 snapshot:
   ".ruby-version": 365c845737dc111861176ea1d0246ce7b335768d8dbd2cea234c305b2983beba
-  Gemfile: fcdd735a2a087bac991a9fd713a7aad01e56fd5d731f688fda33be2f95b214f7
-  Gemfile.lock: '04859b0813e61edb0668516f44d74bb28a98f3e55ceaf842f24bb1e232e294ad'
-  app/models/application_mail.rb: c7f47152a2342999db944f4e801c110ce665cc4d596ba5a2eef41b191b83c450
+  Gemfile: 59dedcc64a4dbb53c16267b0e9893c7eccfa91606edcf68ceb0938827276182e
+  Gemfile.lock: bb86d088cb0ed5f766e3dd579c318e2aebd68954e3369fed408a68c1b8658b6a
   app/models/application_record.rb: 12bf7d0eaefce4d50e0719991e19b48a36a7865aeb7ac745980584806155fdc1
   app/models/chat.rb: 4ebd698bb3b02213e2cf22af062db0ebbf8fe774cc13b038d5ce21c7ee975485
   app/models/concerns/batchable.rb: 1f2d8efb2eb497ece07f3cb43363c396e3a42dd4ad76ff2be01b2cf8604fec01
+  app/models/concerns/embeddable.rb: a64701fddf094d46f01c362ca147b0fdcc857e6b17659c767beaea210a94a203
+  app/models/concerns/fts_searchable.rb: 50bd137e2fea7d720ee1f82671b80ca5a2ea159d14e1da21c0acd3ae1b66e7c8
   app/models/concerns/searchable.rb: 40c1dff7275c6cf950410fced79d3ab9ae8fd66ea699e24e4dae67b8c6acf775
-  app/models/email_connector.rb: 6456a0e335374762e522b48f05a34e6001b7eac6d297e9593a3fa40bf4ef65c1
-  app/models/email_vector.rb: 2f3ce21ff8a2d606f3940dbc1c6985e56137a6293ebf8e72056737cddffd97fd
+  app/models/concerns/taggable.rb: 98d630fb4329091ce3baf82d5339c4a82a56cd4c9397a7403fee3bfc050328c2
+  app/models/document.rb: b1bee29a7af0f3e247176c4adf034a23051fa8663ed7adc1084d6d7dc0ec3cb9
+  app/models/document/file_type.rb: f7480073960eba01a8dc26e8468c5580d251b75765127572b7cdd56b1f5071a0
+  app/models/document_duplicate.rb: 8a349dce8af4f64202039886fd59abb541e42380e96612d8ac97e36bbdf01ab8
+  app/models/email.rb: 61797b92c1e6dc2617a93bfaba4a643da644e4645e49ca6db2b28e4734f2e420
+  app/models/email/sync_cursor.rb: 5fe1f0a9e30508a71193f79a8a6ebf070cc66f2a964f7a556821c4ba4193a58b
+  app/models/email_connector.rb: 6115769fb5181751f35fbb88b0d963232a0863e6c5774649c0c637ec41840537
+  app/models/embedding.rb: 72740e7d53ee4a69c7da455fddfab7aa57502aadf6e24b7bdb97298e58632a42
   app/models/evaluation/dataset.rb: b2413b10841d3e0558da95340a0f8047e82d08402496bfa6a572f699ad1e7c0e
   app/models/evaluation/dataset_sample.rb: 17b2872be49b1767cd00836ddc3b65ace387b5c417959992eb0c3a4cf2920fe5
   app/models/evaluation/evaluation_result.rb: 321e21636f9f6e3d665b8c4a80c654228e33cf38c52315a50b7541ff9e602eb5
@@ -32,20 +39,23 @@ snapshot:
   app/models/evaluation/prompt.rb: 694ede4065992a1c6ab59cf05691a69838e8db71a1d57500abe81f6206a9a662
   app/models/evaluation/sample.rb: '018ae134112114053ba1df150840095a2a17076651b233774dca842b4e6026d8'
   app/models/evaluation/wizard_draft.rb: c9cb872f2c58a8c36dba9383b7ba5428e54609fc8959724561b544c4a3341423
-  app/models/interview.rb: 399b2de62a0a35fd303b7e899539aa01886cb89b9de2ff8584e963379f7fed5b
+  app/models/interview.rb: da07a20bed16ab2cec93601a09f6e71eb931ca027eebb39d148649ac6156b2b7
   app/models/message.rb: 125371683836c173f6653a7470e5fb184324ecfa57c757e8c427b96ea952914c
   app/models/orchestration/action.rb: 36007aa8eb8b46336e3417f416e2b249c7fcfd63fc06d4f5a29d923c66cb4ae0
   app/models/orchestration/action_run.rb: 5a50d8d8b77b841c75c920e28c4eaedd3a793cbee566594976f09f6d608afe3a
   app/models/orchestration/agent.rb: dea35637dbe44c395fcec66897fe795b0061e2fbabdda87711f29f97af212284
   app/models/orchestration/pipeline.rb: 22257a3ea9e9e22064f3217fffd7bbe20fac362708eeb20d7649dcf2ba2ce825
-  app/models/orchestration/pipeline_run.rb: 8a1b430209292e643e47962b4f7e1b818b61828e63b83f101c737503f64c8cdb
+  app/models/orchestration/pipeline_run.rb: 8d09c4a23d17367458feea27810b216b4d17466dc7740b73262e8856c2107332
   app/models/orchestration/schema_builder.rb: 4577ef501d99e12993d3ac426d6bd6fb413e19b50a7a57de5278b23e4b496574
   app/models/orchestration/schema_builder/parser.rb: fde26417e42f06684948173ae91cc0594a269251369e2744c27ebc55506cc975
   app/models/orchestration/schema_builder/serializer.rb: 88b74dc98846936866127c95c73fcbe17382f1314f685cf9f6e86ce03230f329
   app/models/orchestration/step.rb: 4f39f100fc511fa869360e4978b8b007314af808d8e22d1182493cf2db2c4920
   app/models/orchestration/step_action.rb: d12179ac81a5392e71f5dcc30e85ca4234c3c91a82439c8da5ba2ca6325f3041
-  app/models/setting.rb: 6003dcad225d8fe89956e7d40967d035496ae15c91b0c84c5b58b452bc06754a
-  config/application.rb: b830592df26b372b618f0aee9bddd51f3ecdabc844cfe176e6b64b292cb4dd0b
+  app/models/setting.rb: '05867ac14faeef87d1c4af0a1407c5f278b4f2eff1462d3f89baa53476404261'
+  app/models/subtag.rb: b5d218740c6109c688db06710074627f77384a679036d6df715cbb786dd66299
+  app/models/tag.rb: c48ab7e44bf3fdde63033e3bdddecbbbc6fea33a42d58dc5d0d35367d9373b21
+  app/models/tagging.rb: 1b4d895bfa4096c4490b6f94b374916721113c0327bca71b2311c1e5badfa86d
+  config/application.rb: d76105731ccca1452cd5e041bfaf30bd2ecca38814396893e95384bb55c04319
   config/boot.rb: 129a59e499e2d551f78505c6d65bf1e568f09058353f61e167eba5af0e4ca242
   config/ci.rb: 721ea251ae3714fa98331e07c335d469b9e9b902cfc475f9e9ac50fe10c6fd72
   config/database.yml: ddba8855b1c19ca5df84a910731b5d0835cd5f90e806cc7c5a01e8104b8a96d3
@@ -59,19 +69,19 @@ snapshot:
   config/initializers/falcon.rb: e1197b1710b85ef369f8f4ffd610dc50cdcb551a3d2f7b019edb8493acdaacd6
   config/initializers/filter_parameter_logging.rb: f864bd67e7bdaa63a5331b9fc15446613c410c3a314cd70d1b6a7c8b566b6120
   config/initializers/inflections.rb: 2eba6606afd45f7a45e0112fca908f5f717fa3e3e3707df10fd5f562fe8d74d1
-  config/initializers/llm_models.rb: cae3be6ad902e71cc533980e87091089e6e790e5dc8830cb5c5097a6e66906b4
+  config/initializers/llm_models.rb: '08ba53e33dce5d0896ccf61103abf5934bbcaeb6e8730ff4d8c4b6fa62de083b'
   config/initializers/mission_control.rb: 5954d9ff0018c90321fb5b534e3abae9a811bd8a7996026d677f5ceda6ad94c7
+  config/initializers/neighbor.rb: e77ae41d00ee61a9c0ef90965e67163954cc11e31186d14f425d936acbd5b650
   config/initializers/orchestration.rb: 2280ac6ccc1c5b35f15b7cbcda0a4bc46765f6300a3ebb619ef22e91a9979996
   config/initializers/pagy.rb: a5a09c2675df3bb1d292dcb225b1f5ee92148f9f1f6fc990fb8667b90fdd3e49
-  config/initializers/ruby_llm.rb: 52ff9b0105c96719c7dcbce55c7ecfe9a090f735f92a123e2b484c93b0547cd8
+  config/initializers/ruby_llm.rb: 0f447b6649e48450481fd9a8bc0b20cb9ca9c480d07d3486f60742368936b900
   config/initializers/ruby_llm_monitoring.rb: 9e0c0ff244a799b9e8c8ae081bb25584f04e5e7dbe7c87602ff1326caa418d7a
-  config/initializers/sqlite_vec.rb: a39f21b3621edea08f3f17817dc39dc984dee07ab1965e58484497f00939a104
   config/initializers/view_component.rb: 5be366bfbc2294b04ac0489093fd02bc91f8348b622ed3a1aad91996d6768335
   config/locales/en.yml: ad72af216ad0a67a1155c685535698fdd2a7138810c7e6dcb5eab7f0cc1c5922
   config/puma.rb: d1f67568aa22ac7404904351aa738829623d45312a32dc560a4640bcf9eceb3d
   config/queue.yml: b850e3ac994276a0211a032c1d2865b97ea05fb948f326df58ea18ea7c60cb21
   config/recurring.yml: b88669d4686076293b67b0d0c3b3ec50f74e5adc8ea7efb9414b98f95559f839
-  config/routes.rb: a5d0ff0113c97b0d8bfb3cdc388e9e166fc26c79bd6b1f98a6c9fc98332c85b1
+  config/routes.rb: 1caacbf63cd5825d93070ce42f73d0ba6f644d1fcbbaedfd8da0699f1ef3ce33
 references:
 - path: app/models/chat.rb
   line: 6
@@ -81,6 +91,102 @@ references:
   source_path: app/models/chat.rb
   source: Chat
   target: Orchestration::ActionRun
+- path: app/models/document.rb
+  line: 16
+  column: 3
+  end_line: 16
+  end_column: 53
+  source_path: app/models/document.rb
+  source: Document
+  target: DocumentDuplicate
+- path: app/models/document.rb
+  line: 15
+  column: 3
+  end_line: 15
+  end_column: 36
+  source_path: app/models/document.rb
+  source: Document
+  target: Email
+- path: app/models/concerns/embeddable.rb
+  line: 9
+  column: 5
+  end_line: 9
+  end_column: 63
+  source_path: app/models/document.rb
+  source: Document
+  target: Embedding
+- path: app/models/document.rb
+  line: 17
+  column: 3
+  end_line: 18
+  end_column: 85
+  source_path: app/models/document.rb
+  source: Document
+  target: DocumentDuplicate
+- path: app/models/concerns/taggable.rb
+  line: 7
+  column: 5
+  end_line: 7
+  end_column: 59
+  source_path: app/models/document.rb
+  source: Document
+  target: Tagging
+- path: app/models/concerns/taggable.rb
+  line: 8
+  column: 5
+  end_line: 8
+  end_column: 39
+  source_path: app/models/document.rb
+  source: Document
+  target: Tag
+- path: app/models/document_duplicate.rb
+  line: 7
+  column: 3
+  end_line: 7
+  end_column: 23
+  source_path: app/models/document_duplicate.rb
+  source: DocumentDuplicate
+  target: Document
+- path: app/models/document_duplicate.rb
+  line: 8
+  column: 3
+  end_line: 8
+  end_column: 48
+  source_path: app/models/document_duplicate.rb
+  source: DocumentDuplicate
+  target: Document
+- path: app/models/concerns/embeddable.rb
+  line: 9
+  column: 5
+  end_line: 9
+  end_column: 63
+  source_path: app/models/email.rb
+  source: Email
+  target: Embedding
+- path: app/models/email.rb
+  line: 11
+  column: 3
+  end_line: 11
+  end_column: 40
+  source_path: app/models/email.rb
+  source: Email
+  target: Interview
+- path: app/models/concerns/taggable.rb
+  line: 7
+  column: 5
+  end_line: 7
+  end_column: 59
+  source_path: app/models/email.rb
+  source: Email
+  target: Tagging
+- path: app/models/concerns/taggable.rb
+  line: 8
+  column: 5
+  end_line: 8
+  end_column: 39
+  source_path: app/models/email.rb
+  source: Email
+  target: Tag
 - path: app/models/evaluation/dataset.rb
   line: 4
   column: 5
@@ -233,6 +339,14 @@ references:
   source_path: app/models/evaluation/sample.rb
   source: Evaluation::Sample
   target: Evaluation::Prompt
+- path: app/models/interview.rb
+  line: 5
+  column: 3
+  end_line: 5
+  end_column: 35
+  source_path: app/models/interview.rb
+  source: Interview
+  target: Email
 - path: app/models/orchestration/action.rb
   line: 8
   column: 5
@@ -298,17 +412,17 @@ references:
   source: Orchestration::Pipeline
   target: Orchestration::Step
 - path: app/models/orchestration/pipeline_run.rb
-  line: 10
+  line: 11
   column: 5
-  end_line: 10
+  end_line: 11
   end_column: 87
   source_path: app/models/orchestration/pipeline_run.rb
   source: Orchestration::PipelineRun
   target: Orchestration::ActionRun
 - path: app/models/orchestration/pipeline_run.rb
-  line: 9
+  line: 10
   column: 5
-  end_line: 9
+  end_line: 10
   end_column: 64
   source_path: app/models/orchestration/pipeline_run.rb
   source: Orchestration::PipelineRun
@@ -361,6 +475,54 @@ references:
   source_path: app/models/orchestration/step_action.rb
   source: Orchestration::StepAction
   target: Orchestration::Step
+- path: app/models/subtag.rb
+  line: 2
+  column: 3
+  end_line: 2
+  end_column: 18
+  source_path: app/models/subtag.rb
+  source: Subtag
+  target: Tag
+- path: app/models/subtag.rb
+  line: 3
+  column: 3
+  end_line: 3
+  end_column: 54
+  source_path: app/models/subtag.rb
+  source: Subtag
+  target: Tagging
+- path: app/models/tag.rb
+  line: 15
+  column: 3
+  end_line: 15
+  end_column: 41
+  source_path: app/models/tag.rb
+  source: Tag
+  target: Subtag
+- path: app/models/tag.rb
+  line: 16
+  column: 3
+  end_line: 16
+  end_column: 54
+  source_path: app/models/tag.rb
+  source: Tag
+  target: Tagging
+- path: app/models/tagging.rb
+  line: 6
+  column: 3
+  end_line: 6
+  end_column: 37
+  source_path: app/models/tagging.rb
+  source: Tagging
+  target: Subtag
+- path: app/models/tagging.rb
+  line: 5
+  column: 3
+  end_line: 5
+  end_column: 18
+  source_path: app/models/tagging.rb
+  source: Tagging
+  target: Tag
 methods:
 - path: app/models/chat.rb
   line: 6
@@ -372,6 +534,188 @@ methods:
   names:
   - action_runs
   - action_runs=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/document.rb
+  line: 16
+  column: 3
+  end_line: 16
+  end_column: 53
+  source_path: app/models/document.rb
+  owner: Document
+  names:
+  - document_duplicates
+  - document_duplicates=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/document.rb
+  line: 15
+  column: 3
+  end_line: 15
+  end_column: 36
+  source_path: app/models/document.rb
+  owner: Document
+  names:
+  - email
+  - email=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/concerns/embeddable.rb
+  line: 9
+  column: 5
+  end_line: 9
+  end_column: 63
+  source_path: app/models/document.rb
+  owner: Document
+  names:
+  - embeddings
+  - embeddings=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/document.rb
+  line: 17
+  column: 3
+  end_line: 18
+  end_column: 85
+  source_path: app/models/document.rb
+  owner: Document
+  names:
+  - reverse_document_duplicates
+  - reverse_document_duplicates=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/concerns/taggable.rb
+  line: 7
+  column: 5
+  end_line: 7
+  end_column: 59
+  source_path: app/models/document.rb
+  owner: Document
+  names:
+  - taggings
+  - taggings=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/concerns/taggable.rb
+  line: 8
+  column: 5
+  end_line: 8
+  end_column: 39
+  source_path: app/models/document.rb
+  owner: Document
+  names:
+  - tags
+  - tags=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/document_duplicate.rb
+  line: 7
+  column: 3
+  end_line: 7
+  end_column: 23
+  source_path: app/models/document_duplicate.rb
+  owner: DocumentDuplicate
+  names:
+  - document
+  - document=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/document_duplicate.rb
+  line: 8
+  column: 3
+  end_line: 8
+  end_column: 48
+  source_path: app/models/document_duplicate.rb
+  owner: DocumentDuplicate
+  names:
+  - duplicate
+  - duplicate=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/concerns/embeddable.rb
+  line: 9
+  column: 5
+  end_line: 9
+  end_column: 63
+  source_path: app/models/email.rb
+  owner: Email
+  names:
+  - embeddings
+  - embeddings=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/email.rb
+  line: 11
+  column: 3
+  end_line: 11
+  end_column: 40
+  source_path: app/models/email.rb
+  owner: Email
+  names:
+  - interview
+  - interview=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/concerns/taggable.rb
+  line: 7
+  column: 5
+  end_line: 7
+  end_column: 59
+  source_path: app/models/email.rb
+  owner: Email
+  names:
+  - taggings
+  - taggings=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/concerns/taggable.rb
+  line: 8
+  column: 5
+  end_line: 8
+  end_column: 39
+  source_path: app/models/email.rb
+  owner: Email
+  names:
+  - tags
+  - tags=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/embedding.rb
+  line: 5
+  column: 3
+  end_line: 5
+  end_column: 44
+  source_path: app/models/embedding.rb
+  owner: Embedding
+  names:
+  - embeddable
+  - embeddable=
   scope: instance
   visibility: public
   mode: if_missing
@@ -642,6 +986,20 @@ methods:
   visibility: public
   mode: if_missing
   signatures: []
+- path: app/models/interview.rb
+  line: 5
+  column: 3
+  end_line: 5
+  end_column: 35
+  source_path: app/models/interview.rb
+  owner: Interview
+  names:
+  - emails
+  - emails=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
 - path: app/models/orchestration/action.rb
   line: 8
   column: 5
@@ -755,9 +1113,9 @@ methods:
   mode: if_missing
   signatures: []
 - path: app/models/orchestration/pipeline_run.rb
-  line: 10
+  line: 11
   column: 5
-  end_line: 10
+  end_line: 11
   end_column: 87
   source_path: app/models/orchestration/pipeline_run.rb
   owner: Orchestration::PipelineRun
@@ -769,9 +1127,9 @@ methods:
   mode: if_missing
   signatures: []
 - path: app/models/orchestration/pipeline_run.rb
-  line: 9
+  line: 10
   column: 5
-  end_line: 9
+  end_line: 10
   end_column: 64
   source_path: app/models/orchestration/pipeline_run.rb
   owner: Orchestration::PipelineRun
@@ -866,6 +1224,104 @@ methods:
   visibility: public
   mode: if_missing
   signatures: []
+- path: app/models/subtag.rb
+  line: 2
+  column: 3
+  end_line: 2
+  end_column: 18
+  source_path: app/models/subtag.rb
+  owner: Subtag
+  names:
+  - tag
+  - tag=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/subtag.rb
+  line: 3
+  column: 3
+  end_line: 3
+  end_column: 54
+  source_path: app/models/subtag.rb
+  owner: Subtag
+  names:
+  - taggings
+  - taggings=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/tag.rb
+  line: 15
+  column: 3
+  end_line: 15
+  end_column: 41
+  source_path: app/models/tag.rb
+  owner: Tag
+  names:
+  - subtags
+  - subtags=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/tag.rb
+  line: 16
+  column: 3
+  end_line: 16
+  end_column: 54
+  source_path: app/models/tag.rb
+  owner: Tag
+  names:
+  - taggings
+  - taggings=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/tagging.rb
+  line: 6
+  column: 3
+  end_line: 6
+  end_column: 37
+  source_path: app/models/tagging.rb
+  owner: Tagging
+  names:
+  - subtag
+  - subtag=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/tagging.rb
+  line: 5
+  column: 3
+  end_line: 5
+  end_column: 18
+  source_path: app/models/tagging.rb
+  owner: Tagging
+  names:
+  - tag
+  - tag=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/tagging.rb
+  line: 4
+  column: 3
+  end_line: 4
+  end_column: 42
+  source_path: app/models/tagging.rb
+  owner: Tagging
+  names:
+  - taggable
+  - taggable=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
 mixins: []
 exposures: []
 gaps:
@@ -893,6 +1349,14 @@ gaps:
   source_path: app/models/chat.rb
   source: Chat
   message: 'association Chat.ruby_llm_usages: no unique literal declaration'
+- path: app/models/embedding.rb
+  line: 5
+  column: 3
+  end_line: 5
+  end_column: 44
+  source_path: app/models/embedding.rb
+  source: Embedding
+  message: polymorphic association Embedding.embeddable
 - path: app/models/message.rb
   line: 1
   column: 1
@@ -925,5 +1389,13 @@ gaps:
   source_path: app/models/message.rb
   source: Message
   message: 'association Message.ruby_llm_usages: no unique literal declaration'
+- path: app/models/tagging.rb
+  line: 4
+  column: 3
+  end_line: 4
+  end_column: 42
+  source_path: app/models/tagging.rb
+  source: Tagging
+  message: polymorphic association Tagging.taggable
 receivers: []
 resolves: []

@@ -2,7 +2,7 @@
 
 This project is a Rails 8.1 / Ruby 4.0 application designed as a **multi-agent job-application tracking pipeline**. It automates the process of monitoring job applications by fetching emails, classifying them, and updating a local tracker.
 
-- This project uses Rails with SQLite — be aware of SQLite-specific extension issues (e.g., vec0, sqlite_vec) when modifying schema or running `db:test:prepare`
+- This project uses Rails with SQLite — be aware of SQLite-specific extension issues when modifying schema or running `db:test:prepare`
 - Prefer configurable singleton patterns with class methods for service objects
 - Views: ViewComponent, Tailwind CSS, Turbo, Stimulus.
 - Testing Framework: RSpec, FactoryBot, VCR.
@@ -17,20 +17,16 @@ The system follows a pipeline-based architecture where data flows through severa
 
 ### Data Flow
 
-1.  **Ingestion**: Emails are fetched from Gmail and Yahoo Mail concurrently using `Async`.
-2.  **Processing**: A series of AI Agents (Mistral, Anthropic, etc.) process the emails:
-    -   **Classify**: Identify if an email is job-related.
-    -   **Filter**: Select relevant application-related emails.
-    -   **Map**: Extract structured data (Company, Job Title, Action).
-3.  **Persistence**: Extracted data is stored in the `application_mails` table.
-4.  **Reconciliation**: Data is normalized and matched to the `interviews` table to track the application lifecycle.
-5.  **Export**: The tracker can be exported to GitHub Gists as CSV.
+1.  **Ingestion**: `Email::SyncInboxJob` pulls new Gmail and Yahoo INBOX mail into `Email` rows (ADR 0013).
+2.  **Tagging**: `Tags::Classifier` tags each email; tagged attachments are extracted into `Document`s.
+3.  **Extraction**: `Interview::ExtractJob` (`Interviews::EmailExtractor`) reads `job_application`-tagged emails and upserts `Interview` rows directly, linking each email through `emails.interview_id`.
+4.  **Export**: The tracker can be exported to GitHub Gists as CSV.
 
 ## Key Parts
 
 ### Core Technologies
 - **Rails 8.1 / Ruby 4.0**: Modern Rails stack.
-- **SQLite + sqlite-vec**: Local database with vector embedding support for semantic search and retrieval.
+- **SQLite**: Local database (FTS5 for email and document search).
 - **RubyLLM**: A unified client for multiple LLM providers.
 - **ViewComponent + Tailwind + Turbo**: For the Web UI.
 
@@ -38,7 +34,11 @@ The system follows a pipeline-based architecture where data flows through severa
 - `lib/orchestration/agents/`: specialized AI agent implementations (`lib/orchestration/executors/` holds executable steps).
 - `app/models/orchestration/`: models for managing the pipeline workflow.
 - `app/models/evaluation/`, `app/services/evaluation/`, `lib/evaluation/`: evaluation logic to ensure agent quality. See [evals.md](evals.md).
-- `lib/pipeline/`: pipeline workflow steps.
+- `app/services/tags/`, `app/forms/tags/`, `app/components/tags/`: tagging of emails and documents. `Tags::Classifier` classifies with `RubyLLM::Judge` (decisions API, one multi-label call plus one choice per kept tag; never creates tags; keeps manual taggings). Not yet wired into pipelines (ingestion is GH #222). See the taggings table in [schemas.md](schemas.md).
+- Drive ingestion: `Document::SyncDriveJob` (run by the `Orchestration::Executors::DriveDocumentsSync` pipeline step, seeded as "Drive Documents Sync", nightly) scans the folders in `Setting "drive_folder_ids"` (ids or URLs, comma/whitespace separated) via `Emails::Adapters::DriveFileFetcher` (drive.readonly token in `DRIVE_TOKEN_PATH`, default `drive_token.yaml`).
+- Email ingestion: `Email::SyncInboxJob` (run for `gmail` and `yahoo` by the `Orchestration::Executors::EmailsSync` pipeline step, seeded as "Email Ingestion", every 30 minutes) stores new INBOX mail as `Email` rows from a per-account `Email::SyncCursor`. Providers run independently; one without credentials is reported as skipped, a failing one fails the step after the other ran. See [adr/0013-email-ingestion-pipeline.md](adr/0013-email-ingestion-pipeline.md).
+- Embeddings (GH #226, ADR 0014): `Email::EmbedJob` / `Document::EmbedJob` (enqueued after tagging, attachment ingest and Drive sync) call `Embeddings::Embed`; `Email::SearchQuery` / `Document::SearchQuery` take `mode: :text | :semantic | :hybrid`. See the embeddings table in [schemas.md](schemas.md).
+- Document deduplication (GH #227): `Document::EmbedJob` enqueues `Document::DetectDuplicatesJob` (`Document::DetectDuplicates`: KNN over Document vectors of the current model) which records `DocumentDuplicate` candidates. **Decision:** link and flag for review, never merge, hide or delete; the document page lists candidates with Confirm / Dismiss, and a dismissed pair is not flagged again. Threshold: cosine similarity 0.95, Setting `document_dedup_threshold` then ENV `DOCUMENT_DEDUP_THRESHOLD`. See the document_duplicates table in [schemas.md](schemas.md).
 - `app/tools/`: LLM tools exposed to agents.
 - `lib/emails/`: provider-specific email fetching logic. See [connectors.md](docs/connectors.md) for details.
 
@@ -47,6 +47,3 @@ Layer order and subsystem boundaries are declared in [Archspec.rb](../Archspec.r
 
 ## AI Agents
 Agents are first-class citizens, defined in `lib/orchestration/agents/`. They utilize `orchestration_prompts` for versioned system instructions and `orchestration_agents` for tool access configuration.
-
-## Persistence & Vectors
-The project uses `sqlite-vec` for vector operations. `EmailVector` provides a wrapper for storing and querying embeddings of email content.

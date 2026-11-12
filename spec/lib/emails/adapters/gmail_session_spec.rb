@@ -9,7 +9,7 @@ RSpec.describe Emails::Adapters::GmailSession do
   describe '.from_env' do
     it 'raises when the credentials file is missing' do
       expect { described_class.from_env(credentials_path: '/nonexistent/path.json', token_path: GmailHelpers.token_path) }
-        .to raise_error(/Missing Gmail credentials/)
+        .to raise_error(Emails::NotConfigured, /Missing Gmail credentials/)
     end
 
     it 'returns an initialized, authorized GmailAdapter' do
@@ -72,7 +72,25 @@ RSpec.describe Emails::Adapters::GmailSession do
     end
   end
 
+  describe '.setup' do
+    it 'runs the interactive authorization with the configured paths' do
+      auth = Emails::GmailAuth.allocate
+      allow(auth).to receive(:credentials)
+      allow(Emails::GmailAuth).to receive(:new).and_return(auth)
+
+      described_class.setup(credentials_path: GmailHelpers::CREDENTIALS_PATH, token_path: '/tmp/no_token.yaml')
+
+      expect(auth).to have_received(:credentials).with(interactive: true)
+    end
+  end
+
   describe '#authorize' do
+    it 'raises NotConfigured instead of starting interactive authorization when no token is stored' do
+      session = described_class.new(credentials_path: GmailHelpers::CREDENTIALS_PATH, token_path: '/tmp/no_such_token.yaml')
+
+      expect { session.authorize }.to raise_error(Emails::NotConfigured, /no_such_token\.yaml/)
+    end
+
     it 'returns credentials loaded from the stored token' do
       session = described_class.new(credentials_path: GmailHelpers::CREDENTIALS_PATH, token_path: GmailHelpers.token_path)
 

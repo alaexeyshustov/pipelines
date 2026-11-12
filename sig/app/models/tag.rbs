@@ -1,0 +1,15 @@
+class Tag < ApplicationRecord
+  DEFAULT_THRESHOLD: Float
+  NAMES: Array[String]
+  STARTER_SUBTAGS: Hash[String, Array[String]]
+
+  def self.threshold: () -> Float
+  def self.seed_defaults!: () -> void
+  def self.seed_subtags: (Tag tag, Array[String] names, Set[[Integer, String]] known) -> void
+
+  def id: () -> Integer
+  def name: () -> String?
+  def name=: (String?) -> String?
+  def subtags: () -> ActiveRecord::Associations::CollectionProxy
+  def taggings: () -> ActiveRecord::Associations::CollectionProxy
+end

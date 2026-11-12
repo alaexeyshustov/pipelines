@@ -1,0 +1,10 @@
+module Orchestration
+  module Executors
+    class DriveDocumentsSync
+      include Executable
+      extend Executable::ClassMethods
+
+      def self.call: (**json_object_value) -> Document::SyncDriveJob::summary
+    end
+  end
+end
