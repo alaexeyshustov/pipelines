@@ -50,7 +50,7 @@ module Emails
         fetch_uids(build_mailbox(label), criteria, max_results, offset)
       end
 
-      def get_message(message_id, label: nil)
+      def message(message_id, label: nil)
         uid     = message_id.to_i
         mailbox = build_mailbox(label)
 
@@ -64,7 +64,7 @@ module Emails
         end
       end
 
-      def get_labels
+      def labels
         @labels ||= @session.with_lock do
           (@session.imap.list("", "*") || []).map do |mb|
             fname = mb.name
@@ -73,7 +73,7 @@ module Emails
         end
       end
 
-      def get_unread_count
+      def unread_count
         @session.with_lock { @session.imap.status("INBOX", [ "UNSEEN" ])["UNSEEN"] || 0 }
       end
 
@@ -129,7 +129,7 @@ module Emails
       def build_mailbox(label)
         return "INBOX" if label.blank?
 
-        match = get_labels.find do |lbl|
+        match = labels.find do |lbl|
           [ lbl[:id], lbl[:name] ].compact.any? { |value| value.casecmp?(label) }
         end
 

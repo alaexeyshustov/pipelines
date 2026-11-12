@@ -10,6 +10,11 @@ RSpec.describe Orchestration::ToolResolver do
       expect(resolved).to eq([ Records::TempFileTool ])
     end
 
+    it "binds the orchestration classifier into Emails::ClassifyTool" do
+      allow(agent_record).to receive(:tools).and_return([ "Emails::ClassifyTool" ])
+      expect(resolved.first.classifier).to eq(Orchestration::Agents::EmailsClassifier)
+    end
+
     it "raises ArgumentError when a tool is outside allowed namespaces" do
       allow(agent_record).to receive(:tools).and_return([ "Kernel::Exec" ])
       expect { resolved }.to raise_error(ArgumentError, /Unknown tool class: Kernel::Exec/)

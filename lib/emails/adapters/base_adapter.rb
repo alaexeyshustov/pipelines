@@ -20,16 +20,16 @@ module Emails
         raise NotImplementedError, "#{self.class}#list_messages is not implemented"
       end
 
-      def get_message(message_id, label: nil)
-        raise NotImplementedError, "#{self.class}#get_message is not implemented"
+      def message(message_id, label: nil)
+        raise NotImplementedError, "#{self.class}#message is not implemented"
       end
 
-      def get_labels
-        raise NotImplementedError, "#{self.class}#get_labels is not implemented"
+      def labels
+        raise NotImplementedError, "#{self.class}#labels is not implemented"
       end
 
-      def get_unread_count
-        raise NotImplementedError, "#{self.class}#get_unread_count is not implemented"
+      def unread_count
+        raise NotImplementedError, "#{self.class}#unread_count is not implemented"
       end
 
       def modify_labels(message_id, add: [], remove: [], source_mailbox: nil)

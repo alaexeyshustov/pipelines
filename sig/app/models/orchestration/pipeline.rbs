@@ -19,8 +19,6 @@ module Orchestration
     def initial_input_schema: () -> json_object?
     def initial_input_schema=: (json_object?) -> json_object?
 
-    def validate_steps: () -> Array[PipelineValidator::StepResult]
-
     def latest_run: () -> PipelineRun?
     def run_in_progress?: () -> bool
     def enabled_steps: () -> Step::relation

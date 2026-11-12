@@ -15,9 +15,9 @@ RSpec.describe Emails::Adapters::BaseAdapter do
     end
   end
 
-  describe '#get_message' do
+  describe '#message' do
     it 'raises NotImplementedError' do
-      expect { adapter.get_message('id') }.to raise_error(NotImplementedError, /get_message is not implemented/)
+      expect { adapter.message('id') }.to raise_error(NotImplementedError, /message is not implemented/)
     end
   end
 
@@ -27,15 +27,15 @@ RSpec.describe Emails::Adapters::BaseAdapter do
     end
   end
 
-  describe '#get_labels' do
+  describe '#labels' do
     it 'raises NotImplementedError' do
-      expect { adapter.get_labels }.to raise_error(NotImplementedError, /get_labels is not implemented/)
+      expect { adapter.labels }.to raise_error(NotImplementedError, /labels is not implemented/)
     end
   end
 
-  describe '#get_unread_count' do
+  describe '#unread_count' do
     it 'raises NotImplementedError' do
-      expect { adapter.get_unread_count }.to raise_error(NotImplementedError, /get_unread_count is not implemented/)
+      expect { adapter.unread_count }.to raise_error(NotImplementedError, /unread_count is not implemented/)
     end
   end
 

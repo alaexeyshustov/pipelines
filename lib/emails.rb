@@ -24,16 +24,16 @@ module Emails
     fetch(provider_name).list_messages(max_results:, after_date:, before_date:, offset:, label:)
   end
 
-  def self.get_message(provider_name, message_id, label: nil)
-    fetch(provider_name).get_message(message_id, label:)
+  def self.message(provider_name, message_id, label: nil)
+    fetch(provider_name).message(message_id, label:)
   end
 
-  def self.get_labels(provider_name)
-    fetch(provider_name).get_labels
+  def self.labels(provider_name)
+    fetch(provider_name).labels
   end
 
-  def self.get_unread_count(provider_name)
-    fetch(provider_name).get_unread_count
+  def self.unread_count(provider_name)
+    fetch(provider_name).unread_count
   end
 
   def self.modify_labels(provider_name, message_id, add: [], remove: [], source_mailbox: nil)

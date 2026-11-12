@@ -11,7 +11,7 @@ echo "Running rubocop..."
 bundle exec rubocop
 
 echo "Running archspec..."
-bundle exec archspec check
+bundle exec archspec check --check-todo
 
 echo "Running steep type check..."
 # Each worker loads the full RBS env (~250MB); default is one per CPU.

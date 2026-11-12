@@ -46,7 +46,7 @@ jobs:
         run: bundle exec rubocop --parallel
 
       - name: Run ArchSpec
-        run: bundle exec archspec check
+        run: bundle exec archspec check --check-todo
 
   steep:
     name: Steep Type Check

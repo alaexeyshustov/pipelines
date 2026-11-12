@@ -15,7 +15,7 @@ module Emails
       def initialize: (credentials_path: String, token_path: String) -> void
       def authorize: () -> Signet::OAuth2::Client
       def modify_labels: (String message_id, ?add: Array[String], ?remove: Array[String], ?source_mailbox: String?) -> modify_result
-      def get_message: (String | Integer message_id, ?label: String?) -> message
+      def message: (String | Integer message_id, ?label: String?) -> message
       def create_label: (name: String) -> label
 
       private

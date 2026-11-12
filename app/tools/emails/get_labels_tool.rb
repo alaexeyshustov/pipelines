@@ -10,7 +10,7 @@ module Emails
     def name = "get_labels"
 
     def execute(provider:)
-      Emails.get_labels(provider)
+      Emails.labels(provider)
     end
   end
 end

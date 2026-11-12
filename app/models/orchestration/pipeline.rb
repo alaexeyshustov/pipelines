@@ -15,10 +15,6 @@ module Orchestration
         .order("orchestration_pipelines.name")
     }
 
-    def validate_steps
-      PipelineValidator.new(self).validate
-    end
-
     def latest_run
       pipeline_runs.recent_first.first
     end

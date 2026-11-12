@@ -11,6 +11,30 @@ RSpec.describe Evaluation::Experiment do
     end
   end
 
+  describe "#runner_model" do
+    let(:prompt) { create(:orchestration_prompt, name: "Orchestration::Agents::EmailsClassifier") }
+
+    it "prefers the pipeline model recorded in metadata" do
+      create(:orchestration_agent, name: prompt.name, model: "agent-model")
+      experiment = build(:evaluation_experiment, prompt:, metadata: { "pipeline_model" => "pipeline-model" })
+
+      expect(experiment.runner_model).to eq("pipeline-model")
+    end
+
+    it "falls back to the model of the agent named by the prompt" do
+      create(:orchestration_agent, name: prompt.name, model: "agent-model")
+      experiment = build(:evaluation_experiment, prompt:, metadata: {})
+
+      expect(experiment.runner_model).to eq("agent-model")
+    end
+
+    it "is nil when no agent matches the prompt" do
+      experiment = build(:evaluation_experiment, prompt:, metadata: {})
+
+      expect(experiment.runner_model).to be_nil
+    end
+  end
+
   describe ".completed_for_prompt_name" do
     let(:prompt) { create(:orchestration_prompt, name: "classifier") }
     let(:other_prompt) { create(:orchestration_prompt, name: "summarizer") }
