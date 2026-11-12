@@ -18,7 +18,7 @@ module RubyLLM
   end
 
   class Agent
-    def self.fallbacks: (*String models) -> void
+    def self.fallbacks: (*(String | Fallback) models) -> void
     def self.temperature: (Numeric temperature) -> void
     def self.number: (Symbol name, ?required: bool, ?description: String, ?minimum: Numeric, ?maximum: Numeric) -> void
     def after_fallback: () { (Fallback) -> void } -> void

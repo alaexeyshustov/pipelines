@@ -70,6 +70,8 @@ Domain logic lives in `app/models/evaluation/`, `app/services/evaluation/`, `app
 | `experiment.evaluation_model` | `evaluation_experiments` | `JUDGE_LLM_MODEL` env var (`LlmModels.judge`, default `gpt-6-luna`, is the fallback when it is blank or not a judgment model) |
 | `EVALUATION_LLM_MODEL` env var | stays as env var | used by `MetricSuggester`, `MetricExtractor`, `SyntheticDatasetJob`, `PromptImprover` — not scoped to a single experiment |
 
+Any of these may be a local model (`ollama/<model>`); see [local_models.md](local_models.md) for the judge, fallback and cost caveats.
+
 ## Metrics and Rubrics
 
 Metrics are scoped to agents. You can define rubrics for `Emails::ClassifyAgent` that differ from `Emails::MappingAgent`. Metrics can be activated/deactivated as needed. `MetricSuggester` and `MetricExtractor` use structured output (`with_schema`) and the suggester proposes `kind` and its `levels` or `options`.

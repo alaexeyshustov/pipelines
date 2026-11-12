@@ -33,7 +33,7 @@ module Evaluation
     def query_llm(prompt)
       agent = MetricSuggestionAgent.new
       model = @model
-      agent.with_model(model) if model
+      LlmModels.ref(model).apply_to(agent) if model
       agent.ask(prompt)
     end
 

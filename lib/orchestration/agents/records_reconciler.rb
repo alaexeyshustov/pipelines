@@ -3,7 +3,7 @@ module Orchestration
     class RecordsReconciler < RubyLLM::Agent
       chat_model Chat
       tools Records::ReadSchemaTool, Records::TempFileTool, Records::SearchSimilarTool, Records::InsertRowsTool, Records::UpdateRowsTool, Records::ReadRowsTool
-      model LlmModels.records_agent
+      LlmModels.ref(LlmModels.records_agent).declare_on(self)
 
       schema do
         integer :rows_inserted, description: "The number of rows inserted into the database"

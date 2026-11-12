@@ -121,4 +121,22 @@ RSpec.describe Evaluation::Wizard::AgentPromptStepComponent, type: :component do
       expect(selected&.attribute("value")&.value).to eq(first_model)
     end
   end
+
+  context "with provider-prefixed model ids" do
+    before do
+      allow(Orchestration::Agent).to receive(:available_models).and_return(
+        [ [ "ollama", [ "ollama/qwen3:8b" ] ], [ "openrouter", [ "anthropic/claude-haiku-4.5" ] ] ]
+      )
+    end
+
+    let(:options) { rendered.css("select[name='wizard[sample_model]'] option").to_h { |o| [ o.text, o["value"] ] } }
+
+    it "does not repeat the provider in a local model label" do
+      expect(options).to include("ollama / qwen3:8b" => "ollama/qwen3:8b")
+    end
+
+    it "keeps hosted ids with a vendor prefix unchanged" do
+      expect(options).to include("openrouter / anthropic/claude-haiku-4.5" => "anthropic/claude-haiku-4.5")
+    end
+  end
 end

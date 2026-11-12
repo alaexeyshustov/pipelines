@@ -64,7 +64,7 @@ module Evaluation
     end
 
     def call_llm(user_message, model)
-      response = RubyLLM.chat(model:)
+      response = RubyLLM.chat(**LlmModels.ref(model).chat_options)
                         .with_temperature(0.7)
                         .with_instructions(SYSTEM_PROMPT)
                         .ask(user_message)

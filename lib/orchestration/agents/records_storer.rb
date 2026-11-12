@@ -4,7 +4,7 @@ module Orchestration
       chat_model Chat
       tools Emails::GetLabelsTool, Emails::CreateLabelTool, Emails::AddLabelsTool,
       Records::InsertRowsTool, Records::ReadSchemaTool, Emails::GetTool
-      model LlmModels.emails_agent # grouped with email-processing agents; override via EMAILS_AGENT_MODEL
+      LlmModels.ref(LlmModels.emails_agent).declare_on(self) # grouped with email-processing agents; override via EMAILS_AGENT_MODEL
 
       schema do
         integer :rows_inserted, description: "The number of rows inserted into the database"

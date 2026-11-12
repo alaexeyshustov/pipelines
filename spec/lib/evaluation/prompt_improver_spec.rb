@@ -1,5 +1,7 @@
 require "rails_helper"
 
+# `:llm` examples run against a local model with LLM_TEST_BACKEND=ollama; the rest pin the hosted request body or
+# stub failures (fallback, invalid output).
 RSpec.describe Evaluation::PromptImprover do
   let(:agent_name) { "Emails::ClassifyAgent" }
   let(:prompt) { create(:orchestration_prompt, name: agent_name, system_prompt: "You classify emails.", user_prompt: "{{input}}") }
@@ -31,13 +33,13 @@ RSpec.describe Evaluation::PromptImprover do
   end
 
   describe ".call" do
-    it "creates a new version of the prompt with the improved texts and enqueues its auto evaluation" do
+    it "creates a new version of the prompt with the improved texts and enqueues its auto evaluation", :llm do
       stub_request(:post, %r{api\.openai\.com}).to_return(stub_llm(content: JSON.generate({ system_prompt: "Better.", user_prompt: "Improved {{input}}" })))
       result = nil
       expect { result = described_class.call(experiment: experiment) }.to change(Evaluation::Prompt, :count).by(1)
 
-      expect(result).to have_attributes(name: agent_name, version: prompt.version + 1,
-                                        system_prompt: "Better.", user_prompt: "Improved {{input}}")
+      texts = LlmTestBackend.live? ? { system_prompt: be_present, user_prompt: be_present } : { system_prompt: "Better.", user_prompt: "Improved {{input}}" }
+      expect(result).to have_attributes(name: agent_name, version: prompt.version + 1, **texts)
       expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: result.id).once
     end
 
@@ -76,7 +78,7 @@ RSpec.describe Evaluation::PromptImprover do
       })
     end
 
-    it "attributes the LLM usage to the experiment" do
+    it "attributes the LLM usage to the experiment", :llm do
       described_class.call(experiment: experiment)
       expect(RubyLLM::ActiveRecord::Usage.where(owner: experiment).count).to be >= 1
     end
