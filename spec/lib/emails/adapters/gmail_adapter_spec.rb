@@ -50,11 +50,11 @@ RSpec.describe Emails::Adapters::GmailAdapter do
     end
   end
 
-  describe '#get_message' do
+  describe '#message' do
     it 'returns the full message including a body string',
        vcr: { cassette_name: 'emails/adapters/gmail/get_message',
               record: :none, match_requests_on: %i[method path] } do
-      message = adapter.get_message('msg1')
+      message = adapter.message('msg1')
 
       expect(message).to include(
         id:      'msg1',
@@ -76,11 +76,11 @@ RSpec.describe Emails::Adapters::GmailAdapter do
     end
   end
 
-  describe '#get_labels' do
+  describe '#labels' do
     it 'returns all labels with id, name, and type',
        vcr: { cassette_name: 'emails/adapters/gmail/get_labels',
               record: :none, match_requests_on: %i[method path] } do
-      labels = adapter.get_labels
+      labels = adapter.labels
 
       expect(labels).to be_an(Array)
       expect(labels).to include(
@@ -90,11 +90,11 @@ RSpec.describe Emails::Adapters::GmailAdapter do
     end
   end
 
-  describe '#get_unread_count' do
+  describe '#unread_count' do
     it 'returns the total number of unread messages',
        vcr: { cassette_name: 'emails/adapters/gmail/get_unread_count',
               record: :none, match_requests_on: %i[method path] } do
-      count = adapter.get_unread_count
+      count = adapter.unread_count
 
       expect(count).to eq(5)
     end
@@ -162,11 +162,11 @@ RSpec.describe Emails::Adapters::GmailAdapter do
     end
   end
 
-  describe '#get_message with multipart body' do
+  describe '#message with multipart body' do
     it 'extracts text/plain from multipart payload',
        vcr: { cassette_name: 'emails/adapters/gmail/get_message_multipart',
               record: :none, match_requests_on: %i[method path] } do
-      message = adapter.get_message('msg1')
+      message = adapter.message('msg1')
 
       expect(message).to include(
         id:   'msg1',

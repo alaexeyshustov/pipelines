@@ -21,7 +21,7 @@ module Emails
       def inbox_message_ids_since: (String history_id) -> Array[String]
       def inbox_message_ids_after: (Date date) -> Array[String]
       def fetch_message: (String | Integer message_id) -> full_message
-      def get_message: (String | Integer message_id, ?label: String?) -> message
+      def message: (String | Integer message_id, ?label: String?) -> message
       def attachment: (String | Integer message_id, String attachment_id) -> String
       def attachments: (String | Integer message_id) -> Array[attachment]
       def create_label: (name: String) -> label

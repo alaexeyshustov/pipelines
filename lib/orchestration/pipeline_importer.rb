@@ -119,7 +119,7 @@ module Orchestration
     end
 
     def report_mapping_errors(pipeline, label)
-      issues = pipeline.validate_steps.flat_map(&:errors)
+      issues = PipelineValidator.new(pipeline).validate.flat_map(&:errors)
       return if issues.empty?
 
       raise ImportError, "#{label}: #{issues.map(&:message).join('; ')}"

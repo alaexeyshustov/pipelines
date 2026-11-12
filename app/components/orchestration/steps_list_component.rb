@@ -22,7 +22,7 @@ module Orchestration
     end
 
     def compute_validator_results_per_step
-      all_results    = @pipeline.validate_steps
+      all_results    = Orchestration::PipelineValidator.new(@pipeline).validate
       sa_to_step_map = build_step_action_to_step_map
       group_results_by_step(all_results, sa_to_step_map)
     end

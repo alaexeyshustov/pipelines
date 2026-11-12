@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe Emails::ClassifyTool do
-  subject(:tool) { described_class.new }
+  subject(:tool) { described_class.with_classifier(Orchestration::Agents::EmailsClassifier).new }
 
   let(:mistral_url) { 'https://api.mistral.ai/v1/chat/completions' }
   let(:emails)      { [ { 'id' => 'msg1', 'subject' => 'Interview invitation from Acme' } ] }
@@ -55,5 +55,9 @@ RSpec.describe Emails::ClassifyTool do
 
   it 'skips non-hash entries without raising' do
     expect { tool.execute(emails: [ 'not a hash', nil ]) }.not_to raise_error
+  end
+
+  it 'raises when no classifier is injected' do
+    expect { described_class.new.execute(emails:) }.to raise_error(NotImplementedError, /needs a classifier/)
   end
 end

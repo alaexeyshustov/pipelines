@@ -24,7 +24,7 @@ module Emails
         @service = Google::Apis::GmailV1::GmailService.new
         @service.client_options.application_name = GmailSession::APPLICATION_NAME
         @attachment_reader, @inbox_lister = GmailAttachmentReader.new(@service), GmailInboxLister.new(@service)
-        @label_manager = GmailLabelManager.new(service: @service, labels_provider: -> { get_labels })
+        @label_manager = GmailLabelManager.new(service: @service, labels_provider: -> { labels })
       end
 
       def on_init
@@ -54,7 +54,7 @@ module Emails
         end
       end
 
-      def get_message(message_id, **_kwargs)
+      def message(message_id, **_kwargs)
         message = @service.get_user_message("me", message_id.to_s, format: "full")
         raise "Message not found: #{message_id}" unless message
 
@@ -94,12 +94,12 @@ module Emails
         GmailFullMessage.new(message).to_h
       end
 
-      def get_unread_count
+      def unread_count
         label = @service.get_user_label("me", "UNREAD")
         label&.messages_total.to_i
       end
 
-      def get_labels
+      def labels
         response = @service.list_user_labels("me")
         @labels ||= Array(response&.labels).filter_map do |label|
           id = label.id

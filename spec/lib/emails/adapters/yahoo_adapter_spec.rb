@@ -72,7 +72,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     end
   end
 
-  describe '#get_message' do
+  describe '#message' do
     let(:full_message_text) do
       header_text + "We are pleased to inform you that your application was successful.\r\n"
     end
@@ -87,7 +87,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     end
 
     it 'returns the message for the given uid' do
-      message = adapter.get_message(101)
+      message = adapter.message(101)
 
       expect(message).to include(
         id:      "101",
@@ -97,19 +97,19 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     end
 
     it 'includes the message body' do
-      message = adapter.get_message(101)
+      message = adapter.message(101)
 
       expect(message[:body]).to include('application was successful')
     end
 
     it 'fetches the full RFC822 message' do
-      adapter.get_message(101)
+      adapter.message(101)
 
       expect(imap).to have_received(:uid_fetch).with(101, include('RFC822'))
     end
   end
 
-  describe '#get_labels' do
+  describe '#labels' do
     let(:mailbox) { Net::IMAP::MailboxList.new([ :Noselect ], '/', 'INBOX') }
 
     before do
@@ -117,20 +117,20 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     end
 
     it 'returns folders as labels with id, name, and type' do
-      labels = adapter.get_labels
+      labels = adapter.labels
 
       expect(labels).to be_an(Array)
       expect(labels.first).to include(id: 'INBOX', name: 'INBOX')
     end
   end
 
-  describe '#get_unread_count' do
+  describe '#unread_count' do
     before do
       allow(imap).to receive(:status).with('INBOX', [ 'UNSEEN' ]).and_return({ 'UNSEEN' => 7 })
     end
 
     it 'returns the number of unseen messages in the inbox' do
-      count = adapter.get_unread_count
+      count = adapter.unread_count
 
       expect(count).to eq(7)
     end
@@ -242,7 +242,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
   describe '#on_exit' do
     before do
       allow(imap).to receive(:status).and_return({ "UNSEEN" => 0 })
-      adapter.get_unread_count # trigger lazy connection
+      adapter.unread_count # trigger lazy connection
       allow(imap).to receive(:logout)
       allow(imap).to receive(:disconnect)
     end

@@ -59,29 +59,6 @@ RSpec.describe Orchestration::Pipeline do
     end
   end
 
-  describe '#validate_steps' do
-    let(:fake_results) { [] }
-    let(:validator) { Struct.new(:validate).new(fake_results) }
-
-    before do
-      allow(Orchestration::PipelineValidator).to receive(:new).and_return(validator)
-    end
-
-    it 'delegates to PipelineValidator#validate' do
-      pipeline = build(:orchestration_pipeline)
-
-      expect(pipeline.validate_steps).to eq(fake_results)
-    end
-
-    it 'returns an array of StepResult objects for a pipeline with steps' do
-      pipeline = create(:orchestration_pipeline)
-
-      result = pipeline.validate_steps
-
-      expect(result).to be_an(Array)
-    end
-  end
-
   describe '#next_run_at' do
     it 'returns nil when cron_expression is nil' do
       pipeline = build(:orchestration_pipeline, cron_expression: nil)

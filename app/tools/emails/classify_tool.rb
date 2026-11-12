@@ -1,6 +1,14 @@
 module Emails
   class ClassifyTool < RubyLLM::Tool
+    # The classifier agent is injected (see Orchestration::ToolResolver) so the
+    # tools layer doesn't depend on the orchestration subsystem.
+    class_attribute :classifier, instance_accessor: false
+
     def self.readonly? = true
+
+    def self.with_classifier(classifier)
+      Class.new(self) { self.classifier = classifier } # : singleton(ClassifyTool)
+    end
 
     description "Classify a batch of emails and return tags for each one."
 
@@ -26,7 +34,13 @@ module Emails
       end
 
       input = { emails: emails }.to_json
-      Orchestration::Agents::EmailsClassifier.create.ask(input).parsed
+      classifier.create.ask(input).parsed
+    end
+
+    private
+
+    def classifier
+      self.class.classifier or raise NotImplementedError, "#{self.class} needs a classifier; use .with_classifier"
     end
   end
 end

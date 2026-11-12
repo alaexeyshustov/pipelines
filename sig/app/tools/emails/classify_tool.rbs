@@ -1,7 +1,14 @@
 module Emails
   class ClassifyTool < RubyLLM::Tool
+    def self.classifier: () -> singleton(RubyLLM::Agent)?
+    def self.classifier=: (singleton(RubyLLM::Agent)?) -> singleton(RubyLLM::Agent)?
     def self.readonly?: () -> bool
+    def self.with_classifier: (singleton(RubyLLM::Agent) classifier) -> singleton(ClassifyTool)
     def name: () -> String
     def execute: (emails: Array[json_object]) -> json_object_value
+
+    private
+
+    def classifier: () -> singleton(RubyLLM::Agent)
   end
 end

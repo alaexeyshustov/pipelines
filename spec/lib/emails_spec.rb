@@ -44,10 +44,10 @@ RSpec.describe Emails do
     end
   end
 
-  describe '.get_message' do
+  describe '.message' do
     it 'delegates to the matching adapter' do
-      allow(adapter).to receive(:get_message).with('msg_1', label: nil).and_return({ subject: 'Hi' })
-      expect(described_class.get_message('gmail', 'msg_1')).to eq({ subject: 'Hi' })
+      allow(adapter).to receive(:message).with('msg_1', label: nil).and_return({ subject: 'Hi' })
+      expect(described_class.message('gmail', 'msg_1')).to eq({ subject: 'Hi' })
     end
   end
 
@@ -60,17 +60,17 @@ RSpec.describe Emails do
     end
   end
 
-  describe '.get_labels' do
+  describe '.labels' do
     it 'delegates to the matching adapter' do
-      allow(adapter).to receive(:get_labels).and_return(%w[INBOX JOBS])
-      expect(described_class.get_labels('gmail')).to eq(%w[INBOX JOBS])
+      allow(adapter).to receive(:labels).and_return(%w[INBOX JOBS])
+      expect(described_class.labels('gmail')).to eq(%w[INBOX JOBS])
     end
   end
 
-  describe '.get_unread_count' do
+  describe '.unread_count' do
     it 'delegates to the matching adapter' do
-      allow(adapter).to receive(:get_unread_count).and_return(42)
-      expect(described_class.get_unread_count('gmail')).to eq(42)
+      allow(adapter).to receive(:unread_count).and_return(42)
+      expect(described_class.unread_count('gmail')).to eq(42)
     end
   end
 

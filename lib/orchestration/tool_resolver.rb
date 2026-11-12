@@ -2,7 +2,7 @@ module Orchestration
   class ToolResolver
     REGISTRY = {
       "Emails::AddLabelsTool"      => Emails::AddLabelsTool,
-      "Emails::ClassifyTool"       => Emails::ClassifyTool,
+      "Emails::ClassifyTool"       => Emails::ClassifyTool.with_classifier(Agents::EmailsClassifier),
       "Emails::CreateLabelTool"    => Emails::CreateLabelTool,
       "Emails::GetLabelsTool"      => Emails::GetLabelsTool,
       "Emails::GetTool"            => Emails::GetTool,

@@ -107,7 +107,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     end
   end
 
-  describe "#get_message" do
+  describe "#message" do
     let(:raw) { "Subject: Legacy\r\nFrom: a@b.com\r\nTo: me@yahoo.com\r\nDate: Mon, 1 Jan 2026 12:00:00 +0000\r\n\r\nHi\r\n" }
 
     before do
@@ -115,11 +115,11 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     end
 
     it "accepts the legacy bare UID" do
-      expect(adapter.get_message("101")).to include(subject: "Legacy")
+      expect(adapter.message("101")).to include(subject: "Legacy")
     end
 
     it "accepts a <uid_validity>:<uid> id" do
-      expect(adapter.get_message("77:101")).to include(subject: "Legacy")
+      expect(adapter.message("77:101")).to include(subject: "Legacy")
       expect(imap).to have_received(:uid_fetch).with(101, anything)
     end
   end
