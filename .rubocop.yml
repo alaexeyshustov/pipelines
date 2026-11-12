@@ -12,6 +12,11 @@ AllCops:
   Exclude:
     - ".gem_rbs_collection/**/*"
     - "lib/view_primitives/**/*"
+    # Skipped implicitly on a normal checkout (bin stubs, hidden dir), but
+    # linted when the checkout path has a hidden segment such as
+    # .claude/worktrees/. Exclude them explicitly so every checkout lints alike.
+    - "bin/**/*"
+    - ".sandbox/**/*"
 
 Lint:
  Enabled: true
