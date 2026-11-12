@@ -22,6 +22,8 @@ module LlmTestBackend
   # Every ENV var LlmModels reads; spec/lib/llm_models_spec.rb fails when they drift.
   ROUTED_MODEL_VARS = %w[EMAILS_AGENT_MODEL RECORDS_AGENT_MODEL EVALUATION_LLM_MODEL JUDGE_LLM_MODEL].freeze
   BLANKED_MODEL_VARS = %w[EVALUATION_FALLBACK_MODELS].freeze
+  # Already served by Ollama (embeddings, ADR 0014), so nothing to route.
+  LOCAL_MODEL_VARS = %w[EMBEDDING_MODEL].freeze
   HOSTED_LLM_HOSTS = %w[api.openai.com api.mistral.ai api.anthropic.com generativelanguage.googleapis.com openrouter.ai].freeze
   # Default mode never reaches a real Ollama: unstubbed requests to this host fail in WebMock.
   OFFLINE_API_BASE = "http://ollama.test/v1".freeze

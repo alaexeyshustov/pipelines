@@ -4,7 +4,7 @@ RSpec.describe Document::EmbedJob do
   include ActiveJob::TestHelper
   include EmbeddingHelpers
 
-  let(:url) { "http://localhost:11434/v1/embeddings" }
+  let(:url) { EmbeddingHelpers::OLLAMA_EMBEDDINGS_URL }
   let(:document) { create(:document) }
 
   it "embeds the document" do

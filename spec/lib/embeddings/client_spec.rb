@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe Embeddings::Client do
-  let(:url) { "http://localhost:11434/v1/embeddings" }
+  let(:url) { EmbeddingHelpers::OLLAMA_EMBEDDINGS_URL }
 
   def vector(seed) = Array.new(described_class::DIMENSIONS) { |i| (seed + i) / 10_000.0 }
 

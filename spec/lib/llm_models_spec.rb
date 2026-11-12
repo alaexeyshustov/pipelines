@@ -138,13 +138,14 @@ RSpec.describe LlmModels do
     end
   end
 
-  it "has every ENV var it reads routed or blanked by LLM_TEST_BACKEND=ollama (spec/support/llm_test_backend.rb)" do
+  it "has every ENV var it reads routed, blanked or local under LLM_TEST_BACKEND=ollama (spec/support/llm_test_backend.rb)" do
     read = []
     allow(ENV).to(receive(:fetch).and_wrap_original { |original, key, *args| (read << key) && original.call(key, *args) })
     described_class.singleton_methods(false).select { |name| described_class.method(name).arity.zero? }
       .each { |name| described_class.public_send(name) }
 
-    expect(read.uniq).to match_array(LlmTestBackend::ROUTED_MODEL_VARS + LlmTestBackend::BLANKED_MODEL_VARS)
+    expect(read.uniq).to match_array(LlmTestBackend::ROUTED_MODEL_VARS + LlmTestBackend::BLANKED_MODEL_VARS +
+                                    LlmTestBackend::LOCAL_MODEL_VARS)
   end
 
   describe ".ref" do
