@@ -62,6 +62,24 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
 
         expect(result.summary).to eq("ollama API error (501): unsupported")
       end
+
+      it "reports the provider as a string" do
+        result = described_class.new(error:, action_run:, raw_content: nil).normalize
+
+        expect(result.details["provider"]).to eq("ollama")
+      end
+    end
+
+    context "when the agent_snapshot has no model" do
+      let(:model) { nil }
+      let(:response) { Faraday::Response.new(status: 500, body: { "message" => "boom" }.to_json) }
+      let(:error) { RubyLLM::Error.new("boom", response: response) }
+
+      it "falls back to a generic provider name" do
+        result = described_class.new(error:, action_run:, raw_content: nil).normalize
+
+        expect(result.summary).to eq("provider API error (500): boom")
+      end
     end
 
     context "when a provider HTTP error has a nested error.message (no top-level message)" do

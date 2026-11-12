@@ -32,7 +32,7 @@ module Evaluation
 
       def model_options
         available_models.flat_map do |provider, models|
-          models.map { |m| [ "#{provider} / #{m}", m ] }
+          models.map { |m| [ "#{provider} / #{m.delete_prefix("#{provider}/")}", m ] }
         end
       end
     end
