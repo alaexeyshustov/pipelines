@@ -75,7 +75,7 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
       draft = wizard_draft.reload
       generation = draft.payload["dataset_generation"]
       if LlmTestBackend.live? && generation["status"] == "error"
-        expect(generation["error_message"]).to be_present
+        expect(generation["error_message"]).to match(/unexpected (character|token)|Expected JSON array/i)
       else
         expect(generation["status"]).to eq("complete")
         expect(generation["dataset_id"]).to eq(Evaluation::Dataset.last.id)
@@ -148,7 +148,7 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
 
         generation = wizard_draft.reload.payload["dataset_generation"]
         expect(generation["status"]).to eq("error")
-        expect(generation["error_message"]).to be_present
+        expect(generation["error_message"]).to match(/unexpected (character|token)|Expected JSON array/i)
       end
 
       it "logs the failure to the job logger" do
