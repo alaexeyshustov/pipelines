@@ -18,7 +18,7 @@ module Orchestration
 
     def apply_model(agent)
       model = @policy.model
-      agent.with_model(model) if model.present?
+      LlmModels.ref(model).apply_to(agent) if model.present?
     end
 
     def apply_tools(agent)

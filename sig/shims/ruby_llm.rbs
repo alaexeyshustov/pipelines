@@ -27,13 +27,13 @@ module RubyLLM
     def self.create: () -> instance
     def self.new: (?chat: Chat | ::Chat) -> instance
     def self.chat_model: (singleton(::Chat) chat_class) -> void
-    def self.model: (String model_id) -> void
+    def self.model: (String model_id, ?provider: Symbol?, ?assume_model_exists: bool) -> void
     def self.tools: (*singleton(Tool) tools) -> void
     def self.schema: () { () [self: ::Schematist::SchemaBuilder] -> void } -> void
     def self.instructions: (String text) -> void
     def self.string: (Symbol name, ?required: bool, ?description: String) -> void
 
-    def with_model: (String model) -> self
+    def with_model: (String model, ?provider: Symbol?, ?assume_model_exists: bool) -> self
     def with_schema: (singleton(::Schematist::Schema) | json_object schema) -> self
     def with_tools: (*singleton(Tool)? tools) -> self
     def chat: () -> Chat
@@ -57,7 +57,7 @@ module RubyLLM
     @models: Array[model]
 
     def all: () -> Array[model]
-    def find: (String model_id, ?provider: String?) -> ModelInfo
+    def find: (String model_id, ?provider: String | Symbol | nil) -> ModelInfo
   end
 
   class Embedding
@@ -67,7 +67,7 @@ module RubyLLM
 
   def self.embed: (String | Array[String] text, ?model: String?, ?provider: Symbol?, ?assume_model_exists: bool, ?dimensions: Integer?) -> Embedding
   def self.models: () -> Models
-  def self.chat: (?model: String?) -> Chat
+  def self.chat: (?model: String?, ?provider: Symbol?, ?assume_model_exists: bool) -> Chat
 
   class Attachment
     def self.new: (IO | StringIO | String source, ?filename: String?) -> instance
@@ -78,6 +78,15 @@ module RubyLLM
   end
 
   def self.ocr: (Attachment | String file, ?model: String?, ?provider: Symbol?, ?assume_model_exists: bool) -> OCR
+
+  class Fallback
+    def self.new: (id: String, provider: Symbol) -> Fallback
+  end
+
+  class Provider
+    def self.providers: () -> Hash[Symbol, singleton(Provider)]
+    def self.local?: () -> bool
+  end
 end
 
 module Schematist
