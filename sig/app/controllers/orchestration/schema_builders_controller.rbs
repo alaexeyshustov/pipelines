@@ -12,7 +12,11 @@ module Orchestration
 
     private
 
+    def render_mutation: () { (Orchestration::SchemaBuilder) -> Orchestration::SchemaBuilder } -> void
+    def render_builder: (Orchestration::SchemaBuilder builder) -> void
     def render_parse_error: (String message) -> void
+    def parsed_root: () -> Orchestration::SchemaBuilder
+    def property_name: () -> String
     def parse_json: () -> json_object
     def parse_path: () -> Array[String]
     def builder_params: () -> ActionController::Parameters

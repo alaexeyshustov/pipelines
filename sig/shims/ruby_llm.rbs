@@ -56,7 +56,7 @@ module RubyLLM
 
     @models: Array[model]
 
-    def all: () -> Array[model]
+    def all: () -> Array[ModelInfo]
     def find: (String model_id, ?provider: String | Symbol | nil) -> ModelInfo
   end
 

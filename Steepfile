@@ -4,6 +4,8 @@ target :app do
   check "app/services"
   check "app/tools"
   check "lib"
+  check "app/jobs/email/sync_inbox_job.rb"
+  check "app/jobs/email/sync_inbox_job"
   ignore "lib/view_primitives"
 
   library "pathname"

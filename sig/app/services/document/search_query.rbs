@@ -16,11 +16,5 @@ class Document
 
     def initialize: (String? query, limit: Integer, mode: Symbol) -> void
     def call: () -> Array[Hit]
-
-    private
-
-    def text_hits: () -> Array[Hit]
-    def semantic_hits: () -> Array[Hit]
-    def hybrid_hits: () -> Array[Hit]
   end
 end

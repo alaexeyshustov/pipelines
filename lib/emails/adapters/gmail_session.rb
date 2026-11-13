@@ -70,11 +70,12 @@ module Emails
 
       # Stored credentials; raises Emails::NotConfigured without a token. Only the CLI setup passes interactive: true.
       def authorize(interactive: false)
-        GmailAuth.new(
-          credentials_path: @credentials_path,
-          token_path:       @token_path,
-          scope:            SCOPE
-        ).credentials(interactive:)
+        auth.credentials(interactive:)
+      end
+
+      # The OAuth flow for these paths and SCOPE; the web setup uses it for the authorization URL and code exchange.
+      def auth
+        GmailAuth.new(credentials_path: @credentials_path, token_path: @token_path, scope: SCOPE)
       end
     end
   end

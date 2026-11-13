@@ -49,13 +49,8 @@ module Settings
     end
 
     def setup
-      auth = Emails::GmailAuth.new(
-        credentials_path: @email_connector.configuration["credentials_path"],
-        token_path: @email_connector.configuration["token_path"],
-        scope: Emails::Adapters::GmailSession::SCOPE
-      )
       session[:oauth_connector_id] = @email_connector.id
-      redirect_to auth.authorization_url(callback_uri: oauth_callback_settings_email_connectors_url),
+      redirect_to gmail_auth(@email_connector).authorization_url(callback_uri: oauth_callback_settings_email_connectors_url),
                   allow_other_host: true
     rescue Errno::ENOENT => e
       redirect_to edit_settings_email_connector_path(@email_connector),
@@ -70,7 +65,7 @@ module Settings
       end
 
       connector = EmailConnector.find(connector_id)
-      exchange_gmail_oauth_code(connector)
+      gmail_auth(connector).exchange_code(code: params[:code], callback_uri: oauth_callback_settings_email_connectors_url)
       redirect_to edit_settings_email_connector_path(connector), notice: "Gmail connected successfully."
     rescue StandardError => e
       redirect_to edit_settings_email_connector_path(connector), alert: "OAuth failed: #{e.message}"
@@ -78,14 +73,12 @@ module Settings
 
     private
 
-    def exchange_gmail_oauth_code(connector)
-      callback_uri = oauth_callback_settings_email_connectors_url
-      auth = Emails::GmailAuth.new(
-        credentials_path: connector.configuration["credentials_path"],
-        token_path:       connector.configuration["token_path"],
-        scope:            Emails::Adapters::GmailSession::SCOPE
-      )
-      auth.exchange_code(code: params[:code], callback_uri:)
+    def gmail_auth(connector)
+      configuration = connector.configuration
+      Emails::Adapters::GmailSession.new(
+        credentials_path: configuration["credentials_path"],
+        token_path:       configuration["token_path"]
+      ).auth
     end
 
     def set_email_connector

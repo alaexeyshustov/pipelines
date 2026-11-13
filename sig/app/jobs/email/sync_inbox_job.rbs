@@ -9,17 +9,12 @@ class Email
       def self.new: (counts: counts, email_ids: Array[Integer]) -> Result
     end
 
+    INBOXES: Hash[String, singleton(GmailInbox) | singleton(YahooInbox)]
+
     def perform: (String provider) -> Result
 
     private
 
-    def sync_gmail: () -> Result
-    def sync_yahoo: () -> Result
-    def save_yahoo_cursor: (SyncCursor cursor, String mode, Integer uid_validity, Integer? last_uid) -> void
-    def yahoo_uids: (SyncCursor cursor, Integer uid_validity) -> [String, Array[Integer]]
-    def yahoo_window_uids: () -> Array[Integer]
-    def gmail_message_ids: (SyncCursor cursor) -> [String, Array[String]]
-    def window_ids: () -> Array[String]
     def hold_cursor?: (String provider, SyncCursor cursor, Array[String] failed_ids) -> bool
     def store_all: (String provider, String mode, Array[String] ids) -> [Result, Array[String]]
     def counts_for: (String mode, Integer fetched, Array[[String, String, Email?]] outcomes) -> counts

@@ -4,6 +4,7 @@ module Embeddable
   extend ActiveSupport::Concern
 
   Hybrid = Data.define(:record, :score, :snippet)
+  Ranked = Data.define(:record, :rank, :snippet)
 
   included do
     has_many :embeddings, as: :embeddable, dependent: :destroy
@@ -29,7 +30,31 @@ module Embeddable
       fuse(matches, neighbours).first(limit)
     end
 
+    # One search API over the three modes, best first, with lower +rank+ always better: +:text+ ranks by bm25
+    # (fts_search), +:semantic+ by cosine distance with no snippet, +:hybrid+ by the negated fused score.
+    # Raises ArgumentError for any other mode.
+    def ranked_search(query, mode: :text, limit: 20)
+      case mode
+      when :text then text_ranked(query, limit)
+      when :semantic then semantic_ranked(query, limit)
+      when :hybrid then hybrid_ranked(query, limit)
+      else raise ArgumentError, "Unknown search mode: #{mode.inspect}"
+      end
+    end
+
     private
+
+    def text_ranked(query, limit)
+      fts_search(query, limit:).map { |m| Ranked.new(record: m.record, rank: m.rank, snippet: m.snippet) }
+    end
+
+    def semantic_ranked(query, limit)
+      semantic_search(query, limit:).map { |n| Ranked.new(record: n.embeddable, rank: n.neighbor_distance, snippet: nil) }
+    end
+
+    def hybrid_ranked(query, limit)
+      hybrid_search(query, limit:).map { |h| Ranked.new(record: h.record, rank: -h.score, snippet: h.snippet) }
+    end
 
     def fuse(matches, neighbours)
       Neighbor::Reranking.rrf(matches.keys, neighbours.keys).map { |hit| fused_hit(hit[:score], matches[hit[:result]], neighbours[hit[:result]]) }

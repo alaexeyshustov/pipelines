@@ -45,4 +45,46 @@ RSpec.describe Embeddable do
       expect(Email.hybrid_search("salary").map(&:record)).to contain_exactly(kept, other)
     end
   end
+
+  describe ".ranked_search" do
+    let!(:strong) { create(:email, subject: "salary salary", body: "salary talk") }
+    let!(:weak) { create(:email, subject: "Hello", body: "salary maybe, plus a long text " * 3) }
+
+    before do
+      embed_as(strong, unit_vector(0))
+      embed_as(weak, unit_vector(1))
+    end
+
+    it "ranks text matches by bm25 with snippets" do
+      hits = Email.ranked_search("salary", mode: :text)
+
+      expect(hits.map(&:record)).to eq([ strong, weak ])
+      expect(hits.first.rank).to be < hits.last.rank
+      expect(hits.first.snippet).to include("[[salary]]")
+    end
+
+    it "ranks semantic matches by cosine distance without snippets" do
+      hits = Email.ranked_search("q", mode: :semantic)
+
+      expect(hits.map(&:record)).to eq([ strong, weak ])
+      expect(hits.map(&:rank)).to eq(Email.semantic_search("q").map(&:neighbor_distance))
+      expect(hits.map(&:snippet)).to all(be_nil)
+    end
+
+    it "ranks hybrid matches by the negated fused score" do
+      hits = Email.ranked_search("salary", mode: :hybrid)
+
+      expect(hits.map(&:record)).to eq([ strong, weak ])
+      expect(hits.map(&:rank)).to eq(Email.hybrid_search("salary").map { |hit| -hit.score })
+      expect(hits.first.snippet).to include("[[salary]]")
+    end
+
+    it "respects the limit" do
+      expect(Email.ranked_search("salary", mode: :hybrid, limit: 1).size).to eq(1)
+    end
+
+    it "raises on an unknown mode" do
+      expect { Email.ranked_search("salary", mode: :fuzzy) }.to raise_error(ArgumentError, /fuzzy/)
+    end
+  end
 end
