@@ -1,0 +1,16 @@
+class Email
+  class SyncInboxJob < ApplicationJob
+    class GmailInbox
+      @profile: { email_address: String, history_id: String }
+
+      def initialize: () -> void
+      def cursor: () -> SyncCursor
+      def listing: (SyncCursor cursor) -> [String, Array[String]]
+      def position: (String _mode) -> SyncCursor::position
+
+      private
+
+      def window_ids: () -> Array[String]
+    end
+  end
+end

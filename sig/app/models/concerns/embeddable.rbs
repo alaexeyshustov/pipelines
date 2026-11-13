@@ -7,6 +7,14 @@ module Embeddable
     def self.new: (record: ApplicationRecord, score: Float, snippet: String?) -> instance
   end
 
+  class Ranked
+    attr_reader record: ApplicationRecord
+    attr_reader rank: Float
+    attr_reader snippet: String?
+
+    def self.new: (record: ApplicationRecord, rank: Float, snippet: String?) -> instance
+  end
+
   def embeddings: () -> ActiveRecord::Associations::CollectionProxy
 
   module ClassMethods
@@ -14,9 +22,13 @@ module Embeddable
     def fts_search: (String? query, ?limit: Integer) -> Array[FtsSearchable::Match]
     def semantic_search: (String? query, ?limit: Integer) -> Array[Embedding]
     def hybrid_search: (String? query, ?limit: Integer) -> Array[Hybrid]
+    def ranked_search: (String? query, ?mode: Symbol, ?limit: Integer) -> Array[Ranked]
 
     private
 
+    def text_ranked: (String? query, Integer limit) -> Array[Ranked]
+    def semantic_ranked: (String? query, Integer limit) -> Array[Ranked]
+    def hybrid_ranked: (String? query, Integer limit) -> Array[Ranked]
     def fuse: (Hash[Integer, FtsSearchable::Match] matches, Hash[Integer, Embedding] neighbours) -> Array[Hybrid]
     def fused_hit: (Float score, FtsSearchable::Match? match, Embedding? neighbour) -> Hybrid
   end

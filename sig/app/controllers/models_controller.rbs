@@ -8,5 +8,5 @@ class ModelsController < ApplicationController
 
   private
 
-  def model_matches?: (RubyLLM::Models::model model, String query) -> bool
+  def model_matches?: (RubyLLM::Models::ModelInfo model, String query) -> bool
 end

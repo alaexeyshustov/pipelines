@@ -1,5 +1,6 @@
 class Embedding < ApplicationRecord
   def self.store!: (ApplicationRecord embeddable, model: String, content_digest: String, vector: Array[Float]) -> Embedding
+  def self.row_for: (ApplicationRecord embeddable, Hash[Symbol, String | Integer | ActiveSupport::TimeWithZone | Array[Float]] attributes) -> Hash[Symbol, String | Integer | ActiveSupport::TimeWithZone | Array[Float]]
   def self.nearest: (Array[Float] vector, type: String, model: String, ?scope: ActiveRecord::Relation, ?limit: Integer) -> ActiveRecord::Relation
 
   def neighbor_distance: () -> Float

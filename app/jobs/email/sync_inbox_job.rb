@@ -1,5 +1,5 @@
 # Pulls new INBOX mail of one provider into +Email+ rows (ADR 0013). "gmail" and "yahoo" (Emails::PROVIDER_NAMES) are supported; another
-# provider adds a +sync_<provider>+ method and a branch in +perform+.
+# provider adds an inbox class (cursor, listing, position; see GmailInbox) and an INBOXES entry.
 #
 # Gmail: the cursor account is the mailbox address from the Gmail profile. With no cursor the last
 # Email.backfill_days days are listed ("backfill"); with a cursor the history since its historyId is read
@@ -26,71 +26,23 @@
 class Email::SyncInboxJob < ApplicationJob
   Result = Data.define(:counts, :email_ids)
 
+  INBOXES = { Emails::GMAIL => GmailInbox, Emails::YAHOO => YahooInbox }.freeze
+
   def perform(provider)
-    case provider
-    when Emails::GMAIL then sync_gmail
-    when Emails::YAHOO then sync_yahoo
-    else raise ArgumentError, "Unsupported email provider: #{provider}"
-    end
+    inbox = INBOXES.fetch(provider) { raise ArgumentError, "Unsupported email provider: #{provider}" }.new
+    cursor = inbox.cursor
+    mode, ids = inbox.listing(cursor)
+
+    result, failed_ids = store_all(provider, mode, ids)
+    return result if hold_cursor?(provider, cursor, failed_ids)
+
+    position = inbox.position(mode) #: Email::SyncCursor::position
+    # steep cannot type a double splat of a record
+    mode == "incremental" ? cursor.advance!(**position) : cursor.reset!(**position) # steep:ignore
+    result
   end
 
   private
-
-  def sync_gmail
-    profile = Emails.profile(Emails::GMAIL)
-    cursor = Email::SyncCursor.for(provider: Emails::GMAIL, account: profile.fetch(:email_address))
-    mode, ids = gmail_message_ids(cursor)
-
-    result, failed_ids = store_all(Emails::GMAIL, mode, ids)
-    return result if hold_cursor?(Emails::GMAIL, cursor, failed_ids)
-
-    mode == "incremental" ? cursor.advance!(history_id: profile.fetch(:history_id)) : cursor.reset!(history_id: profile.fetch(:history_id))
-    result
-  end
-
-  def sync_yahoo
-    cursor = Email::SyncCursor.for(provider: Emails::YAHOO, account: Emails.account(Emails::YAHOO))
-    status = Emails.inbox_status(Emails::YAHOO)
-    uid_validity = status.uid_validity
-    mode, uids = yahoo_uids(cursor, uid_validity)
-
-    result, failed_ids = store_all(Emails::YAHOO, mode, uids.map { |uid| "#{uid_validity}:#{uid}" })
-    return result if hold_cursor?(Emails::YAHOO, cursor, failed_ids)
-
-    save_yahoo_cursor(cursor, mode, uid_validity, mode == "incremental" ? uids.max : status.last_uid)
-    result
-  end
-
-  def save_yahoo_cursor(cursor, mode, uid_validity, last_uid)
-    if mode == "incremental"
-      cursor.advance!(uid_validity: uid_validity, last_uid: last_uid)
-    else
-      cursor.reset!(uid_validity: uid_validity, last_uid: last_uid)
-    end
-  end
-
-  def yahoo_uids(cursor, uid_validity)
-    return [ "backfill", yahoo_window_uids ] if cursor.uid_validity.nil?
-    return [ "rescan", yahoo_window_uids ] if cursor.uid_validity != uid_validity
-
-    [ "incremental", Emails.inbox_uids_after(Emails::YAHOO, cursor.last_uid.to_i) ]
-  end
-
-  def yahoo_window_uids
-    Emails.inbox_uids_since(Emails::YAHOO, Date.current - Email.backfill_days)
-  end
-
-  def gmail_message_ids(cursor)
-    return [ "backfill", window_ids ] if cursor.history_id.blank?
-
-    [ "incremental", Emails.inbox_message_ids_since(Emails::GMAIL, cursor.history_id.to_s) ]
-  rescue Emails::HistoryExpiredError
-    [ "rescan", window_ids ]
-  end
-
-  def window_ids
-    Emails.inbox_message_ids_after(Emails::GMAIL, Date.current - Email.backfill_days)
-  end
 
   # True when a failed message keeps the cursor where it is: counts the failed run, and gives up (false, with a
   # warning) once it was the MAX_FAILED_RUNS-th, so the caller advances or resets the cursor, which clears the count.
@@ -110,7 +62,10 @@ class Email::SyncInboxJob < ApplicationJob
   # [Result, ids of the messages that failed]
   def store_all(provider, mode, ids)
     known = Email.where(provider: provider, provider_message_id: ids).pluck(:provider_message_id).to_set
-    outcomes = ids.map { |message_id| [ message_id, *store(provider, message_id, known) ] }
+    outcomes = ids.map do |message_id|
+      outcome, email = store(provider, message_id, known)
+      [ message_id, outcome, email ]
+    end #: Array[[String, String, Email?]]
     failed_ids = outcomes.select { |(_id, outcome, _email)| outcome == "failed" }.map(&:first)
     [ Result.new(counts: counts_for(mode, ids.size, outcomes), email_ids: outcomes.filter_map { |(*, email)| email&.id }), failed_ids ]
   end
