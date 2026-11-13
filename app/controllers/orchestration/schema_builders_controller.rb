@@ -1,60 +1,59 @@
 module Orchestration
   class SchemaBuildersController < ApplicationController
     def build
-      root = SchemaBuilder.from_schema(parse_json)
-      if params[:builder].present?
-        root = root.with_mutation(parse_path) { |node| SchemaBuilderParamsForm.new(builder_params).apply(node) }
-      end
-      @builder = root
-      @json = @builder.to_schema.to_json
-      render :build
+      return render_builder(parsed_root) if params[:builder].blank?
+
+      render_mutation { |node| SchemaBuilderParamsForm.new(builder_params).apply(node) }
     end
 
     def add_property
-      name = params[:property_name].to_s.strip
-      root = SchemaBuilder.from_schema(parse_json)
-      @builder = root.with_mutation(parse_path) { |b| b.add_property(name) }
-      @json = @builder.to_schema.to_json
-      render :build
+      render_mutation { |node| node.add_property(property_name) }
     end
 
     def remove_property
-      name = params[:property_name].to_s.strip
-      root = SchemaBuilder.from_schema(parse_json)
-      @builder = root.with_mutation(parse_path) { |b| b.remove_property(name) }
-      @json = @builder.to_schema.to_json
-      render :build
+      render_mutation { |node| node.remove_property(property_name) }
     end
 
     def change_type
       new_type = params[:new_type].to_s
-      root = SchemaBuilder.from_schema(parse_json)
-      @builder =
-        if SchemaBuilder::TYPES.include?(new_type)
-          root.with_mutation(parse_path) { |b| b.with_type(new_type) }
-        else
-          root
-        end
-      @json = @builder.to_schema.to_json
-      render :build
+      return render_builder(parsed_root) unless SchemaBuilder::TYPES.include?(new_type)
+
+      render_mutation { |node| node.with_type(new_type) }
     end
 
     def parse
       parsed = JSON.parse(params[:json].to_s)
       return render_parse_error("Invalid JSON: expected an object, got #{parsed.class.name.downcase}") unless parsed.is_a?(Hash)
 
-      @builder = SchemaBuilder.from_schema(parsed)
-      @json = @builder.to_schema.to_json
-      render :build
+      render_builder(SchemaBuilder.from_schema(parsed))
     rescue JSON::ParserError
       render_parse_error("Invalid JSON: #{$!.message}")
     end
 
     private
 
+    # Applies +mutation+ to the node at params[:path] of the submitted schema and renders the result.
+    def render_mutation(&mutation)
+      render_builder(parsed_root.with_mutation(parse_path, &mutation))
+    end
+
+    def render_builder(builder)
+      @builder = builder
+      @json = builder.to_schema.to_json
+      render :build
+    end
+
     def render_parse_error(message)
       @error = message
       render :parse_error, status: :unprocessable_content
+    end
+
+    def parsed_root
+      SchemaBuilder.from_schema(parse_json)
+    end
+
+    def property_name
+      params[:property_name].to_s.strip
     end
 
     def parse_json

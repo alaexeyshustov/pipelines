@@ -14,37 +14,37 @@ sources:
 - "**/app/models/**/*.rb"
 snapshot:
   ".ruby-version": 365c845737dc111861176ea1d0246ce7b335768d8dbd2cea234c305b2983beba
-  Gemfile: c7fdefc9c89b5a8139143645e074864d55072086f6ac985d04d519bd31fb219c
-  Gemfile.lock: 738dc723858a11b4666a5579217b3a57c8c504b5fa793fcf2df7514ed9ced300
+  Gemfile: 59dedcc64a4dbb53c16267b0e9893c7eccfa91606edcf68ceb0938827276182e
+  Gemfile.lock: bb86d088cb0ed5f766e3dd579c318e2aebd68954e3369fed408a68c1b8658b6a
   app/models/application_record.rb: 12bf7d0eaefce4d50e0719991e19b48a36a7865aeb7ac745980584806155fdc1
   app/models/chat.rb: 4ebd698bb3b02213e2cf22af062db0ebbf8fe774cc13b038d5ce21c7ee975485
   app/models/concerns/batchable.rb: 1f2d8efb2eb497ece07f3cb43363c396e3a42dd4ad76ff2be01b2cf8604fec01
-  app/models/concerns/embeddable.rb: a64701fddf094d46f01c362ca147b0fdcc857e6b17659c767beaea210a94a203
+  app/models/concerns/embeddable.rb: ef6cb9c5537cd9e443a9b49ce5cd59b98b80e46077d0771b065c4246e69efaf8
   app/models/concerns/fts_searchable.rb: 50bd137e2fea7d720ee1f82671b80ca5a2ea159d14e1da21c0acd3ae1b66e7c8
   app/models/concerns/searchable.rb: 40c1dff7275c6cf950410fced79d3ab9ae8fd66ea699e24e4dae67b8c6acf775
   app/models/concerns/taggable.rb: 98d630fb4329091ce3baf82d5339c4a82a56cd4c9397a7403fee3bfc050328c2
   app/models/document.rb: b1bee29a7af0f3e247176c4adf034a23051fa8663ed7adc1084d6d7dc0ec3cb9
   app/models/document/file_type.rb: f7480073960eba01a8dc26e8468c5580d251b75765127572b7cdd56b1f5071a0
-  app/models/document_duplicate.rb: a2e03ef7a0b74b1b7e93bde2c23d3a40dea3d8620cb090b4d3f84e21a563cdc8
+  app/models/document_duplicate.rb: 8a349dce8af4f64202039886fd59abb541e42380e96612d8ac97e36bbdf01ab8
   app/models/email.rb: 61797b92c1e6dc2617a93bfaba4a643da644e4645e49ca6db2b28e4734f2e420
-  app/models/email/sync_cursor.rb: 7aae72c185139e6f5338b03bbcdca11f2fd6500cf815c1c727fa3e2739d72fa4
-  app/models/email_connector.rb: 394424d1f31f638be6924c3e5171b4abc25faa3afda95628bee39a6da220bab7
-  app/models/embedding.rb: 72740e7d53ee4a69c7da455fddfab7aa57502aadf6e24b7bdb97298e58632a42
+  app/models/email/sync_cursor.rb: 5fe1f0a9e30508a71193f79a8a6ebf070cc66f2a964f7a556821c4ba4193a58b
+  app/models/email_connector.rb: 6115769fb5181751f35fbb88b0d963232a0863e6c5774649c0c637ec41840537
+  app/models/embedding.rb: 429243be249b9633d2cec19c35cfdafed50efb9cc47f8ad931c875874f3cdbf3
   app/models/evaluation/dataset.rb: b2413b10841d3e0558da95340a0f8047e82d08402496bfa6a572f699ad1e7c0e
   app/models/evaluation/dataset_sample.rb: 17b2872be49b1767cd00836ddc3b65ace387b5c417959992eb0c3a4cf2920fe5
-  app/models/evaluation/evaluation_result.rb: f896953756ae3aaa040c18c0732478fd19bcd2788d0497ce4c2efe05e813cafd
-  app/models/evaluation/experiment.rb: b60d79d6e615bd6e05f38d174874f7269189c026386787b6f2f2aaced8fd76c3
+  app/models/evaluation/evaluation_result.rb: 321e21636f9f6e3d665b8c4a80c654228e33cf38c52315a50b7541ff9e602eb5
+  app/models/evaluation/experiment.rb: f473c6d34748a7ba92408465253054332cfe4ecda9079a736cffd0fd83685b89
   app/models/evaluation/justification.rb: 26b5deb006d0b35231ce2163eba042c5c66497d75ab2ebb08c58cf316e4cc715
-  app/models/evaluation/metric.rb: ef57b9a5fc62d6d3fa3ab73b3a330a1934a0dc8c460edf2f9f8690e46564e40c
+  app/models/evaluation/metric.rb: 4cdebd8449cb94767633e3fbd6ef726587424055e34a2159cde71d4866fec669
   app/models/evaluation/prompt.rb: 694ede4065992a1c6ab59cf05691a69838e8db71a1d57500abe81f6206a9a662
   app/models/evaluation/sample.rb: '018ae134112114053ba1df150840095a2a17076651b233774dca842b4e6026d8'
   app/models/evaluation/wizard_draft.rb: c9cb872f2c58a8c36dba9383b7ba5428e54609fc8959724561b544c4a3341423
-  app/models/interview.rb: 8d9db37dfe03954d5e5a2830482215493feca0386df144d8b2ff321616dcda55
+  app/models/interview.rb: da07a20bed16ab2cec93601a09f6e71eb931ca027eebb39d148649ac6156b2b7
   app/models/message.rb: 125371683836c173f6653a7470e5fb184324ecfa57c757e8c427b96ea952914c
-  app/models/orchestration/action.rb: 18b6b1434a382d16cab9cdb5d1fb22825338a2266404dbc80d6279215842997d
+  app/models/orchestration/action.rb: 36007aa8eb8b46336e3417f416e2b249c7fcfd63fc06d4f5a29d923c66cb4ae0
   app/models/orchestration/action_run.rb: 5a50d8d8b77b841c75c920e28c4eaedd3a793cbee566594976f09f6d608afe3a
-  app/models/orchestration/agent.rb: 30aa6db50e218bf96d60d7b9b7e18754e2282e2c32ef7579ed07d26d8d61e6f0
-  app/models/orchestration/pipeline.rb: 89478dbc1cb6f46c60309226b725f84ea14accae9501dd0b3e8a7be0ef099ff5
+  app/models/orchestration/agent.rb: 9ef855572f3913c30e9fdcf6887700977c3b827c0fbf3c34ea50a1361fd5129f
+  app/models/orchestration/pipeline.rb: 22257a3ea9e9e22064f3217fffd7bbe20fac362708eeb20d7649dcf2ba2ce825
   app/models/orchestration/pipeline_run.rb: 8d09c4a23d17367458feea27810b216b4d17466dc7740b73262e8856c2107332
   app/models/orchestration/schema_builder.rb: 4577ef501d99e12993d3ac426d6bd6fb413e19b50a7a57de5278b23e4b496574
   app/models/orchestration/schema_builder/parser.rb: fde26417e42f06684948173ae91cc0594a269251369e2744c27ebc55506cc975
@@ -53,8 +53,8 @@ snapshot:
   app/models/orchestration/step_action.rb: d12179ac81a5392e71f5dcc30e85ca4234c3c91a82439c8da5ba2ca6325f3041
   app/models/setting.rb: '05867ac14faeef87d1c4af0a1407c5f278b4f2eff1462d3f89baa53476404261'
   app/models/subtag.rb: b5d218740c6109c688db06710074627f77384a679036d6df715cbb786dd66299
-  app/models/tag.rb: 265e7832b401cbf14525162971802670e52321e6b1c68bcd544de832469fa72a
-  app/models/tagging.rb: 77803506ec48ac9f088282367435abe6dd938ad3305418801053f0c15fd79963
+  app/models/tag.rb: c48ab7e44bf3fdde63033e3bdddecbbbc6fea33a42d58dc5d0d35367d9373b21
+  app/models/tagging.rb: 1b4d895bfa4096c4490b6f94b374916721113c0327bca71b2311c1e5badfa86d
   config/application.rb: d76105731ccca1452cd5e041bfaf30bd2ecca38814396893e95384bb55c04319
   config/boot.rb: 129a59e499e2d551f78505c6d65bf1e568f09058353f61e167eba5af0e4ca242
   config/ci.rb: 721ea251ae3714fa98331e07c335d469b9e9b902cfc475f9e9ac50fe10c6fd72
@@ -108,9 +108,9 @@ references:
   source: Document
   target: Email
 - path: app/models/concerns/embeddable.rb
-  line: 9
+  line: 10
   column: 5
-  end_line: 9
+  end_line: 10
   end_column: 63
   source_path: app/models/document.rb
   source: Document
@@ -156,9 +156,9 @@ references:
   source: DocumentDuplicate
   target: Document
 - path: app/models/concerns/embeddable.rb
-  line: 9
+  line: 10
   column: 5
-  end_line: 9
+  end_line: 10
   end_column: 63
   source_path: app/models/email.rb
   source: Email
@@ -567,9 +567,9 @@ methods:
   mode: if_missing
   signatures: []
 - path: app/models/concerns/embeddable.rb
-  line: 9
+  line: 10
   column: 5
-  end_line: 9
+  end_line: 10
   end_column: 63
   source_path: app/models/document.rb
   owner: Document
@@ -651,9 +651,9 @@ methods:
   mode: if_missing
   signatures: []
 - path: app/models/concerns/embeddable.rb
-  line: 9
+  line: 10
   column: 5
-  end_line: 9
+  end_line: 10
   end_column: 63
   source_path: app/models/email.rb
   owner: Email
@@ -1341,22 +1341,6 @@ gaps:
   source_path: app/models/chat.rb
   source: Chat
   message: 'association Chat.model: no unique literal declaration'
-- path: app/models/chat.rb
-  line: 1
-  column: 1
-  end_line: 7
-  end_column: 4
-  source_path: app/models/chat.rb
-  source: Chat
-  message: 'association Chat.ruby_llm_chat_files: no unique literal declaration'
-- path: app/models/chat.rb
-  line: 1
-  column: 1
-  end_line: 7
-  end_column: 4
-  source_path: app/models/chat.rb
-  source: Chat
-  message: 'association Chat.ruby_llm_queued_messages: no unique literal declaration'
 - path: app/models/chat.rb
   line: 1
   column: 1

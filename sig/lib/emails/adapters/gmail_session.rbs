@@ -15,6 +15,7 @@ module Emails
 
       def initialize: (credentials_path: String, token_path: String) -> void
       def authorize: (?interactive: bool) -> Signet::OAuth2::Client
+      def auth: () -> GmailAuth
     end
   end
 end

@@ -1,0 +1,20 @@
+class Email
+  class SyncInboxJob < ApplicationJob
+    class YahooInbox
+      @status: Emails::Adapters::ImapInboxReader::Status?
+      @uids: Array[Integer]
+
+      def initialize: () -> void
+      def cursor: () -> SyncCursor
+      def listing: (SyncCursor cursor) -> [String, Array[String]]
+      def position: (String mode) -> SyncCursor::position
+
+      private
+
+      def uids: (SyncCursor cursor) -> [String, Array[Integer]]
+      def window_uids: () -> Array[Integer]
+      def uid_validity: () -> Integer
+      def status: () -> Emails::Adapters::ImapInboxReader::Status
+    end
+  end
+end
