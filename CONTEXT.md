@@ -29,6 +29,11 @@ _Avoid_: model, LLM, AI
 **Agent snapshot**: An immutable record of the model, prompt, tools, and schema an agent used for a specific run — captured at execution time.
 _Avoid_: agent state, agent config
 
+### Models
+
+**Model id**: The string configured wherever a model is chosen (`LlmModels.*`, settings, agent and experiment models). Either a bare registry id (`gpt-5.4`, or an OpenRouter id like `anthropic/claude-haiku-4.5`) or a **local model id** `provider/model` (`ollama/qwen3:8b`) that pins a local provider (Ollama, GPUStack). Parsed by `LlmModels.ref` into an `LlmModels::ModelRef`; see [docs/local_models.md](docs/local_models.md).
+_Avoid_: model name, provider-qualified id (for hosted ids, which are never pinned)
+
 ### Evaluation
 
 **Experiment**: A single evaluation run of an agent against a dataset using one specific prompt version. Progresses `pending → running → completed` (or `failed`); completes when at least 80% of dataset samples are fully graded.

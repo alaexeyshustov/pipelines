@@ -31,7 +31,10 @@ module Evaluation
         name: "Auto-eval for #{prompt.name} v#{prompt.version}",
         dataset: previous_experiment.dataset,
         prompt: prompt,
-        metadata: { triggered_by: "prompt_change" }
+        metadata: { triggered_by: "prompt_change" },
+        # Same models as the run it is compared with, so a score change comes from the prompt.
+        sample_model: previous_experiment.sample_model,
+        evaluation_model: previous_experiment.evaluation_model
       )
     end
   end

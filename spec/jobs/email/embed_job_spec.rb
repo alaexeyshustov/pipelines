@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe Email::EmbedJob do
   include ActiveJob::TestHelper
 
-  let(:url) { "http://localhost:11434/v1/embeddings" }
+  let(:url) { EmbeddingHelpers::OLLAMA_EMBEDDINGS_URL }
   let(:email) { create(:email) }
 
   it "embeds the email" do

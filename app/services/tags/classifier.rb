@@ -80,7 +80,7 @@ class Tags::Classifier
     RubyLLM::Judge.new.judge(
       input,
       questions: questions,
-      model: LlmModels.judge,
+      **LlmModels.ref(LlmModels.judge).chat_options,
       owner: @item,
       metadata: { item_id: @item.id }
     )

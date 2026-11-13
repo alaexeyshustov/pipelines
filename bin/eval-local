@@ -1,0 +1,151 @@
+#!/usr/bin/env ruby
+# Runs one evaluation improvement cycle against a local Ollama model (docs/local_models.md):
+#
+#   baseline experiment -> PromptImprover -> auto-eval of the new prompt version -> score comparison
+#
+# Jobs run inline in this process, so no bin/jobs worker is needed. The agent under test, the improver and the
+# evaluation chats use ollama/<model>; evaluation fallbacks are disabled. Grading needs a model with RubyLLM's
+# `judgment` capability: unless a synced local model has it, the judge is hosted and the script refuses to run
+# without --allow-hosted-judge.
+#
+#   bin/eval-local --agent Orchestration::Agents::EmailsClassifier --model qwen3:8b
+require "optparse"
+require "net/http"
+require "json"
+require "uri"
+
+options = {
+  agent: "Orchestration::Agents::EmailsClassifier",
+  model: ENV.fetch("OLLAMA_MODEL", "qwen3:8b"),
+  judge: nil,
+  dataset_id: nil,
+  allow_hosted_judge: false
+}
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: bin/eval-local [options]"
+  opts.on("--agent NAME", "Agent under test (default: #{options[:agent]})") { |v| options[:agent] = v }
+  opts.on("--model MODEL", "Ollama model, as in `ollama list` (default: #{options[:model]}; env OLLAMA_MODEL)") { |v| options[:model] = v }
+  opts.on("--judge MODEL", "Judge model (default: LlmModels.judge)") { |v| options[:judge] = v }
+  opts.on("--dataset ID", Integer, "Dataset id (default: the agent's dataset with the most samples)") { |v| options[:dataset_id] = v }
+  opts.on("--allow-hosted-judge", "Grade with a hosted judge when no local judgment model is available") { options[:allow_hosted_judge] = true }
+end.parse!
+
+def abort_with(message) = abort("eval-local: #{message}")
+
+# == Preflight (before Rails boots: agent classes read their model when they load) ==
+
+api_base = ENV.fetch("OLLAMA_API_BASE", "http://localhost:11434/v1")
+native   = URI(api_base.delete_suffix("/").delete_suffix("/v1"))
+model    = options[:model]
+
+def ollama(native, path, body = nil)
+  uri = URI.join("#{native}/", path)
+  Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https", open_timeout: 2, read_timeout: 30) do |http|
+    response = body ? http.post(uri.path, body.to_json, "Content-Type" => "application/json") : http.get(uri.path)
+    raise "#{path}: HTTP #{response.code} #{response.body}" unless response.is_a?(Net::HTTPSuccess)
+
+    JSON.parse(response.body)
+  end
+end
+
+begin
+  pulled = ollama(native, "api/tags").fetch("models", []).map { |m| m["name"] }
+rescue StandardError => e
+  abort_with("Ollama unreachable at #{native} (#{e.message}). Start it with `ollama serve`.")
+end
+unless pulled.include?(model) || pulled.include?("#{model}:latest")
+  abort_with("model #{model} is not pulled (have: #{pulled.join(', ')}). Run `ollama pull #{model}` or pass --model.")
+end
+
+capabilities = Array(ollama(native, "api/show", { model: model })["capabilities"])
+abort_with("#{model} lacks tool calling (capabilities: #{capabilities.join(', ')}); agents need it.") unless capabilities.include?("tools")
+
+local = "ollama/#{model}"
+ENV["OLLAMA_API_BASE"] = api_base
+%w[EMAILS_AGENT_MODEL RECORDS_AGENT_MODEL EVALUATION_LLM_MODEL].each { |var| ENV[var] = local }
+ENV["EVALUATION_FALLBACK_MODELS"] = ""
+
+require_relative "../config/environment"
+
+# == Configuration checks (Setting rows override ENV) ==
+
+overridden = %w[emails_agent_model records_agent_model evaluation_llm_model evaluation_fallback_models]
+  .select { |key| Setting.fetch(key).present? }
+abort_with("Settings override the local model: #{overridden.join(', ')}. Clear them on the Settings page.") if overridden.any?
+
+agent = options[:agent]
+abort_with("unknown agent #{agent}") unless Orchestration::Agent.named(agent)
+
+prompt = Evaluation::Prompt.last_for_agent(agent) or
+  abort_with("no prompt version for #{agent}; create one in the experiment wizard first.")
+abort_with("no active metrics for #{agent}; run `bin/rails \"evaluation:seed_metrics[#{agent}]\"`.") if Evaluation::Metric.active_for_agent(agent).none?
+
+dataset =
+  if options[:dataset_id]
+    Evaluation::Dataset.find(options[:dataset_id])
+  else
+    Evaluation::Dataset.for_agent(agent).left_joins(:dataset_samples).group(:id).order("COUNT(evaluation_dataset_samples.id) DESC").first
+  end
+samples = dataset&.dataset_samples&.count.to_i
+abort_with("no dataset samples for #{agent}; run `bin/rails \"evaluation:seed_dataset[#{agent}]\"`.") if samples.zero?
+
+judge_choice = Evaluation::Judge::ModelChoice.call(options[:judge] || LlmModels.judge)
+unless LlmModels.ref(judge_choice).local? || options[:allow_hosted_judge]
+  abort_with("the judge resolves to hosted #{judge_choice}: no synced local model has the `judgment` capability. " \
+             "Pass --allow-hosted-judge to grade with it anyway.")
+end
+
+# == Run jobs inline, honouring retry waits (the inline adapter cannot schedule) ==
+
+class InlineWithWaits < ActiveJob::QueueAdapters::InlineAdapter
+  def enqueue_at(job, timestamp)
+    sleep([ timestamp - Time.now.to_f, 0 ].max)
+    enqueue(job)
+  end
+end
+ActiveJob::Base.queue_adapter = InlineWithWaits.new
+
+def report(experiment)
+  experiment.reload
+  averages = experiment.per_metric_averages
+  puts "  #{experiment.name} (##{experiment.id}): #{experiment.status}, #{experiment.samples.count} samples graded"
+  averages.sort.each { |metric, score| puts format("    %-40s %.3f", metric, score.to_f) }
+  averages
+end
+
+puts "Agent:   #{agent} (prompt v#{prompt.version})"
+puts "Dataset: #{dataset.name} (##{dataset.id}, #{samples} samples)"
+puts "Model:   #{local}"
+puts "Judge:   #{judge_choice}#{' (hosted)' unless LlmModels.ref(judge_choice).local?}"
+puts
+
+started = Time.current
+puts "1/3 Baseline experiment..."
+baseline = Evaluation::Experiment.create!(
+  name: "Local eval #{agent.demodulize} v#{prompt.version}", dataset:, prompt:,
+  metadata: { "triggered_by" => "manual" }, sample_model: local, evaluation_model: judge_choice
+)
+Evaluation::ExperimentJob.perform_now(baseline)
+before = report(baseline)
+abort_with("baseline experiment #{baseline.status}; see log/development.log") unless baseline.reload.completed?
+
+puts "2/3 Improving the prompt..."
+improved = Evaluation::PromptImprover.call(experiment: baseline, model: local)
+puts "  new prompt v#{improved.version} (##{improved.id})"
+
+puts "3/3 Evaluating v#{improved.version}..."
+candidate = Evaluation::Experiment.where(prompt: improved).order(:id).last or
+  abort_with("no auto-eval experiment was created for v#{improved.version}")
+after = report(candidate)
+
+puts
+puts "Change (v#{prompt.version} -> v#{improved.version}):"
+(before.keys | after.keys).sort.each do |metric|
+  from = before[metric]&.to_f
+  to   = after[metric]&.to_f
+  delta = from && to ? format("%+.3f", to - from) : "n/a"
+  puts format("  %-40s %s", metric, delta)
+end
+puts
+puts "Done in #{(Time.current - started).round}s. Compare in the app: #{Rails.application.routes.url_helpers.compare_evaluation_experiment_path(baseline, candidate)}"

@@ -43,7 +43,7 @@ snapshot:
   app/models/message.rb: 125371683836c173f6653a7470e5fb184324ecfa57c757e8c427b96ea952914c
   app/models/orchestration/action.rb: 36007aa8eb8b46336e3417f416e2b249c7fcfd63fc06d4f5a29d923c66cb4ae0
   app/models/orchestration/action_run.rb: 5a50d8d8b77b841c75c920e28c4eaedd3a793cbee566594976f09f6d608afe3a
-  app/models/orchestration/agent.rb: dea35637dbe44c395fcec66897fe795b0061e2fbabdda87711f29f97af212284
+  app/models/orchestration/agent.rb: 30aa6db50e218bf96d60d7b9b7e18754e2282e2c32ef7579ed07d26d8d61e6f0
   app/models/orchestration/pipeline.rb: 22257a3ea9e9e22064f3217fffd7bbe20fac362708eeb20d7649dcf2ba2ce825
   app/models/orchestration/pipeline_run.rb: 8d09c4a23d17367458feea27810b216b4d17466dc7740b73262e8856c2107332
   app/models/orchestration/schema_builder.rb: 4577ef501d99e12993d3ac426d6bd6fb413e19b50a7a57de5278b23e4b496574
@@ -69,12 +69,12 @@ snapshot:
   config/initializers/falcon.rb: e1197b1710b85ef369f8f4ffd610dc50cdcb551a3d2f7b019edb8493acdaacd6
   config/initializers/filter_parameter_logging.rb: f864bd67e7bdaa63a5331b9fc15446613c410c3a314cd70d1b6a7c8b566b6120
   config/initializers/inflections.rb: 2eba6606afd45f7a45e0112fca908f5f717fa3e3e3707df10fd5f562fe8d74d1
-  config/initializers/llm_models.rb: '08ba53e33dce5d0896ccf61103abf5934bbcaeb6e8730ff4d8c4b6fa62de083b'
+  config/initializers/llm_models.rb: 6bcae16cc03c9b966bbf57b0b185007c0b9ccc9450cf9eb6fa5171bc49a217d8
   config/initializers/mission_control.rb: 5954d9ff0018c90321fb5b534e3abae9a811bd8a7996026d677f5ceda6ad94c7
   config/initializers/neighbor.rb: e77ae41d00ee61a9c0ef90965e67163954cc11e31186d14f425d936acbd5b650
   config/initializers/orchestration.rb: 2280ac6ccc1c5b35f15b7cbcda0a4bc46765f6300a3ebb619ef22e91a9979996
   config/initializers/pagy.rb: a5a09c2675df3bb1d292dcb225b1f5ee92148f9f1f6fc990fb8667b90fdd3e49
-  config/initializers/ruby_llm.rb: 0f447b6649e48450481fd9a8bc0b20cb9ca9c480d07d3486f60742368936b900
+  config/initializers/ruby_llm.rb: df8c2a7681dc51aedd78a3243db16b94933acea4f60d4676e5b18666ce2b85c6
   config/initializers/ruby_llm_monitoring.rb: 9e0c0ff244a799b9e8c8ae081bb25584f04e5e7dbe7c87602ff1326caa418d7a
   config/initializers/view_component.rb: 5be366bfbc2294b04ac0489093fd02bc91f8348b622ed3a1aad91996d6768335
   config/locales/en.yml: ad72af216ad0a67a1155c685535698fdd2a7138810c7e6dcb5eab7f0cc1c5922

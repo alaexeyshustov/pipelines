@@ -10,5 +10,6 @@
 - [Architecture overview](docs/architecture.md)
 - [Orchestration subsystem](docs/orchestration.md)
 - [Evaluations subsystem](docs/evals.md)
+- [Local models (Ollama) and `LLM_TEST_BACKEND=ollama`](docs/local_models.md)
 
 ## [Gotchas](docs/claude/gotchas.md)

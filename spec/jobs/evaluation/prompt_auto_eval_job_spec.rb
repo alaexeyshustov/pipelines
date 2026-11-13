@@ -28,6 +28,13 @@ RSpec.describe Evaluation::PromptAutoEvalJob do
       expect(new_exp.dataset).to eq(dataset)
     end
 
+    it "reuses the previous experiment's sample and evaluation models" do
+      previous_experiment.update!(sample_model: "ollama/qwen3:8b", evaluation_model: "jev-latest")
+      described_class.perform_now(prompt_id: new_prompt.id)
+      new_exp = Evaluation::Experiment.where(prompt: new_prompt).first
+      expect(new_exp).to have_attributes(sample_model: "ollama/qwen3:8b", evaluation_model: "jev-latest")
+    end
+
     it "tags the experiment metadata with triggered_by: prompt_change" do
       described_class.perform_now(prompt_id: new_prompt.id)
       new_exp = Evaluation::Experiment.where(prompt: new_prompt).first

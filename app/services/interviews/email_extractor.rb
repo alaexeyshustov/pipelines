@@ -58,7 +58,7 @@ class Interviews::EmailExtractor
   end
 
   def extract
-    message = RubyLLM.chat(model: LlmModels.emails_agent)
+    message = RubyLLM.chat(**LlmModels.ref(LlmModels.emails_agent).chat_options)
                      .with_instructions(INSTRUCTIONS)
                      .with_schema(InterviewExtractionSchema)
                      .ask(prompt)

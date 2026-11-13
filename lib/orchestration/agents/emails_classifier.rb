@@ -3,7 +3,7 @@ module Orchestration
     class EmailsClassifier < RubyLLM::Agent
       chat_model Chat
       tools Records::TempFileTool
-      model LlmModels.emails_agent
+      LlmModels.ref(LlmModels.emails_agent).declare_on(self)
 
       schema do
         array :results do
