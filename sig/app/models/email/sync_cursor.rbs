@@ -6,6 +6,8 @@ class Email
 
     MAX_FAILED_RUNS: Integer
 
+    type position = { ?history_id: String?, ?uid_validity: Integer?, ?last_uid: Integer? }
+
     def advance!: (?history_id: String?, ?uid_validity: Integer?, ?last_uid: Integer?) -> void
     def reset!: (?history_id: String?, ?uid_validity: Integer?, ?last_uid: Integer?) -> void
 

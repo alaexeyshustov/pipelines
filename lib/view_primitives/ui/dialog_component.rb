@@ -34,22 +34,30 @@ module UI
 
     def panel
       content_tag(:div, data: { dialog_target: "panel" }, hidden: true) do
-        concat content_tag(:div, nil,
-          class: OVERLAY,
-          data: { action: "click->dialog#close" },
-          "aria-hidden": "true")
-        concat content_tag(:div,
-          class: cn(PANEL, @extra_class),
-          role: "dialog",
-          "aria-modal": "true",
-          "aria-label": @title,
-          data: { action: "keydown.esc@window->dialog#close" }) {
-          concat close_button
-          concat header_area
-          concat content_tag(:div, content) unless content.blank?
-          concat content_tag(:div, footer, class: "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end") if footer
-        }
+        concat overlay
+        concat dialog_box
       end
+    end
+
+    def overlay
+      content_tag(:div, nil,
+        class: OVERLAY,
+        data: { action: "click->dialog#close" },
+        "aria-hidden": "true")
+    end
+
+    def dialog_box
+      content_tag(:div,
+        class: cn(PANEL, @extra_class),
+        role: "dialog",
+        "aria-modal": "true",
+        "aria-label": @title,
+        data: { action: "keydown.esc@window->dialog#close" }) {
+        concat close_button
+        concat header_area
+        concat content_tag(:div, content) unless content.blank?
+        concat content_tag(:div, footer, class: "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end") if footer
+      }
     end
 
     def header_area

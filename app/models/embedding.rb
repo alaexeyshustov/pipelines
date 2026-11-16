@@ -13,10 +13,9 @@ class Embedding < ApplicationRecord
     # Creates or replaces the embedding of +embeddable+ under +model+ (one upsert, no lookup, so storing a batch is
     # not an N+1).
     def store!(embeddable, model:, content_digest:, vector:)
-      row = { embeddable_type: embeddable.class.polymorphic_name, embeddable_id: embeddable.id, model:, content_digest:,
-              dimensions: vector.size, embedded_at: Time.current, vector: }
-      new(row.except(:embeddable_type, :embeddable_id).merge(embeddable:)).validate! # upsert skips validations; uniqueness is the unique index's job
-      stored = upsert(row, unique_by: :index_embeddings_on_embeddable_and_model, returning: column_names)
+      attributes = { model:, content_digest:, dimensions: vector.size, embedded_at: Time.current, vector: }
+      new(attributes.merge(embeddable:)).validate! # upsert skips validations; uniqueness is the unique index's job
+      stored = upsert(row_for(embeddable, attributes), unique_by: :index_embeddings_on_embeddable_and_model, returning: column_names)
       instantiate(stored.first).tap { |embedding| embedding.embeddable = embeddable }
     end
 
@@ -31,6 +30,12 @@ class Embedding < ApplicationRecord
         .nearest_neighbors(:vector, vector, distance: "cosine")
         .limit(limit)
         .includes(:embeddable)
+    end
+
+    private
+
+    def row_for(embeddable, attributes)
+      { embeddable_type: embeddable.class.polymorphic_name, embeddable_id: embeddable.id, **attributes }
     end
   end
 

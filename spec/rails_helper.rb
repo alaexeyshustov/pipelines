@@ -10,6 +10,7 @@ if ENV['COVERAGE']
     add_filter '/lib/pipeline/'
     add_filter '/app/schemas/'
     add_filter '/lib/pipeline.rb'
+    add_filter '/lib/view_primitives/' # vendored gem components, also excluded from RuboCop and Steep
   end
 end
 

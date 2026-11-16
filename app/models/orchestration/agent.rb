@@ -47,9 +47,14 @@ module Orchestration
       RubyLLM.models.all
         .select { |m| m.type.to_s == "chat" }
         .group_by { |m| m.provider.to_s }
-        .transform_values { |models| models.map { |m| LlmModels::ModelRef.id_for(m.id, m.provider) }.sort }
+        .transform_values { |models| model_ids(models) }
         .sort_by { |provider, _| provider }
     end
+
+    def self.model_ids(models)
+      models.map { |m| LlmModels::ModelRef.id_for(m.id, m.provider) }.sort
+    end
+    private_class_method :model_ids
 
     private
 
