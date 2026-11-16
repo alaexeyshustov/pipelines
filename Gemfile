@@ -5,7 +5,7 @@ gem "sqlite3", ">= 2.1"
 gem "sqlite-vec"
 gem "neighbor"
 
-gem "aasm", "~> 5.5"
+gem "aasm", "~> 6.0"
 gem "view_component", "~> 4.6"
 
 # Evaluation framework
