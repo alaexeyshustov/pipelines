@@ -1,4 +1,5 @@
 class Chat < ApplicationRecord
+  def self.acts_as_chat: (**top) -> void
   include Batchable
 
   type relation = _Relation[Chat, Integer]

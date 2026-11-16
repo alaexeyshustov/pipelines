@@ -31,8 +31,8 @@ module Emails
 
     def connect_gmail_adapter(adapter_class)
       adapter = adapter_class.from_env(
-        credentials_path: @configuration[:credentials_path],
-        token_path: @configuration[:token_path]
+        credentials_path: config_value(:credentials_path),
+        token_path: config_value(:token_path)
       )
       adapter.on_init
       adapter.instance_variable_get(:@service).get_user_profile("me")
@@ -40,12 +40,16 @@ module Emails
 
     def connect_yahoo_adapter(adapter_class)
       adapter = adapter_class.from_env(
-        host: @configuration[:host],
-        port: @configuration[:port].presence&.to_i,
-        username: @configuration[:username],
-        password: @configuration[:password]
+        host: config_value(:host),
+        port: config_value(:port).presence&.to_i,
+        username: config_value(:username),
+        password: config_value(:password)
       )
       adapter.list_messages(max_results: 1)
+    end
+
+    def config_value(key)
+      @configuration[key]&.to_s
     end
   end
 end

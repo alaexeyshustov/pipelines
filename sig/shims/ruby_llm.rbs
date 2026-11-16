@@ -48,15 +48,16 @@ module RubyLLM
   end
 
   class Models
-    type model = { id: String, temperature: Numeric, name: String?, provider: String? }
+    type model = ModelInfo
 
     class ModelInfo
+      def name: () -> String
       def provider: () -> String
     end
 
     @models: Array[model]
 
-    def all: () -> Array[model]
+    def all: () -> Array[ModelInfo]
     def find: (String model_id, ?provider: String | Symbol | nil) -> ModelInfo
   end
 

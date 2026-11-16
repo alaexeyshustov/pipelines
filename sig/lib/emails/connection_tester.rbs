@@ -17,5 +17,6 @@ module Emails
     def run_provider_check: (provider_class adapter_class) -> void
     def connect_gmail_adapter: (provider_class adapter_class) -> void
     def connect_yahoo_adapter: (provider_class adapter_class) -> void
+    def config_value: (Symbol key) -> String?
   end
 end

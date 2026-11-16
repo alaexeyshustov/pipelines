@@ -134,7 +134,7 @@ class Document::SyncDriveJob < ApplicationJob # rubocop:disable Metrics/ClassLen
   # exists as another Document.
   def store(attributes, document)
     if document
-      document.update!(attributes)
+      document.update!(**attributes)
       stored(document, "updated")
     else
       created = Document.ingest!(attributes)

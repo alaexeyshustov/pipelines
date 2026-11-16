@@ -14,7 +14,8 @@ class Tagging < ApplicationRecord
   private
 
   def subtag_belongs_to_tag
-    return if subtag.nil? || subtag.tag_id == tag_id
+    selected = subtag
+    return if selected.nil? || selected.tag_id == tag_id
 
     errors.add(:subtag, "must belong to the selected tag")
   end

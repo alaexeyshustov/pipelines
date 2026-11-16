@@ -12,3 +12,9 @@ bundle exec archspec reflect --environment test
 - No other ENV is captured, so a model whose associations depend on ENV is reflected with the test environment's values.
 - `bundle exec archspec check --reflect` refreshes stale facts before checking, but boots `development` by default; prefix it with `RAILS_ENV=test` (the committed facts are for `test`, and a worktree may have no development DB).
 - CI runs plain `check` and never boots the app, so stale facts fail CI rather than being regenerated there.
+
+## Steep (`Steepfile`, `.claude/hooks/steep_check.sh`)
+
+- Steep checks `lib/`, `app/jobs`, `app/models`, `app/services` and `app/tools`. The `ignore` entries in `Steepfile` are known gaps: remove one when its files type-check, never add one to get a change through.
+- A Claude Code `PostToolUse` hook runs `steep check` on each edited Ruby file in those paths (and on the Ruby file behind an edited `sig/app` or `sig/lib` signature), about 4 s per edit. Its errors arrive as context; it never blocks the edit.
+- `rbs_collection.yaml` ignores `ruby_llm`: `sig/shims/ruby_llm*.rbs` types the API this app uses, and loading the collection's version too duplicates declarations. After `rbs collection update`, check `steep check` for `Different superclasses` / duplicate-declaration errors from newly added gems.

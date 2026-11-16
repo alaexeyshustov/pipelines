@@ -38,8 +38,8 @@ module Orchestration
     def chat_id=: (Integer?) -> Integer?
 
     def ground_truth: () -> json_object?
-    def index_attributes: () -> { status: String?, action: String, started_at: Time?, finished_at: Time? }
-    def show_attributes: () -> { status: String?, action: String, input: json_object?, output: json_object?, error: String?, error_details: json_object?, agent_snapshot: json_object?, started_at: Time?, finished_at: Time? }
-    def to_llm_context: () -> { action: String, input: json_object?, status: String?, agent_snapshot: json_object? }
+    def index_attributes: () -> { status: String?, action: String?, started_at: Time?, finished_at: Time? }
+    def show_attributes: () -> { status: String?, action: String?, input: json_object?, output: json_object?, error: String?, error_details: json_object?, agent_snapshot: json_object?, started_at: Time?, finished_at: Time? }
+    def to_llm_context: () -> { action: String?, input: json_object?, status: String?, agent_snapshot: json_object? }
   end
 end

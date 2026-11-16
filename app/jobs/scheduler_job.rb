@@ -22,7 +22,7 @@ class SchedulerJob < ApplicationJob
   def schedule_pipeline_if_due(pipeline, latest_finished)
     reference_time = latest_finished[pipeline.id] || pipeline.created_at
     next_time      = pipeline.next_run_at(from: reference_time)
-    return unless next_time && next_time <= Time.current
+    return unless next_time && Time.current >= next_time
 
     pipeline_run = pipeline.pipeline_runs.create!(status: "pending", triggered_by: "schedule")
     PipelineRunJob.perform_later(pipeline_run.id)

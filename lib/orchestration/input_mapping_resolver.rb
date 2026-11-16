@@ -16,7 +16,7 @@ module Orchestration
       return spec unless spec.is_a?(Hash)
       return spec["value"] if spec.key?("value")
 
-      from     = spec["from"] # steep:ignore
+      from     = spec["from"]
       path     = spec["path"].presence && spec["path"].to_s  # : String?
       optional = spec["optional"] # : bool
 
@@ -39,7 +39,7 @@ module Orchestration
     def dig_path(upstream, path, from, optional)
       node = upstream # : json_object_value
       path.split(".").each do |seg|
-        node = traverse_node(node, seg) # steep:ignore
+        node = traverse_node(node, seg)
         break if node.nil?
       end
 

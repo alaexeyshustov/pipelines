@@ -11,13 +11,14 @@ module Orchestration
 
     attr_reader type: String?
     attr_reader description: String?
+    attr_reader format: String?
     attr_reader required: Array[String]
     attr_reader additional_properties: bool?
     attr_reader properties: Hash[String, SchemaBuilder]
     attr_reader items: SchemaBuilder?
     attr_reader enum: Array[json_value]
-    attr_reader minimum: Numeric?
-    attr_reader maximum: Numeric?
+    attr_reader minimum: (Integer | Float)?
+    attr_reader maximum: (Integer | Float)?
 
     def initialize: (
       ?type: String?,
@@ -28,8 +29,8 @@ module Orchestration
       ?properties: Hash[String, SchemaBuilder],
       ?items: SchemaBuilder?,
       ?enum: Array[json_value],
-      ?minimum: Numeric?,
-      ?maximum: Numeric?
+      ?minimum: (Integer | Float)?,
+      ?maximum: (Integer | Float)?
     ) -> void
 
     def self.from_schema: (json_object schema) -> SchemaBuilder
@@ -54,8 +55,8 @@ module Orchestration
       ?properties: Hash[String, SchemaBuilder],
       ?items: SchemaBuilder?,
       ?enum: Array[json_value],
-      ?minimum: Numeric?,
-      ?maximum: Numeric?
+      ?minimum: (Integer | Float)?,
+      ?maximum: (Integer | Float)?
     ) -> SchemaBuilder
   end
 end

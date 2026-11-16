@@ -37,7 +37,7 @@ module TagPages
       emails = Email.preload(:interview, taggings: :subtag).where(id: tagged_ids("Email")).where(date: date_range)
       records(emails).map do |email, snippet, rank|
         Row.new(kind: :email, record: email, title: email.subject.to_s, date: email.date, subtag: subtag_of(email),
-                interview: email.interview, snippet:, rank:) # steep:ignore
+                interview: email.interview, snippet:, rank:)
       end
     end
 
@@ -46,7 +46,7 @@ module TagPages
                           .where(created_at: date_range)
       records(documents).map do |document, snippet, rank|
         Row.new(kind: :document, record: document, title: document.title, date: document.created_at,
-                subtag: subtag_of(document), interview: document.email&.interview, snippet:, rank:) # steep:ignore
+                subtag: subtag_of(document), interview: document.email&.interview, snippet:, rank:)
       end
     end
 

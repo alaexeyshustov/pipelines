@@ -1,5 +1,7 @@
 module Evaluation
   class Experiment < ApplicationRecord
+    include AASM
+    extend AASM::ClassMethods
     include SteepHacks
 
     type relation = _Relation[Experiment, Integer]
@@ -32,7 +34,7 @@ module Evaluation
     def evaluation_model: () -> String?
     def evaluation_model=: (String?) -> String?
 
-    def dataset: () -> Dataset?
+    def dataset: () -> Dataset
     def dataset=: (Dataset) -> Dataset
     def prompt: () -> Prompt?
     def prompt=: (Prompt?) -> Prompt?
@@ -45,6 +47,12 @@ module Evaluation
     def completed?: () -> bool
     def failed?: () -> bool
     def pending_samples_count: () -> Integer
+    def may_start?: () -> bool
+    def start!: () -> bool
+    def may_complete?: () -> bool
+    def complete!: () -> bool
+    def may_fail?: () -> bool
+    def fail!: () -> bool
 
     def update!: (**top attrs) -> Experiment
 

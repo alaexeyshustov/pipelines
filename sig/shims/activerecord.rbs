@@ -1,0 +1,7 @@
+module ActiveRecord
+  class Relation
+    # The collection's generated signature takes only a Symbol; Relation#exists? also takes conditions.
+    def exists?: (*top) -> bool
+               | ...
+  end
+end

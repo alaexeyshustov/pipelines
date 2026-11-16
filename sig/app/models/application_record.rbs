@@ -6,9 +6,10 @@ end
 # rubocop:enable RBS/Lint/TopLevelInterface
 
 class ApplicationRecord < ActiveRecord::Base
-  def self.where: (*top) -> ActiveRecord::Relation
-                | () -> ActiveRecord::QueryMethods::WhereChain[ActiveRecord::Relation]
+  def self.where: () -> ActiveRecord::QueryMethods::WhereChain[ActiveRecord::Relation]
+                | (*top) -> ActiveRecord::Relation
   def self.joins: (*top) -> ActiveRecord::Relation
+  def self.left_joins: (*top) -> ActiveRecord::Relation
   def self.distinct: () -> ActiveRecord::Relation
   def self.includes: (*top) -> ActiveRecord::Relation
   def self.eager_load: (*top) -> ActiveRecord::Relation
@@ -26,6 +27,8 @@ class ApplicationRecord < ActiveRecord::Base
   def self.find_by: (*top) -> instance?
   def self.find_by!: (*top) -> instance
   def self.find_or_create_by!: (*top) ?{ (instance) -> void } -> instance
+  def self.find_or_initialize_by: (*top) ?{ (instance) -> void } -> instance
+  def self.exists?: (*top) -> bool
   def self.create!: (*top) -> instance
   def self.as_rows: (?ActiveRecord::Relation scope) -> Array[Hash[String, String?]]
   def self.arel_table: () -> Arel::Table
@@ -35,9 +38,9 @@ class ApplicationRecord < ActiveRecord::Base
   def self.validators: () -> Array[ActiveModel::Validator]
 
   def id: () -> Integer
-  def reload: () -> self
+  def reload: (?lock: bool) -> self
   def update: (*top) -> bool
-  def update!: (**top) -> self
+  def update!: (**top) -> true
   def update_columns: (**top) -> bool
   def save!: () -> bool
   def new_record?: () -> bool

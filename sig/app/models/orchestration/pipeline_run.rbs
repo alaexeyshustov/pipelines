@@ -5,6 +5,9 @@ module Orchestration
     class ActiveRecord_Associations_CollectionProxy < ::ActiveRecord::Associations::CollectionProxy
       include ::Enumerable[PipelineRun]
       include ::ActiveRecord::Relation::Methods[PipelineRun, ::Integer]
+
+      def recent_first: () -> PipelineRun::relation
+      def in_progress: () -> PipelineRun::relation
     end
 
     STATUSES: Array[String]

@@ -3,7 +3,7 @@ class SchedulerJob < ApplicationJob
 
   private
 
-  def load_latest_completed_times: () -> Hash[Integer, Time?]
+  def load_latest_finished_times: () -> Hash[Integer, Time?]
   def schedulable_pipelines: () -> Orchestration::Pipeline::relation
-  def schedule_pipeline_if_due: (Orchestration::Pipeline pipeline, Hash[Integer, Time?] latest_completed) -> void
+  def schedule_pipeline_if_due: (Orchestration::Pipeline pipeline, Hash[Integer, Time?] latest_finished) -> void
 end

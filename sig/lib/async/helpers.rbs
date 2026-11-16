@@ -1,6 +1,6 @@
 module Async
   module Helpers
-    def self.with_semaphore: [T, U] (?concurrency: Integer, ?items: Array[T]) { (T) -> (Array[U] | U) } -> Array[U]
-    def self.with_barrier: [T] (?concurrency: Integer, ?items: Array[T]) { (T) -> void } -> void
+    def self.with_semaphore: [Item, Result] (?concurrency: Integer, ?items: Array[Item]) { (Item) -> (Array[Result] | Result) } -> Array[Result]
+    def self.with_barrier: [Item] (?concurrency: Integer, ?items: Array[Item]) { (Item) -> void } -> void
   end
 end

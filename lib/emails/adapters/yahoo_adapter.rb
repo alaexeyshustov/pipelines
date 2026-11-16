@@ -72,7 +72,7 @@ module Emails
         @labels ||= @session.with_lock do
           (@session.imap.list("", "*") || []).map do |mb|
             fname = mb.name
-            { id: fname, name: fname, type: (Array(mb.attr).map(&:to_s).first || "user") }
+            { id: fname, name: fname, type: (mb.attr.map(&:to_s).first || "user") }
           end
         end
       end

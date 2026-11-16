@@ -31,8 +31,8 @@ module Emails
       end
 
       def inline?(part)
-        header = Array(part.headers).find { |candidate| candidate.name.to_s.casecmp?("Content-Disposition") } # steep:ignore
-        header ? header.value.to_s.strip.downcase.start_with?("inline") : false # steep:ignore
+        header = Array(part.headers).find { |candidate| candidate.name.to_s.casecmp?("Content-Disposition") }
+        header ? header.value.to_s.strip.downcase.start_with?("inline") : false
       end
 
       def metadata(part)

@@ -67,9 +67,8 @@ group :development do
   gem "rubocop-rails-omakase", require: false
   gem "rubocop-rspec", require: false
   gem "rubocop-rspec_rails", require: false
-  gem "rubocop-on-rbs", require: false
-  gem "steep", require: false
-  gem "rbs-sentinel", require: false
+  gem "rubocop-on-rbs", "~> 2.2", require: false
+  gem "steep", "~> 2.1", require: false
   gem "rbs_rails", "~> 0.13.0"
   gem "ruby-lsp"
 end

@@ -7,7 +7,9 @@ module Emails
     def self.readonly? = true
 
     def self.with_classifier(classifier)
-      Class.new(self) { self.classifier = classifier } # : singleton(ClassifyTool)
+      subclass = Class.new(self) # : singleton(ClassifyTool)
+      subclass.classifier = classifier
+      subclass
     end
 
     description "Classify a batch of emails and return tags for each one."

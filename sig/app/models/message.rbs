@@ -1,4 +1,5 @@
 class Message < ApplicationRecord
+  def self.acts_as_message: (**top) -> void
   type relation = _Relation[Message, Integer]
 
   def role: () -> String?
