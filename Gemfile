@@ -12,7 +12,7 @@ gem "view_component", "~> 4.6"
 gem "liquid"
 
 # LLM
-gem "ruby_llm", "~> 2.1.1"
+gem "ruby_llm", "~> 2.2.2"
 gem "schematist"
 gem "ruby_llm-monitoring"
 

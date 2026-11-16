@@ -469,7 +469,7 @@ RSpec.describe Orchestration::PipelineRunner do
         action.agent.update!(model: "mistral-small-latest")
         create(:orchestration_step_action, step: step1, action: action, position: 1)
         allow(stub_agent).to receive(:with_model).and_return(stub_agent)
-        allow(stub_agent).to receive(:ask).and_raise(Faraday::TimeoutError.new("execution expired"))
+        allow(stub_agent).to receive(:ask).and_raise(RubyLLM::ConnectionError.new("execution expired"))
       end
 
       it "persists transport diagnostics" do

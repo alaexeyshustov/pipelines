@@ -4,7 +4,7 @@ class Email::EmbedJob < ApplicationJob
   queue_as :default
 
   discard_on ActiveRecord::RecordNotFound
-  retry_on Faraday::ConnectionFailed, Faraday::TimeoutError, wait: :polynomially_longer, attempts: 2 do |job, error|
+  retry_on RubyLLM::ConnectionError, wait: :polynomially_longer, attempts: 2 do |job, error|
     Rails.logger.error("[Email::EmbedJob] email #{job.arguments.first} not embedded after retries: #{error.message}")
   end
 

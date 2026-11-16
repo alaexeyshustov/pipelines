@@ -30,7 +30,7 @@ Domain logic lives in `app/models/evaluation/`, `app/services/evaluation/`, `app
 
 - **Evaluation::ExperimentJob**: starts the run and enqueues the `SampleJob`s. Re-run on a `running` experiment it re-enqueues only samples that have no `Sample` yet, and only when no `SampleJob` of that experiment is still queued or claimed.
 - **Evaluation::SampleJob**: sample, grade, persist, release the slot. Idempotent: an existing `Sample` is reused and grading that already ran is skipped.
-- **Retry policy**: RubyLLM already retries HTTP failures and falls back across models, so a `RubyLLM::Error` that reaches the job is final: the half-finished sample is deleted, the slot is released, no job retry. Only raw transport errors (`Faraday::ConnectionFailed`, `Faraday::TimeoutError`, `Net::OpenTimeout`, `Net::ReadTimeout`) get one outer retry (`attempts: 2`); when it is exhausted the slot is released the same way. A run therefore always finishes.
+- **Retry policy**: RubyLLM already retries HTTP failures and falls back across models, so a `RubyLLM::Error` that reaches the job is final: the half-finished sample is deleted, the slot is released, no job retry. Only transport errors (`RubyLLM::ConnectionError`, which the job re-raises past its `RubyLLM::Error` rescue, `Net::OpenTimeout`, `Net::ReadTimeout`) get one outer retry (`attempts: 2`); when it is exhausted the slot is released the same way. A run therefore always finishes.
 
 ## Sampler
 

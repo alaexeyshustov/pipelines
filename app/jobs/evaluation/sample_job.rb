@@ -4,15 +4,15 @@ module Evaluation
   # to the experiment.
   #
   # Retries: RubyLLM already retries HTTP-level failures (and falls back across models), so a
-  # RubyLLM::Error reaching this job is final and the sample is counted as failed. Only raw
-  # transport errors that RubyLLM does not wrap get one outer retry. Either way the job always
+  # RubyLLM::Error reaching this job is final and the sample is counted as failed. Only transport
+  # errors (RubyLLM::ConnectionError, re-raised past that rescue) get one outer retry. Either way the job always
   # releases its slot in the experiment's pending counter, so the run can finish.
   #
   # Idempotent: a retried job reuses its existing Sample and skips grading that already ran.
   class SampleJob < ApplicationJob
     queue_as :default
 
-    TRANSPORT_ERRORS = [ Faraday::ConnectionFailed, Faraday::TimeoutError, Net::OpenTimeout, Net::ReadTimeout ].freeze
+    TRANSPORT_ERRORS = [ RubyLLM::ConnectionError, Net::OpenTimeout, Net::ReadTimeout ].freeze
 
     retry_on(*TRANSPORT_ERRORS, wait: 5.seconds, attempts: 2) do |job, error|
       Rails.logger.error("[SampleJob] transport error after retries: #{error.message}")
@@ -25,6 +25,8 @@ module Evaluation
 
       run_sample(experiment, dataset_sample)
       finish_slot(experiment)
+    rescue RubyLLM::ConnectionError
+      raise
     rescue RubyLLM::Error => e
       Rails.logger.error("[SampleJob] sample #{dataset_sample_id} of experiment #{experiment_id} failed: #{e.message}")
       release_slot(experiment_id, dataset_sample_id)

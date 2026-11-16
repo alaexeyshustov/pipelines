@@ -9,12 +9,13 @@ class Interview::ExtractJob < ApplicationJob
 
   TRANSPORT_ERRORS = Email::ProcessJob::TRANSPORT_ERRORS
 
-  retry_on(*TRANSPORT_ERRORS, wait: 5.seconds, attempts: 2) do |job, error|
-    Rails.logger.error("[Interview::ExtractJob] email #{job.arguments.first} transport error after retries: #{error.message}")
-  end
-
   retry_on RubyLLM::Error, wait: :polynomially_longer, attempts: 3 do |job, error|
     Rails.logger.error("[Interview::ExtractJob] extracting email #{job.arguments.first} failed after retries: #{error.message}")
+  end
+
+  # Declared after RubyLLM::Error: handlers are matched last-first, and RubyLLM::ConnectionError is a RubyLLM::Error.
+  retry_on(*TRANSPORT_ERRORS, wait: 5.seconds, attempts: 2) do |job, error|
+    Rails.logger.error("[Interview::ExtractJob] email #{job.arguments.first} transport error after retries: #{error.message}")
   end
 
   def perform(email_id)

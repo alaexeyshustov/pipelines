@@ -1,5 +1,5 @@
 module RubyLLM
-  def self.with_usage_owner: [T] (ApplicationRecord? owner) { () -> T } -> T
+  def self.with_owner: [T] (ApplicationRecord? owner) { () -> T } -> T
 
   class Models
     class ModelInfo

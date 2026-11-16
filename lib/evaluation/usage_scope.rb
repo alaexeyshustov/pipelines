@@ -11,7 +11,7 @@ module Evaluation
   # - only ActiveRecord owners are stored (a nil owner just yields).
   class UsageScope
     def self.call(experiment, &)
-      RubyLLM.with_usage_owner(experiment, &)
+      RubyLLM.with_owner(experiment, &)
     end
   end
 end

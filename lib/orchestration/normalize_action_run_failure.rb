@@ -25,10 +25,7 @@ module Orchestration
     end
 
     def transport_error?
-      @error.is_a?(Faraday::TimeoutError) ||
-        @error.is_a?(Faraday::ConnectionFailed) ||
-        @error.is_a?(Faraday::SSLError) ||
-        @error.is_a?(Faraday::ParsingError)
+      @error.is_a?(RubyLLM::ConnectionError)
     end
 
     def invalid_model_output?

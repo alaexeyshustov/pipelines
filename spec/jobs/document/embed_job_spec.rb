@@ -29,7 +29,7 @@ RSpec.describe Document::EmbedJob do
   end
 
   it "retries once when the model server is unreachable, then gives up" do
-    allow(Embeddings::Embed).to receive(:call).and_raise(Faraday::ConnectionFailed, "refused")
+    allow(Embeddings::Embed).to receive(:call).and_raise(RubyLLM::ConnectionError, "refused")
 
     perform_enqueued_jobs(only: described_class) { described_class.perform_later(document.id) }
 

@@ -10,11 +10,12 @@
 # emails older than REQUEUE_AFTER even when their job still waits in a slow queue, so duplicates become no-ops.
 #
 # Retries mirror Evaluation::SampleJob: RubyLLM already retries HTTP-level failures, so a RubyLLM::Error reaching
-# this job is final for this run (logged, tagged_at stays nil); raw transport errors get one outer retry.
+# this job is final for this run (logged, tagged_at stays nil); transport errors (RubyLLM::ConnectionError, re-raised
+# past that rescue) get one outer retry.
 class Email::ProcessJob < ApplicationJob
   queue_as :default
 
-  TRANSPORT_ERRORS = [ Faraday::ConnectionFailed, Faraday::TimeoutError, Net::OpenTimeout, Net::ReadTimeout ].freeze
+  TRANSPORT_ERRORS = [ RubyLLM::ConnectionError, Net::OpenTimeout, Net::ReadTimeout ].freeze
 
   retry_on(*TRANSPORT_ERRORS, wait: 5.seconds, attempts: 2) do |job, error|
     Rails.logger.error("[Email::ProcessJob] email #{job.arguments.first} transport error after retries: #{error.message}")
@@ -28,6 +29,8 @@ class Email::ProcessJob < ApplicationJob
     Tags::Classifier.call(email)
     email.update!(tagged_at: Time.current)
     enqueue_later_stages(email)
+  rescue RubyLLM::ConnectionError
+    raise
   rescue RubyLLM::Error => error
     Rails.logger.error("[Email::ProcessJob] tagging email #{email_id} failed: #{error.message}")
   end

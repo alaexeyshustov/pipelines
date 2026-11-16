@@ -26,6 +26,8 @@ Prosopite.allow_stack_paths = [
   /ActivePromptResolver#call/,
   # One message query per sampled run, bounded by sample_size.
   /ToolCallExtractor\.call/,
+  # RubyLLM 2.2's agent loop reads the chat's queued and latest message on every tool round.
+  /evaluation\/sampler\.rb:\d+:in 'block \(2 levels\) in task_class'/,
   # destroy_all runs each record's dependent: :destroy callbacks.
   /Batchable::ClassMethods#destroy_by_ids/,
   # A rare admin action over a small file; lookups per imported record.

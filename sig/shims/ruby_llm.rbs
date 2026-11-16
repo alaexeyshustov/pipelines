@@ -3,6 +3,9 @@ module RubyLLM
     def response: () -> (String | _ToS)
   end
 
+  class ConnectionError < Error
+  end
+
   class Message
     def content: () -> String?
     def parsed: () -> json_object_value
@@ -26,7 +29,7 @@ module RubyLLM
   class Agent
     def self.create: () -> instance
     def self.new: (?chat: Chat | ::Chat) -> instance
-    def self.chat_model: (singleton(::Chat) chat_class) -> void
+    def self.chat_class: (singleton(::Chat) chat_class) -> void
     def self.model: (String model_id, ?provider: Symbol?, ?assume_model_exists: bool) -> void
     def self.tools: (*singleton(Tool) tools) -> void
     def self.schema: () { () [self: ::Schematist::SchemaBuilder] -> void } -> void

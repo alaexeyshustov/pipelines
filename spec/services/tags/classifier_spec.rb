@@ -28,10 +28,10 @@ RSpec.describe Tags::Classifier do
 
   def answer_for(question)
     if question["type"] == "predicate"
-      { "probability" => probabilities.fetch(question["name"]) }
+      { "name" => question["name"], "probability" => probabilities.fetch(question["name"]) }
     else
       pick = choices.fetch(question["name"])
-      { "choice" => pick, "confidence" => 0.8, "probabilities" => option_names(question).map { |name| { "value" => name, "probability" => name == pick ? 0.7 : 0.3 } } }
+      { "name" => question["name"], "choice" => pick, "confidence" => 0.8, "probabilities" => option_names(question).map { |name| { "value" => name, "probability" => name == pick ? 0.7 : 0.3 } } }
     end
   end
 

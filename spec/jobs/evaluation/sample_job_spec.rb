@@ -106,7 +106,7 @@ RSpec.describe Evaluation::SampleJob do
 
   describe "when a transport error persists" do
     before do
-      allow(Evaluation::Sampler).to receive(:call).and_raise(Faraday::ConnectionFailed, "down")
+      allow(Evaluation::Sampler).to receive(:call).and_raise(RubyLLM::ConnectionError, "down")
     end
 
     it "retries once, then releases the slot" do
