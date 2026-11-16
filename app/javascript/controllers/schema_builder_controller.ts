@@ -73,8 +73,7 @@ export default class SchemaBuilderController extends Controller {
       const onRender = (event: Event) => {
         frame.removeEventListener('turbo:frame-render', onRender);
         const fetchResponse = (event as CustomEvent).detail?.fetchResponse as
-          | { succeeded: boolean }
-          | undefined;
+          { succeeded: boolean } | undefined;
         if (fetchResponse?.succeeded) {
           this.showingRaw = true; // currently true; toggleRaw will flip it to false
           this.toggleRaw();
