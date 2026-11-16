@@ -424,7 +424,7 @@ GEM
       method_source (~> 1.0)
     pry-nav (1.0.0)
       pry (>= 0.9.10, < 0.15)
-    pstore (0.2.1)
+    pstore (0.3.0)
     psych (5.5.0)
       date
       stringio
@@ -936,7 +936,7 @@ CHECKSUMS
   protocol-url (0.4.0) sha256=64d4c03b6b51ad815ac6fdaf77a1d91e5baf9220d26becb846c5459dacdea9e1
   pry (0.14.2) sha256=c4fe54efedaca1d351280b45b8849af363184696fcac1c72e0415f9bdac4334d
   pry-nav (1.0.0) sha256=616b57f84ca478e606f28b04bbc218dc32818885ddea86903c6fc58171a99354
-  pstore (0.2.1) sha256=03904d0f2c66579e96d1e6704cdabc0c88df7ea8ed8782d9f3569f6f6c702c1a
+  pstore (0.3.0) sha256=97888d57cdc8b99b3587dde5e1d01fc5ca4a9124dfeb2afb84e3dd982e78f829
   psych (5.5.0) sha256=4b245bbbd0f3238df8ccee766ebc1a6b062b10e4ee1d3284eb588739ba156a0a
   public_suffix (7.0.5) sha256=1a8bb08f1bbea19228d3bed6e5ed908d1cb4f7c2726d18bd9cadf60bc676f623
   raabro (1.4.0) sha256=d4fa9ff5172391edb92b242eed8be802d1934b1464061ae5e70d80962c5da882
