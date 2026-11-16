@@ -41,7 +41,7 @@ module Orchestration
     def validate_required_keys!(value, required, path)
       return unless required.is_a?(Array)
 
-      required.each do |key| # steep:ignore
+      required.each do |key|
         next unless key.is_a?(String)
 
         raise Error, "#{path} missing required key: #{key}" unless value.key?(key)

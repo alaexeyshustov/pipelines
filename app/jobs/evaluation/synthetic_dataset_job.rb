@@ -52,7 +52,7 @@ module Evaluation
     end
 
     def build_user_message(system_prompt_text:, count:, hints:, few_shot:)
-      parts = []
+      parts = [] # : Array[String]
       parts << "## Agent System Prompt\n#{system_prompt_text}" if system_prompt_text.present?
       parts << "## Number of examples to generate\n#{count}"
       parts << "## Additional hints\n#{hints}" if hints.present?
@@ -69,7 +69,7 @@ module Evaluation
                         .with_instructions(SYSTEM_PROMPT)
                         .ask(user_message)
 
-      parsed = JSON.parse(response.content)
+      parsed = JSON.parse(response.content.to_s)
       raise ArgumentError, "Expected JSON array from LLM" unless parsed.is_a?(Array)
 
       parsed
@@ -102,7 +102,7 @@ module Evaluation
       draft = Evaluation::WizardDraft.find_by(session_token: draft_token)
       return unless draft
 
-      generation = { "status" => status }
+      generation = { "status" => status } # : { "status" => String, ?"dataset_id" => Integer, ?"error_message" => String }
       generation["dataset_id"]    = dataset_id    if dataset_id
       generation["error_message"] = error_message if error_message
 

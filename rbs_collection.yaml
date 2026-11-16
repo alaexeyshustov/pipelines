@@ -21,6 +21,10 @@ gems:
   # activerecord 8.0 that defines Relation with 0 params → GenericParameterMismatchError
   - name: pagy
     ignore: true
+  # sig/shims/ruby_llm*.rbs types the RubyLLM API this app uses, ahead of the
+  # gem version the collection covers; loading both duplicates declarations.
+  - name: ruby_llm
+    ignore: true
 #  - name: activerecord
 #    ignore: true
 #  - name: activestorage

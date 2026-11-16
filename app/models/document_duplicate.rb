@@ -27,7 +27,7 @@ class DocumentDuplicate < ApplicationRecord
 
   # Records the pair; only a pending pair gets its similarity refreshed, a confirmed or dismissed one is left alone.
   def self.flag!(first, second, similarity:)
-    low, high = [ first, second ].sort_by(&:id)
+    low, high = ordered(first, second)
     record = find_or_initialize_by(document: low, duplicate: high)
     record.similarity = similarity if record.new_record? || record.pending?
     record.save!
@@ -48,13 +48,19 @@ class DocumentDuplicate < ApplicationRecord
   end
 
   def self.flag_known!(existing, document, other, similarity)
-    low, high = [ document, other ].sort_by(&:id)
+    low, high = ordered(document, other)
     record = existing[[ low.id, high.id ]] || new(document: low, duplicate: high)
     record.similarity = similarity if record.new_record? || record.pending?
     record.save!
     record
   end
   private_class_method :flag_known!
+
+  # A pair is stored with the lower document id first.
+  def self.ordered(first, second)
+    first.id <= second.id ? [ first, second ] : [ second, first ]
+  end
+  private_class_method :ordered
 
   # The document on the other side of the pair.
   def other(from)

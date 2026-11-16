@@ -34,7 +34,7 @@ class Interview < ApplicationRecord
 
   def self.as_rows(scope = all)
     scope.order(:company, :job_title).map do |r|
-      COLUMN_NAMES.index_with { |col| r.public_send(col)&.to_s } # steep:ignore
+      COLUMN_NAMES.index_with { |col| r.public_send(col)&.to_s }
     end
   end
 end

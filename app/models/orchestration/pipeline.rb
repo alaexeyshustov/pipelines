@@ -24,11 +24,11 @@ module Orchestration
     end
 
     def enabled_steps
-      steps.where(enabled: true)
+      steps.where(enabled: true) # : Step::relation
     end
 
     def steps_with_actions
-      steps.includes(step_actions: { action: :agent })
+      steps.includes(step_actions: { action: :agent }) # : Step::relation
     end
 
     def next_run_at(from: Time.current)

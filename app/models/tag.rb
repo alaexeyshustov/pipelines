@@ -27,7 +27,7 @@ class Tag < ApplicationRecord
   def self.seed_defaults!
     transaction do
       tags = where(name: STARTER_SUBTAGS.keys).index_by(&:name)
-      known = Subtag.where(tag_id: tags.values.map(&:id)).pluck(:tag_id, :name).to_set
+      known = Subtag.where(tag_id: tags.values.map(&:id)).pluck(:tag_id, :name).to_set # : Set[[Integer, String]]
       STARTER_SUBTAGS.each do |name, subtag_names|
         tag = tags[name] ||= create!(name:)
         seed_subtags(tag, subtag_names, known)

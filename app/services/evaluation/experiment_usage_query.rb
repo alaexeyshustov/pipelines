@@ -31,14 +31,14 @@ module Evaluation
 
     private
 
-    # RubyLLM's usage model is not in our RBS; keep the untyped ActiveRecord calls in these two methods.
+    # RubyLLM's usage model is not in our RBS, so its query stays untyped.
     def scope
-      usage = RubyLLM::ActiveRecord::Usage # steep:ignore
+      usage = RubyLLM::ActiveRecord::Usage
       usage.where(owner_type: Experiment.polymorphic_name, owner_id: @experiment_ids, status: "succeeded") # steep:ignore
     end
 
     def totals_by_experiment
-      rows = scope.group(:owner_id) # steep:ignore
+      rows = scope.group(:owner_id)
                   .pluck(:owner_id, Arel.sql("COUNT(*)"), Arel.sql("COALESCE(SUM(input_tokens), 0)"),
                          Arel.sql("COALESCE(SUM(output_tokens), 0)"), Arel.sql("COALESCE(SUM(cache_read_tokens), 0)"),
                          Arel.sql("COALESCE(SUM(total_cost), 0)"))

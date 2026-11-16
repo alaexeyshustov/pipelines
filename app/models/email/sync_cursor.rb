@@ -64,9 +64,10 @@ class Email::SyncCursor < ApplicationRecord
   end
 
   def older_uid?(candidate_uid_validity, candidate)
-    return false if candidate.nil? || last_uid.nil?
+    current = last_uid
+    return false if candidate.nil? || current.nil?
 
-    candidate_uid_validity == uid_validity && candidate < last_uid
+    candidate_uid_validity == uid_validity && candidate < current
   end
 
   def newer_history_id?(candidate)

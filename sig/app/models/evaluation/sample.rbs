@@ -15,6 +15,7 @@ module Evaluation
 
     def experiment: () -> Experiment?
     def experiment=: (Experiment?) -> Experiment?
+    def evaluation_results: () -> EvaluationResult::relation
     def dataset_sample: () -> DatasetSample
     def dataset_sample=: (DatasetSample) -> DatasetSample
     def prompt: () -> Prompt

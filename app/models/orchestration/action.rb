@@ -40,7 +40,7 @@ module Orchestration
         return
       end
 
-      klass = agent_class.safe_constantize
+      klass = agent_class.to_s.safe_constantize
       return errors.add(:agent_class, "must be an existing constant") if klass.nil?
 
       unless klass.ancestors.include?(Orchestration::Executable)

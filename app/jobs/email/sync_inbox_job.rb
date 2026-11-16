@@ -110,7 +110,10 @@ class Email::SyncInboxJob < ApplicationJob
   # [Result, ids of the messages that failed]
   def store_all(provider, mode, ids)
     known = Email.where(provider: provider, provider_message_id: ids).pluck(:provider_message_id).to_set
-    outcomes = ids.map { |message_id| [ message_id, *store(provider, message_id, known) ] }
+    outcomes = ids.map do |message_id|
+      outcome, email = store(provider, message_id, known)
+      [ message_id, outcome, email ] # : [String, String, Email?]
+    end
     failed_ids = outcomes.select { |(_id, outcome, _email)| outcome == "failed" }.map(&:first)
     [ Result.new(counts: counts_for(mode, ids.size, outcomes), email_ids: outcomes.filter_map { |(*, email)| email&.id }), failed_ids ]
   end

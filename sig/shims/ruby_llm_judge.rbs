@@ -1,5 +1,5 @@
 module RubyLLM
-  class ModelNotFoundError < Error
+  class ModelNotFoundError < StandardError
   end
 
   class Configuration

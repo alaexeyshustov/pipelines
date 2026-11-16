@@ -38,7 +38,6 @@ module Evaluation
 
     private
 
-    def increment_version: () -> Integer
-    def assign_next_version: () -> Integer
+    def assign_next_version: () -> void
   end
 end

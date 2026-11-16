@@ -15,7 +15,7 @@ module Interviews
       CSV.generate(headers: true) do |csv|
         csv << @columns
         scope.each do |interview|
-          csv << @columns.map { |col| interview.public_send(col) } # steep:ignore
+          csv << @columns.map { |col| interview.public_send(col) }
         end
       end
     end

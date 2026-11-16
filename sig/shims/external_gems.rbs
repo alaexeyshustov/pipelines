@@ -71,12 +71,6 @@ module Net
       def attr: () -> Hash[String, String]
     end
 
-    class NoResponseError < StandardError
-    end
-
-    class ByeResponseError < StandardError
-    end
-
     def initialize: (String host, ?port: Integer, ?ssl: bool | Hash[Symbol, primitive]) -> void
     def login: (String user, String password) -> void
     def logout: () -> void
@@ -257,5 +251,38 @@ module Zip
   class File
     def self.open_buffer: (StringIO io) { (File zip) -> void } -> void
     def read: (String entry) -> String
+  end
+end
+
+module Fugit
+  class Cron
+    interface _ToTime
+      def to_t: () -> Time
+    end
+
+    def self.parse: (String? source) -> Cron?
+    def next_time: (?Time from) -> _ToTime
+  end
+end
+
+module SolidQueue
+  class Record < ActiveRecord::Base
+    def self.where: (*top) -> ActiveRecord::Relation
+    def self.exists?: (*top) -> bool
+  end
+
+  class Job < Record
+  end
+
+  class ReadyExecution < Record
+  end
+
+  class ClaimedExecution < Record
+  end
+
+  class ScheduledExecution < Record
+  end
+
+  class BlockedExecution < Record
   end
 end

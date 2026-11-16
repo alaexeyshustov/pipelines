@@ -26,6 +26,7 @@ interface _Relation[Model, PrimaryKey]
   def group: (*(Symbol | String | Arel::Attributes::Attribute)) -> self
            | ...
   def average: (Symbol | String | Arel::Attributes::Attribute) -> (Numeric? | Hash[Symbol | String, Numeric?])
+  def maximum: (Symbol | String | Arel::Attributes::Attribute) -> (Integer | Float | BigDecimal | String | Time | nil)
 
   def to_a: () -> Array[Model]
   def map: [T] () { (Model) -> T } -> Array[T]

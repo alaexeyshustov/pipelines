@@ -56,11 +56,11 @@ class Document::TextExtractor
   def docx_xml
     xml = "" # : String
     Zip::File.open_buffer(StringIO.new(@data)) do |zip|
-      entry = zip.find_entry(DOCX_XML) # steep:ignore
+      entry = zip.find_entry(DOCX_XML)
       raise Unsupported, "Unreadable docx: no #{DOCX_XML}" unless entry
-      raise Unsupported, "docx text too large (#{entry.size} bytes)" if entry.size > MAX_DOCX_XML_BYTES # steep:ignore
+      raise Unsupported, "docx text too large (#{entry.size} bytes)" if entry.size > MAX_DOCX_XML_BYTES
 
-      xml = entry.get_input_stream.read.to_s # steep:ignore
+      xml = entry.get_input_stream.read.to_s
     end
     xml
   end

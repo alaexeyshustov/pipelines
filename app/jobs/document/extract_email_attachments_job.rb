@@ -26,7 +26,8 @@ class Document::ExtractEmailAttachmentsJob < ApplicationJob
   end
 
   def with_resolved_type(attachment)
-    attachment.merge(mime_type: Document::FileType.resolve(attachment[:mime_type], attachment[:filename]))
+    { id: attachment[:id], filename: attachment[:filename], size: attachment[:size],
+      mime_type: Document::FileType.resolve(attachment[:mime_type], attachment[:filename]) }
   end
 
   def eligible?(email)
@@ -38,7 +39,7 @@ class Document::ExtractEmailAttachmentsJob < ApplicationJob
     checksum = Digest::SHA256.hexdigest(data)
     return if Document.exists?(checksum:)
 
-    text = Document::TextExtractor.call(data:, mime_type: attachment[:mime_type], filename: attachment[:filename])
+    text = Document::TextExtractor.call(data:, mime_type: attachment[:mime_type].to_s, filename: attachment[:filename])
     document = ingest(email, attachment, checksum, text)
     return unless document.previously_new_record?
 

@@ -10,15 +10,15 @@ module Evaluation
     accepts_nested_attributes_for :justifications, allow_destroy: true
 
     def self.overall_average(experiment)
-      where(experiment: experiment).average(:score)
+      where(experiment: experiment).average(:score) # : Float?
     end
 
     def self.per_metric_averages(experiment)
-      joins(justification_join_source)
-        .where(experiment: experiment)
-        .group(Justification.arel_table[:metric_name])
-        .average(arel_table[:score])
-        .transform_keys(&:to_s)
+      averages = joins(justification_join_source)
+                 .where(experiment: experiment)
+                 .group(Justification.arel_table[:metric_name])
+                 .average(arel_table[:score]) # : Hash[String, Float]
+      averages.transform_keys(&:to_s)
     end
 
     def self.justification_join_source

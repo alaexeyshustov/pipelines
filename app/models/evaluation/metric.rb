@@ -16,7 +16,8 @@ module Evaluation
 
     scope :for_agent, ->(agent_name) { where(agent_name: agent_name) }
     scope :active, -> { where(active: true) }
-    scope :active_for_agent, ->(agent_name) { active.for_agent(agent_name) }
+    # _Relation has no model scopes, so Steep can't see `for_agent` on `active`.
+    scope :active_for_agent, ->(agent_name) { active.for_agent(agent_name) } # steep:ignore NoMethod
 
     private
 
@@ -28,13 +29,15 @@ module Evaluation
     end
 
     def valid_score_levels?
-      levels.is_a?(Array) && levels.size >= 2 && levels.all?(&:present?)
+      value = levels
+      value.is_a?(Array) && value.size >= 2 && value.all?(&:present?)
     end
 
     def valid_choice_levels?
-      return false unless levels.is_a?(Hash) && levels.size >= 2
+      value = levels
+      return false unless value.is_a?(Hash) && value.size >= 2
 
-      levels.values.all? do |option|
+      value.values.all? do |option|
         option.is_a?(Hash) && (option["value"].nil? || (0.0..1.0).cover?(option["value"]))
       end
     end

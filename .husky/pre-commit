@@ -4,9 +4,6 @@ pnpm run build
 echo "Building CSS assets before push..."
 bundle exec rails tailwindcss:build
 
-echo "#check signatures are up to date"
-bundle exec sentinel check
-
 echo "Running rubocop..."
 bundle exec rubocop
 

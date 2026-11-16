@@ -24,9 +24,9 @@ class Email
     def failed_runs: () -> Integer
     def failed_runs=: (Integer) -> Integer
     def last_synced_at: () -> Time?
-    def last_synced_at=: (Time?) -> Time?
+    def last_synced_at=: ((Time | ActiveSupport::TimeWithZone)?) -> (Time | ActiveSupport::TimeWithZone)?
     def last_rescan_at: () -> Time?
-    def last_rescan_at=: (Time?) -> Time?
+    def last_rescan_at=: ((Time | ActiveSupport::TimeWithZone)?) -> (Time | ActiveSupport::TimeWithZone)?
 
     private
 
