@@ -1,7 +1,7 @@
 module Orchestration
   module Agents
     class RecordsNormalizer < RubyLLM::Agent
-      chat_model Chat
+      chat_class Chat
       tools Records::ListRowsTool, Records::ReadRowsTool, Records::UpdateRowsTool, Records::ReadSchemaTool, Records::SearchSimilarTool
       LlmModels.ref(LlmModels.records_agent).declare_on(self)
 

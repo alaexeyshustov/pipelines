@@ -5,7 +5,8 @@
 #
 # Returns early, with no LLM call, for a Document that is already tagged, so duplicates queued by a slow queue are
 # no-ops. RubyLLM already retries HTTP-level failures, so a RubyLLM::Error reaching this job is final for this run
-# (logged, tagged_at stays nil); raw transport errors get one outer retry.
+# (logged, tagged_at stays nil); transport errors (RubyLLM::ConnectionError, re-raised past that rescue) get one
+# outer retry.
 class Document::TagJob < ApplicationJob
   queue_as :default
 
@@ -24,6 +25,8 @@ class Document::TagJob < ApplicationJob
 
     Tags::Classifier.call(document)
     document.update!(tagged_at: Time.current)
+  rescue RubyLLM::ConnectionError
+    raise
   rescue RubyLLM::Error => error
     Rails.logger.error("[Document::TagJob] tagging document #{document_id} failed: #{error.message}")
   end

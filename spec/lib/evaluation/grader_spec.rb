@@ -15,8 +15,8 @@ RSpec.describe Evaluation::Grader do
   end
   let(:answers) do
     [
-      { "probability" => 0.9 },
-      { "score" => 1.2, "confidence" => 0.8,
+      { "name" => "accuracy", "probability" => 0.9 },
+      { "name" => "quality", "score" => 1.2, "confidence" => 0.8,
         "probabilities" => [ { "label" => "0", "probability" => 0.1 }, { "label" => "1", "probability" => 0.5 },
                              { "label" => "2", "probability" => 0.4 } ] }
     ]
@@ -61,7 +61,7 @@ RSpec.describe Evaluation::Grader do
   end
 
   it "marks a grade failed when below the minimum" do
-    answers[0] = { "probability" => 0.2 }
+    answers[0] = { "name" => "accuracy", "probability" => 0.2 }
     expect(grades.first.passed).to be(false)
   end
 
@@ -88,7 +88,7 @@ RSpec.describe Evaluation::Grader do
     accuracy.update!(active: false)
     quality.update!(active: false)
     create(:evaluation_metric, :choice, agent_name: agent_name, name: "bucket")
-    answers.replace([ { "choice" => "good", "confidence" => 1.0,
+    answers.replace([ { "name" => "bucket", "choice" => "good", "confidence" => 1.0,
                         "probabilities" => [ { "value" => "good", "probability" => 0.5 },
                                              { "value" => "ok", "probability" => 0.5 },
                                              { "value" => "bad", "probability" => 0.0 } ] } ])

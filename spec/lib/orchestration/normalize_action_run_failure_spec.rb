@@ -171,7 +171,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
 
     context "when the failure is a transport error" do
       let(:model) { "mistral-small-latest" }
-      let(:error) { Faraday::TimeoutError.new("execution expired") }
+      let(:error) { RubyLLM::ConnectionError.new("execution expired") }
 
       it "classifies it as a transport error" do
         result = described_class.new(error:, action_run:, raw_content: nil).normalize
@@ -185,26 +185,6 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
           "status_code" => nil
         )
         expect(result.details["raw_response_excerpt"]).to be_nil
-      end
-    end
-
-    context "when the failure is a Faraday::ConnectionFailed transport error" do
-      let(:model) { "mistral-small-latest" }
-      let(:error) { Faraday::ConnectionFailed.new("Connection refused - connect(2)") }
-
-      it "classifies as transport_error" do
-        result = described_class.new(error:, action_run:, raw_content: nil).normalize
-        expect(result.details["category"]).to eq("transport_error")
-      end
-    end
-
-    context "when the failure is a Faraday::SSLError transport error" do
-      let(:model) { "mistral-small-latest" }
-      let(:error) { Faraday::SSLError.new("SSL_connect SYSCALL returned=5") }
-
-      it "classifies as transport_error" do
-        result = described_class.new(error:, action_run:, raw_content: nil).normalize
-        expect(result.details["category"]).to eq("transport_error")
       end
     end
 

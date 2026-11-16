@@ -44,7 +44,7 @@ RSpec.describe Document::TagJob do
     end
 
     context "when the classifier raises a transport error" do
-      before { allow(Tags::Classifier).to receive(:call).and_raise(Faraday::ConnectionFailed, "reset") }
+      before { allow(Tags::Classifier).to receive(:call).and_raise(RubyLLM::ConnectionError, "reset") }
 
       it "retries once and leaves tagged_at nil" do
         perform_enqueued_jobs(only: described_class) { described_class.perform_later(document.id) }

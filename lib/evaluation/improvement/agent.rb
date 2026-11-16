@@ -1,7 +1,7 @@
 module Evaluation
   module Improvement
     class Agent < AuxiliaryAgent
-      chat_model Chat
+      chat_class Chat
       tools LoadSamplesTool, ListExperimentsTool, GetExperimentJustificationsTool, GetExperimentPromptTool
 
       schema do

@@ -14,7 +14,7 @@ RSpec.describe Orchestration::ProviderErrorResponse do
     end
 
     it "is false for a transport error" do
-      expect(described_class.new(error: Faraday::TimeoutError.new("timeout")).present?).to be(false)
+      expect(described_class.new(error: RubyLLM::ConnectionError.new("timeout")).present?).to be(false)
     end
   end
 

@@ -562,13 +562,14 @@ GEM
       prism (>= 1.2, < 2.0)
       rbs (>= 3, < 5)
     ruby-progressbar (1.13.0)
-    ruby_llm (2.1.1)
+    ruby_llm (2.2.2)
       base64
       faraday (>= 1.10.0, != 2.0.0)
       faraday-multipart (>= 1)
       faraday-net_http (>= 1)
       faraday-retry (>= 1)
       json (< 4)
+      logger
       marcel (>= 1.0, < 3)
       schematist (~> 1.1)
       zeitwerk (~> 2)
@@ -761,7 +762,7 @@ DEPENDENCIES
   rubocop-rspec
   rubocop-rspec_rails
   ruby-lsp
-  ruby_llm (~> 2.1.1)
+  ruby_llm (~> 2.2.2)
   ruby_llm-monitoring
   rubycritic
   rubyzip (~> 3.7)
@@ -976,7 +977,7 @@ CHECKSUMS
   rubocop-rspec_rails (2.32.0) sha256=4a0d641c72f6ebb957534f539d9d0a62c47abd8ce0d0aeee1ef4701e892a9100
   ruby-lsp (0.26.9) sha256=33a01c001c00a76b4e821efc04ed7572983430f31ca5d6f3e343d0b6ccab4129
   ruby-progressbar (1.13.0) sha256=80fc9c47a9b640d6834e0dc7b3c94c9df37f08cb072b7761e4a71e22cff29b33
-  ruby_llm (2.1.1) sha256=2a59a6c100d1f7a5c5df7f3c392392c4430220ed936a34fdd34dd15954cc3573
+  ruby_llm (2.2.2) sha256=e08da09150bc11e15b294a7628b8295e0813d7f611ca97f74dcb1286ba7cdc79
   ruby_llm-monitoring (0.4.0) sha256=e5ca2893f2e34a2d45a1107a12a5728239caf1e2e044ee979d85746893bb5488
   ruby_parser (3.22.0) sha256=1eb4937cd9eb220aa2d194e352a24dba90aef00751e24c8dfffdb14000f15d23
   rubycritic (5.0.0) sha256=7f3877556d7f52bf0980496b7c907a827a9592ba690b80a593403a60bd6cfb42
