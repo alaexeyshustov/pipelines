@@ -53,6 +53,8 @@ module RubyLLM
   class Models
     type model = ModelInfo
 
+    def refresh: (?remote_only: bool) -> self
+
     class ModelInfo
       def name: () -> String
       def provider: () -> String

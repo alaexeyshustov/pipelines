@@ -193,6 +193,10 @@ create(:evaluation_wizard_draft,
       expect(form.step_form(4)).to be_a(Evaluation::Wizard::Step4Form)
     end
 
+    it "raises for a step outside the wizard" do
+      expect { form.step_form(5) }.to raise_error(ArgumentError, "unknown wizard step: 5")
+    end
+
     context "when step 1" do
       it "populates agent_name from the draft payload" do
         expect(form.step_form(1).agent_name).to eq("Emails::ClassifyAgent")

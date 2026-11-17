@@ -8,7 +8,7 @@ module Emails
 
       # Raw bytes of a message attachment.
       def data(message_id, attachment_id)
-        body = @service.get_user_message_attachment("me", message_id.to_s, attachment_id.to_s) # steep:ignore
+        body = @service.get_user_message_attachment("me", message_id.to_s, attachment_id.to_s)
         raise "Attachment not found: #{attachment_id}" unless body
 
         body.data.to_s
@@ -37,7 +37,7 @@ module Emails
 
       def metadata(part)
         body = part.body
-        filename = part.filename.to_s # steep:ignore
+        filename = part.filename.to_s
         return [] unless body&.attachment_id && !filename.empty? && !inline?(part)
 
         [ { id: body.attachment_id.to_s, filename: filename, mime_type: part.mime_type.to_s, size: body.size.to_i } ]

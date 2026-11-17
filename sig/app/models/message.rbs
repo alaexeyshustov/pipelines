@@ -11,6 +11,8 @@ class Message < ApplicationRecord
   def model_id: () -> Integer?
   def model_id=: (Integer?) -> Integer?
 
+  def tokens: () -> RubyLLM::Tokens?
+
   def parent_tool_call: () -> ToolCall?
   def parent_tool_call=: (ToolCall?) -> ToolCall?
 end

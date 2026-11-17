@@ -72,18 +72,31 @@ module Net
     end
 
     def initialize: (String host, ?port: Integer, ?ssl: bool | Hash[Symbol, primitive]) -> void
+                  | ...
     def login: (String user, String password) -> void
+             | ...
     def logout: () -> void
+              | ...
     def disconnect: () -> void
+                  | ...
     def select: (String mailbox) -> void
+              | ...
     def uid_search: (Array[String] criteria) -> Array[Integer]
+                  | ...
     def uid_fetch: (Integer uid, Array[String] | String fields) -> Array[FetchData]?
+                 | ...
     def uid_copy: (Integer uid, String mailbox) -> void
+                | ...
     def uid_store: (Integer uid, String attr, Array[String | Symbol] flags) -> void
+                 | ...
     def expunge: () -> void
+               | ...
     def list: (String refname, String mailbox) -> Array[MailboxData]?
+            | ...
     def status: (String mailbox, Array[String] attrs) -> Hash[String, Integer?]
+              | ...
     def create: (String mailbox_name) -> void
+              | ...
   end
 end
 
@@ -99,6 +112,7 @@ module Google
         def authorization=: (Signet::OAuth2::Client auth) -> void
         def list_user_messages: (String user_id, ?max_results: Integer, ?q: String?, ?page_token: String?, ?label_ids: Array[String]?) -> ListMessagesResponse?
         def get_user_message: (String user_id, String message_id, ?format: String, ?metadata_headers: Array[String]?) -> Message?
+        def get_user_message_attachment: (String user_id, String message_id, String id) -> MessagePartBody?
         def list_user_labels: (String user_id) -> ListLabelsResponse?
         def get_user_label: (String user_id, String label_id) -> LabelWithCount?
         def modify_message: (String user_id, String message_id, ModifyMessageRequest request) -> Message?
@@ -158,6 +172,7 @@ module Google
         def body: () -> MessagePartBody?
         def parts: () -> Array[MessagePart]?
         def mime_type: () -> String?
+        def filename: () -> String?
       end
 
       class MessagePartBody
@@ -210,12 +225,23 @@ end
 
 module ViewComponent
   class Base
-    def render_in: (view_context: ActionView::Base) -> String
     def render: () -> String
   end
 end
 
 class Pagy
+  def last: () -> Integer
+  def series_nav: (?Symbol style, **top) -> String
+end
+
+module Signet
+  module OAuth2
+    class Client
+      def access_token: () -> String?
+      def expired?: () -> bool
+      def fetch_access_token!: (?Hash[Symbol, top] options) -> Hash[String, top]
+    end
+  end
 end
 
 class Array[unchecked out Elem]
@@ -240,17 +266,16 @@ module Arel
     def on: (*untyped exprs) -> self
           | ...
     def join_sources: () -> Array[Arel::Nodes::Join]
+                    | ...
   end
 end
 # rubocop:enable RBS/Lint/NoUntyped
 
 module Zip
-  class Error < StandardError
-  end
-
   class File
+    # The collection's signature takes IO | String; StringIO is not an IO subclass.
     def self.open_buffer: (StringIO io) { (File zip) -> void } -> void
-    def read: (String entry) -> String
+                        | ...
   end
 end
 

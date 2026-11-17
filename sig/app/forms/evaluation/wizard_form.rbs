@@ -15,7 +15,7 @@ module Evaluation
     def complete?: () -> bool
     def advance!: (Integer step, wizard_payload payload) -> bool
     def complete!: () -> Experiment
-    def step_form: (Integer step) -> (Wizard::Step1Form | Wizard::Step2Form | Wizard::Step3Form | Wizard::Step4Form)?
+    def step_form: (Integer step) -> (Wizard::Step1Form | Wizard::Step2Form | Wizard::Step3Form | Wizard::Step4Form)
 
     private
 

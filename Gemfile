@@ -70,6 +70,8 @@ group :development do
   gem "rubocop-on-rbs", "~> 2.2", require: false
   gem "steep", "~> 2.1", require: false
   gem "rbs_rails", "~> 0.13.0"
+  # 0.x is an evaluation trial upstream; pin exactly and regenerate .rigor-baseline.yml on bump (GH #171).
+  gem "rigortype", "0.4.8", require: false
   gem "ruby-lsp"
 end
 
