@@ -190,6 +190,20 @@ bundle exec rubycritic .
 
 Tests use VCR cassettes for all external API calls — no live network traffic in CI.
 
+### repowise (git-history context)
+
+[repowise](https://github.com/repowise-dev/repowise) adds co-change and change-risk context for Claude Code (MCP) and an advisory CI check. It is pinned in `.mise.toml` and needs [mise](https://mise.jdx.dev); the first install takes about 5 minutes and 800 MB.
+
+```bash
+# One-time: install and build the local index (.repowise/, gitignored)
+mise install && mise run repowise:init
+
+# Before a PR that touches the orchestration layer
+mise run repowise:health
+```
+
+`.husky/post-commit` refreshes the index in the background after each commit. Telemetry is disabled via `DO_NOT_TRACK` in `.mise.toml`.
+
 ---
 
 ## Project structure

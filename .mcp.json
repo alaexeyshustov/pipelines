@@ -5,6 +5,11 @@
       "command": "${HOME}/.cargo/bin/rubydex_mcp",
       "args": [],
       "env": {}
+    },
+    "repowise": {
+      "type": "stdio",
+      "command": "mise",
+      "args": ["exec", "--", "repowise", "mcp", ".", "--tools", "lean"]
     }
   }
 }

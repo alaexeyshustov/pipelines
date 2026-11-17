@@ -1,0 +1,4 @@
+# Background-refresh the repowise index; no-op without a local index.
+[ -f .repowise/state.json ] || exit 0
+command -v mise >/dev/null 2>&1 || exit 0
+(mise run repowise:update >> .repowise/.update.log 2>&1 &)

@@ -11,5 +11,6 @@
 - [Orchestration subsystem](docs/orchestration.md)
 - [Evaluations subsystem](docs/evals.md)
 - [Local models (Ollama) and `LLM_TEST_BACKEND=ollama`](docs/local_models.md)
+- [repowise: co-change and change-risk context via MCP](docs/claude/repowise.md)
 
 ## [Gotchas](docs/claude/gotchas.md)

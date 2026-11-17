@@ -1,0 +1,24 @@
+# Project tools managed by mise. Ruby comes from .ruby-version; node/pnpm from the global mise config.
+
+[tools]
+uv = "0.12"                  # pipx backend uses uv; uv supplies its own Python ≥3.11, no python pin needed
+"pipx:repowise" = "0.60.1"   # exact pin; weekly 0.x releases, never "latest"
+
+[env]
+DO_NOT_TRACK = "1"           # repowise telemetry is opt-out
+
+[tasks."repowise:init"]
+description = "Build the local repowise index without touching editor or Claude Code config"
+run = "repowise init --no-prose --no-editor-setup --no-distill-hook --no-claude-md --no-agents"
+
+[tasks."repowise:update"]
+description = "Refresh the repowise index (run by .husky/post-commit)"
+run = "repowise update --index-only"
+
+[tasks."repowise:health"]
+description = "Report code health and refactoring targets"
+run = "repowise health --refactoring-targets"
+
+[tasks."repowise:risk"]
+description = "Score this branch's change size against recent history (advisory)"
+run = "repowise risk origin/main...HEAD"   # `...` = from merge-base; `..` would count commits landed on main
