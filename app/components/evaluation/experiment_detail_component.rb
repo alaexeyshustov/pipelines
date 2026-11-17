@@ -80,10 +80,6 @@ module Evaluation
 
     def models_label = @usage&.models&.keys&.join(", ")
 
-    def active_run?
-      @experiment.pending? || @experiment.running?
-    end
-
     def progress_label
       return unless @experiment.running?
 

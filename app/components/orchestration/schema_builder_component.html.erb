@@ -18,7 +18,7 @@
             <option value="" selected disabled>— select type —</option>
           <% end %>
           <% type_options.each do |label, value| %>
-            <option value="<%= value %>" <%= "selected" if builder.type == value %>><%= label %></option>
+            <option value="<%= value %>" <% if builder.type == value %>selected<% end %>><%= label %></option>
           <% end %>
         </select>
       </form>
@@ -50,11 +50,11 @@
         <select name="builder[format]"
                 class="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 onchange="this.form.requestSubmit()">
-          <option value="" <%= "selected" if builder.format.blank? %>>none</option>
+          <option value="" <% if builder.format.blank? %>selected<% end %>>none</option>
           <% if builder.type == "string" %>
-            <option value="date" <%= "selected" if builder.format == "date" %>>date</option>
+            <option value="date" <% if builder.format == "date" %>selected<% end %>>date</option>
           <% end %>
-          <option value="hardcoded" <%= "selected" if builder.format == "hardcoded" %>>hardcoded</option>
+          <option value="hardcoded" <% if builder.format == "hardcoded" %>selected<% end %>>hardcoded</option>
         </select>
       </form>
     </div>
@@ -138,7 +138,7 @@
                     <input type="checkbox"
                            name="builder[required_checked]"
                            value="true"
-                           <%= "checked" if required?(prop_name) %>
+                           <% if required?(prop_name) %>checked<% end %>
                            onchange="this.form.requestSubmit()"
                            class="rounded border-gray-300">
                     required
@@ -195,7 +195,7 @@
           <input type="checkbox"
                  name="builder[additional_properties]"
                  value="true"
-                 <%= "checked" if builder.additional_properties == true %>
+                 <% if builder.additional_properties == true %>checked<% end %>
                  onchange="this.form.requestSubmit()"
                  class="rounded border-gray-300">
           Allow additional properties

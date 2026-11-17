@@ -6,7 +6,7 @@
       <% tools.each do |tool| %>
         <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
           <input type="checkbox" name="orchestration_agent[tools][]" value="<%= tool %>"
-            <%= "checked" if selected?(tool) %>
+            <% if selected?(tool) %>checked<% end %>
             class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
           <%= tool %>
         </label>

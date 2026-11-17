@@ -7,6 +7,15 @@ RSpec.describe "Settings::EmailConnectors" do
       expect(response).to be_successful
       expect(response.body).to include("Email Connectors")
     end
+
+    it "asks Turbo to confirm before destroying a connector" do
+      connector = EmailConnector.create!(name: "My Gmail", provider: "gmail", configuration: { credentials_path: "credentials.json" })
+
+      get settings_email_connectors_path
+
+      destroy = Nokogiri::HTML(response.body).at_css("form[action='#{settings_email_connector_path(connector)}'] button")
+      expect(destroy["data-turbo-confirm"]).to eq("Are you sure?")
+    end
   end
 
   describe "POST /settings/email_connectors" do

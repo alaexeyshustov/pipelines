@@ -1,3 +1,3 @@
-<turbo-frame id="experiment-status" <%= "src=\"#{turbo_src}\"".html_safe if turbo_src %> <%= "refresh=\"interval\" data-turbo-refresh-interval=\"3000\"".html_safe if polling? %>>
+<%= tag.turbo_frame id: "experiment-status", src: turbo_src, refresh: ("interval" if polling?), data: { turbo_refresh_interval: (3000 if polling?) } do %>
   <%= badge %>
-</turbo-frame>
+<% end %>

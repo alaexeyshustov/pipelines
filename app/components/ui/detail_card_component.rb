@@ -1,7 +1,5 @@
 module UI
   class DetailCardComponent < ViewComponent::Base
-    renders_one :status_badge, "UI::StatusBadgeComponent"
-
     Attribute = Data.define(:label, :attribute, :type, :variant_map)
     class Attribute
       def self.from(hash)

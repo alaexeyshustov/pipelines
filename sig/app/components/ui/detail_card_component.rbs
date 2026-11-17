@@ -17,9 +17,5 @@ module UI
     def variant_for: (Attribute attr, primitive value) -> Symbol
     def text_classes_for: (Attribute attr) -> String
     def json_display: (json_object_value val) -> String
-
-    def with_status_badge: (label: String, ?variant: Symbol) -> StatusBadgeComponent
-    def status_badge: () -> String?
-    def status_badge?: () -> bool
   end
 end
