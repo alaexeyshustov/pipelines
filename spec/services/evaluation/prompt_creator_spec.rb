@@ -9,7 +9,7 @@ RSpec.describe Evaluation::PromptCreator do
     end
 
     it "enqueues PromptAutoEvalJob for the new prompt" do
-      prompt = described_class.call(**attributes)
+      prompt = described_class.call(**attributes).prompt
 
       expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: prompt.id)
     end

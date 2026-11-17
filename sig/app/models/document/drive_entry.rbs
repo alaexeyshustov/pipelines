@@ -1,0 +1,15 @@
+class Document
+  class DriveEntry
+    type attributes = Hash[Symbol, String | Hash[Symbol, String?]?]
+
+    attr_reader entry: Emails::Adapters::DriveFileFetcher::Entry
+
+    def initialize: (Emails::Adapters::DriveFileFetcher::Entry entry) -> void
+    def supported?: () -> bool
+    def mime_type: () -> String?
+    def unchanged?: (Document document) -> bool
+    def attributes: (Emails::Adapters::DriveFileFetcher::File file, String text, String checksum) -> attributes
+    def relink_attributes: () -> attributes
+    def source_ref: () -> Hash[Symbol, String?]
+  end
+end

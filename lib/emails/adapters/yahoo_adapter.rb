@@ -14,13 +14,9 @@ module Emails
       def self.test_connection(opts = {})
         connection = from_env(opts)
         connection.list_messages(max_results: 1)
-        # rubocop:disable Rails/Output
-        puts "✓ Yahoo Mail connection successful"
-        # rubocop:enable Rails/Output
+        "✓ Yahoo Mail connection successful"
       rescue StandardError => error
-        # rubocop:disable Rails/Output
-        puts "ERROR: Yahoo Mail connection failed - #{error.message}"
-        # rubocop:enable Rails/Output
+        "ERROR: Yahoo Mail connection failed - #{error.message}"
       end
 
       def self.from_env(opts = {})

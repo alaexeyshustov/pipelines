@@ -1,6 +1,6 @@
 # Full-text search over subject, body and sender (FTS5), best match first.
 #
-#   Email::SearchQuery.call("interview acme").first.snippet  # => "... [[interview]] at ..."
+#   Email::SearchQuery.call("interview acme").hits.first.snippet  # => "... [[interview]] at ..."
 #
 # User input is turned into quoted terms (implicitly ANDed), so operators and stray quotes are plain text.
 #
@@ -9,6 +9,7 @@
 # (reciprocal rank fusion); its rank is the negated fused score, so lower is still better.
 class Email::SearchQuery
   Hit = Data.define(:email, :rank, :snippet)
+  Result = Data.define(:hits)
 
   def self.call(query, limit: 20, mode: :text)
     new(query, limit:, mode:).call
@@ -21,6 +22,7 @@ class Email::SearchQuery
   end
 
   def call
-    Email.ranked_search(@query, mode: @mode, limit: @limit).map { |hit| Hit.new(email: hit.record, rank: hit.rank, snippet: hit.snippet) } # steep:ignore
+    hits = Email.ranked_search(@query, mode: @mode, limit: @limit).map { |hit| Hit.new(email: hit.record, rank: hit.rank, snippet: hit.snippet) } # steep:ignore
+    Result.new(hits:)
   end
 end

@@ -1,4 +1,0 @@
-class ToolCall < ApplicationRecord
-  def name: () -> String
-  def arguments: () -> json_object
-end

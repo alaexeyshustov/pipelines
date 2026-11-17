@@ -33,7 +33,7 @@ RSpec.describe Document::SyncDriveJob do
     allow(fetcher).to receive(:empty_folders).with(%w[root1 root2]) { empty_folders }
     allow(fetcher).to receive(:fetch).with("f1", name: "cv.pdf", mime_type: "application/pdf").and_return(drive_file("%PDF", "cv.pdf", "application/pdf"))
     allow(fetcher).to receive(:fetch).with("g1", name: "Notes", mime_type: Emails::Adapters::DriveFileFetcher::GOOGLE_DOC_MIME).and_return(drive_file("docx-bytes", "Notes", docx))
-    allow(Document::TextExtractor).to receive(:call).and_return("extracted")
+    allow(Document::TextExtractor).to receive(:call).and_return(Document::TextExtractor::Result.new(text: "extracted"))
   end
 
   it "creates a Document per supported file with Drive source data and extracted text" do
@@ -269,7 +269,7 @@ RSpec.describe Document::SyncDriveJob do
   it "logs a failing file, keeps its existing Document and processes the rest" do
     existing = drive_document("f1", md5: "stale", checksum: "stale")
     allow(Document::TextExtractor).to receive(:call) do |filename:, **|
-      filename == "cv.pdf" ? raise(RubyLLM::Error, "ocr down") : "ok"
+      filename == "cv.pdf" ? raise(RubyLLM::Error, "ocr down") : Document::TextExtractor::Result.new(text: "ok")
     end
     allow(Rails.logger).to receive(:error)
 

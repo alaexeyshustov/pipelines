@@ -1,0 +1,8 @@
+module UI
+  class LegacyTabsComponent
+    class TabComponent < ViewComponent::Base
+      def initialize: (id: String, label: String, controls: String, ?active: bool) -> void
+      def call: () -> String
+    end
+  end
+end

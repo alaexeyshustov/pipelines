@@ -4,7 +4,7 @@ RSpec.describe "Orchestration pipeline export/import" do
   let(:envelope_for) { ->(pipelines) { { "format" => "pipeline_export", "schema_version" => 1, "pipelines" => pipelines.map(&:name) } } }
   let(:exporter) do
     envelope = envelope_for
-    Class.new { define_singleton_method(:call) { |pipelines| envelope.call(Array(pipelines)) } }
+    stub_const("FakePipelineExporter", Class.new { define_singleton_method(:call) { |pipelines| envelope.call(Array(pipelines)) } })
   end
 
   before { stub_const("Orchestration::PipelineExporter", exporter) }

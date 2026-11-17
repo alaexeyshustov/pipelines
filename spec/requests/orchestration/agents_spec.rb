@@ -48,18 +48,21 @@ RSpec.describe "Orchestration::Agents" do
         }
       end
 
-      it "creates an agent and redirects" do # rubocop:disable RSpec/MultipleExpectations
+      it "creates an agent and redirects" do
         expect {
           post orchestration_agents_path, params: valid_params
         }.to change(Orchestration::Agent, :count).by(1)
         expect(response).to redirect_to(orchestration_agents_path)
-        expect(Orchestration::Agent.last.prompt).to eq("Classify this payload")
-        expect(Orchestration::Agent.last.output_schema).to eq(
-          "type" => "object",
-          "required" => [ "result" ],
-          "properties" => { "result" => { "type" => "array" } }
+      end
+
+      it "stores the prompt and the parsed output schema" do
+        post orchestration_agents_path, params: valid_params
+
+        expect(Orchestration::Agent.last).to have_attributes(
+          prompt: "Classify this payload",
+          output_schema: { "type" => "object", "required" => [ "result" ], "properties" => { "result" => { "type" => "array" } } }
         )
-      end # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
+      end
     end
 
     context "with invalid params" do

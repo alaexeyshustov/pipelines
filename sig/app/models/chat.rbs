@@ -8,8 +8,8 @@ class Chat < ApplicationRecord
 
   def model_id: () -> Integer?
   def model_id=: (Integer?) -> Integer?
-  def model: () -> Model?
-  def model=: (Model?) -> Model?
+  def model: () -> RubyLLM::ActiveRecord::Model?
+  def model=: (RubyLLM::ActiveRecord::Model?) -> RubyLLM::ActiveRecord::Model?
 
   def messages: () -> Message::relation
   def action_runs: () -> Orchestration::ActionRun::relation

@@ -1,5 +1,10 @@
 module Emails
   class TestConnectionService
+    Result = Data.define(:success, :error)
+    class Result
+      def success? = success
+    end
+
     def self.call(connector:) = new(connector:).call
 
     def initialize(connector:)
@@ -9,7 +14,7 @@ module Emails
     def call
       outcome = Emails::ConnectionTester.new(provider: @connector.provider, configuration: @connector.configuration).call
       record_outcome(outcome)
-      outcome
+      Result.new(success: outcome[:success], error: outcome[:error])
     end
 
     private

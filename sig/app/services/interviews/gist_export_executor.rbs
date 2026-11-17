@@ -1,7 +1,0 @@
-module Interviews
-  class GistExportExecutor
-    include Orchestration::Executable
-    extend Orchestration::Executable::ClassMethods
-    def self.call: (?gist_id: String?) -> Hash[String, json_object_value]
-  end
-end

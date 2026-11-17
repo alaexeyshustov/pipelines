@@ -147,7 +147,6 @@ RSpec.describe UI::ActionComponent, type: :component do
     end
 
     context "with method: :post (form builder yielded)" do
-      # rubocop:disable Rails/OutputSafety
       subject(:rendered) do
         component = UI::ActionComponent::DialogComponent.new(
           label: "Run",
@@ -158,11 +157,10 @@ RSpec.describe UI::ActionComponent, type: :component do
           variant: :primary
         )
         component.with_body do |f|
-          f.text_field(:name, placeholder: "Pipeline name", class: "field-input").html_safe
+          f.text_field(:name, placeholder: "Pipeline name", class: "field-input")
         end
         render_inline(component)
       end
-      # rubocop:enable Rails/OutputSafety
 
       it "renders the body inside the form" do
         expect(rendered.css("dialog form .mb-4 input[name='name']")).to be_present

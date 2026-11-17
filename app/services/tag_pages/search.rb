@@ -8,9 +8,10 @@ module TagPages
     LIMIT = 500
 
     Row = Data.define(:kind, :record, :title, :date, :subtag, :interview, :snippet, :rank)
+    Result = Data.define(:rows)
 
     def self.call(tag:, filter:)
-      return [] unless tag
+      return Result.new(rows: []) unless tag
 
       new(tag:, filter:).call
     end
@@ -24,7 +25,7 @@ module TagPages
       rows = [] # : Array[Row]
       rows.concat(email_rows) if @filter.include_emails?
       rows.concat(document_rows) if @filter.include_documents?
-      (ranked? ? rows.sort_by { |row| row.rank.to_f } : rows.sort_by(&:date).reverse).first(LIMIT)
+      Result.new(rows: (ranked? ? rows.sort_by { |row| row.rank.to_f } : rows.sort_by(&:date).reverse).first(LIMIT))
     end
 
     private

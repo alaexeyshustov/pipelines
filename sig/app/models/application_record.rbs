@@ -1,9 +1,7 @@
-# rubocop:disable RBS/Lint/TopLevelInterface
 interface _DBConnection
   def quote_column_name: (String column_name) -> String
   def select_all: (String sql) -> Array[Hash[String, String?]]
 end
-# rubocop:enable RBS/Lint/TopLevelInterface
 
 class ApplicationRecord < ActiveRecord::Base
   def self.where: () -> ActiveRecord::QueryMethods::WhereChain[ActiveRecord::Relation]

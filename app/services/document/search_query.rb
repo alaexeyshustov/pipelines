@@ -1,6 +1,6 @@
 # Full-text search over document title and extracted text (FTS5), best match first.
 #
-#   Document::SearchQuery.call("lease rent").first.snippet  # => "... monthly [[rent]] ..."
+#   Document::SearchQuery.call("lease rent").hits.first.snippet  # => "... monthly [[rent]] ..."
 #
 # User input is turned into quoted terms (implicitly ANDed), so operators and stray quotes are plain text.
 #
@@ -9,6 +9,7 @@
 # (reciprocal rank fusion); its rank is the negated fused score, so lower is still better.
 class Document::SearchQuery
   Hit = Data.define(:document, :rank, :snippet)
+  Result = Data.define(:hits)
 
   def self.call(query, limit: 20, mode: :text)
     new(query, limit:, mode:).call
@@ -21,6 +22,7 @@ class Document::SearchQuery
   end
 
   def call
-    Document.ranked_search(@query, mode: @mode, limit: @limit).map { |hit| Hit.new(document: hit.record, rank: hit.rank, snippet: hit.snippet) } # steep:ignore
+    hits = Document.ranked_search(@query, mode: @mode, limit: @limit).map { |hit| Hit.new(document: hit.record, rank: hit.rank, snippet: hit.snippet) } # steep:ignore
+    Result.new(hits:)
   end
 end

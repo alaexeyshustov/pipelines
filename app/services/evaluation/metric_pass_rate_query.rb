@@ -1,6 +1,8 @@
 module Evaluation
   # Pass rate (0.0..1.0) per metric name within one experiment; see PassRateQuery.
   class MetricPassRateQuery
+    Result = Data.define(:by_metric)
+
     def self.call(experiment:)
       new(experiment:).call
     end
@@ -14,7 +16,7 @@ module Evaluation
       rows = EvaluationResult.joins(EvaluationResult.justification_join_source)
                              .where(experiment: @experiment).where.not(passed: nil)
                              .group(name).pluck(name, PassRateQuery::PASS_RATE)
-      rows.to_h { |metric_name, rate| [ metric_name.to_s, Float(rate) ] }
+      Result.new(by_metric: rows.to_h { |metric_name, rate| [ metric_name.to_s, Float(rate) ] })
     end
   end
 end

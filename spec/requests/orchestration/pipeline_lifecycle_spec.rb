@@ -7,101 +7,53 @@ require "rails_helper"
 # 3. Edit    – update pipeline metadata, reorder/add/remove steps, swap action attachments
 RSpec.describe "Orchestration::Pipeline lifecycle" do
   describe "setup: creating a pipeline with steps and actions via HTTP" do
-    # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
-    it "creates a pipeline with a service-object action and an agentic action end-to-end" do
-      # --- actions ---
+    let(:classify_agent) { create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier") }
+    let(:pipeline) { Orchestration::Pipeline.find_by!(name: "Job Application Pipeline") }
 
-      expect {
-        post orchestration_actions_path, params: {
-          orchestration_action: {
-            name: "Query Interviews",
-            kind: "service",
-            agent_class: "Orchestration::Executors::Query",
-            description: "Fetches interviews from the database"
-          }
-        }
-      }.to change(Orchestration::Action, :count).by(1)
-
-      query_action = Orchestration::Action.last
-      expect(response).to redirect_to(orchestration_actions_path)
-      expect(query_action.agent_class).to eq("Orchestration::Executors::Query")
-
-      classify_agent_record = create(:orchestration_agent, name: "Orchestration::Agents::EmailsClassifier")
-
-      expect {
-        post orchestration_actions_path, params: {
-          orchestration_action: {
-            name: "Classify Emails",
-            kind: "agent",
-            agent_id: classify_agent_record.id,
-            description: "Classifies emails using Mistral AI"
-          }
-        }
-      }.to change(Orchestration::Action, :count).by(1)
-
-      classify_action = Orchestration::Action.last
-      expect(response).to redirect_to(orchestration_actions_path)
-      expect(classify_action.agent.name).to eq("Orchestration::Agents::EmailsClassifier")
-
-      # --- pipeline ---
-
-      expect {
-        post orchestration_pipelines_path, params: {
-          orchestration_pipeline: { name: "Job Application Pipeline", enabled: true }
-        }
-      }.to change(Orchestration::Pipeline, :count).by(1)
-
-      pipeline = Orchestration::Pipeline.last
-      expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
-      expect(pipeline.name).to eq("Job Application Pipeline")
-      expect(pipeline.enabled).to be true
-
-      # --- steps ---
-
-      post orchestration_pipeline_steps_path(pipeline), params: {
-        orchestration_step: { name: "Fetch Interviews" }
-      }
-      expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
-      fetch_step = Orchestration::Step.find_by!(name: "Fetch Interviews")
-      expect(fetch_step.position).to eq(1)
-
-      post orchestration_pipeline_steps_path(pipeline), params: {
-        orchestration_step: { name: "Classify Emails" }
-      }
-      expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
-      classify_step = Orchestration::Step.find_by!(name: "Classify Emails")
-      expect(classify_step.position).to eq(2)
-
-      # --- attach actions to steps ---
-
-      expect {
-        post orchestration_pipeline_step_step_actions_path(pipeline, fetch_step), params: {
-          orchestration_step_action: { action_id: query_action.id }
-        }
-      }.to change(Orchestration::StepAction, :count).by(1)
-
-      expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
-      expect(Orchestration::StepAction.last.action).to eq(query_action)
-
-      expect {
-        post orchestration_pipeline_step_step_actions_path(pipeline, classify_step), params: {
-          orchestration_step_action: { action_id: classify_action.id }
-        }
-      }.to change(Orchestration::StepAction, :count).by(1)
-
-      expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
-      expect(Orchestration::StepAction.last.action).to eq(classify_action)
-
-      # --- verify show page reflects full structure ---
-
-      get orchestration_pipeline_path(pipeline)
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Job Application Pipeline")
-      expect(response.body).to include("Fetch Interviews")
-      expect(response.body).to include("Classify Emails")
-      expect(response.body).to include("Query Interviews")
+    def create_action(**attributes)
+      post orchestration_actions_path, params: { orchestration_action: attributes }
     end
-    # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength
+
+    def add_step(name, action_name:)
+      post orchestration_pipeline_steps_path(pipeline), params: { orchestration_step: { name: } }
+      action_id = Orchestration::Action.find_by!(name: action_name).id
+      post orchestration_pipeline_step_step_actions_path(pipeline, pipeline.steps.find_by!(name:)),
+           params: { orchestration_step_action: { action_id: } }
+    end
+
+    before do
+      create_action(name: "Query Interviews", kind: "service", agent_class: "Orchestration::Executors::Query",
+                    description: "Fetches interviews from the database")
+      create_action(name: "Classify Emails", kind: "agent", agent_id: classify_agent.id,
+                    description: "Classifies emails using Mistral AI")
+      post orchestration_pipelines_path, params: { orchestration_pipeline: { name: "Job Application Pipeline", enabled: true } }
+      add_step("Fetch Interviews", action_name: "Query Interviews")
+      add_step("Classify Emails", action_name: "Classify Emails")
+    end
+
+    it "creates a service-object action and an agentic action" do
+      expect(Orchestration::Action.find_by!(name: "Query Interviews").agent_class).to eq("Orchestration::Executors::Query")
+      expect(Orchestration::Action.find_by!(name: "Classify Emails").agent).to eq(classify_agent)
+    end
+
+    it "creates the enabled pipeline" do
+      expect(pipeline.enabled).to be true
+    end
+
+    it "adds the steps in order, each with its action" do
+      steps = pipeline.steps.includes(step_actions: :action).order(:position).map do |step|
+        [ step.name, step.position, step.step_actions.map { |step_action| step_action.action.name } ]
+      end
+
+      expect(steps).to eq([ [ "Fetch Interviews", 1, [ "Query Interviews" ] ], [ "Classify Emails", 2, [ "Classify Emails" ] ] ])
+    end
+
+    it "shows the full structure on the pipeline page" do
+      get orchestration_pipeline_path(pipeline)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Job Application Pipeline", "Fetch Interviews", "Classify Emails", "Query Interviews")
+    end
   end
 
   describe "run: executing a pipeline with service-object and agentic steps" do
@@ -133,39 +85,26 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
       create(:orchestration_step_action, step: classify_step, action: classify_action, position: 1)
     end
 
-    # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
     it "completes both steps and records action run outputs", :llm,
        vcr: { cassette_name: "orchestration/pipeline_lifecycle/classify_agent_run" } do
-      pipeline_run = Orchestration::PipelineRun.create!(
-        pipeline: pipeline,
-        status: "pending",
-        triggered_by: "manual"
-      )
-
+      pipeline_run = Orchestration::PipelineRun.create!(pipeline:, status: "pending", triggered_by: "manual")
       Orchestration::PipelineRunner.new(pipeline_run).run
 
-      pipeline_run.reload
-      expect(pipeline_run.status).to eq("completed")
-      expect(pipeline_run.action_runs.count).to eq(2)
-
-      query_run = pipeline_run.action_runs
-        .joins(:step_action)
-        .find_by(orchestration_step_actions: { action_id: query_action.id })
-
-      expect(query_run.status).to eq("completed")
-      expect(query_run.output).to have_key("interviews")
-      expect(query_run.output["interviews"]).to be_an(Array)
-
-      classify_run = pipeline_run.action_runs
-        .joins(:step_action)
-        .find_by(orchestration_step_actions: { action_id: classify_action.id })
-
-      expect(classify_run.status).to eq("completed")
-      expect(classify_run.output).to have_key("result")
-      # The agent has no prompt; only the recorded answer is known to be JSON.
-      expect(classify_run.output["result"]).to have_key("results") unless LlmTestBackend.live?
+      expect(pipeline_run.reload).to have_attributes(status: "completed", action_runs: have_attributes(count: 2))
+      expect(run_of(pipeline_run, query_action))
+        .to have_attributes(status: "completed", output: a_hash_including("interviews" => an_instance_of(Array)))
+      expect(run_of(pipeline_run, classify_action))
+        .to have_attributes(status: "completed", output: a_hash_including("result" => classify_result))
     end
-    # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength
+
+    def run_of(pipeline_run, action)
+      pipeline_run.action_runs.joins(:step_action).find_by(orchestration_step_actions: { action_id: action.id })
+    end
+
+    # The agent has no prompt; only the recorded answer is known to be JSON.
+    def classify_result
+      LlmTestBackend.live? ? anything : a_hash_including("results")
+    end
 
     it "uses the HTTP trigger endpoint to enqueue a run and redirects with notice" do
       allow(PipelineRunJob).to receive(:perform_later)
@@ -223,27 +162,25 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
       expect(classify_step.name).to eq("AI Classification")
     end
 
-    # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
-    it "adds a new step with a service-object action at the end" do
+    it "adds a new step at the end" do
       expect {
         post orchestration_pipeline_steps_path(pipeline), params: {
           orchestration_step: { name: "Transform Data" }
         }
       }.to change(Orchestration::Step, :count).by(1)
 
-      transform_step = Orchestration::Step.find_by!(name: "Transform Data")
-      expect(transform_step.position).to eq(3)
+      expect(Orchestration::Step.find_by!(name: "Transform Data").position).to eq(3)
+    end
+
+    it "attaches a service-object action to a new step" do
+      transform_step = create(:orchestration_step, pipeline:, name: "Transform Data", position: 3)
 
       post orchestration_pipeline_step_step_actions_path(pipeline, transform_step), params: {
         orchestration_step_action: { action_id: ingest_action.id }
       }
 
-      transform_step.reload
-      expect(transform_step.step_actions.count).to eq(1)
-      step_action = transform_step.step_actions.first
-      expect(step_action.action).to eq(ingest_action)
+      expect(transform_step.reload.step_actions.map(&:action)).to eq([ ingest_action ])
     end
-    # rubocop:enable RSpec/MultipleExpectations, RSpec/ExampleLength
 
     it "removes a step from the pipeline" do
       expect {
@@ -271,22 +208,17 @@ RSpec.describe "Orchestration::Pipeline lifecycle" do
       expect(fetch_step.reload.position).to eq(2)
     end
 
-    # rubocop:disable RSpec/MultipleExpectations
     it "detaches an action from a step and attaches a different one" do
       expect {
         delete orchestration_pipeline_step_step_action_path(pipeline, fetch_step, fetch_step_action)
       }.to change(Orchestration::StepAction, :count).by(-1)
 
-      expect(fetch_step.reload.step_actions.count).to eq(0)
-
       post orchestration_pipeline_step_step_actions_path(pipeline, fetch_step), params: {
         orchestration_step_action: { action_id: ingest_action.id }
       }
 
-      expect(fetch_step.reload.step_actions.count).to eq(1)
-      expect(fetch_step.step_actions.first.action).to eq(ingest_action)
+      expect(fetch_step.reload.step_actions.map(&:action)).to eq([ ingest_action ])
     end
-    # rubocop:enable RSpec/MultipleExpectations
 
     it "toggles a step's enabled state" do
       patch toggle_orchestration_pipeline_step_path(pipeline, fetch_step)

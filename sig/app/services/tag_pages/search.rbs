@@ -15,13 +15,19 @@ module TagPages
       def self.new: (kind: Symbol, record: Email | Document, title: String, date: Time, subtag: Subtag?, interview: Interview?, snippet: String?, rank: Float?) -> instance
     end
 
-    def self.call: (tag: Tag?, filter: FilterForm) -> Array[Row]
+    class Result < Data
+      attr_reader rows: Array[Row]
+
+      def self.new: (rows: Array[Row]) -> instance
+    end
+
+    def self.call: (tag: Tag?, filter: FilterForm) -> Result
 
     @tag: Tag
     @filter: FilterForm
 
     def initialize: (tag: Tag, filter: FilterForm) -> void
-    def call: () -> Array[Row]
+    def call: () -> Result
 
     private
 

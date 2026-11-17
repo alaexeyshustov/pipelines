@@ -47,7 +47,7 @@ module Evaluation
     def run_sample(experiment, dataset_sample)
       Evaluation::UsageScope.call(experiment) do
         sample = experiment.samples.find_by(dataset_sample_id: dataset_sample.id) ||
-                 Evaluation::Sampler.call(experiment: experiment, dataset_sample: dataset_sample, prompt: experiment.prompt)
+                 Evaluation::Sampler.call(experiment: experiment, dataset_sample: dataset_sample, prompt: experiment.prompt).sample
         grade(experiment, dataset_sample, sample)
       end
     end

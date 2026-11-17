@@ -4,6 +4,8 @@ module RuboCop
       module Lint
         class NoUntyped < ::RuboCop::RBS::CopBase
           MSG: String
+          BARE_COLLECTION_MSG: String
+          COLLECTIONS: Array[Symbol]
 
           def on_rbs_def: (::RBS::AST::Members::MethodDefinition decl) -> void
           def on_rbs_constant: (::RBS::AST::Declarations::Constant decl) -> void
@@ -15,6 +17,7 @@ module RuboCop
           private
 
           def check_type: (::RBS::Types::t type) -> void
+          def bare_collection?: (::RBS::Types::ClassInstance instance) -> bool
         end
       end
     end

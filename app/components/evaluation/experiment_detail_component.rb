@@ -6,9 +6,12 @@ module Evaluation
       Evaluation::ExperimentMetricRowComponent.new(metric: metric, avg: avg, experiment: @experiment, pass_rate: @metric_pass_rates[metric.name])
     }
 
-    # usage: Evaluation::ExperimentUsageQuery::Usage; pass_rate / metric_pass_rates: Evaluation::PassRateQuery (callers load them).
-    def initialize(experiment:, usage: nil, pass_rate: nil, metric_pass_rates: {})
+    # metrics: the agent's Evaluation::Metric rows; usage: Evaluation::ExperimentUsageQuery::Usage;
+    # pass_rate / metric_pass_rates: Evaluation::PassRateQuery (callers load them).
+    def initialize(experiment:, metrics:, sample_count:, usage: nil, pass_rate: nil, metric_pass_rates: {})
       @experiment = experiment
+      @metrics = metrics
+      @sample_count = sample_count
       @usage = usage
       @pass_rate = pass_rate
       @metric_pass_rates = metric_pass_rates
@@ -44,13 +47,7 @@ module Evaluation
 
     public
 
-    def metrics
-      @metrics ||= @experiment.agent_name ? Metric.for_agent(@experiment.agent_name).order(:name) : Evaluation::Metric.none
-    end
-
-    def sample_count
-      @sample_count ||= @experiment.samples.count
-    end
+    attr_reader :metrics, :sample_count
 
     def per_metric_avg
       @per_metric_avg ||= @experiment.per_metric_averages

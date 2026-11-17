@@ -6,16 +6,17 @@ module Evaluation
     @judge_model: String?
     @per_metric_avg: Hash[String, Float]?
 
-    @sample_count: Integer?
+    @metrics: Array[Metric]
+    @sample_count: Integer
     @metric_weights: Hash[String?, Float]?
     @usage: ExperimentUsageQuery::Usage?
     @pass_rate: Float?
     @metric_pass_rates: Hash[String, Float]
 
-    def initialize: (experiment: Experiment, ?usage: ExperimentUsageQuery::Usage?, ?pass_rate: Float?, ?metric_pass_rates: Hash[String, Float]) -> void
+    def initialize: (experiment: Experiment, metrics: Array[Metric], sample_count: Integer, ?usage: ExperimentUsageQuery::Usage?, ?pass_rate: Float?, ?metric_pass_rates: Hash[String, Float]) -> void
 
     def before_render: () -> void
-    def metrics: () -> Metric::relation
+    def metrics: () -> Array[Metric]
     def sample_count: () -> Integer
     def per_metric_avg: () -> Hash[String, Float]
     def overall_avg: () -> Float?

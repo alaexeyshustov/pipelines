@@ -1,0 +1,16 @@
+module RuboCop
+  module Cop
+    module App
+      class NoAnonymousClassInSpec < ::RuboCop::Cop::Base
+        MSG: String
+
+        def on_send: (::RuboCop::Cop::_Node node) -> void
+
+        private
+
+        def spec_file?: () -> bool
+        def anonymous_class?: (::RuboCop::Cop::_Node node) -> bool
+      end
+    end
+  end
+end

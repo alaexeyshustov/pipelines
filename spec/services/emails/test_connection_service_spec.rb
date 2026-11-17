@@ -4,9 +4,9 @@ RSpec.describe Emails::TestConnectionService do
   let(:connector) { EmailConnector.create!(name: "Y", provider: "yahoo", configuration: { host: "h", port: 993 }) }
 
   def stub_tester(outcome)
-    tester = Class.new do
+    tester = stub_const("FakeConnectionTester", Class.new do
       define_method(:call) { outcome }
-    end.new
+    end).new
     allow(Emails::ConnectionTester).to receive(:new).and_return(tester)
   end
 
@@ -15,7 +15,7 @@ RSpec.describe Emails::TestConnectionService do
 
     result = described_class.call(connector:)
 
-    expect(result).to eq(success: true)
+    expect(result).to have_attributes(success: true, error: nil)
     expect(connector.reload).to have_attributes(status: "connected", last_connected_at: be_present)
   end
 
@@ -24,7 +24,7 @@ RSpec.describe Emails::TestConnectionService do
 
     result = described_class.call(connector:)
 
-    expect(result).to eq(success: false, error: "nope")
+    expect(result).to have_attributes(success: false, error: "nope")
     expect(connector.reload.status).to eq("failed")
   end
 

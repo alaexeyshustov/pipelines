@@ -139,6 +139,19 @@ RSpec.describe UI::LegacyTableComponent, type: :component do
     end
   end
 
+  context "with a column variant" do
+    let(:component) { described_class.new(collection: records) }
+
+    before do
+      component.with_columns([ { key: :name, variant: :mono } ])
+      render_inline(component)
+    end
+
+    it "applies the variant classes to the cells" do
+      expect(rendered.css("tbody td").first["class"]).to eq("px-4 py-3 font-mono text-xs")
+    end
+  end
+
   context "with a component and props" do
     let(:component) { described_class.new(collection: records) }
 

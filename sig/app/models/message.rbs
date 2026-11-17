@@ -13,6 +13,5 @@ class Message < ApplicationRecord
 
   def tokens: () -> RubyLLM::Tokens?
 
-  def parent_tool_call: () -> ToolCall?
-  def parent_tool_call=: (ToolCall?) -> ToolCall?
+  def parent_tool_call: () -> RubyLLM::ActiveRecord::ToolCall?
 end

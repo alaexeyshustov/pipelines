@@ -1,12 +1,18 @@
 module Evaluation
   class ImproveFailureLogger
+    class Result < Data
+      attr_reader message: String
+
+      def self.new: (message: String) -> instance
+    end
+
     @context: String
     @experiment: Experiment
     @error: StandardError
 
-    def self.call: (context: String, experiment: Experiment, error: StandardError) -> void
+    def self.call: (context: String, experiment: Experiment, error: StandardError) -> Result
 
     def initialize: (context: String, experiment: Experiment, error: StandardError) -> void
-    def call: () -> void
+    def call: () -> Result
   end
 end

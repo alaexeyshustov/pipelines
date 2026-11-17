@@ -7,7 +7,6 @@
 #
 # A new Document is queued for embedding and then for tagging (Document::TagJob), each its own job so a failing
 # classifier cannot lose the embedding; an untagged Document is re-queued by EmailsSync (tagged_at stays NULL).
-# Orchestrates services here because services must not call each other (App/ServiceMustNotCallService).
 class Document::ExtractEmailAttachmentsJob < ApplicationJob
   def perform(email_id)
     email = Email.find(email_id)
@@ -39,12 +38,15 @@ class Document::ExtractEmailAttachmentsJob < ApplicationJob
     checksum = Digest::SHA256.hexdigest(data)
     return if Document.exists?(checksum:)
 
-    text = Document::TextExtractor.call(data:, mime_type: attachment[:mime_type].to_s, filename: attachment[:filename])
-    document = ingest(email, attachment, checksum, text)
+    document = ingest(email, attachment, checksum, extract_text(data, attachment))
     return unless document.previously_new_record?
 
     Document::EmbedJob.perform_later(document.id)
     Document::TagJob.perform_later(document.id)
+  end
+
+  def extract_text(data, attachment)
+    Document::TextExtractor.call(data:, mime_type: attachment[:mime_type].to_s, filename: attachment[:filename]).text
   end
 
   def ingest(email, attachment, checksum, text)

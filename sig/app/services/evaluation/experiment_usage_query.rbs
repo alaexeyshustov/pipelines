@@ -14,12 +14,18 @@ module Evaluation
 
     EMPTY: Usage
 
-    def self.call: (experiment_ids: Array[Integer]) -> Hash[Integer, Usage]
+    class Result < Data
+      attr_reader by_experiment: Hash[Integer, Usage]
+
+      def self.new: (by_experiment: Hash[Integer, Usage]) -> instance
+    end
+
+    def self.call: (experiment_ids: Array[Integer]) -> Result
 
     @experiment_ids: Array[Integer]
 
     def initialize: (experiment_ids: Array[Integer]) -> void
-    def call: () -> Hash[Integer, Usage]
+    def call: () -> Result
 
     private
 

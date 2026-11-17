@@ -1,0 +1,21 @@
+module RuboCop
+  module Cop
+    module App
+      class ServiceMustDefineResult < ::RuboCop::Cop::Base
+        extend ::RuboCop::Cop::AutoCorrector
+
+        MSG: String
+        STRUCT_MSG: String
+
+        def on_class: (::RuboCop::Cop::_Node node) -> void
+        def on_casgn: (::RuboCop::Cop::_Node node) -> void
+
+        private
+
+        def service_file?: () -> bool
+        def defines_result?: (::RuboCop::Cop::_Node node) -> bool
+        def result_struct?: (::RuboCop::Cop::_Node node) -> bool def result_name?: (Symbol? name) -> bool
+      end
+    end
+  end
+end

@@ -4,13 +4,15 @@ module RuboCop
       module Lint
         # Disallows `untyped` in RBS signatures. Every use of `untyped` opts
         # out of type checking for that position — prefer a concrete type, a
-        # union, or a generic parameter instead.
+        # union, or a generic parameter instead. A bare `Array` or `Hash` is
+        # `untyped` in disguise, so their element types must be given.
         #
         # @example
         #   # bad
         #   def fetch: () -> untyped
         #   def store: (untyped value) -> void
         #   def ids: () -> Array[untyped]
+        #   def names: () -> Array
         #   MAPPING: Hash[String, untyped]
         #
         #   # good
@@ -21,6 +23,8 @@ module RuboCop
         #
         class NoUntyped < RuboCop::RBS::CopBase
           MSG = "Avoid `untyped`. Use a more specific type."
+          BARE_COLLECTION_MSG = "Give the element types, e.g. `Array[String]` or `Hash[Symbol, Integer]`."
+          COLLECTIONS = %i[Array Hash].freeze
 
           def on_rbs_def(decl)
             decl.overloads.each do |overload|
@@ -44,6 +48,15 @@ module RuboCop
             on_type([ ::RBS::Types::Bases::Any ], type) do |untyped|
               add_offense(location_to_range(untyped.location), message: MSG)
             end
+            on_type([ ::RBS::Types::ClassInstance ], type) do |instance|
+              next unless instance.is_a?(::RBS::Types::ClassInstance) && bare_collection?(instance)
+
+              add_offense(location_to_range(instance.location), message: BARE_COLLECTION_MSG)
+            end
+          end
+
+          def bare_collection?(instance)
+            instance.args.empty? && COLLECTIONS.include?(instance.name.name) && instance.name.namespace.path.empty?
           end
         end
       end

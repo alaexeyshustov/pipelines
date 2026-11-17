@@ -1,0 +1,17 @@
+module RuboCop
+  module Cop
+    module App
+      class NoUpdateInBefore < ::RuboCop::Cop::Base
+        MSG: String
+        UPDATE_METHODS: Array[Symbol]
+
+        def on_send: (::RuboCop::Cop::_Node node) -> void
+
+        private
+
+        def spec_file?: () -> bool
+        def before_hook?: (::RuboCop::Cop::_Node block) -> bool
+      end
+    end
+  end
+end

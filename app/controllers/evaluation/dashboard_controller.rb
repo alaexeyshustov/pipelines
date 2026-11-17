@@ -1,10 +1,10 @@
 module Evaluation
   class DashboardController < ApplicationController
     def show
-      @agent_summaries = AgentSummaryQuery.call
+      @agent_summaries = AgentSummaryQuery.call.summaries
       @experiments = Evaluation::Experiment.includes(:prompt).order(created_at: :desc)
-      @usage_by_experiment = ExperimentUsageQuery.call(experiment_ids: @experiments.map(&:id))
-      @pass_rates = PassRateQuery.call(experiment_ids: @experiments.map(&:id))
+      @usage_by_experiment = ExperimentUsageQuery.call(experiment_ids: @experiments.map(&:id)).by_experiment
+      @pass_rates = PassRateQuery.call(experiment_ids: @experiments.map(&:id)).by_experiment
     end
   end
 end

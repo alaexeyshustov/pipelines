@@ -34,13 +34,13 @@ RSpec.describe Evaluation::MetricSuggester do
 
   describe ".call" do
     it "delegates to a new instance", :llm do
-      expect(described_class.call(agent_name: agent_name).size).to(LlmTestBackend.live? ? be_an(Integer) : eq(3))
+      expect(described_class.call(agent_name: agent_name).metrics.size).to(LlmTestBackend.live? ? be_an(Integer) : eq(3))
     end
   end
 
   describe "#call" do
     it "maps entries to Metric columns: kind, levels, weight, minimum" do
-      expect(suggester.call).to eq(
+      expect(suggester.call.metrics).to eq(
         [
           { name: "is_correct", description: "Is the label right", weight: 0.5, kind: "probability", levels: nil, minimum: 0.8 },
           { name: "quality", description: "Quality of the reply", weight: 0.3, kind: "score", levels: [ "wrong", "ok", "great" ], minimum: 0.5 },
@@ -52,7 +52,7 @@ RSpec.describe Evaluation::MetricSuggester do
     end
 
     it "yields attributes that build valid Metric rows", :llm do
-      suggester.call.each do |attrs|
+      suggester.call.metrics.each do |attrs|
         expect(Evaluation::Metric.new(attrs.merge(agent_name: agent_name))).to be_valid
       end
     end
@@ -96,7 +96,7 @@ RSpec.describe Evaluation::MetricSuggester do
       end
 
       it "degrades them to probability metrics" do
-        expect(suggester.call).to all(include(kind: "probability", levels: nil))
+        expect(suggester.call.metrics).to all(include(kind: "probability", levels: nil))
       end
     end
 
@@ -109,7 +109,7 @@ RSpec.describe Evaluation::MetricSuggester do
       end
 
       it "drops them and clamps the minimum" do
-        expect(suggester.call).to match([ include(name: "good", minimum: 1.0) ])
+        expect(suggester.call.metrics).to match([ include(name: "good", minimum: 1.0) ])
       end
     end
   end

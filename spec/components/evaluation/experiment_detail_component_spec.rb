@@ -1,7 +1,12 @@
 require "rails_helper"
 
 RSpec.describe Evaluation::ExperimentDetailComponent, type: :component do
-  subject(:rendered) { render_inline(described_class.new(experiment: experiment)) }
+  subject(:rendered) { render_inline(component) }
+
+  def component(**options)
+    metrics = Evaluation::Metric.for_agent(experiment.agent_name).order(:name).to_a
+    described_class.new(experiment: experiment, metrics: metrics, sample_count: experiment.samples.count, **options)
+  end
 
   let(:experiment) { create(:evaluation_experiment) }
 
@@ -42,7 +47,9 @@ RSpec.describe Evaluation::ExperimentDetailComponent, type: :component do
   end
 
   context "when the prompt has system and user prompts" do
-    before { experiment.prompt.update!(system_prompt: "You are an assistant", user_prompt: "Classify this email") }
+    let(:experiment) do
+      create(:evaluation_experiment, prompt: create(:orchestration_prompt, system_prompt: "You are an assistant", user_prompt: "Classify this email"))
+    end
 
     it "renders a collapsible Prompt section" do
       expect(rendered.css("details summary").map(&:text)).to include(match(/Prompt/))
@@ -54,7 +61,9 @@ RSpec.describe Evaluation::ExperimentDetailComponent, type: :component do
   end
 
   context "when the prompt has an output schema" do
-    before { experiment.prompt.update!(output_schema: { "type" => "object", "properties" => { "label" => { "type" => "string" } } }) }
+    let(:experiment) do
+      create(:evaluation_experiment, prompt: create(:orchestration_prompt, output_schema: { "type" => "object", "properties" => { "label" => { "type" => "string" } } }))
+    end
 
     it "renders a collapsible Output Schema section" do
       expect(rendered.css("details summary").map(&:text)).to include(match(/Output Schema/))
@@ -82,7 +91,7 @@ RSpec.describe Evaluation::ExperimentDetailComponent, type: :component do
   end
 
   describe "scores and usage" do
-    subject(:rendered) { render_inline(described_class.new(experiment: experiment, usage: usage, pass_rate: 0.75, metric_pass_rates: { "precision" => 0.5 })) }
+    subject(:rendered) { render_inline(component(usage: usage, pass_rate: 0.75, metric_pass_rates: { "precision" => 0.5 })) }
 
     let(:experiment) { create(:evaluation_experiment, status: :completed) }
     let(:usage) { nil }

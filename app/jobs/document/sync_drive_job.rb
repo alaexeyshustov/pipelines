@@ -21,8 +21,8 @@
 # lists nothing at its top level nothing is deleted in that scan ("empty_folders" counts them, and they are logged): the
 # Documents are not attributed to a folder (a file can sit under several), so this is the safe, simple rule; the
 # price is that deletions wait while a whitelisted folder is genuinely empty.
-# An empty whitelist is a no-op. Orchestrates services here because services must not call each other.
-class Document::SyncDriveJob < ApplicationJob # rubocop:disable Metrics/ClassLength -- one scan's create/update/merge/relink/delete decisions belong together
+# An empty whitelist is a no-op.
+class Document::SyncDriveJob < ApplicationJob
   SETTING_KEY = "drive_folder_ids".freeze
 
   def perform
@@ -66,55 +66,39 @@ class Document::SyncDriveJob < ApplicationJob # rubocop:disable Metrics/ClassLen
 
   # +gone+ is gone_documents; process takes out the ones it relinks.
   def sync(fetcher, entry, document, gone)
-    return unless Document::FileType.supported?(mime_type_of(entry))
+    drive_entry = Document::DriveEntry.new(entry)
+    return unless drive_entry.supported?
 
-    if document && unchanged?(entry, document)
+    if document && drive_entry.unchanged?(document)
       summary["unchanged"] += 1
     else
-      process(fetcher, entry, document, gone)
+      process(fetcher, drive_entry, document, gone)
     end
   rescue StandardError => error
     summary["failed"] += 1
     Rails.logger.error("Drive file #{entry.name.inspect} (#{entry.id}) failed: #{error.class}: #{error.message}")
   end
 
-  def mime_type_of(entry)
-    return Document::FileType::DOCX if entry.mime_type == Emails::Adapters::DriveFileFetcher::GOOGLE_DOC_MIME
-
-    Document::FileType.resolve(entry.mime_type, entry.name)
-  end
-
-  def unchanged?(entry, document)
-    if entry.md5
-      document.source_ref["md5"] == entry.md5
-    else
-      document.source_ref["modified_time"] == entry.modified_time
-    end
-  end
-
-  def process(fetcher, entry, document, gone)
-    file = fetch_file(fetcher, entry)
+  def process(fetcher, drive_entry, document, gone)
+    entry = drive_entry.entry
+    file = fetcher.fetch(entry.id, name: entry.name, mime_type: entry.mime_type)
     checksum = Digest::SHA256.hexdigest(file.data)
-    return if known_bytes?(checksum, entry, document, gone)
+    return if known_bytes?(checksum, drive_entry, document, gone)
 
-    text = Document::TextExtractor.call(data: file.data, mime_type: file.mime_type, filename: entry.name)
-    store(attributes_for(entry, file, text, checksum), document)
-  end
-
-  def fetch_file(fetcher, entry)
-    fetcher.fetch(entry.id, name: entry.name, mime_type: entry.mime_type)
+    text = Document::TextExtractor.call(data: file.data, mime_type: file.mime_type, filename: entry.name).text
+    store(drive_entry.attributes(file, text, checksum), document)
   end
 
   # Bytes that already exist as another Document are not extracted again. When that Document belongs to a Drive file
   # gone from the scan, it now stands for this file ("relinked"); otherwise it is kept as is. A changed file that had
   # a Drive Document of its own loses it (it would break checksum uniqueness), so it is in the same state as a new
   # Drive file with known bytes.
-  def known_bytes?(checksum, entry, document, gone)
+  def known_bytes?(checksum, drive_entry, document, gone)
     relinked = gone.delete(checksum)
     return false unless relinked || Document.where.not(id: document&.id).exists?(checksum:)
 
     merge_into_existing(document)
-    relink(relinked, entry) if relinked
+    relink(relinked, drive_entry) if relinked
     true
   end
 
@@ -125,8 +109,8 @@ class Document::SyncDriveJob < ApplicationJob # rubocop:disable Metrics/ClassLen
     summary["merged"] += 1
   end
 
-  def relink(document, entry)
-    document.update!(title: entry.name, source_url: entry.web_view_link, source_ref: source_ref_for(entry))
+  def relink(document, drive_entry)
+    document.update!(**drive_entry.relink_attributes)
     summary["relinked"] += 1
   end
 
@@ -155,18 +139,6 @@ class Document::SyncDriveJob < ApplicationJob # rubocop:disable Metrics/ClassLen
 
   def queued_tagging
     @queued_tagging ||= []
-  end
-
-  def attributes_for(entry, file, text, checksum)
-    {
-      title: entry.name, mime_type: Document::FileType.resolve(file.mime_type, entry.name), text:, checksum:,
-      source: Document::DRIVE, source_url: entry.web_view_link, tagged_at: nil,
-      source_ref: source_ref_for(entry)
-    }
-  end
-
-  def source_ref_for(entry)
-    { provider: Document::DRIVE_REF_PROVIDER, drive_file_id: entry.id, md5: entry.md5, modified_time: entry.modified_time }
   end
 
   def delete_missing(gone, empty_folder_ids)

@@ -33,6 +33,17 @@ module RubyLLM
   module ActiveRecord
     class Usage < ::ActiveRecord::Base
     end
+
+    class Model < ::ActiveRecord::Base
+      def model_id: () -> String?
+      def name: () -> String?
+      def provider: () -> String?
+    end
+
+    class ToolCall < ::ActiveRecord::Base
+      def name: () -> String
+      def arguments: () -> json_object
+    end
   end
 end
 

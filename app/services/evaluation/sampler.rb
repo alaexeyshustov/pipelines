@@ -5,6 +5,8 @@ module Evaluation
   class Sampler
     WRITE_BLOCKED_SENTINEL = "[write tool blocked during sampling]"
 
+    Result = Data.define(:sample)
+
     def self.call(experiment:, dataset_sample:, prompt:)
       new(experiment: experiment, dataset_sample: dataset_sample, prompt: prompt).call
     end
@@ -21,7 +23,7 @@ module Evaluation
       error     = trial.error
       raise error if error
 
-      persist_sample(trial)
+      Result.new(sample: persist_sample(trial))
     end
 
     private

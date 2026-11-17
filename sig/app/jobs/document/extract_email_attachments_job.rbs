@@ -10,6 +10,7 @@ class Document
     def eligible?: (Email email) -> bool
     def handle: (Email email, Emails::attachment attachment) -> void
     def with_resolved_type: (Emails::attachment attachment) -> resolved_attachment
+    def extract_text: (String data, resolved_attachment attachment) -> String
     def ingest: (Email email, resolved_attachment attachment, String checksum, String text) -> Document
     def source_ref: (Email email, resolved_attachment attachment) -> Hash[Symbol, String]
     def process: (Email email, resolved_attachment attachment) -> void

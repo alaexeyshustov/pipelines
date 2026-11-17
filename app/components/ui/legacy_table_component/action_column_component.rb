@@ -15,20 +15,18 @@ module UI
         content_tag(:th, "", class: PADDING_CLASSES.fetch(@style, PADDING_CLASSES[:default]))
       end
 
-      # rubocop:disable Rails/OutputSafety
       def render_cell(record)
         return "" if @actions.nil?
 
         padding = ActionCellComponent::PADDING_CLASSES.fetch(@style, ActionCellComponent::PADDING_CLASSES[:default])
         cell_class = "#{padding} text-right flex items-center justify-end gap-3"
 
-        actions_html = @actions.call(record).map { |action|
+        actions_html = safe_join(@actions.call(record).map { |action|
           ActionCellComponent::ActionSlot.new(**action).render_in(helpers)
-        }.join.html_safe
+        })
 
         content_tag(:td, actions_html, class: cell_class)
       end
-      # rubocop:enable Rails/OutputSafety
     end
   end
 end

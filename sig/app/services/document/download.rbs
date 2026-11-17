@@ -1,6 +1,6 @@
 class Document
   class Download
-    class File
+    class Result < Data
       attr_reader data: String
       attr_reader filename: String
       attr_reader mime_type: String
@@ -11,17 +11,17 @@ class Document
     class Unsupported < StandardError
     end
 
-    def self.call: (Document document) -> File
+    def self.call: (Document document) -> Result
 
     @document: Document
 
     def initialize: (Document document) -> void
-    def call: () -> File
+    def call: () -> Result
 
     private
 
-    def from_gmail: (Hash[String, String | Integer | bool | nil] ref) -> File
-    def from_drive: (Hash[String, String | Integer | bool | nil] ref) -> File
+    def from_gmail: (Hash[String, String | Integer | bool | nil] ref) -> Result
+    def from_drive: (Hash[String, String | Integer | bool | nil] ref) -> Result
     def filename: (String name, String? mime_type) -> String
   end
 end

@@ -27,7 +27,7 @@ RSpec.describe Emails::RetrievalService do
     it 'returns an array of normalized email hashes' do
       allow(Emails).to receive(:list_messages).and_return([ email_fixture.call('msg1') ])
 
-      result = service.call
+      result = service.call.emails
 
       expect(result).to eq([
         { 'id' => 'msg1', 'subject' => 'Job offer msg1', 'provider' => 'gmail',
@@ -42,7 +42,7 @@ RSpec.describe Emails::RetrievalService do
       allow(Emails).to receive(:list_messages).with('gmail', hash_including(offset: 0)).and_return(page1)
       allow(Emails).to receive(:list_messages).with('gmail', hash_including(offset: 100)).and_return(page2)
 
-      result = service.call
+      result = service.call.emails
 
       expect(result.size).to eq(101)
       expect(Emails).to have_received(:list_messages).twice
@@ -57,7 +57,7 @@ RSpec.describe Emails::RetrievalService do
     end
 
     it 'returns an empty array when no emails are found' do
-      expect(service.call).to eq([])
+      expect(service.call.emails).to eq([])
     end
   end
 end

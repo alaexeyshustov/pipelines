@@ -58,7 +58,6 @@ Metrics/BlockLength:
   Exclude:
     - 'Gemfile'
     - 'Steepfile'
-    - 'lib/tasks/**/*.rake'
     - 'app/schemas/**/*'
     - 'db/**/*'
     - 'config/**/*'
@@ -102,12 +101,21 @@ RSpec/MultipleExpectations:
   Max: 3
 RSpec/ExampleLength:
   Max: 10
+# RubyLLM::Evaluation::RSpec's `evaluates` defines one example per case.
+RSpec:
+  Language:
+    Includes:
+      Examples:
+        - evaluates
 RSpec/MultipleMemoizedHelpers:
   Enabled: false
 Style/FrozenStringLiteralComment:
   Enabled: true
   EnforcedStyle: never
 
-App/ComponentMustHavePreview:
-  Exclude:
-    - 'app/components/application_component.rb'
+
+# Shims declare shared interfaces and aliases at the top level on purpose.
+RBS/Lint/TopLevelInterface:
+  Enabled: false
+RBS/Lint/TopLevelTypeAlias:
+  Enabled: false

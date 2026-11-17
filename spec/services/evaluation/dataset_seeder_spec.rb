@@ -17,6 +17,13 @@ RSpec.describe Evaluation::DatasetSeeder do
            input: { "emails" => [ { "id" => "1", "subject" => "Job offer" } ] })
   end
 
+  # A completed run of +action+ in a pipeline of its own.
+  def run_action(action)
+    other_step_action = create(:orchestration_step_action, action:)
+    create(:orchestration_action_run, step_action: other_step_action, status: "completed", chat:,
+                                      pipeline_run: create(:orchestration_pipeline_run, pipeline: other_step_action.step.pipeline))
+  end
+
   describe ".call" do
     it "creates a dataset named after the agent" do
       build_action_run
@@ -67,15 +74,8 @@ RSpec.describe Evaluation::DatasetSeeder do
       expect(dataset.dataset_samples.count).to eq(0)
     end
 
-    it "skips action runs with service-kind step actions" do # rubocop:disable RSpec/ExampleLength
-      service_action = create(:orchestration_action, kind: :service, agent: nil, agent_class: "Orchestration::Executors::Query")
-      service_step_action = create(:orchestration_step_action, action: service_action)
-      service_pipeline_run = create(:orchestration_pipeline_run, pipeline: service_step_action.step.pipeline)
-      create(:orchestration_action_run,
-             step_action: service_step_action,
-             pipeline_run: service_pipeline_run,
-             status: "completed",
-             chat: chat)
+    it "skips action runs with service-kind step actions" do
+      run_action(create(:orchestration_action, kind: :service, agent: nil, agent_class: "Orchestration::Executors::Query"))
 
       described_class.call(agent_name: agent_name, sample_size: 10)
 
@@ -83,15 +83,8 @@ RSpec.describe Evaluation::DatasetSeeder do
       expect(dataset.dataset_samples.count).to eq(0)
     end
 
-    it "skips action runs for a different agent name" do # rubocop:disable RSpec/ExampleLength
-      other_agent = create(:orchestration_agent, name: "Emails::FilterAgent")
-      other_action = create(:orchestration_action, kind: :agent, agent: other_agent)
-      other_step_action = create(:orchestration_step_action, action: other_action)
-      create(:orchestration_action_run,
-             step_action: other_step_action,
-             pipeline_run: create(:orchestration_pipeline_run, pipeline: other_step_action.step.pipeline),
-             status: "completed",
-             chat: chat)
+    it "skips action runs for a different agent name" do
+      run_action(create(:orchestration_action, kind: :agent, agent: create(:orchestration_agent, name: "Emails::FilterAgent")))
 
       described_class.call(agent_name: agent_name, sample_size: 10)
 

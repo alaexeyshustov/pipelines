@@ -4,6 +4,8 @@ require "json"
 class GistUploader
   GITHUB_API = "https://api.github.com"
 
+  Result = Data.define(:url)
+
   class ApiError < StandardError; end
 
   def self.call(content, token:, gist_id: nil, filename:) = new(token:, gist_id:, filename:).call(content)
@@ -28,7 +30,7 @@ class GistUploader
       end
 
     html_url = response["html_url"]
-    html_url.nil? ? nil : html_url.to_s
+    Result.new(url: html_url&.to_s)
   end
 
   private

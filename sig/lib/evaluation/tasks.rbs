@@ -1,0 +1,8 @@
+module Evaluation
+  module Tasks
+    def self?.extract_metrics: (String? agent_name, ?out: IO) -> void
+    def self?.seed_dataset: (String? agent_name, String? sample_size, ?out: IO) -> void
+    def self?.seed_metrics: (String? agent_name, ?out: IO) -> void
+    def self?.required: (String? value, String usage) -> String
+  end
+end

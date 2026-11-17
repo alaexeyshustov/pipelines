@@ -10,19 +10,12 @@ RSpec.describe Evaluation::Improvement::LoadSamplesTool do
       expect(tool.execute(experiment_id: experiment.id)).to eq([])
     end
 
-    it "returns input/output pairs for samples" do # rubocop:disable RSpec/ExampleLength
-      dataset_sample = create(:evaluation_dataset_sample,
-                               dataset: experiment.dataset,
-                               input: { "email" => "test" })
-      create(:evaluation_sample,
-             experiment: experiment,
-             dataset_sample: dataset_sample,
-             tool_calls: [],
-             output: "test output")
+    it "returns input/output pairs for samples" do
+      dataset_sample = create(:evaluation_dataset_sample, dataset: experiment.dataset, input: { "email" => "test" })
+      create(:evaluation_sample, experiment:, dataset_sample:, tool_calls: [], output: "test output")
 
-      result = tool.execute(experiment_id: experiment.id)
-      expect(result).to be_an(Array)
-      expect(result.first).to include(input: { "email" => "test" }, output: "test output")
+      expect(tool.execute(experiment_id: experiment.id))
+        .to contain_exactly(a_hash_including(input: { "email" => "test" }, output: "test output"))
     end
 
     it "returns empty output string when output is nil" do

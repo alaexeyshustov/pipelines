@@ -1,5 +1,7 @@
 module Evaluation
   class PromptCreator
+    Result = Data.define(:prompt)
+
     def self.call(name:, system_prompt:, user_prompt:, output_schema: nil)
       new(name:, system_prompt:, user_prompt:, output_schema:).call
     end
@@ -11,7 +13,7 @@ module Evaluation
     def call
       prompt = Evaluation::Prompt.create!(**@attributes)
       Evaluation::PromptAutoEvalJob.perform_later(prompt_id: prompt.id)
-      prompt
+      Result.new(prompt:)
     end
   end
 end

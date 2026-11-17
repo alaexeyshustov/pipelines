@@ -169,7 +169,7 @@ RSpec.describe "Evaluation::Metrics" do
     end
 
     before do
-      allow(Evaluation::MetricSuggester).to receive(:call).and_return(suggestions)
+      allow(Evaluation::MetricSuggester).to receive(:call).and_return(Evaluation::MetricSuggester::Result.new(metrics: suggestions))
     end
 
     it "renders suggestions partial with the suggestions" do

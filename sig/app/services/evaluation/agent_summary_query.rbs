@@ -18,11 +18,19 @@ module Evaluation
       ) -> void
     end
 
-    def self.call: () -> Array[AgentSummary]
+    class Result < Data
+      attr_reader summaries: Array[AgentSummary]
 
-    def call: () -> Array[AgentSummary]
+      def self.new: (summaries: Array[AgentSummary]) -> instance
+    end
+
+    def self.call: () -> Result
+
+    def call: () -> Result
 
     private
+
+    def summaries_for: (Array[Experiment] all_experiments) -> Array[AgentSummary]
 
     def extract_prompt_names: (Array[Experiment] experiments) -> Array[String]
     def fetch_stats_data: (Array[Experiment] all_experiments, Hash[String, Experiment] latest) -> { history_avgs: Hash[Integer, Float?], latest_stats: Hash[Integer, { avg: Float?, count: Integer }] }

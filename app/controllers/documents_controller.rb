@@ -1,7 +1,7 @@
 class DocumentsController < ApplicationController
   def index
     if params[:q].present?
-      @hits = Document::SearchQuery.call(params[:q])
+      @hits = Document::SearchQuery.call(params[:q]).hits
     else
       @pagy, documents = pagy(:offset, Document.order(created_at: :desc))
       @hits = documents.map { |document| Document::SearchQuery::Hit.new(document:, rank: nil, snippet: nil) }

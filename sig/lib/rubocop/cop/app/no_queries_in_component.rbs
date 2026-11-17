@@ -1,0 +1,22 @@
+module RuboCop
+  module Cop
+    module App
+      class NoQueriesInComponent < ::RuboCop::Cop::Base
+        MSG: String
+        QUERY_METHODS: Array[Symbol]
+        CONSTANT_QUERY_METHODS: Array[Symbol]
+
+        def on_send: (::RuboCop::Cop::_Node node) -> void
+
+        private
+
+        def component_file?: () -> bool
+        def query?: (::RuboCop::Cop::_Node node) -> bool
+        def chained_into_query?: (::RuboCop::Cop::_Node node) -> bool
+        def enumerable_call?: (::RuboCop::Cop::_Node node) -> bool
+        def model_chain?: (::RuboCop::Cop::_Node node) -> bool
+        def association_reader?: (::RuboCop::Cop::_Node node) -> bool
+      end
+    end
+  end
+end

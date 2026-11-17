@@ -29,7 +29,9 @@ Unique index on `[provider, account, mailbox]`. A model (`Email::SyncCursor`), n
 
 **Idempotency.** `Email` is unique on `[provider, provider_message_id]` (exists). Insert and rescue `ActiveRecord::RecordNotUnique`; only newly created rows count as stored and enter the chain. Gmail id is the message id. IMAP UIDs are only unique within one `UIDVALIDITY`, so Yahoo's `provider_message_id` becomes `"<uid_validity>:<uid>"` (a reset then creates new rows instead of colliding with old UIDs; the 90-day rescan limits the duplicates this can produce).
 
-**Where orchestration lives.** Services must not call services (`App/ServiceMustNotCallService`) and models must not enqueue, so the flow is jobs, mirroring #221:
+**Where orchestration lives.** ~~Services must not call services (`App/ServiceMustNotCallService`) and~~ models must not enqueue, so the flow is jobs, mirroring #221:
+
+**Superseded (#247):** the cop is removed and services may call services for synchronous domain logic. The ingestion flow stays in jobs because each stage retries on its own. "Models must not enqueue" is now checked by ArchSpec (`Archspec.rb`).
 
 - `Orchestration::Executors::EmailsSync` (registered in `ServiceRegistry`) runs `Email::SyncInboxJob.perform_now` inline for each provider, so the `StepRun` records the outcome. Seeded as pipeline "Email Ingestion" with one step.
 - `Email::SyncInboxJob(provider)` fetches via the `Emails` seam (new cursor-based methods on the adapters, in `infra`), stores new emails and enqueues `Email::ProcessJob` per new email. `Emails` stays free of models.

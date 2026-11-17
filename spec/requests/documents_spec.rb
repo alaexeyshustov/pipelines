@@ -57,7 +57,7 @@ RSpec.describe "Documents" do
     let(:document) { create(:document, title: "Offer letter") }
 
     it "streams the original file" do
-      result = Document::Download::File.new(data: "%PDF-", filename: "Offer letter.pdf", mime_type: "application/pdf")
+      result = Document::Download::Result.new(data: "%PDF-", filename: "Offer letter.pdf", mime_type: "application/pdf")
       allow(Document::Download).to receive(:call).with(document).and_return(result)
 
       get download_document_path(document)

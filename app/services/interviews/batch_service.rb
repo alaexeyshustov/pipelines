@@ -39,7 +39,7 @@ module Interviews
     end
 
     def export_interviews
-      Result.new(ok: true, csv: Interviews::CsvExportService.new(ids: @ids).call)
+      Result.new(ok: true, csv: Interviews::CsvExportService.call(ids: @ids).csv)
     end
 
     def handle_merge(count)

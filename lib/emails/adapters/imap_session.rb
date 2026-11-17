@@ -35,20 +35,23 @@ module Emails
         @current_mailbox = mailbox
       end
 
-      # rubocop:disable Metrics/BlockLength
       def with_lock
         attempts = 0
         @mutex.synchronize do
           yield
         rescue Net::IMAP::ByeResponseError, IOError, Errno::ECONNRESET, Errno::EPIPE => error
           raise if (attempts += 1) > 1
-          $stderr.puts "IMAP connection lost (#{error.class}: #{error.message}), reconnecting..."
-          @imap            = nil
-          @current_mailbox = nil
+
+          drop_connection(error)
           retry
         end
       end
-      # rubocop:enable Metrics/BlockLength
+
+      def drop_connection(error)
+        $stderr.puts "IMAP connection lost (#{error.class}: #{error.message}), reconnecting..."
+        @imap            = nil
+        @current_mailbox = nil
+      end
 
       def fetch_raw_mail(uid, fields)
         result = imap.uid_fetch(uid, fields)&.first&.attr

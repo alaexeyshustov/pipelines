@@ -43,15 +43,13 @@ module Evaluation
     def resync_success_streams(dataset, new_count)
       [
         turbo_stream.update("dataset-resync-status-#{dataset.id}",
-                            html: '<p class="text-xs text-indigo-600">✓ Resynced.</p>'.html_safe),
+                            html: helpers.tag.p("✓ Resynced.", class: "text-xs text-indigo-600")),
         turbo_stream.update("dataset-count-#{dataset.id}", html: "#{new_count} records")
       ]
     end
 
-    # rubocop:disable Rails/OutputSafety
     def inline_error_html(message)
-      "<p class=\"text-xs text-red-600\">Error: #{ERB::Util.html_escape(message)}</p>".html_safe
+      helpers.tag.p("Error: #{message}", class: "text-xs text-red-600")
     end
-    # rubocop:enable Rails/OutputSafety
   end
 end

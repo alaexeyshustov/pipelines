@@ -13,10 +13,9 @@ module UI
         mono:   "font-mono text-xs"
       }.freeze
 
-      def initialize(style: :default, variant: nil, classes: nil)
+      def initialize(style: :default, variant: nil)
         @style   = style.to_sym
         @variant = variant&.to_sym
-        @classes = classes
       end
 
       def call
@@ -26,8 +25,6 @@ module UI
       private
 
       def resolved_classes
-        return @classes if @classes
-
         parts = [ PADDING_CLASSES.fetch(@style, PADDING_CLASSES[:default]) ]
         parts << VARIANT_CLASSES[@variant] if @variant && VARIANT_CLASSES.key?(@variant)
         parts.join(" ")

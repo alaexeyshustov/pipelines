@@ -323,23 +323,22 @@ RSpec.describe Emails::Adapters::YahooAdapter do
       allow(imap).to receive(:uid_search).and_return([])
     end
 
-    it 'prints a success message when the connection works' do
-      expect {
-        described_class.test_connection(
-          username: 'test@yahoo.com',
-          password: 'secret',
-          host:     'imap.mail.yahoo.com',
-          port:     993
-        )
-      }.to output(/Yahoo Mail connection successful/).to_stdout
+    it 'returns a success message when the connection works' do
+      status = described_class.test_connection(
+        username: 'test@yahoo.com',
+        password: 'secret',
+        host:     'imap.mail.yahoo.com',
+        port:     993
+      )
+
+      expect(status).to match(/Yahoo Mail connection successful/)
     end
 
-    it 'prints an error message when the connection fails' do
+    it 'returns an error message when the connection fails' do
       allow(imap).to receive(:login).and_raise(StandardError, 'auth failed')
 
-      expect {
-        described_class.test_connection(username: 'test@yahoo.com', password: 'secret')
-      }.to output(/Yahoo Mail connection failed/).to_stdout
+      expect(described_class.test_connection(username: 'test@yahoo.com', password: 'secret'))
+        .to match(/Yahoo Mail connection failed/)
     end
   end
 

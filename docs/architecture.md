@@ -29,6 +29,7 @@ The system follows a pipeline-based architecture where data flows through severa
 - **SQLite**: Local database (FTS5 for email and document search).
 - **RubyLLM**: A unified client for multiple LLM providers.
 - **ViewComponent + Tailwind + Turbo**: For the Web UI.
+- **State machines**: Rails `enum` for simple states; AASM for complex workflows (currently only `Evaluation::Experiment`).
 
 ### Directory Structure
 - `lib/orchestration/agents/`: specialized AI agent implementations (`lib/orchestration/executors/` holds executable steps).

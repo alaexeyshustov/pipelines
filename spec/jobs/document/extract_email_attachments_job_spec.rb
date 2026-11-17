@@ -14,7 +14,7 @@ RSpec.describe Document::ExtractEmailAttachmentsJob do
     create(:tag, name: "job_application")
     allow(Emails).to receive(:attachments).with("gmail", "m1").and_return(attachments)
     allow(Emails).to receive(:attachment) { |_provider, _msg, id| bytes.fetch(id) }
-    allow(Document::TextExtractor).to receive(:call).and_return("extracted")
+    allow(Document::TextExtractor).to receive(:call).and_return(Document::TextExtractor::Result.new(text: "extracted"))
   end
 
   context "with a tagged email" do
@@ -87,7 +87,7 @@ RSpec.describe Document::ExtractEmailAttachmentsJob do
       attachments << { id: "a3", filename: "b.png", mime_type: "image/png", size: 1 }
       bytes["a3"] = "png"
       allow(Document::TextExtractor).to receive(:call) do |filename:, **|
-        filename == "cv.pdf" ? raise(RubyLLM::Error, "ocr down") : "png text"
+        filename == "cv.pdf" ? raise(RubyLLM::Error, "ocr down") : Document::TextExtractor::Result.new(text: "png text")
       end
       allow(Rails.logger).to receive(:error)
 

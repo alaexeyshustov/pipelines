@@ -12,45 +12,45 @@ RSpec.describe Interviews::CsvExportService do
     end
 
     it "returns a CSV string" do
-      result = described_class.new(ids: [ acme.id ]).call
+      result = described_class.call(ids: [ acme.id ]).csv
       expect(result).to be_a(String)
     end
 
     it "includes COLUMN_NAMES as the header row" do
-      result = described_class.new(ids: [ acme.id ]).call
+      result = described_class.call(ids: [ acme.id ]).csv
       headers = CSV.parse(result, headers: true).headers
       expect(headers).to eq(Interview::COLUMN_NAMES.without("id"))
     end
 
     it "exports only the requested ids" do
-      result = described_class.new(ids: [ acme.id ]).call
+      result = described_class.call(ids: [ acme.id ]).csv
       rows = CSV.parse(result, headers: true)
       expect(rows.size).to eq(1)
       expect(rows.first["company"]).to eq("Acme")
     end
 
     it "exports multiple selected records ordered by applied_at desc" do
-      result = described_class.new(ids: [ beta.id, acme.id ]).call
+      result = described_class.call(ids: [ beta.id, acme.id ]).csv
       rows = CSV.parse(result, headers: true)
       expect(rows.size).to eq(2)
       expect(rows.pluck("company")).to eq(%w[Beta Acme])
     end
 
     it "exports all records when ids is nil" do
-      result = described_class.new(ids: nil).call
+      result = described_class.call(ids: nil).csv
       rows = CSV.parse(result, headers: true)
       expect(rows.size).to eq(2)
       expect(rows.pluck("company")).to eq(%w[Beta Acme])
     end
 
     it "exports all records when ids is empty" do
-      result = described_class.new(ids: []).call
+      result = described_class.call(ids: []).csv
       rows = CSV.parse(result, headers: true)
       expect(rows.size).to eq(2)
     end
 
     it "includes all column values for a record" do
-      result = described_class.new(ids: [ acme.id ]).call
+      result = described_class.call(ids: [ acme.id ]).csv
       row = CSV.parse(result, headers: true).first
       expect(row.to_h).to include("company" => "Acme", "job_title" => "Backend")
       expect(row["status"]).to eq("pending_reply")
@@ -58,7 +58,7 @@ RSpec.describe Interviews::CsvExportService do
     end
 
     it "handles nil date columns as empty strings" do
-      result = described_class.new(ids: [ acme.id ]).call
+      result = described_class.call(ids: [ acme.id ]).csv
       row = CSV.parse(result, headers: true).first
       expect(row["rejected_at"]).to be_nil
       expect(row["first_interview_at"]).to be_nil

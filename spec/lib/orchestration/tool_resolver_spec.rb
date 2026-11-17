@@ -34,12 +34,11 @@ RSpec.describe Orchestration::ToolResolver do
       let(:agent_record) { create(:orchestration_agent, name: "Emails::FallbackAgent", tools: nil) }
 
       it "falls back to the agent class's declared tools" do
-        fake_agent_class = Class.new do
+        stub_const("Emails::FallbackAgent", Class.new do
           def self.tools
             [ Records::TempFileTool ]
           end
-        end
-        stub_const("Emails::FallbackAgent", fake_agent_class)
+        end)
 
         expect(resolved).to eq([ Records::TempFileTool ])
       end

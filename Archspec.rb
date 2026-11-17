@@ -25,3 +25,10 @@ component(:orchestration, in: %w[lib/orchestration/**/*.rb app/models/orchestrat
 # Don't admit :orchestration/:evaluation in the layer allowlists: since archspec
 # 1.2, a target passes when any component that owns it is allowed, so that would
 # let every layer reach the subsystems' application-layer files.
+
+# Side effects belong to the caller of #save or of an AASM event, not to forms or models.
+component(:forms, in: "app/forms/**/*.rb")
+  .cannot_call(:perform_later, :perform_now, :deliver_later, :deliver_now)
+  .cannot_reference_constants("RubyLLM", "Emails", "Embeddings")
+component(:models, in: "app/models/**/*.rb")
+  .cannot_call(:perform_later, :perform_now, :deliver_later, :deliver_now)

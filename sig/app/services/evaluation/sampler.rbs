@@ -2,17 +2,23 @@ module Evaluation
   class Sampler
     WRITE_BLOCKED_SENTINEL: String
 
+    class Result < Data
+      attr_reader sample: Sample
+
+      def self.new: (sample: Sample) -> instance
+    end
+
     type tool_call = { "tool_name" => String, "arguments" => json_object, "result" => String }
 
     @experiment: Experiment
     @dataset_sample: DatasetSample
     @prompt: Prompt?
 
-    def self.call: (experiment: Experiment, dataset_sample: DatasetSample, prompt: Prompt?) -> Sample
+    def self.call: (experiment: Experiment, dataset_sample: DatasetSample, prompt: Prompt?) -> Result
 
     def initialize: (experiment: Experiment, dataset_sample: DatasetSample, prompt: Prompt?) -> void
 
-    def call: () -> Sample
+    def call: () -> Result
 
     private
 

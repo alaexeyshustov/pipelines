@@ -213,23 +213,21 @@ RSpec.describe Emails::Adapters::GmailAdapter do
   end
 
   describe '.test_connection' do
-    it 'prints a success message when the connection works',
+    it 'returns a success message when the connection works',
        vcr: { cassette_name: 'emails/adapters/gmail/test_connection',
               record: :none, match_requests_on: %i[method path] } do
-      expect {
-        described_class.test_connection(
-          credentials_path: GmailHelpers::CREDENTIALS_PATH,
-          token_path:       GmailHelpers.token_path
-        )
-      }.to output(/Gmail connection successful/).to_stdout
+      status = described_class.test_connection(
+        credentials_path: GmailHelpers::CREDENTIALS_PATH,
+        token_path:       GmailHelpers.token_path
+      )
+
+      expect(status).to match(/Gmail connection successful/)
     end
 
-    it 'prints an error message when the connection fails' do
+    it 'returns an error message when the connection fails' do
       allow(described_class).to receive(:from_env).and_raise(StandardError, 'auth failed')
 
-      expect {
-        described_class.test_connection
-      }.to output(/Gmail connection failed/).to_stdout
+      expect(described_class.test_connection).to match(/Gmail connection failed/)
     end
   end
 end

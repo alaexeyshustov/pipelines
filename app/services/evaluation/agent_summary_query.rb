@@ -1,6 +1,7 @@
 module Evaluation
   class AgentSummaryQuery
     AgentSummary = Data.define(:agent_name, :latest_experiment, :latest_score, :active_prompt_version, :sample_count, :score_history)
+    Result = Data.define(:summaries)
 
     def self.call
       new.call
@@ -8,8 +9,12 @@ module Evaluation
 
     def call
       all_experiments = fetch_all_experiments
-      return [] if all_experiments.empty?
+      Result.new(summaries: all_experiments.empty? ? [] : summaries_for(all_experiments))
+    end
 
+    private
+
+    def summaries_for(all_experiments)
       prompt_names = extract_prompt_names(all_experiments)
       grouped      = group_by_agent(all_experiments)
       latest       = latest_per_agent(grouped)
@@ -18,8 +23,6 @@ module Evaluation
 
       build_agent_summaries(prompt_names, grouped, latest, eval_stats[:latest_stats], eval_stats[:history_avgs], active_vers)
     end
-
-    private
 
     def extract_prompt_names(experiments)
       experiments.filter_map { |e| e.prompt&.name&.to_s }.uniq

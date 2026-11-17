@@ -70,10 +70,10 @@ RSpec.describe Orchestration::InputMappingUpdater do
 
     context "when the step_action does not appear in the validator results" do
       it "treats missing step_result as no errors and no warnings" do
-        null_validator = Class.new do
+        null_validator = stub_const("NullPipelineValidator", Class.new do
           def initialize(_pipeline); end
           def validate; []; end
-        end
+        end)
 
         result = build_updater(input_mapping: {}, pipeline_validator: null_validator).update
 

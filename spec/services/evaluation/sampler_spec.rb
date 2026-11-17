@@ -80,7 +80,7 @@ RSpec.describe Evaluation::Sampler do
 
   describe ".call" do
     subject(:sample) do
-      described_class.call(experiment: experiment, dataset_sample: dataset_sample, prompt: experiment.prompt)
+      described_class.call(experiment: experiment, dataset_sample: dataset_sample, prompt: experiment.prompt).sample
     end
 
     it "creates and returns a Sample record" do

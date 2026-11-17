@@ -1,0 +1,7 @@
+module UI
+  class ActionComponent
+    class RawComponent < ViewComponent::Base
+      def call: () -> String
+    end
+  end
+end

@@ -25,7 +25,6 @@ module UI
           label: col[:label],
           style: col.fetch(:style, :default).to_sym,
           variant: col[:variant]&.to_sym,
-          classes: col[:classes].to_s,
           cell: col[:cell],
           badge_component: col[:badge],
           component: col[:component],

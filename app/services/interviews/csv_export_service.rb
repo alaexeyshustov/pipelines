@@ -2,6 +2,8 @@ require "csv"
 
 module Interviews
   class CsvExportService
+    Result = Data.define(:csv)
+
     def self.call(ids:) = new(ids:).call
 
     def initialize(ids:)
@@ -10,14 +12,18 @@ module Interviews
     end
 
     def call
-      scope = @ids.present? ? Interview.where(id: @ids) : Interview.all
-      scope = scope.order(applied_at: :desc) # : Interview::relation
-      CSV.generate(headers: true) do |csv|
-        csv << @columns
-        scope.each do |interview|
-          csv << @columns.map { |col| interview.public_send(col) }
-        end
+      csv = CSV.generate(headers: true) do |rows|
+        rows << @columns
+        scope.each { |interview| rows << @columns.map { |col| interview.public_send(col) } }
       end
+      Result.new(csv:)
+    end
+
+    private
+
+    def scope
+      scope = @ids.present? ? Interview.where(id: @ids) : Interview.all
+      scope.order(applied_at: :desc) # : Interview::relation
     end
   end
 end

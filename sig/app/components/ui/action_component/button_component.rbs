@@ -1,0 +1,17 @@
+module UI
+  class ActionComponent
+    class ButtonComponent < ViewComponent::Base
+      def initialize: (
+        label: String?,
+        url: String?,
+        ?method: Symbol,
+        ?variant: ActionComponent::action_variant?,
+        ?confirm: String?,
+        ?data: Hash[Symbol | String, primitive]
+      ) -> void
+
+      def button_classes: () -> String
+      def button_data: () -> Hash[Symbol | String, primitive]
+    end
+  end
+end

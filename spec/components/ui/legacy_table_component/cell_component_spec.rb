@@ -42,10 +42,4 @@ RSpec.describe UI::LegacyTableComponent::CellComponent, type: :component do
     td = rendered.css("td").first
     expect(td["class"]).to include("font-mono", "text-xs")
   end
-
-  it "overrides with custom classes when provided" do
-    rendered = render_inline(described_class.new(classes: "custom-class")) { "x" }
-
-    expect(rendered.css("td").first["class"]).to eq("custom-class")
-  end
 end
