@@ -4,6 +4,7 @@ Use this guidance for Ruby and RBS changes that touch typed code paths.
 
 - After any signature edit, run `bundle exec rbs -r optparse validate sig/**/*.rbs sig/**/**/*.rbs sig/**/**/**/*.rbs`.
 - Then run `bundle exec steep check --jobs 2` (the default spawns one ~250MB worker per CPU and OOMs the sandbox VM). In Claude Code, a hook already checks each edited Ruby file; run the full check before committing.
+- Then run `bundle exec rigor check` (see [Rigor gotchas](gotchas.md#rigor-rigordistyml-rigor-baselineyml)).
 - If `rbs collection install` fails intermittently, retry once before treating it as a real problem.
 - If a gem lacks RBS types, add or update a type shim instead of skipping the check.
 - `void?` is invalid RBS syntax; if Ruby can return `nil`, use the real nullable type such as `String?` or `bool?`.

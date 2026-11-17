@@ -40,6 +40,7 @@ module Evaluation
       when 2 then Wizard::Step2Form.new(draft_payload: payload)
       when 3 then Wizard::Step3Form.new(draft_payload: payload, draft_token: @wizard_token)
       when 4 then Wizard::Step4Form.new(draft_payload: payload)
+      else raise ArgumentError, "unknown wizard step: #{step}"
       end
     end
 

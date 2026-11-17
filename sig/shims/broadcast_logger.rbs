@@ -1,0 +1,11 @@
+module ActiveSupport
+  # The collection's generated signature lacks the severity writers Rails.logger exposes; shapes follow ::Logger.
+  class BroadcastLogger
+    def debug: (?top progname) ?{ () -> top } -> true
+    def info: (?top progname) ?{ () -> top } -> true
+    def warn: (?top progname) ?{ () -> top } -> true
+    def error: (?top progname) ?{ () -> top } -> true
+    def fatal: (?top progname) ?{ () -> top } -> true
+    def unknown: (?top progname) ?{ () -> top } -> true
+  end
+end

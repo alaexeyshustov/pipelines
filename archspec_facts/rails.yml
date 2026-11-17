@@ -14,8 +14,8 @@ sources:
 - "**/app/models/**/*.rb"
 snapshot:
   ".ruby-version": 365c845737dc111861176ea1d0246ce7b335768d8dbd2cea234c305b2983beba
-  Gemfile: c72c65292e904bd9731f1c6018b1ec9397e181a27bb9268dd532a5a840804440
-  Gemfile.lock: d778419c76b062e69989651b30cc68f64f1d0c870a2ff617c9087658d230c892
+  Gemfile: cbf13766f0d919d4f9f4381b059d7ed760ee261cb133823cfb17c3768734033c
+  Gemfile.lock: 34fe2491ca5929251bf0046a0c478d09de812d87ff184610dd71eb3e21dd43f0
   app/models/application_record.rb: 12bf7d0eaefce4d50e0719991e19b48a36a7865aeb7ac745980584806155fdc1
   app/models/chat.rb: 4ebd698bb3b02213e2cf22af062db0ebbf8fe774cc13b038d5ce21c7ee975485
   app/models/concerns/batchable.rb: 1f2d8efb2eb497ece07f3cb43363c396e3a42dd4ad76ff2be01b2cf8604fec01

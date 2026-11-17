@@ -72,6 +72,34 @@ jobs:
       - name: Check type coverage (≥90%)
         run: bundle exec bin/rbs_audit coverage --threshold=90
 
+  rigor:
+    name: Rigor Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Install RBS collection
+        run: bundle exec rbs collection install
+
+      - name: Generate schema for rigor-activerecord
+        run: bundle exec ruby script/rigor_schema.rb
+
+      - name: Restore Rigor cache
+        uses: actions/cache@v6
+        with:
+          path: .rigor/cache
+          key: rigor-${{ hashFiles('Gemfile.lock') }}-${{ github.sha }}
+          restore-keys: rigor-${{ hashFiles('Gemfile.lock') }}-
+
+      - name: Run Rigor
+        run: bundle exec rigor check
+
   brakeman:
     name: Brakeman
     runs-on: ubuntu-latest

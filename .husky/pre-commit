@@ -17,6 +17,11 @@ echo "Running steep type check..."
 # repository's index with foreign entries and fail the commit.
 env -u GIT_INDEX_FILE bundle exec steep check --jobs 2
 
+echo "Running rigor type check..."
+# Refresh the schema rigor-activerecord reads only when the SQL dump changed, so the incremental cache stays warm.
+[ db/structure.sql -nt tmp/rigor/schema.rb ] && bundle exec ruby script/rigor_schema.rb
+bundle exec rigor check --incremental
+
 echo "Running brakeman..."
 bundle exec brakeman --no-pager
 
