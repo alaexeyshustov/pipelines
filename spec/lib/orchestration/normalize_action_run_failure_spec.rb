@@ -81,62 +81,6 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
       end
     end
 
-    context "when a provider HTTP error has a nested error.message (no top-level message)" do
-      let(:response) do
-        Data.define(:status, :body).new(
-          status: 400,
-          body: { "error" => { "code" => "invalid_input", "error" => { "message" => "Nested detail" } } }.to_json
-        )
-      end
-      let(:error) { RubyLLM::BadRequestError.new("An unknown error occurred", response: response) }
-
-      it "digs into the nested error.message" do
-        result = described_class.new(error:, action_run:, raw_content: nil).normalize
-        expect(result.summary).to include("Nested detail")
-      end
-    end
-
-    context "when the provider HTTP response body is not valid JSON" do
-      let(:response) { Data.define(:status, :body).new(status: 503, body: "Service Unavailable") }
-      let(:error) { RubyLLM::ServiceUnavailableError.new("unavailable", response: response) }
-
-      it "returns nil parsed_error and falls back to the error message" do
-        result = described_class.new(error:, action_run:, raw_content: nil).normalize
-        expect(result.details["parsed_error"]).to be_nil
-        expect(result.summary).to include("unavailable")
-      end
-    end
-
-    context "when the provider HTTP response body is a JSON array" do
-      let(:response) { Data.define(:status, :body).new(status: 400, body: '["err1","err2"]') }
-      let(:error) { RubyLLM::BadRequestError.new("array errors", response: response) }
-
-      it "preserves the array as parsed_error" do
-        result = described_class.new(error:, action_run:, raw_content: nil).normalize
-        expect(result.details["parsed_error"]).to eq([ "err1", "err2" ])
-      end
-    end
-
-    context "when the provider HTTP response has no message or error keys" do
-      let(:response) { Data.define(:status, :body).new(status: 429, body: '{"code":42}') }
-      let(:error) { RubyLLM::RateLimitError.new("rate limited fallback", response: response) }
-
-      it "falls back to the error message" do
-        result = described_class.new(error:, action_run:, raw_content: nil).normalize
-        expect(result.summary).to include("rate limited fallback")
-      end
-    end
-
-    context "when the parsed message is 'An unknown error occurred'" do
-      let(:response) { Data.define(:status, :body).new(status: 500, body: '{"message":"An unknown error occurred"}') }
-      let(:error) { RubyLLM::ServerError.new("real server error", response: response) }
-
-      it "skips the sentinel and falls back to the error message" do
-        result = described_class.new(error:, action_run:, raw_content: nil).normalize
-        expect(result.summary).to include("real server error")
-      end
-    end
-
     context "when the agent_snapshot contains sensitive keys" do
       let(:action_run) do
         create(

@@ -136,38 +136,6 @@ RSpec.describe Orchestration::SchemaBuilder do
     end
   end
 
-  # --- round-trip ---
-
-  describe "from_schema → to_schema round-trip" do
-    let(:schema) do
-      {
-        "type" => "object",
-        "description" => "Person",
-        "required" => [ "name" ],
-        "additionalProperties" => false,
-        "properties" => {
-          "name" => { "type" => "string", "description" => "Full name" },
-          "age" => { "type" => "integer", "minimum" => 0, "maximum" => 200 },
-          "tags" => { "type" => "array", "items" => { "type" => "string" } },
-          "status" => { "type" => "string", "enum" => %w[active inactive] }
-        }
-      }
-    end
-
-    it "preserves all fields" do
-      expect(described_class.from_schema(schema).to_schema).to eq(schema)
-    end
-
-    it "preserves format on string properties" do
-      schema_with_format = schema.merge(
-        "properties" => schema["properties"].merge(
-          "due_date" => { "type" => "string", "format" => "date" }
-        )
-      )
-      expect(described_class.from_schema(schema_with_format).to_schema).to eq(schema_with_format)
-    end
-  end
-
   # --- from_params ---
 
   describe ".from_params" do

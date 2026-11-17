@@ -2,91 +2,138 @@ require "rails_helper"
 
 RSpec.describe Evaluation::DatasetSeeder do
   let(:agent_name) { "Emails::ClassifyAgent" }
-
   let(:orchestration_agent) { create(:orchestration_agent, name: agent_name) }
   let(:action) { create(:orchestration_action, kind: :agent, agent: orchestration_agent) }
   let(:step_action) { create(:orchestration_step_action, action: action) }
+  let(:pipeline_run) { create(:orchestration_pipeline_run, pipeline: step_action.step.pipeline) }
+  let(:chat) { create(:chat) }
 
-  before do
-    allow(Evaluation::ToolCallExtractor).to receive(:call).and_return([])
-  end
-
-  def completed_action_run(chat: nil)
-    chat ||= create(:chat)
+  def build_action_run(status: "completed", chat: self.chat, step_action: self.step_action)
     create(:orchestration_action_run,
            step_action: step_action,
-           status: "completed",
+           pipeline_run: pipeline_run,
+           status: status,
            chat: chat,
-           input: { "email" => "subject: Job offer" })
+           input: { "emails" => [ { "id" => "1", "subject" => "Job offer" } ] })
+  end
+
+  # A completed run of +action+ in a pipeline of its own.
+  def run_action(action)
+    other_step_action = create(:orchestration_step_action, action:)
+    create(:orchestration_action_run, step_action: other_step_action, status: "completed", chat:,
+                                      pipeline_run: create(:orchestration_pipeline_run, pipeline: other_step_action.step.pipeline))
   end
 
   describe ".call" do
-    it "creates a Dataset when one does not exist" do
-      expect { described_class.call(agent_name: agent_name) }
-        .to change(Evaluation::Dataset, :count).by(1)
+    it "creates a dataset named after the agent" do
+      build_action_run
+      described_class.call(agent_name: agent_name, sample_size: 10)
+      expect(Evaluation::Dataset.find_by(name: agent_name)).to be_present
     end
 
-    it "reuses an existing Dataset with the same name" do
-      Evaluation::Dataset.create!(name: agent_name)
-      expect { described_class.call(agent_name: agent_name) }
-        .not_to change(Evaluation::Dataset, :count)
+    it "creates a dataset sample linking the action run via source_run_id" do
+      action_run = build_action_run
+      described_class.call(agent_name: agent_name, sample_size: 10)
+
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
+      expect(dataset.dataset_samples.first.source_run_id).to eq(action_run.id)
     end
 
-    it "creates DatasetSamples for completed ActionRuns belonging to the agent" do
-      completed_action_run
-      expect { described_class.call(agent_name: agent_name) }
-        .to change(Evaluation::DatasetSample, :count).by(1)
+    it "copies input from the action run's input field" do
+      action_run = build_action_run
+      described_class.call(agent_name: agent_name, sample_size: 10)
+
+      sample = Evaluation::Dataset.find_by!(name: agent_name).dataset_samples.first
+      expect(sample.input).to eq(action_run.input)
     end
 
-    it "does not create DatasetSamples for ActionRuns with a different agent" do
-      other_agent = create(:orchestration_agent, name: "Other::Agent")
-      other_action = create(:orchestration_action, kind: :agent, agent: other_agent)
-      other_step = create(:orchestration_step_action, action: other_action)
-      create(:orchestration_action_run, step_action: other_step, status: "completed", chat: create(:chat),
-             input: { "other" => true })
+    it "stores expected_tool_calls extracted via ToolCallExtractor" do
+      tool_calls = [ { "tool_name" => "search", "arguments" => { "q" => "jobs" }, "result" => "ok" } ]
+      allow(Evaluation::ToolCallExtractor).to receive(:call).and_return(tool_calls)
 
-      expect { described_class.call(agent_name: agent_name) }
-        .not_to change(Evaluation::DatasetSample, :count)
+      build_action_run
+      described_class.call(agent_name: agent_name, sample_size: 10)
+
+      sample = Evaluation::Dataset.find_by!(name: agent_name).dataset_samples.first
+      expect(sample.expected_tool_calls).to eq(tool_calls)
     end
 
-    it "skips ActionRuns with no associated chat" do
-      create(:orchestration_action_run, step_action: step_action, status: "completed", chat: nil)
-      expect { described_class.call(agent_name: agent_name) }
-        .not_to change(Evaluation::DatasetSample, :count)
+    it "skips action runs with status other than completed" do
+      build_action_run(status: "failed")
+      described_class.call(agent_name: agent_name, sample_size: 10)
+
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
+      expect(dataset.dataset_samples.count).to eq(0)
     end
 
-    it "stores expected_tool_calls extracted from the chat" do
-      allow(Evaluation::ToolCallExtractor).to receive(:call).and_return(
-        [ { "tool_name" => "classify_email", "arguments" => { "label" => "offer" } } ]
-      )
-      completed_action_run
-      described_class.call(agent_name: agent_name)
-      expect(Evaluation::DatasetSample.last.expected_tool_calls).to eq(
-        [ { "tool_name" => "classify_email", "arguments" => { "label" => "offer" } } ]
-      )
+    it "skips action runs without a chat" do
+      build_action_run(chat: nil)
+      described_class.call(agent_name: agent_name, sample_size: 10)
+
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
+      expect(dataset.dataset_samples.count).to eq(0)
     end
 
-    it "returns a Result with the correct created count" do
-      completed_action_run
-      result = described_class.call(agent_name: agent_name)
+    it "skips action runs with service-kind step actions" do
+      run_action(create(:orchestration_action, kind: :service, agent: nil, agent_class: "Orchestration::Executors::Query"))
+
+      described_class.call(agent_name: agent_name, sample_size: 10)
+
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
+      expect(dataset.dataset_samples.count).to eq(0)
+    end
+
+    it "skips action runs for a different agent name" do
+      run_action(create(:orchestration_action, kind: :agent, agent: create(:orchestration_agent, name: "Emails::FilterAgent")))
+
+      described_class.call(agent_name: agent_name, sample_size: 10)
+
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
+      expect(dataset.dataset_samples.count).to eq(0)
+    end
+
+    it "respects sample_size limit" do
+      3.times { build_action_run(chat: create(:chat)) }
+
+      described_class.call(agent_name: agent_name, sample_size: 2)
+
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
+      expect(dataset.dataset_samples.count).to eq(2)
+    end
+
+    it "does not duplicate dataset samples when called twice" do
+      build_action_run
+      described_class.call(agent_name: agent_name, sample_size: 10)
+      described_class.call(agent_name: agent_name, sample_size: 10)
+
+      dataset = Evaluation::Dataset.find_by!(name: agent_name)
+      expect(dataset.dataset_samples.count).to eq(1)
+    end
+
+    it "does not duplicate the dataset when called twice" do
+      build_action_run
+      described_class.call(agent_name: agent_name, sample_size: 10)
+      described_class.call(agent_name: agent_name, sample_size: 10)
+
+      expect(Evaluation::Dataset.where(name: agent_name).count).to eq(1)
+    end
+
+    it "returns a result with agent_name, created, and skipped counts" do
+      build_action_run
+      result = described_class.call(agent_name: agent_name, sample_size: 10)
+
+      expect(result.agent_name).to eq(agent_name)
       expect(result.created).to eq(1)
       expect(result.skipped).to eq(0)
     end
 
-    it "returns a Result with the correct skipped count for existing records" do
-      run = completed_action_run
-      Evaluation::Dataset.create!(name: agent_name).tap do |ds|
-        ds.dataset_samples.create!(input: run.input, source_run_id: run.id)
-      end
-      result = described_class.call(agent_name: agent_name)
+    it "returns correct skipped count on second call" do
+      build_action_run
+      described_class.call(agent_name: agent_name, sample_size: 10)
+      result = described_class.call(agent_name: agent_name, sample_size: 10)
+
       expect(result.created).to eq(0)
       expect(result.skipped).to eq(1)
-    end
-
-    it "respects the sample_size limit" do
-      3.times { completed_action_run }
-      result = described_class.call(agent_name: agent_name, sample_size: 2)
-      expect(result.created).to eq(2)
     end
   end
 end
