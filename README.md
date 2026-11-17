@@ -140,6 +140,22 @@ bin/rails server
 
 ---
 
+## Docker (production image)
+
+The root `Dockerfile` builds the production image (Kamal uses it too). `compose.yaml` runs it locally as a smoke test: `web` (Falcon, runs `db:prepare` on start) and `jobs` (`bin/jobs`) share the `storage` volume.
+
+```bash
+cp .env.docker.example .env.docker   # fill in SECRET_KEY_BASE and an LLM key
+docker compose up --build            # builds linux/amd64; web on 127.0.0.1:3000 only
+curl -i http://127.0.0.1:3000/up     # 200 once booted
+docker compose run --rm web bin/rails runner 'p ActiveRecord::Base.connection.select_value("select vec_version()")'
+docker compose --profile ollama up   # optional local embeddings (see compose.yaml)
+```
+
+To check the image carries no secrets: `docker run --rm --entrypoint ls pipelines:latest -a /app`.
+
+---
+
 ## Sandbox (OrbStack)
 
 An isolated Linux machine for running the app without touching your local environment.

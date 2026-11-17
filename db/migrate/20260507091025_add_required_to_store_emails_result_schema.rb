@@ -22,8 +22,9 @@ class AddRequiredToStoreEmailsResultSchema < ActiveRecord::Migration[8.1]
   }.freeze
 
   def up
-    Orchestration::Agent.find_by(name: "Records::StoreAgent")
-      &.update!(output_schema: SCHEMA)
+    execute <<~SQL.squish
+      UPDATE orchestration_agents SET output_schema = #{quote(SCHEMA.to_json)} WHERE name = 'Records::StoreAgent'
+    SQL
   end
 
   def down

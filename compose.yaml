@@ -1,0 +1,47 @@
+# Local production smoke test: `docker compose up --build`, then
+# curl http://127.0.0.1:3000/up. Copy .env.docker.example to .env.docker first.
+x-app: &app
+  image: pipelines:latest
+  platform: linux/amd64
+  volumes:
+    - storage:/app/storage
+  env_file:
+    - path: .env.docker
+      required: false
+  environment:
+    DATABASE_PATH: /app/storage/production.sqlite3
+    QUEUE_DATABASE_PATH: /app/storage/production_queue.sqlite3
+
+services:
+  web:
+    <<: *app
+    build:
+      context: .
+      target: production
+      platforms:
+        - linux/amd64
+    ports:
+      - "127.0.0.1:3000:3000"
+
+  jobs:
+    <<: *app
+    command: bin/jobs -c config/queue.yml
+    # The image HEALTHCHECK probes the web server, which this container doesn't run.
+    healthcheck:
+      disable: true
+    depends_on:
+      web:
+        condition: service_healthy
+
+  # Local embeddings: `docker compose --profile ollama up`, then set
+  # OLLAMA_API_BASE=http://ollama:11434/v1 in .env.docker and pull the model:
+  # `docker compose exec ollama ollama pull qwen3-embedding:0.6b`.
+  ollama:
+    image: ollama/ollama:latest
+    profiles: [ ollama ]
+    volumes:
+      - ollama:/root/.ollama
+
+volumes:
+  storage:
+  ollama:

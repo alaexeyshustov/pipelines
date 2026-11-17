@@ -36,15 +36,17 @@ class AddOutputSchemaToClassifyEmailsAgent < ActiveRecord::Migration[8.1]
   }.freeze
 
   def up
-    Orchestration::Agent.find_by(name: "Emails::ClassifyAgent")
-      &.update!(output_schema: CLASSIFY_SCHEMA)
+    execute <<~SQL.squish
+      UPDATE orchestration_agents SET output_schema = #{quote(CLASSIFY_SCHEMA.to_json)} WHERE name = 'Emails::ClassifyAgent'
+    SQL
 
     fix_filter_emails_path
   end
 
   def down
-    Orchestration::Agent.find_by(name: "Emails::ClassifyAgent")
-      &.update!(output_schema: nil)
+    execute <<~SQL.squish
+      UPDATE orchestration_agents SET output_schema = NULL WHERE name = 'Emails::ClassifyAgent'
+    SQL
 
     restore_filter_emails_path
   end

@@ -24,11 +24,13 @@ class MoveStoreEmailsOutputSchemaToAgent < ActiveRecord::Migration[8.1]
   }.freeze
 
   def up
-    Orchestration::Agent.find_by(name: "Records::StoreAgent")
-      &.update!(output_schema: SCHEMA)
+    execute <<~SQL.squish
+      UPDATE orchestration_agents SET output_schema = #{quote(SCHEMA.to_json)} WHERE name = 'Records::StoreAgent'
+    SQL
 
-    Orchestration::Action.find_by(name: "Store Emails")
-      &.update!(output_schema: nil)
+    execute <<~SQL.squish
+      UPDATE actions SET output_schema = NULL WHERE name = 'Store Emails'
+    SQL
   end
 
   def down
