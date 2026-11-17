@@ -1,12 +1,12 @@
 module RuboCop
   module Cop
     module App
-      # Services return a `Result = Data.define(...)` value object.
+      # Services return a `Result = Data.define(...)` value object; a `*Result` name (e.g. `ComparisonResult`) also counts.
       class ServiceMustDefineResult < Base
         extend AutoCorrector
 
-        MSG = "Services must define `Result = Data.define(...)` and return it."
-        STRUCT_MSG = "Define `Result` with `Data.define`, not `Struct.new`."
+        MSG = "Services must define `Result = Data.define(...)` (or a `*Result` name) and return it."
+        STRUCT_MSG = "Define `%<name>s` with `Data.define`, not `Struct.new`."
 
         def on_class(node)
           return unless service_file?
@@ -21,7 +21,7 @@ module RuboCop
           return unless service_file?
           return unless result_struct?(node)
 
-          add_offense(node, message: STRUCT_MSG) do |corrector|
+          add_offense(node, message: format(STRUCT_MSG, name: node.to_a[1])) do |corrector|
             _, _, value = *node
             corrector.replace(value.receiver.source_range, "Data")
             corrector.replace(value.loc.selector, "define")
@@ -39,16 +39,20 @@ module RuboCop
           return false unless body
 
           children = body.begin_type? ? body.children : [ body ]
-          children.any? { |child| child.casgn_type? && child.to_a[1] == :Result }
+          children.any? { |child| child.casgn_type? && result_name?(child.to_a[1]) }
         end
 
         def result_struct?(node)
           _, name, value = *node
-          return false unless name == :Result
+          return false unless result_name?(name)
           return false unless value&.send_type? && value.method_name == :new
           return false unless value.receiver&.const_type?
 
           value.receiver.short_name == :Struct
+        end
+
+        def result_name?(name)
+          name.to_s.end_with?("Result")
         end
       end
     end

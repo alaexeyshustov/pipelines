@@ -1,6 +1,6 @@
 module Evaluation
   class Comparison
-    Result = Data.define(:baseline_score, :candidate_score, :baseline_metrics, :candidate_metrics, :metric_deltas, :overall_delta)
+    ComparisonResult = Data.define(:baseline_score, :candidate_score, :baseline_metrics, :candidate_metrics, :metric_deltas, :overall_delta)
 
     def self.call(baseline_experiment:, candidate_experiment:)
       new(baseline_experiment: baseline_experiment, candidate_experiment: candidate_experiment).call
@@ -20,7 +20,7 @@ module Evaluation
       candidate_score = overall_average(@candidate_experiment)
       overall_delta   = (baseline_score && candidate_score) ? candidate_score - baseline_score : nil
 
-      Result.new(
+      ComparisonResult.new(
         baseline_score: baseline_score,
         candidate_score: candidate_score,
         baseline_metrics: baseline_metrics,

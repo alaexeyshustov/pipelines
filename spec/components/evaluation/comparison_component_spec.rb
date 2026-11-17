@@ -4,7 +4,7 @@ RSpec.describe Evaluation::ComparisonComponent, type: :component do
   subject(:rendered) { render_inline(component) }
 
   let(:result) do
-    Evaluation::Comparison::Result.new(
+    Evaluation::Comparison::ComparisonResult.new(
       baseline_score: 0.6,
       candidate_score: 0.8,
       baseline_metrics: { "clarity" => 0.6, "accuracy" => 0.6 },
@@ -43,7 +43,7 @@ RSpec.describe Evaluation::ComparisonComponent, type: :component do
 
   context "with negative delta" do
     let(:result) do
-      Evaluation::Comparison::Result.new(
+      Evaluation::Comparison::ComparisonResult.new(
         baseline_score: 0.8,
         candidate_score: 0.6,
         baseline_metrics: { "clarity" => 0.8 },
@@ -64,7 +64,7 @@ RSpec.describe Evaluation::ComparisonComponent, type: :component do
 
   context "with nil score" do
     let(:result) do
-      Evaluation::Comparison::Result.new(
+      Evaluation::Comparison::ComparisonResult.new(
         baseline_score: nil,
         candidate_score: nil,
         baseline_metrics: {},

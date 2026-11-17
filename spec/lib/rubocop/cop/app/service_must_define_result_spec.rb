@@ -7,7 +7,7 @@ RSpec.describe RuboCop::Cop::App::ServiceMustDefineResult, :config do
   it "registers an offense when a service defines no Result" do
     expect_offense(<<~RUBY, file)
       class FooService
-      ^^^^^^^^^^^^^^^^ Services must define `Result = Data.define(...)` and return it.
+      ^^^^^^^^^^^^^^^^ Services must define `Result = Data.define(...)` (or a `*Result` name) and return it.
         def self.call
           new.call
         end
@@ -31,6 +31,21 @@ RSpec.describe RuboCop::Cop::App::ServiceMustDefineResult, :config do
       class FooService
         Result = Data.define(:ok, :value)
       end
+    RUBY
+  end
+
+  it "registers no offense for a *Result name" do
+    expect_no_offenses(<<~RUBY, file)
+      class Comparison
+        ComparisonResult = Data.define(:ok)
+      end
+    RUBY
+  end
+
+  it "registers an offense when a *Result name uses Struct.new" do
+    expect_offense(<<~RUBY, file)
+      ComparisonResult = Struct.new(:ok)
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Define `ComparisonResult` with `Data.define`, not `Struct.new`.
     RUBY
   end
 

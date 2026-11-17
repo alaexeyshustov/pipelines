@@ -27,7 +27,7 @@ RSpec.describe Evaluation::Comparison do
 
       it "returns a Result" do
         result = described_class.call(baseline_experiment: baseline, candidate_experiment: candidate)
-        expect(result).to be_a(Evaluation::Comparison::Result)
+        expect(result).to be_a(Evaluation::Comparison::ComparisonResult)
       end
 
       it "computes per-metric deltas (positive = improvement)" do

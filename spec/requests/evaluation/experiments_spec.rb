@@ -132,7 +132,7 @@ RSpec.describe "Evaluation::Experiments" do
 
       before do
         allow(Evaluation::Comparison).to receive(:call).and_return(
-          Evaluation::Comparison::Result.new(
+          Evaluation::Comparison::ComparisonResult.new(
             baseline_score: 0.6,
             candidate_score: 0.8,
             baseline_metrics: { "clarity" => 0.6 },

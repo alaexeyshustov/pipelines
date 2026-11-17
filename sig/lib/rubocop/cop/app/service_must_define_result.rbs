@@ -14,7 +14,7 @@ module RuboCop
 
         def service_file?: () -> bool
         def defines_result?: (::RuboCop::Cop::_Node node) -> bool
-        def result_struct?: (::RuboCop::Cop::_Node node) -> bool
+        def result_struct?: (::RuboCop::Cop::_Node node) -> bool def result_name?: (Symbol? name) -> bool
       end
     end
   end
