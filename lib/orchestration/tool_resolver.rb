@@ -17,6 +17,10 @@ module Orchestration
       "Records::UpdateRowsTool"    => Records::UpdateRowsTool
     }.freeze
 
+    def self.lookup(name)
+      REGISTRY.fetch(name) { raise ArgumentError, "Unknown tool class: #{name}" }
+    end
+
     def initialize(agent:)
       @agent = agent
     end
@@ -25,8 +29,8 @@ module Orchestration
       configured = @agent.tools.presence
       return resolve_configured(configured) if configured
 
-      agent_class = @agent.name.safe_constantize # : singleton(RubyLLM::Agent)
-      return agent_class.tools if agent_class.respond_to?(:tools) # steep:ignore
+      agent_class = @agent.name.safe_constantize
+      return agent_class.tools if agent_class.is_a?(Class) && agent_class < RubyLLM::Agent
 
       raise ArgumentError, "agent #{@agent.name.inspect} has no configured tools"
     end
@@ -34,11 +38,7 @@ module Orchestration
     private
 
     def resolve_configured(configured)
-      configured.map { |tool| resolve_class(tool) }
-    end
-
-    def resolve_class(tool)
-      REGISTRY.fetch(tool) { raise ArgumentError, "Unknown tool class: #{tool}" }
+      configured.map { |tool| self.class.lookup(tool) }
     end
   end
 end

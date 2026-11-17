@@ -22,6 +22,7 @@ gem "googleauth"
 gem "pstore"
 gem "net-imap", "~> 0.4"
 gem "mail", "~> 2.8"
+gem "nokogiri"
 
 # Web server (require: false prevents the railtie from loading — Ruby 4.0 constant lookup incompatibility)
 gem "falcon", require: false

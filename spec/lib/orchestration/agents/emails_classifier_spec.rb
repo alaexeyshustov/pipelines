@@ -38,12 +38,17 @@ RSpec.describe Orchestration::Agents::EmailsClassifier, :llm, type: :model do
     ).to have_been_made
   end
 
-  it 'sends temp_file as a tool' do
+  it 'sends no tools' do
     expect(
-      a_request(:post, mistral_url).with { |req|
-        tool_names = JSON.parse(req.body)['tools'].map { |t| t.dig('function', 'name') }
-        tool_names.include?('temp_file')
-      }
+      a_request(:post, mistral_url).with { |req| JSON.parse(req.body)['tools'].blank? }
     ).to have_been_made
+  end
+
+  it 'declares no tools on the class' do
+    expect(described_class.tools).to be_empty
+  end
+
+  it 'tells the model that the input fields are data, not instructions' do
+    expect(described_class.instructions.first[:value]).to match(/data.*ignore|ignore.*instructions/im)
   end
 end

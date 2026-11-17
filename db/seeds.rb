@@ -33,7 +33,6 @@ CLASSIFY_EMAILS_OUTPUT_SCHEMA = {
 AGENT_DEFINITIONS = {
   "Orchestration::Agents::EmailsClassifier" => {
     model:         LlmModels.emails_agent,
-    tools:         [ "Records::TempFileTool" ],
     output_schema: CLASSIFY_EMAILS_OUTPUT_SCHEMA,
     prompt:        <<~PROMPT
       You are an email classifier. Your job is to tag a list of emails by their subject lines and return suggested tags.

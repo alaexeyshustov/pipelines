@@ -265,7 +265,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
       it 'applies the Evaluation::Prompt system_prompt as instructions' do
         described_class.new(pipeline_run).run
-        expect(chat).to have_received(:with_instructions).with("Custom Leva prompt for classifier")
+        expect(chat).to have_received(:with_instructions).with("#{Orchestration::RuntimeAgentBuilder::UNTRUSTED_INPUT_PREAMBLE}\n\nCustom Leva prompt for classifier")
       end
     end
 
@@ -286,7 +286,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
       it 'prefers the Evaluation::Prompt over the agent prompt' do
         described_class.new(pipeline_run).run
-        expect(chat).to have_received(:with_instructions).with("Leva wins over agent prompt")
+        expect(chat).to have_received(:with_instructions).with("#{Orchestration::RuntimeAgentBuilder::UNTRUSTED_INPUT_PREAMBLE}\n\nLeva wins over agent prompt")
       end
     end
 
@@ -302,7 +302,7 @@ RSpec.describe Orchestration::PipelineRunner do
 
       it 'falls back to the agent prompt' do
         described_class.new(pipeline_run).run
-        expect(chat).to have_received(:with_instructions).with("Agent-level fallback prompt")
+        expect(chat).to have_received(:with_instructions).with("#{Orchestration::RuntimeAgentBuilder::UNTRUSTED_INPUT_PREAMBLE}\n\nAgent-level fallback prompt")
       end
     end
 
@@ -316,9 +316,9 @@ RSpec.describe Orchestration::PipelineRunner do
         create(:orchestration_step_action, step: step1, action: action, position: 1)
       end
 
-      it 'does not call with_instructions on the chat' do
+      it 'applies only the untrusted-input preamble as instructions' do
         described_class.new(pipeline_run).run
-        expect(chat).not_to have_received(:with_instructions)
+        expect(chat).to have_received(:with_instructions).with(Orchestration::RuntimeAgentBuilder::UNTRUSTED_INPUT_PREAMBLE)
       end
     end
 

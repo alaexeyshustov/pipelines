@@ -34,7 +34,6 @@ module Orchestration
     def resolved_model: () -> String?
     def resolved_prompt: () -> String?
     def resolved_tools: () -> Array[singleton(RubyLLM::Tool)]?
-    def resolve_tool_class: (String | singleton(RubyLLM::Tool) tool) -> singleton(RubyLLM::Tool)
     def resolved_output_schema: () -> json_object?
     def resolved_generation_schema: () -> json_object?
     def normalized_hash: (json_object | String | nil value, field_name: String) -> json_object

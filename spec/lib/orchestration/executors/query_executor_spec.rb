@@ -71,6 +71,38 @@ RSpec.describe Orchestration::Executors::Query do
       end
     end
 
+    context 'when column_name is not a readable column' do
+      it 'raises ArgumentError for an unknown column' do
+        expect {
+          described_class.call(table: "interviews", column_name: "nonexistent", column_values: [ "x" ])
+        }.to raise_error(ArgumentError, /Unknown column/)
+      end
+
+      it 'raises ArgumentError for a SQL fragment' do
+        expect {
+          described_class.call(table: "interviews", column_name: "1=1 OR company", column_values: [ "x" ])
+        }.to raise_error(ArgumentError, /Unknown column/)
+      end
+    end
+
+    context 'when columns include created_at' do
+      it 'returns created_at alongside the tool columns' do
+        result = described_class.call(
+          table: "interviews", column_name: "company", column_values: [ "Acme" ], columns: [ "company", "created_at" ]
+        )
+        expect(result["interviews"].first.keys).to contain_exactly("company", "created_at")
+      end
+    end
+
+    context 'when columns contains an unknown entry' do
+      it 'raises ArgumentError' do
+        expect {
+          described_class.call(table: "interviews", column_name: "status",
+                               column_values: [ "rejected" ], columns: [ "company", "nonexistent" ])
+        }.to raise_error(ArgumentError, /Unknown column/)
+      end
+    end
+
     describe '.input_schema' do
       it 'returns a JSON Schema with required fields' do
         schema = described_class.input_schema

@@ -46,14 +46,39 @@ RSpec.describe Orchestration::AgentResolutionPolicy do
       expect(result.tools).to eq([ Records::TempFileTool ])
     end
 
-    it 'raises ArgumentError when a tool is outside allowed namespaces' do
-      allow(agent_record).to receive(:tools).and_return([ "Kernel::Exec" ])
-      expect { policy }.to raise_error(ArgumentError, /outside allowed namespaces/)
+    it 'resolves no tools when tool_classes is an empty array' do
+      result = described_class.new(action: action, tool_classes: []).resolve
+      expect(result.tools).to eq([])
     end
 
-    it 'raises ArgumentError when a tool class cannot be found' do
-      allow(agent_record).to receive(:tools).and_return([ "Records::NonExistentTool" ])
-      expect { policy }.to raise_error(ArgumentError, /NonExistentTool/)
+    it 'passes caller-supplied anonymous subclasses through unvalidated' do
+      stub_const('BlockedTempFileTool', Class.new(Records::TempFileTool))
+      blocked = BlockedTempFileTool
+      result = described_class.new(action: action, tool_classes: [ blocked ]).resolve
+      expect(result.tools).to eq([ blocked ])
+    end
+
+    it 'resolves Emails::ClassifyTool to the registry subclass bound to the classifier' do
+      allow(agent_record).to receive(:tools).and_return([ 'Emails::ClassifyTool' ])
+      expect(policy.tools.first.classifier).to eq(Orchestration::Agents::EmailsClassifier)
+    end
+
+    it 'resolves through Orchestration::ToolResolver.lookup' do
+      allow(Orchestration::ToolResolver).to receive(:lookup).and_call_original
+      policy
+      expect(Orchestration::ToolResolver).to have_received(:lookup).with('Records::TempFileTool')
+    end
+
+    [ 'Kernel::Exec', 'Records::NonExistentTool', 'Records::ModelResolver', 'Emails::Adapters::GmailAdapter' ].each do |name|
+      it "raises ArgumentError for stored tool #{name}" do
+        allow(agent_record).to receive(:tools).and_return([ name ])
+        expect { policy }.to raise_error(ArgumentError, /Unknown tool class: #{Regexp.escape(name)}/)
+      end
+    end
+
+    it 'does not accept a Class stored in the agent tools' do
+      allow(agent_record).to receive(:tools).and_return([ Records::TempFileTool ])
+      expect { policy }.to raise_error(ArgumentError)
     end
   end
 

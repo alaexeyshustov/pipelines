@@ -4,6 +4,8 @@ module Orchestration
 
     @agent: Agent
 
+    def self.lookup: (String name) -> singleton(RubyLLM::Tool)
+
     def initialize: (agent: Agent) -> void
 
     def resolve: () -> Array[singleton(RubyLLM::Tool)]
@@ -11,6 +13,5 @@ module Orchestration
     private
 
     def resolve_configured: (Array[String] configured) -> Array[singleton(RubyLLM::Tool)]
-    def resolve_class: (String tool) -> singleton(RubyLLM::Tool)
   end
 end

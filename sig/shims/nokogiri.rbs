@@ -1,0 +1,8 @@
+module Nokogiri
+  def self.HTML5: (String | IO input, ?max_tree_depth: Integer) -> Nokogiri::HTML5::Document
+
+  module HTML5
+    class Document < Nokogiri::HTML::Document
+    end
+  end
+end

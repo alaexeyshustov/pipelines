@@ -1,8 +1,14 @@
 module Emails
   module HtmlText
-    NOISE: Regexp
-    ENTITIES: Hash[String, String]
+    SKIPPED_TAGS: Array[String]
+    BLOCK_TAGS: Array[String]
+    HIDDEN_STYLE: Regexp
+    MAX_TREE_DEPTH: Integer
+    TOO_DEEP_MARKER: String
 
     def self?.to_text: (String html) -> String
+    def self?.collect: (Array[Nokogiri::XML::Node] nodes, String buffer) -> void
+    def self?.collect_element: (Nokogiri::XML::Node node, String buffer, Array[Nokogiri::XML::Node | :newline] stack) -> void
+    def self?.skipped?: (Nokogiri::XML::Node node) -> bool
   end
 end

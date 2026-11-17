@@ -1,13 +1,22 @@
 module Records
   class TempFileTool < RubyLLM::Tool
+    FILENAME_PATTERN: Regexp
+    MAX_WRITE_BYTES: Integer
+    WRITE_FLAGS: Integer
+
+    self.@scratch_dir: Pathname?
+
     def self.readonly?: () -> bool
+    def self.scratch_dir: () -> Pathname
+    def self.scratch_dir=: (Pathname? dir) -> Pathname?
     def name: () -> String
     def execute: (action: String, filename: String, ?content: String?) -> String
 
     private
 
+    def valid_filename?: (Object? filename) -> bool
     def read_file: (Pathname path, String filename) -> String
-    def write_file: (Pathname root, Pathname path, String filename, String? content) -> String
+    def write_file: (Pathname path, String filename, String? content) -> String
     def delete_file: (Pathname path, String filename) -> String
   end
 end

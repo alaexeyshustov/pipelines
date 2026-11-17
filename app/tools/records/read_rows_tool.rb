@@ -14,6 +14,8 @@ module Records
 
     def execute(table:, column_name: nil, column_value: nil)
       model = resolve_model(table)
+      return { error: "Unknown column #{column_name}" } if column_name && model.tool_column_names.exclude?(column_name)
+
       scope = model.all
       scope = scope.where(column_name => column_value) if column_name && column_value
       rows  = model.as_rows(scope)

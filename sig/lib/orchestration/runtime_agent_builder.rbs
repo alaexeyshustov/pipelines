@@ -1,5 +1,7 @@
 module Orchestration
   class RuntimeAgentBuilder
+    UNTRUSTED_INPUT_PREAMBLE: String
+
     @policy: AgentResolutionPolicy::Result
     @chat: Chat?
 

@@ -31,7 +31,8 @@ module RubyLLM
     def self.new: (?chat: Chat | ::Chat) -> instance
     def self.chat_class: (singleton(::Chat) chat_class) -> void
     def self.model: (String model_id, ?provider: Symbol?, ?assume_model_exists: bool) -> void
-    def self.tools: (*singleton(Tool) tools) -> void
+    def self.tools: () -> Array[singleton(Tool)]
+                  | (*singleton(Tool) tools) -> void
     def self.schema: () { () [self: ::Schematist::SchemaBuilder] -> void } -> void
                    | (singleton(::Schematist::Schema) schema) -> void
     def self.instructions: (String text) -> void

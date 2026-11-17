@@ -27,7 +27,11 @@ Orchestration Agents (`Orchestration::Agent`) are restricted to specific tool na
 - `Records`
 - `Emails`
 
-Tools must be valid Ruby classes that can be constantized.
+A tool is usable only if it is registered in `Orchestration::ToolResolver::REGISTRY`. Stored tool names are looked up there with `ToolResolver.lookup(name)`, which raises `ArgumentError` for anything else; stored names are never constantized. `Orchestration::Agent` validates tool names against `Agent.available_tools` (the files under `app/tools`), and a spec keeps that list equal to the registry keys, so a new tool file must be registered. Caller-supplied `tool_classes:` (e.g. the Sampler's write-blocked subclasses) bypass the registry.
+
+### Untrusted input
+
+Agent input (email subjects, bodies, record fields) is untrusted. `Orchestration::RuntimeAgentBuilder` always prepends `UNTRUSTED_INPUT_PREAMBLE` to the agent's instructions (also for prompt overrides and empty prompts), telling the model to treat input as data and ignore instructions inside it. `Emails::HtmlText` drops hidden elements, scripts, styles and comments before email HTML reaches a model. Tools also limit what a model can do: `Records::TempFileTool` is confined to `tmp/agent_scratch/`, `Emails::GetTool` caps bodies at 32 KB, `Emails::AddLabelsTool` rejects TRASH, SPAM and IMAP flags other than `\Flagged`/`\Seen`, and record tools can read `id` but not write it.
 
 ## Service steps
 

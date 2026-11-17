@@ -12,8 +12,8 @@ module Emails
 
     def name = "search_emails"
 
-    def execute(provider:, query:, max_results: 10, label: nil)
-      Emails.search_messages(provider, query, max_results:, label:)
+    def execute(provider:, query:, max_results: 10, offset: 0, label: nil)
+      Emails.search_messages(provider, query, max_results:, offset:, label:)
     end
   end
 end
