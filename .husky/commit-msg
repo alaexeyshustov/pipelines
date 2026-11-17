@@ -1,0 +1,7 @@
+# Strip Claude Code attribution trailers from commit messages.
+perl -CS -i -0777 -pe '
+  s/^[^\S\n]*(?:🤖[^\S\n]*)?Generated with \[?Claude Code\]?(?:\([^)]*\))?[^\S\n]*\n?//gim;
+  s/^[^\S\n]*Co-Authored-By:[^\S\n]*Claude\b.*\n?//gim;
+  s/\n{3,}/\n\n/g;
+  s/\n+\z/\n/;
+' "$1"
