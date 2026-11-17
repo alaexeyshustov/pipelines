@@ -194,7 +194,7 @@ RSpec.describe LlmModels do
     end
 
     it "applies the model to an agent instance and declares it on an agent class" do
-      agent_class = Class.new(RubyLLM::Agent)
+      agent_class = stub_const("FakeAgent", Class.new(RubyLLM::Agent))
       described_class.ref("ollama/qwen3").declare_on(agent_class)
       agent = described_class.ref("ollama/qwen3:8b").apply_to(agent_class.new)
 

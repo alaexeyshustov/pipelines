@@ -28,7 +28,7 @@ Existing violations are recorded in `archspec_todo.yml` (matched by fingerprint)
 `reflect :rails` adds what Rails resolves at runtime (association targets, custom validators, conditional concern effects), so e.g. a `has_many` from an orchestration model to an `Evaluation::*` model breaks the component rule. `archspec reflect --environment test` boots the app once and writes `archspec_facts/rails.yml`, which is committed: CI runs plain `check` and never boots the app, and fails with `facts.stale` when a model or reflection input changed without regenerating the facts (see `docs/claude/gotchas.md`).
 
 Other archspec 1.2 features, not adopted (GH #249):
-- `descendants_of:` for `Data.define` results: `App/ServiceResultMustUseDataDefine` already enforces the result shape; revisit with the Success/Failure result type (#230) if a dependency rule on results becomes useful.
+- `descendants_of:` for `Data.define` results: ~~`App/ServiceResultMustUseDataDefine`~~ `App/ServiceMustDefineResult` (renamed in #247; it now also requires every service to define `Result = Data.define(...)`) already enforces the result shape; revisit with the Success/Failure result type (#230) if a dependency rule on results becomes useful.
 - ERB view components: views are mostly ViewComponents (already in `interface`); add a `views` component only with a concrete agreed rule.
 
 ## Consequences

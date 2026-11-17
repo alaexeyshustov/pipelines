@@ -1,0 +1,18 @@
+module RuboCop
+  module Cop
+    module App
+      class NoSideEffectAasmCallbacks < ::RuboCop::Cop::Base
+        MSG: String
+        SIDE_EFFECT_METHODS: Array[Symbol]
+        SIDE_EFFECT_CONSTANTS: Array[Symbol]
+
+        def on_block: (::RuboCop::Cop::_Node node) -> void
+
+        private
+
+        def aasm_block?: (::RuboCop::Cop::_Node node) -> bool
+        def side_effect?: (::RuboCop::Cop::_Node node) -> bool
+      end
+    end
+  end
+end

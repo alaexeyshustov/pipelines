@@ -2,10 +2,10 @@ require 'rails_helper'
 
 RSpec.describe Orchestration::Executable do
   def make_executor(&block)
-    Class.new do
+    stub_const("ExecutableHost", Class.new do
       include Orchestration::Executable
       class_eval(&block)
-    end
+    end)
   end
 
   describe '.input_schema' do

@@ -1,0 +1,14 @@
+module RuboCop
+  module Cop
+    module RBS
+      module Style
+        class NoCompactNamespace < ::RuboCop::RBS::CopBase
+          MSG: String
+
+          def on_rbs_class: (::RBS::AST::Declarations::Class | ::RBS::AST::Declarations::Module decl) -> void
+          def on_rbs_module: (::RBS::AST::Declarations::Class | ::RBS::AST::Declarations::Module decl) -> void
+        end
+      end
+    end
+  end
+end

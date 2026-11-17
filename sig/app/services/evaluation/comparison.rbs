@@ -1,6 +1,6 @@
 module Evaluation
   class Comparison
-    class ComparisonResult
+    class Result
       attr_reader baseline_score: Float?
       attr_reader candidate_score: Float?
       attr_reader baseline_metrics: Hash[String, Float]
@@ -21,7 +21,7 @@ module Evaluation
     def self.call: (
       baseline_experiment: Evaluation::Experiment,
       candidate_experiment: Evaluation::Experiment
-    ) -> ComparisonResult
+    ) -> Result
 
     @baseline_experiment: Evaluation::Experiment
     @candidate_experiment: Evaluation::Experiment
@@ -31,7 +31,7 @@ module Evaluation
       candidate_experiment: Evaluation::Experiment
     ) -> void
 
-    def call: () -> ComparisonResult
+    def call: () -> Result
 
     private
 

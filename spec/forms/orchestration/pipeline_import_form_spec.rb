@@ -5,10 +5,10 @@ RSpec.describe Orchestration::PipelineImportForm do
   let(:pipeline) { build_stubbed(:orchestration_pipeline) }
   let(:importer) do
     result = result_class.new([ pipeline ], [])
-    Class.new do
+    stub_const("FakePipelineImporter", Class.new do
       define_singleton_method(:call) { |hash| (@calls ||= []) << hash; result }
       define_singleton_method(:calls) { @calls }
-    end
+    end)
   end
 
   before { stub_const("Orchestration::PipelineImporter", importer) }

@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe SteepHacks do
   subject(:instance) { host_class.new }
 
-  let(:host_class) { Class.new { include SteepHacks } }
+  let(:host_class) { stub_const("SteepHacksHost", Class.new { include SteepHacks }) }
 
   describe '#empty_object' do
     it 'returns an empty hash' do

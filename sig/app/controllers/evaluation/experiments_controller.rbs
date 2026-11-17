@@ -5,7 +5,7 @@ module Evaluation
     @experiments: Experiment::relation
     @experiment: Experiment
     @candidate: Experiment?
-    @result: Comparison::ComparisonResult?
+    @result: Comparison::Result?
     @metric_name: String?
     @justifications: Justification::relation
     @wizard_form: WizardForm

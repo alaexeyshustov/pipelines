@@ -111,3 +111,25 @@ Style/FrozenStringLiteralComment:
 App/ComponentMustHavePreview:
   Exclude:
     - 'app/components/application_component.rb'
+
+# Services that still return raw values or row types; convert them with the result-returning services (GH #230).
+App/ServiceMustDefineResult:
+  Exclude:
+    - 'app/services/document/download.rb'
+    - 'app/services/document/search_query.rb'
+    - 'app/services/document/text_extractor.rb'
+    - 'app/services/email/search_query.rb'
+    - 'app/services/emails/retrieval_service.rb'
+    - 'app/services/emails/test_connection_service.rb'
+    - 'app/services/evaluation/active_prompt_resolver.rb'
+    - 'app/services/evaluation/agent_summary_query.rb'
+    - 'app/services/evaluation/experiment_usage_query.rb'
+    - 'app/services/evaluation/improve_failure_logger.rb'
+    - 'app/services/evaluation/metric_pass_rate_query.rb'
+    - 'app/services/evaluation/metric_suggester.rb'
+    - 'app/services/evaluation/pass_rate_query.rb'
+    - 'app/services/evaluation/prompt_creator.rb'
+    - 'app/services/evaluation/sampler.rb'
+    - 'app/services/gist_uploader.rb'
+    - 'app/services/interviews/csv_export_service.rb'
+    - 'app/services/tag_pages/search.rb'

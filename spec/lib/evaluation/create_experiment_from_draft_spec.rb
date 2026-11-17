@@ -3,13 +3,16 @@ require "rails_helper"
 RSpec.describe Evaluation::CreateExperimentFromDraft do
   let(:dataset) { create(:evaluation_dataset) }
   let(:prompt)  { create(:orchestration_prompt) }
-  let!(:metric) { create(:evaluation_metric, agent_name: prompt.name, active: true) }
+  let(:metric_active) { true }
+
+  before do
+    create(:evaluation_metric, agent_name: prompt.name, active: metric_active)
+    allow(Evaluation::ExperimentJob).to receive(:perform_later)
+  end
 
   def build_draft(payload)
     create(:evaluation_wizard_draft, payload: payload, step: 4)
   end
-
-  before { allow(Evaluation::ExperimentJob).to receive(:perform_later) }
 
   describe ".call" do
     context "when prompt_id is present in the payload" do
@@ -94,7 +97,7 @@ RSpec.describe Evaluation::CreateExperimentFromDraft do
     end
 
     context "when agent has no active metrics" do
-      before { metric.update!(active: false) }
+      let(:metric_active) { false }
 
       let(:draft) do
         build_draft(

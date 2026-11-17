@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe Paginable do
   let(:stub_class) do
-    Class.new do
+    stub_const("PaginableHost", Class.new do
       include Paginable
 
       self.paginable_sortable          = %w[date company job_title]
@@ -23,7 +23,7 @@ RSpec.describe Paginable do
         )
         set_pagination_params
       end
-    end
+    end)
   end
 
   def build_ctrl(params = {})
@@ -65,7 +65,7 @@ RSpec.describe Paginable do
 
     context "when sort param default is a symbol" do
       let(:symbol_default_class) do
-        Class.new do
+        stub_const("PaginableSymbolDefaultHost", Class.new do
           include Paginable
 
           self.paginable_sortable          = %w[date]
@@ -85,7 +85,7 @@ RSpec.describe Paginable do
             )
             set_pagination_params
           end
-        end
+        end)
       end
 
       it "coerces the default sort to a string" do
@@ -95,7 +95,7 @@ RSpec.describe Paginable do
 
     context "when a custom default direction is configured" do
       let(:asc_default_class) do
-        Class.new do
+        stub_const("PaginableAscDefaultHost", Class.new do
           include Paginable
 
           self.paginable_sortable          = %w[date]
@@ -115,7 +115,7 @@ RSpec.describe Paginable do
             )
             set_pagination_params
           end
-        end
+        end)
       end
 
       it "uses the configured default direction when no param is present" do

@@ -4,9 +4,9 @@ RSpec.describe Emails::TestConnectionService do
   let(:connector) { EmailConnector.create!(name: "Y", provider: "yahoo", configuration: { host: "h", port: 993 }) }
 
   def stub_tester(outcome)
-    tester = Class.new do
+    tester = stub_const("FakeConnectionTester", Class.new do
       define_method(:call) { outcome }
-    end.new
+    end).new
     allow(Emails::ConnectionTester).to receive(:new).and_return(tester)
   end
 

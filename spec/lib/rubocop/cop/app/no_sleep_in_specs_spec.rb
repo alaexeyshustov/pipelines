@@ -1,20 +1,21 @@
 require "support/rubocop_support"
 require "rubocop/cop/app_cops"
 
-RSpec.describe RuboCop::Cop::App::NoSleepInSystemSpecs, :config do
+RSpec.describe RuboCop::Cop::App::NoSleepInSpecs, :config do
   it "registers an offense for sleep in a system spec" do
     expect_offense(<<~RUBY, "spec/system/foo_spec.rb")
       it "waits" do
         sleep(1)
-        ^^^^^^^^ Do not use `sleep` in system specs; use Capybara's async helpers instead.
+        ^^^^^^^^ Do not use `sleep` in specs; use Capybara's async helpers or `travel_to` instead.
       end
     RUBY
   end
 
-  it "registers no offense for sleep in a non-system spec" do
-    expect_no_offenses(<<~RUBY, "spec/services/foo_spec.rb")
+  it "registers an offense for sleep in a non-system spec" do
+    expect_offense(<<~RUBY, "spec/services/foo_spec.rb")
       it "waits" do
         sleep(1)
+        ^^^^^^^^ Do not use `sleep` in specs; use Capybara's async helpers or `travel_to` instead.
       end
     RUBY
   end

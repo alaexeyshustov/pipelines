@@ -1,0 +1,8 @@
+module UI
+  class ActionComponent
+    class LinkComponent < ViewComponent::Base
+      def initialize: (label: String?, url: String?, ?variant: ActionComponent::action_variant?) -> void
+      def link_classes: () -> String
+    end
+  end
+end

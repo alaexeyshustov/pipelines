@@ -1,0 +1,8 @@
+module UI
+  class ActionComponent
+    class DeleteComponent < ViewComponent::Base
+      def initialize: (label: String?, url: String?, ?confirm: String?) -> void
+      def css_classes: () -> String
+    end
+  end
+end

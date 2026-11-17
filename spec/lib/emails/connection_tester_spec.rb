@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe Emails::ConnectionTester do
   let(:yahoo_class) do
-    Class.new do
+    stub_const("FakeYahooClient", Class.new do
       class << self
         attr_accessor :init_args, :error
       end
@@ -17,11 +17,11 @@ RSpec.describe Emails::ConnectionTester do
 
         []
       end
-    end
+    end)
   end
 
   let(:gmail_class) do
-    Class.new do
+    stub_const("FakeGmailClient", Class.new do
       class << self
         attr_accessor :env_args, :profile_requests
       end
@@ -38,7 +38,7 @@ RSpec.describe Emails::ConnectionTester do
       end
 
       def on_init; end
-    end
+    end)
   end
 
   let(:providers) { { "yahoo" => yahoo_class, "gmail" => gmail_class } }

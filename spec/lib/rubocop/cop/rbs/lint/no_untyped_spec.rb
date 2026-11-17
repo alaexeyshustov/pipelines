@@ -98,4 +98,18 @@ RSpec.describe RuboCop::Cop::RBS::Lint::NoUntyped, :config do
       expect(inspect_rbs_source(source)).to be_empty
     end
   end
+
+  context "when Array or Hash has no type arguments" do
+    it "registers an offense" do
+      source = <<~RBS
+        class Foo
+          def ids: () -> Array
+          def store: (::Hash options) -> void
+        end
+      RBS
+
+      expect(offense_messages(source)).to all(eq(described_class::BARE_COLLECTION_MSG))
+      expect(offense_highlights(source)).to contain_exactly("Array", "::Hash")
+    end
+  end
 end

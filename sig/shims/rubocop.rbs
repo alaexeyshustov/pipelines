@@ -36,6 +36,7 @@ module RuboCop
       def class_type?: () -> bool
       def begin_type?: () -> bool
       def def_type?: () -> bool
+      def casgn_type?: () -> bool
       def defs_type?: () -> bool
       def self_type?: () -> bool
       def cbase_type?: () -> bool
@@ -43,6 +44,15 @@ module RuboCop
       def parent_class: () -> _Node?
       def const_name: () -> String?
       def identifier: () -> _Node
+      def parent: () -> _Node?
+      def equal?: (top) -> bool
+      def send_node: () -> _Node
+      def name: () -> Symbol
+      def each_descendant: (*Symbol) { (_Node) -> void } -> void
+      def block_type?: () -> bool
+      def block_pass_type?: () -> bool
+      def kwarg_type?: () -> bool
+      def kwoptarg_type?: () -> bool
     end
 
     interface _Corrector
@@ -50,12 +60,12 @@ module RuboCop
     end
 
     class Base
-      def add_offense: (top range, ?message: String) -> void
+      def add_offense: (top range, ?message: String) ?{ (_Corrector) -> void } -> void
       def range_between: (Integer start_pos, Integer end_pos) -> top
       def processed_source: () -> _ProcessedSource
     end
 
-    module AutocorrectLogic
+    module AutoCorrector
     end
 
     module RangeHelp
@@ -63,12 +73,8 @@ module RuboCop
   end
 
   module RBS
-    interface _Located
-      def location: () -> top
-    end
-
     module OnTypeHelper
-      def on_type: (Array[Class] types, ::RBS::Types::t type) { (_Located) -> void } -> void
+      def on_type: (Array[Class] types, ::RBS::Types::t type) { (::RBS::Types::t) -> void } -> void
     end
 
     class CopBase < ::RuboCop::Cop::Base

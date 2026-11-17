@@ -11,11 +11,10 @@ module UI
         compact: "px-6 py-4"
       }.freeze
 
-      def initialize(key: nil, label: nil, style: :default, classes: nil, variant: nil, cell: nil, badge_component: nil, component: nil, props: nil, sort_url: nil, sort_active: false, sort_direction: nil)
+      def initialize(key: nil, label: nil, style: :default, variant: nil, cell: nil, badge_component: nil, component: nil, props: nil, sort_url: nil, sort_active: false, sort_direction: nil)
         @key             = key
         @label           = label || derive_label(key)
         @style           = style.to_sym
-        @classes         = classes
         @variant         = variant&.to_sym
         @cell            = cell
         @badge_component = badge_component
@@ -63,8 +62,6 @@ module UI
       end
 
       def cell_css_classes
-        return @classes if @classes
-
         parts = [ CellComponent::PADDING_CLASSES.fetch(@style, CellComponent::PADDING_CLASSES[:default]) ]
         parts << CellComponent::VARIANT_CLASSES[@variant] if @variant && CellComponent::VARIANT_CLASSES.key?(@variant)
         parts.join(" ")

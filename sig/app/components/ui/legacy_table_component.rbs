@@ -5,7 +5,7 @@ module UI
       def empty?: () -> bool
     end
 
-    type cell = { ?style: Symbol, ?variant: Symbol?, ?classes: String? }
+    type cell = { ?style: Symbol, ?variant: Symbol? }
     type sort_param = { ?sort_url: String, ?sort_active: bool, ?sort_direction: String }
     type batch_action = { ?type: Symbol, ?label: String?, ?url: String?, ?action: String?, ?variant: Symbol?, ?confirm: String?, ?dialog_title: String?, ?require_selection: bool }
     type column = { key: String, ?label: String?, ?cell: (^(ApplicationRecord) -> String)?, ?badge_component: singleton(ViewComponent::Base)?, ?component: singleton(ViewComponent::Base)?, ?props: (^(ApplicationRecord) -> Hash[Symbol, top])? } & cell & sort_param

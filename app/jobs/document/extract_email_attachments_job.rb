@@ -7,7 +7,6 @@
 #
 # A new Document is queued for embedding and then for tagging (Document::TagJob), each its own job so a failing
 # classifier cannot lose the embedding; an untagged Document is re-queued by EmailsSync (tagged_at stays NULL).
-# Orchestrates services here because services must not call each other (App/ServiceMustNotCallService).
 class Document::ExtractEmailAttachmentsJob < ApplicationJob
   def perform(email_id)
     email = Email.find(email_id)

@@ -8,7 +8,7 @@ module Evaluation
                                         output_schema: {})
       experiment = Evaluation::Experiment.new(id: 1, name: "Experiment #1",
                                               dataset: dataset, prompt: prompt)
-      render(Evaluation::ExperimentDetailComponent.new(experiment: experiment))
+      render(Evaluation::ExperimentDetailComponent.new(experiment: experiment, metrics: [], sample_count: 0))
     end
   end
 end
