@@ -44,5 +44,6 @@ module UI
     private
 
     def subcomponent: () -> ViewComponent::Base
+    def dialog_component: () -> DialogComponent
   end
 end

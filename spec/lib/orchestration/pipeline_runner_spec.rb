@@ -163,25 +163,10 @@ RSpec.describe Orchestration::PipelineRunner do
           .with(satisfy { |json| JSON.parse(json) == {} })
       end
 
-      it 'uses the database output schema for structured output requests' do # rubocop:disable RSpec/ExampleLength
+      it 'uses the database output schema for structured output requests' do
         described_class.new(pipeline_run).run
 
-        expect(serialized_agent).to have_received(:with_schema).with(
-          "type" => "object",
-          "required" => [ "result" ],
-          "properties" => {
-            "result" => {
-              "type" => "array",
-              "items" => {
-                "type" => "object",
-                "required" => [ "id" ],
-                "properties" => {
-                  "id" => { "type" => "string" }
-                }
-              }
-            }
-          }
-        )
+        expect(serialized_agent).to have_received(:with_schema).with(agent_attributes[:output_schema])
       end
     end
 
@@ -426,19 +411,19 @@ RSpec.describe Orchestration::PipelineRunner do
         allow(stub_agent).to receive(:ask).and_raise(RubyLLM::Error.new("An unknown error occurred", response: response))
       end
 
-      it "persists structured provider diagnostics and logs them" do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
+      it "persists structured provider diagnostics on the action run" do
         described_class.new(pipeline_run).run
 
-        action_run = Orchestration::ActionRun.last
-        expect(action_run.status).to eq("failed")
-        expect(action_run.error).to eq("openai API error (429): Rate limit exceeded")
-        expect(action_run.error_details).to include(
-          "category" => "provider_http_error",
-          "provider" => "openai",
-          "model" => "gpt-4.1-mini",
-          "status_code" => 429,
-          "message" => "Rate limit exceeded"
+        expect(Orchestration::ActionRun.last).to have_attributes(
+          status: "failed", error: "openai API error (429): Rate limit exceeded",
+          error_details: a_hash_including("category" => "provider_http_error", "provider" => "openai", "model" => "gpt-4.1-mini",
+                                          "status_code" => 429, "message" => "Rate limit exceeded")
         )
+      end
+
+      it "fails the pipeline run with the summary and logs the category" do
+        described_class.new(pipeline_run).run
+
         expect(pipeline_run.reload.error).to eq("openai API error (429): Rate limit exceeded")
         expect(Rails.logger).to have_received(:error).with(include('"category":"provider_http_error"'))
       end
@@ -455,24 +440,20 @@ RSpec.describe Orchestration::PipelineRunner do
         expect(Rails.logger).to have_received(:error).with(include('"chat_id"'))
       end
 
-      it 'logs every failure field mapped to the correct value' do # rubocop:disable RSpec/ExampleLength
-        logged = nil
-        allow(Rails.logger).to receive(:error) { |payload| logged = payload }
-
+      it 'logs every failure field mapped to the correct value' do
         described_class.new(pipeline_run).run
         action_run = Orchestration::ActionRun.last
 
-        expect(JSON.parse(logged)).to eq(
-          "event"           => "orchestration.action_run_failed",
-          "category"        => "provider_http_error",
-          "provider"        => "openai",
-          "model"           => "gpt-4.1-mini",
-          "status_code"     => 429,
-          "action_run_id"   => action_run.id,
-          "pipeline_run_id" => pipeline_run.id,
-          "chat_id"         => action_run.chat_id,
-          "summary"         => "openai API error (429): Rate limit exceeded"
-        )
+        expect(Rails.logger).to have_received(:error).with(satisfy { |payload| JSON.parse(payload) == logged_failure(action_run) })
+      end
+
+      def logged_failure(action_run)
+        {
+          "event" => "orchestration.action_run_failed", "category" => "provider_http_error", "provider" => "openai",
+          "model" => "gpt-4.1-mini", "status_code" => 429, "action_run_id" => action_run.id,
+          "pipeline_run_id" => pipeline_run.id, "chat_id" => action_run.chat_id,
+          "summary" => "openai API error (429): Rate limit exceeded"
+        }
       end
     end
 
@@ -586,16 +567,14 @@ RSpec.describe Orchestration::PipelineRunner do
         allow(stub_agent).to receive_messages(with_schema: stub_agent, ask: build_message("I need more information."))
       end
 
-      it 'marks the ActionRun as failed with invalid model output diagnostics' do # rubocop:disable RSpec/MultipleExpectations
+      it 'marks the ActionRun as failed with invalid model output diagnostics' do
         described_class.new(pipeline_run).run
-        action_run = Orchestration::ActionRun.last
-        expect(action_run.status).to eq("failed")
-        expect(action_run.error).to match(/Invalid model output/)
-        expect(action_run.error_details).to include(
-          "category" => "invalid_model_output",
-          "message" => a_string_matching(/Invalid model output/)
+        expect(Orchestration::ActionRun.last).to have_attributes(
+          status: "failed", error: a_string_matching(/Invalid model output/),
+          error_details: a_hash_including("category" => "invalid_model_output",
+                                          "message" => a_string_matching(/Invalid model output/),
+                                          "raw_response_excerpt" => a_string_including("I need more information."))
         )
-        expect(action_run.error_details["raw_response_excerpt"]).to include("I need more information.")
       end
 
       it 'marks the PipelineRun as failed' do

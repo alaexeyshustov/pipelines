@@ -47,29 +47,23 @@ module UI
 
     private
 
-    def subcomponent # rubocop:disable Metrics/MethodLength
+    def subcomponent
       case @type
-      when :link
-        LinkComponent.new(label: @label, url: @url, variant: @variant)
-      when :button
-        ButtonComponent.new(label: @label, url: @url, method: @method, variant: @variant)
-      when :delete
-        DeleteComponent.new(label: @label, url: @url, confirm: @confirm)
-      when :dialog
-        DialogComponent.new(
-          label: @label, dialog_title: @dialog_title,
-          url: @url, method: @method,
-          confirm_label: @confirm_label,
-          variant: @variant,
-          size: @size,
-          body_component: @body_component,
-          body_options: @body_options
-        )
-      when :raw
-        RawComponent.new.with_content(content)
+      when :link   then LinkComponent.new(label: @label, url: @url, variant: @variant)
+      when :button then ButtonComponent.new(label: @label, url: @url, method: @method, variant: @variant)
+      when :delete then DeleteComponent.new(label: @label, url: @url, confirm: @confirm)
+      when :dialog then dialog_component
+      when :raw    then RawComponent.new.with_content(content)
       else
         raise ArgumentError, "Unknown action type: #{@type.inspect}. Must be one of #{TYPES.inspect}"
       end
+    end
+
+    def dialog_component
+      DialogComponent.new(
+        label: @label, dialog_title: @dialog_title, url: @url, method: @method, confirm_label: @confirm_label,
+        variant: @variant, size: @size, body_component: @body_component, body_options: @body_options
+      )
     end
   end
 end

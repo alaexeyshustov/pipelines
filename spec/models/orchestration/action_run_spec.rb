@@ -59,29 +59,25 @@ RSpec.describe Orchestration::ActionRun do
   end
 
   describe '#show_attributes' do
-    it 'returns hash including input, output, status, and error_details' do # rubocop:disable RSpec/MultipleExpectations
+    it 'returns hash including input, output, status, and error_details' do
       action_run = create(:orchestration_action_run,
                           status: 'completed',
                           input: { 'email' => 'test' },
                           output: { 'result' => 'ok' },
                           error_details: { 'category' => 'provider_http_error' })
-      result = action_run.show_attributes
-      expect(result).to include(status: 'completed')
-      expect(result).to have_key(:input)
-      expect(result).to have_key(:output)
-      expect(result).to have_key(:error_details)
+      expect(action_run.show_attributes).to include(
+        status: 'completed', input: { 'email' => 'test' }, output: { 'result' => 'ok' },
+        error_details: { 'category' => 'provider_http_error' }
+      )
     end
   end
 
   describe '#to_llm_context' do
-    it 'returns hash with input, action, status, and agent_snapshot' do # rubocop:disable RSpec/MultipleExpectations
+    it 'returns hash with input, action, status, and agent_snapshot' do
       action_run = create(:orchestration_action_run, input: { 'email' => 'test body' }, agent_snapshot: { 'model' => 'mistral' })
-      result = action_run.to_llm_context
-      expect(result).to have_key(:input)
-      expect(result).to have_key(:action)
-      expect(result).to have_key(:status)
-      expect(result).to have_key(:agent_snapshot)
-      expect(result[:agent_snapshot]).to eq({ 'model' => 'mistral' })
+      expect(action_run.to_llm_context).to include(
+        input: anything, action: anything, status: anything, agent_snapshot: { 'model' => 'mistral' }
+      )
     end
   end
 end

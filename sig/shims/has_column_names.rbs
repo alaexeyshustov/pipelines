@@ -1,4 +1,3 @@
-# rubocop:disable RBS/Lint/TopLevelInterface
 interface _HasColumnNames
   def tool_column_names: () -> Array[String]
   def all: () -> ActiveRecord::Relation
@@ -13,4 +12,3 @@ interface _HasColumnNames
   def table_name: () -> String
   def to_s: () -> String
 end
-# rubocop:enable RBS/Lint/TopLevelInterface

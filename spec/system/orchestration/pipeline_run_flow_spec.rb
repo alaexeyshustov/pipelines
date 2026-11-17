@@ -40,53 +40,47 @@ RSpec.describe "Pipeline run flow", :js do
     # No input_mapping needed — the WebMock stub fires regardless of request body.
   end
 
-  it "runs a pipeline through the dialog UI and shows the completed run" do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-    # Stub Mistral at the WebMock level — response matches ClassifyAgent schema:
-    # schema { array :results { object { string :id; array :tags, of: :string } } }
-    # Wire format confirmed from spec/cassettes/orchestration/pipeline_lifecycle/classify_agent_run.yml
-    mistral_stub = stub_request(:post, %r{api\.mistral\.ai/v1/chat/completions})
-      .to_return(
-        status: 200,
-        body: {
-          id: "cmpl-test",
-          object: "chat.completion",
-          model: "mistral-large-latest",
-          choices: [ {
-            index: 0,
-            message: {
-              role: "assistant",
-              content: '{"results":[{"id":"email-1","tags":["job","application"]}]}',
-              tool_calls: nil
-            },
-            finish_reason: "stop"
-          } ],
-          usage: { prompt_tokens: 50, completion_tokens: 20, total_tokens: 70 }
-        }.to_json,
-        headers: { "Content-Type" => "application/json" }
-      )
+  # Mistral at the WebMock level, answering in the ClassifyAgent schema
+  # (wire format from spec/cassettes/orchestration/pipeline_lifecycle/classify_agent_run.yml).
+  def stub_mistral_classification
+    stub_request(:post, %r{api\.mistral\.ai/v1/chat/completions}).to_return(
+      status: 200, headers: { "Content-Type" => "application/json" },
+      body: {
+        id: "cmpl-test", object: "chat.completion", model: "mistral-large-latest",
+        choices: [ {
+          index: 0, finish_reason: "stop",
+          message: { role: "assistant", content: '{"results":[{"id":"email-1","tags":["job","application"]}]}', tool_calls: nil }
+        } ],
+        usage: { prompt_tokens: 50, completion_tokens: 20, total_tokens: 70 }
+      }.to_json
+    )
+  end
 
+  # Opens the native <dialog> via Stimulus (stimulus-components/dialog calls showModal()) and submits it.
+  def run_from_dialog
     visit orchestration_pipeline_path(pipeline)
-
-    # Open the native <dialog> via Stimulus (stimulus-components/dialog calls showModal())
     click_button "Run now"
-    expect(page).to have_selector("dialog[open]", wait: 2)
-
-    within("dialog[open]") do
+    within("dialog[open]", wait: 2) do
       # Value is irrelevant — the WebMock stub matches by URL only
       fill_in "Email body", with: "Congratulations on your application"
       click_button "Run"
     end
+  end
+
+  it "runs a pipeline through the dialog UI and completes it" do
+    mistral_stub = stub_mistral_classification
+    run_from_dialog
 
     expect(page).to have_content("Pipeline run triggered", wait: 5)
-
-    # Assert the Mistral stub was actually hit (not short-circuited)
     expect(mistral_stub).to have_been_requested.times(1)
+    expect(Orchestration::PipelineRun.last.status).to eq("completed")
+  end
 
-    # Assert the run completed in the DB (not just UI text)
-    pipeline_run = Orchestration::PipelineRun.last
-    expect(pipeline_run.status).to eq("completed")
+  it "shows the completed run in the run history" do
+    stub_mistral_classification
+    run_from_dialog
+    expect(page).to have_content("Pipeline run triggered", wait: 5)
 
-    # Navigate to run history and verify the completed run appears
     click_link "Run History"
     expect(page).to have_content("Completed", wait: 5)
   end

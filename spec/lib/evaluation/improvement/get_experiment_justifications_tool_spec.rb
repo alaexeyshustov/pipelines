@@ -10,20 +10,12 @@ RSpec.describe Evaluation::Improvement::GetExperimentJustificationsTool do
       expect(tool.execute(experiment_id: experiment.id)).to eq([])
     end
 
-    it "returns justification tuples with metric_name, score, and justification" do # rubocop:disable RSpec/ExampleLength
+    it "returns justification tuples with metric_name, score, and justification" do
       result = create(:evaluation_evaluation_result, experiment: experiment, score: 4.0)
-      create(:evaluation_justification,
-             evaluation_result: result,
-             metric_name: "accuracy",
-             justification: "Correct tool called")
+      create(:evaluation_justification, evaluation_result: result, metric_name: "accuracy", justification: "Correct tool called")
 
-      output = tool.execute(experiment_id: experiment.id)
-
-      expect(output.size).to eq(1)
-      expect(output.first).to eq(
-        metric_name: "accuracy",
-        score: 4.0,
-        justification: "Correct tool called"
+      expect(tool.execute(experiment_id: experiment.id)).to eq(
+        [ { metric_name: "accuracy", score: 4.0, justification: "Correct tool called" } ]
       )
     end
 

@@ -1,7 +1,7 @@
 require "rails_helper"
 require_relative "emails_classifier_evaluation"
 
-RSpec.describe Evaluation::Regression::EmailsClassifierEvaluation do # rubocop:disable RSpec/SpecFilePathFormat
+RSpec.describe Evaluation::Regression::EmailsClassifierEvaluation do
   describe "golden dataset" do
     it "loads native cases without calling the API" do
       cases = described_class.cases
@@ -16,7 +16,7 @@ RSpec.describe Evaluation::Regression::EmailsClassifierEvaluation do # rubocop:d
   end
 
   # Live regression gate: needs real credentials, so it is skipped unless EVALS=1 (see docs/evals.md).
-  describe "regression gate", :eval, vcr: { cassette_name: "evals/emails_classifier" } do # rubocop:disable RSpec/EmptyExampleGroup
+  describe "regression gate", :eval, vcr: { cassette_name: "evals/emails_classifier" } do
     extend RubyLLM::Evaluation::RSpec
 
     evaluates described_class

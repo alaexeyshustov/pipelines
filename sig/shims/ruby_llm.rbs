@@ -33,6 +33,7 @@ module RubyLLM
     def self.model: (String model_id, ?provider: Symbol?, ?assume_model_exists: bool) -> void
     def self.tools: (*singleton(Tool) tools) -> void
     def self.schema: () { () [self: ::Schematist::SchemaBuilder] -> void } -> void
+                   | (singleton(::Schematist::Schema) schema) -> void
     def self.instructions: (String text) -> void
     def self.string: (Symbol name, ?required: bool, ?description: String) -> void
 

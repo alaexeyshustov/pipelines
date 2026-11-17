@@ -8,7 +8,7 @@ module Emails
       @token_path: String
 
       def self.setup: (?gmail_options) -> void
-      def self.test_connection: (?gmail_options) -> void
+      def self.test_connection: (?gmail_options) -> String
       def self.reset: () -> void
       def self.from_env: (?gmail_options) -> GmailAdapter
       def self.paths_from_env: (gmail_options opts) -> { credentials_path: String, token_path: String }

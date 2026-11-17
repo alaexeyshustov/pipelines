@@ -3,11 +3,7 @@ module Evaluation
   # once per pipeline run; the instance memoizes lookups (including nil results)
   # for the lifetime of that run. Fresh instance per run means no stale cross-run
   # caching.
-  #
-  # Intentionally instance-based (#call, not .call): the port carries per-run cache
-  # state that a stateless `.call` singleton could not hold, so it deviates from the
-  # house service convention on purpose.
-  class ActivePromptResolver # rubocop:disable App/ServiceMustHaveClassCall
+  class ActivePromptResolver
     def initialize
       @cache = {}
     end

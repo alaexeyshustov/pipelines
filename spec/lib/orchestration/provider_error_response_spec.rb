@@ -1,6 +1,10 @@
 require "rails_helper"
 
 RSpec.describe Orchestration::ProviderErrorResponse do
+  def response_for(error_class, message, status:, body:)
+    described_class.new(error: error_class.new(message, response: Data.define(:status, :body).new(status:, body:)))
+  end
+
   describe "#present?" do
     it "is true for a RubyLLM error with a response" do
       response = Data.define(:status, :body).new(status: 429, body: "{}")
@@ -19,20 +23,12 @@ RSpec.describe Orchestration::ProviderErrorResponse do
   end
 
   describe "#status, #body, #parsed_error, #message" do
-    it "extracts status, body, parsed error, and a sanitized top-level message" do # rubocop:disable RSpec/ExampleLength
-      response = Data.define(:status, :body).new(
-        status: 429,
-        body: { "error" => { "message" => "Rate limit exceeded" } }.to_json
-      )
-      error = RubyLLM::RateLimitError.new("An unknown error occurred", response: response)
-      subject = described_class.new(error: error)
+    it "extracts status, body, parsed error, and a sanitized top-level message" do
+      body = { "error" => { "message" => "Rate limit exceeded" } }.to_json
+      response = response_for(RubyLLM::RateLimitError, "An unknown error occurred", status: 429, body:)
 
-      aggregate_failures do
-        expect(subject.status).to eq(429)
-        expect(subject.body).to eq(response.body)
-        expect(subject.parsed_error).to eq("message" => "Rate limit exceeded")
-        expect(subject.message).to eq("Rate limit exceeded")
-      end
+      expect(response).to have_attributes(status: 429, body:, parsed_error: { "message" => "Rate limit exceeded" },
+                                          message: "Rate limit exceeded")
     end
 
     it "digs into a nested error.message when there is no top-level message" do

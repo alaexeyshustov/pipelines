@@ -38,17 +38,16 @@ module ActiveRecord
 
   module Validations
     class UniquenessValidator
-      type validator_options = { conditions: _Callable | nil, scope: Symbol | Array[Symbol] | nil, class: Class? }
+      type validator_options = { conditions: Proc?, scope: Symbol | Array[Symbol] | nil, class: Class? }
       def attributes: () -> Array[Symbol | String]
       def options: () -> validator_options
     end
   end
 
-  # rubocop:disable RBS/Lint/NoUntyped
   class Result
-    def map: [T] () { (Hash[String, untyped]) -> T } -> Array[T]
+    # SQLite column values.
+    def map: [T] () { (Hash[String, String | Integer | Float | nil]) -> T } -> Array[T]
   end
-  # rubocop:enable RBS/Lint/NoUntyped
 end
 
 class TCPServer
@@ -255,21 +254,19 @@ module Arel
   end
 end
 
-# rubocop:disable RBS/Lint/NoUntyped
 module Arel
   class Table
-    def join: (untyped relation, ?untyped klass) -> SelectManager
+    def join: (Arel::Table relation, ?Class klass) -> SelectManager
             | ...
   end
 
   class SelectManager
-    def on: (*untyped exprs) -> self
+    def on: (*Arel::Nodes::Node exprs) -> self
           | ...
     def join_sources: () -> Array[Arel::Nodes::Join]
                     | ...
   end
 end
-# rubocop:enable RBS/Lint/NoUntyped
 
 module Zip
   class File

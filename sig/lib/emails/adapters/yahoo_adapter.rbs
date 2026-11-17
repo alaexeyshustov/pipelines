@@ -12,7 +12,7 @@ module Emails
       @labels: Array[label]
 
       def self.from_env: (?imap_options) -> YahooAdapter
-      def self.test_connection: (?imap_options) -> void
+      def self.test_connection: (?imap_options) -> String
 
       def initialize: (host: String, port: Integer, username: String, password: String) -> void
       def message: (String | Integer message_id, ?label: String?) -> message

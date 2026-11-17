@@ -26,13 +26,9 @@ module Emails
         adapter = from_env(opts)
         adapter.on_init
         adapter.instance_variable_get(:@service).get_user_profile("me")
-        # rubocop:disable Rails/Output
-        puts "✓ Gmail connection successful"
-        # rubocop:enable Rails/Output
+        "✓ Gmail connection successful"
       rescue StandardError => error
-        # rubocop:disable Rails/Output
-        puts "ERROR: Gmail connection failed - #{error.message}"
-        # rubocop:enable Rails/Output
+        "ERROR: Gmail connection failed - #{error.message}"
       end
 
       def self.reset

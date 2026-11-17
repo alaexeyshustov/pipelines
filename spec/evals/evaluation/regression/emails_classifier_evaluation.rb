@@ -1,4 +1,4 @@
-require_relative "support/agent_evaluation"
+require_relative "../../support/agent_evaluation"
 
 module Evaluation
   module Regression

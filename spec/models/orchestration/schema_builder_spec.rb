@@ -36,19 +36,14 @@ RSpec.describe Orchestration::SchemaBuilder do
       expect(builder.additional_properties).to be false
     end
 
-    it "parses properties as nested SchemaBuilders" do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-      schema = {
-        "type" => "object",
-        "properties" => {
-          "name" => { "type" => "string" },
-          "age" => { "type" => "integer", "minimum" => 0, "maximum" => 150 }
-        }
-      }
-      builder = described_class.from_schema(schema)
-      expect(builder.properties["name"]).to be_a(described_class)
-      expect(builder.properties["name"].type).to eq("string")
-      expect(builder.properties["age"].minimum).to eq(0)
-      expect(builder.properties["age"].maximum).to eq(150)
+    it "parses properties as nested SchemaBuilders" do
+      properties = { "name" => { "type" => "string" }, "age" => { "type" => "integer", "minimum" => 0, "maximum" => 150 } }
+      builder = described_class.from_schema("type" => "object", "properties" => properties)
+
+      expect(builder.properties).to match(
+        "name" => an_instance_of(described_class).and(have_attributes(type: "string")),
+        "age" => an_instance_of(described_class).and(have_attributes(minimum: 0, maximum: 150))
+      )
     end
 
     it "parses array items as a nested SchemaBuilder" do

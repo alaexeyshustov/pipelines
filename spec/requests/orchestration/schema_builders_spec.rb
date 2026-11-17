@@ -94,18 +94,11 @@ RSpec.describe "Orchestration::SchemaBuilders" do
       expect(response.body).to include("email")
     end
 
-    it "adds property at nested path" do # rubocop:disable RSpec/ExampleLength
-      schema = {
-        "type" => "object",
-        "properties" => {
-          "address" => { "type" => "object", "properties" => {} }
-        }
-      }.to_json
-      post add_property_orchestration_schema_builders_path, params: {
-        json: schema,
-        path: '["properties","address"]',
-        property_name: "street"
-      }
+    it "adds property at nested path" do
+      schema = { "type" => "object", "properties" => { "address" => { "type" => "object", "properties" => {} } } }
+      post add_property_orchestration_schema_builders_path,
+           params: { json: schema.to_json, path: '["properties","address"]', property_name: "street" }
+
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("street")
     end

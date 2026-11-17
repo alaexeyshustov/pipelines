@@ -102,6 +102,12 @@ RSpec/MultipleExpectations:
   Max: 3
 RSpec/ExampleLength:
   Max: 10
+# RubyLLM::Evaluation::RSpec's `evaluates` defines one example per case.
+RSpec:
+  Language:
+    Includes:
+      Examples:
+        - evaluates
 RSpec/MultipleMemoizedHelpers:
   Enabled: false
 Style/FrozenStringLiteralComment:
@@ -121,7 +127,6 @@ App/ServiceMustDefineResult:
     - 'app/services/email/search_query.rb'
     - 'app/services/emails/retrieval_service.rb'
     - 'app/services/emails/test_connection_service.rb'
-    - 'app/services/evaluation/active_prompt_resolver.rb'
     - 'app/services/evaluation/agent_summary_query.rb'
     - 'app/services/evaluation/experiment_usage_query.rb'
     - 'app/services/evaluation/improve_failure_logger.rb'
@@ -133,3 +138,9 @@ App/ServiceMustDefineResult:
     - 'app/services/gist_uploader.rb'
     - 'app/services/interviews/csv_export_service.rb'
     - 'app/services/tag_pages/search.rb'
+
+# Shims declare shared interfaces and aliases at the top level on purpose.
+RBS/Lint/TopLevelInterface:
+  Enabled: false
+RBS/Lint/TopLevelTypeAlias:
+  Enabled: false

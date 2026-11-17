@@ -44,22 +44,9 @@ RSpec.describe "Orchestration::StepActions" do
     end
 
     context "when a unique-key collision occurs (race condition)" do
-      before do
-        allow_any_instance_of(Orchestration::OutputKeyDeriver).to receive(:derive).and_return("classify_emails") # rubocop:disable RSpec/AnyInstance
+      include UniqueKeyRaceHelpers
 
-        # AR uniqueness validation passes before the INSERT; the collision arrives from a
-        # concurrent commit that can only be simulated by stubbing save on the instance.
-        first_call = true
-        # rubocop:disable RSpec/AnyInstance
-        allow_any_instance_of(Orchestration::StepAction).to receive(:save).and_wrap_original do |m, **opts|
-          if first_call
-            first_call = false
-            raise ActiveRecord::RecordNotUnique, "UNIQUE constraint failed"
-          end
-          m.call(**opts)
-        end
-        # rubocop:enable RSpec/AnyInstance
-      end
+      before { raise_not_unique_on_first_save(Orchestration::StepAction) }
 
       it "saves with a hex-suffixed key instead of raising" do
         expect { post_create }.to change(Orchestration::StepAction, :count).by(1)

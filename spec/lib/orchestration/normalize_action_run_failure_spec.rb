@@ -16,6 +16,8 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
     end
 
     context "when the failure is a provider HTTP error" do
+      subject(:result) { described_class.new(error:, action_run:, raw_content: nil).normalize }
+
       let(:response) do
         Faraday::Response.new(
           status: 429,
@@ -29,26 +31,23 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
       end
       let(:error) { RubyLLM::RateLimitError.new("An unknown error occurred", response: response) }
 
-      it "extracts a concise summary and structured details" do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-        result = described_class.new(error:, action_run:, raw_content: nil).normalize
-
+      it "extracts a concise summary" do
         expect(result.summary).to eq("openai API error (429): Rate limit exceeded")
+      end
+
+      it "records the provider, model and request context" do
         expect(result.details).to include(
-          "category" => "provider_http_error",
-          "provider" => "openai",
-          "model" => "gpt-4.1-mini",
-          "status_code" => 429,
-          "message" => "Rate limit exceeded",
-          "chat_id" => action_run.chat_id,
-          "request_context" => {
-            "agent_snapshot" => action_run.agent_snapshot
-          }
+          "category" => "provider_http_error", "provider" => "openai", "model" => "gpt-4.1-mini",
+          "status_code" => 429, "message" => "Rate limit exceeded", "chat_id" => action_run.chat_id,
+          "request_context" => { "agent_snapshot" => action_run.agent_snapshot }
         )
-        expect(result.details["parsed_error"]).to eq(
-          "message" => "Rate limit exceeded",
-          "type" => "rate_limit"
+      end
+
+      it "keeps the parsed error and a raw excerpt" do
+        expect(result.details).to include(
+          "parsed_error" => { "message" => "Rate limit exceeded", "type" => "rate_limit" },
+          "raw_response_excerpt" => a_string_including("rate_limit")
         )
-        expect(result.details["raw_response_excerpt"]).to include("rate_limit")
       end
     end
 
@@ -197,7 +196,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
         )
       end
 
-      it "sanitizes and truncates the raw excerpt" do # rubocop:disable RSpec/MultipleExpectations
+      it "sanitizes and truncates the raw excerpt" do
         result = described_class.new(error:, action_run:, raw_content: nil).normalize
 
         expect(result.summary).to eq("Invalid model output: data.result must be an array")
@@ -207,8 +206,7 @@ RSpec.describe Orchestration::NormalizeActionRunFailure do
           "model" => "claude-haiku-4-5",
           "message" => "Invalid model output: data.result must be an array"
         )
-        expect(result.details["raw_response_excerpt"]).to include("[REDACTED_EMAIL]")
-        expect(result.details["raw_response_excerpt"]).to include("[REDACTED]")
+        expect(result.details["raw_response_excerpt"]).to include("[REDACTED_EMAIL]", "[REDACTED]")
       end
     end
 

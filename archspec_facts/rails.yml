@@ -24,6 +24,7 @@ snapshot:
   app/models/concerns/searchable.rb: 40c1dff7275c6cf950410fced79d3ab9ae8fd66ea699e24e4dae67b8c6acf775
   app/models/concerns/taggable.rb: 98d630fb4329091ce3baf82d5339c4a82a56cd4c9397a7403fee3bfc050328c2
   app/models/document.rb: b1bee29a7af0f3e247176c4adf034a23051fa8663ed7adc1084d6d7dc0ec3cb9
+  app/models/document/drive_entry.rb: 37a8a60e9a195793297b186201d983da179ea34561aa51159be82ffdbb02ff5e
   app/models/document/file_type.rb: f7480073960eba01a8dc26e8468c5580d251b75765127572b7cdd56b1f5071a0
   app/models/document_duplicate.rb: a2e03ef7a0b74b1b7e93bde2c23d3a40dea3d8620cb090b4d3f84e21a563cdc8
   app/models/email.rb: 61797b92c1e6dc2617a93bfaba4a643da644e4645e49ca6db2b28e4734f2e420

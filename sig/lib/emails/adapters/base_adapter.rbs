@@ -3,7 +3,7 @@ module Emails
     class BaseAdapter
       def self.from_env: (?options) -> instance
       def self.setup: (?options) -> void
-      def self.test_connection: (?options) -> void
+      def self.test_connection: (?options) -> String?
       def self.reset: () -> void
 
       def on_exit: () -> void
