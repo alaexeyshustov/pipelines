@@ -1,8 +1,3 @@
-<% if newer_experiment_active? || active_run? %>
-  <meta name="turbo-refresh-interval" content="5000">
-  <meta name="turbo-refresh-method" content="replace">
-<% end %>
-
 <%= header %>
 
 <div class="space-y-6 max-w-2xl">
@@ -41,7 +36,7 @@
     <details class="rounded-lg border border-gray-200 bg-white">
       <summary class="px-6 py-4 cursor-pointer list-none flex items-center justify-between">
         <span class="text-sm font-semibold text-gray-700">Dataset Records</span>
-        <span class="text-xs text-gray-400"><%= dataset_samples.size %> <%= "record".pluralize(dataset_samples.size) %></span>
+        <span class="text-xs text-gray-400"><%= pluralize(dataset_samples.size, "record") %></span>
       </summary>
       <div class="border-t border-gray-200 divide-y divide-gray-100">
         <% dataset_samples.each_with_index do |sample, i| %>

@@ -26,7 +26,6 @@ module Evaluation
     def cost_label: () -> String
     def tokens_label: () -> String?
     def models_label: () -> String?
-    def active_run?: () -> bool
     def progress_label: () -> String?
     def newer_experiment_active?: () -> bool
     def dataset_samples: () -> Array[DatasetSample]

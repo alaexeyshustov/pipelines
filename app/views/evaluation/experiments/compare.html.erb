@@ -1,8 +1,3 @@
-<% if @candidate.pending? || @candidate.running? %>
-  <meta name="turbo-refresh-interval" content="5000">
-  <meta name="turbo-refresh-method" content="replace">
-<% end %>
-
 <%= render UI::PageHeaderComponent.new(
   title: "Comparison",
   parent: { label: @experiment.name, url: evaluation_experiment_path(@experiment) }

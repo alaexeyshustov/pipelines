@@ -35,7 +35,7 @@
           <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
             <%= button_to "Test", test_settings_email_connector_path(connector), method: :post, class: "text-blue-600 hover:text-blue-900 inline" %>
             <%= link_to "Edit", edit_settings_email_connector_path(connector), class: "text-indigo-600 hover:text-indigo-900" %>
-            <%= button_to "Destroy", settings_email_connector_path(connector), method: :delete, data: { confirm: "Are you sure?" }, class: "text-red-600 hover:text-red-900 inline" %>
+            <%= button_to "Destroy", settings_email_connector_path(connector), method: :delete, data: { turbo_confirm: "Are you sure?" }, class: "text-red-600 hover:text-red-900 inline" %>
           </td>
         </tr>
       <% end %>

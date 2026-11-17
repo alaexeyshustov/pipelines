@@ -7,6 +7,12 @@ bundle exec rails tailwindcss:build
 echo "Running rubocop..."
 bundle exec rubocop
 
+echo "Running herb lint on staged templates..."
+staged_erb=$(git diff --cached --name-only --diff-filter=ACMR -- '*.erb')
+if [ -n "$staged_erb" ]; then
+  echo "$staged_erb" | xargs pnpm herb:lint
+fi
+
 echo "Running archspec..."
 bundle exec archspec check --check-todo
 

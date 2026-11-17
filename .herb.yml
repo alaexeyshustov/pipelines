@@ -1,0 +1,18 @@
+version: 0.11.2
+framework: actionview
+
+files:
+  exclude:
+    - 'public/**/*'
+    - 'lib/view_primitives/**/*' # vendored, as in .rubocop.yml
+
+linter:
+  enabled: true
+  logLevel: warning
+  rules:
+    actionview-prefer-qualified-partial-path: { enabled: false }
+    html-input-require-autocomplete: { enabled: false }
+    html-require-script-nonce: { enabled: false } # re-enable with CSP
+
+formatter:
+  enabled: false

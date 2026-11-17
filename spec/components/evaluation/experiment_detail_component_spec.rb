@@ -130,9 +130,8 @@ RSpec.describe Evaluation::ExperimentDetailComponent, type: :component do
     context "when running" do
       let(:experiment) { create(:evaluation_experiment, status: :running, pending_samples_count: 3) }
 
-      it "shows progress and refreshes itself" do
+      it "shows progress" do
         expect(rendered.text).to include("3 pending")
-        expect(rendered.css("meta[name='turbo-refresh-interval']")).to be_present
       end
     end
   end

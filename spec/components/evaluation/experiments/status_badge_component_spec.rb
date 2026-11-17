@@ -16,4 +16,16 @@ RSpec.describe Evaluation::Experiments::StatusBadgeComponent, type: :component d
       end
     end
   end
+
+  context "with a source" do
+    subject(:rendered) { render_inline(described_class.new(experiment: experiment)) }
+
+    let(:experiment) { create(:evaluation_experiment, status: :running) }
+
+    it "points the frame at the status endpoint and polls every 3 seconds" do
+      frame = rendered.at_css("turbo-frame#experiment-status")
+      expect(frame["src"]).to eq("/evaluation/experiments/#{experiment.id}/status_frame")
+      expect(frame["data-turbo-refresh-interval"]).to eq("3000")
+    end
+  end
 end

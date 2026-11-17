@@ -27,6 +27,9 @@ jobs:
       - name: Check Prettier formatting
         run: pnpm format:check
 
+      - name: Run Herb linter (HTML+ERB)
+        run: pnpm herb:lint
+
       - name: Run pnpm audit
         run: pnpm audit
 
@@ -47,6 +50,9 @@ jobs:
 
       - name: Run ArchSpec
         run: bundle exec archspec check --check-todo
+
+      - name: Run Herb analyze (ERB security and compile check)
+        run: bundle exec herb analyze .
 
   steep:
     name: Steep Type Check

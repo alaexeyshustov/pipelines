@@ -1,5 +1,5 @@
 <%= render UI::PageHeaderComponent.new(title: "New Action", parent: { label: "Action Library", url: orchestration_actions_path }) %>
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 max-w-2xl">
-  <%= render "form", action: @action %>
+  <%= render "form", action: @action, agents: @agents %>
 </div>

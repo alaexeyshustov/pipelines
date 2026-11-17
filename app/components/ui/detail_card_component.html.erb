@@ -6,8 +6,7 @@
         <dt class="w-40 text-sm font-medium text-gray-500 shrink-0"><%= attr.label %></dt>
         <dd>
           <% if attr.type == :badge %>
-            <% with_status_badge(label: val&.humanize || "—", variant: variant_for(attr, val)) %>
-            <%= status_badge %>
+            <%= render UI::StatusBadgeComponent.new(label: val&.humanize || "—", variant: variant_for(attr, val)) %>
           <% elsif attr.type == :json %>
             <pre class="text-sm font-mono text-gray-900 whitespace-pre-wrap"><%= json_display(val) %></pre>
           <% elsif attr.type == :multiline %>
@@ -20,4 +19,3 @@
     <% end %>
   </dl>
 </div>
-
