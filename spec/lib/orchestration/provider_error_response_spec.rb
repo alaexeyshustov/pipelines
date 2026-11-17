@@ -22,7 +22,7 @@ RSpec.describe Orchestration::ProviderErrorResponse do
     end
   end
 
-  describe "#status, #body, #parsed_error, #message" do
+  describe "#message" do
     it "extracts status, body, parsed error, and a sanitized top-level message" do
       body = { "error" => { "message" => "Rate limit exceeded" } }.to_json
       response = response_for(RubyLLM::RateLimitError, "An unknown error occurred", status: 429, body:)

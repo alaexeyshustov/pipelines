@@ -109,11 +109,11 @@ RSpec.describe "Orchestration::Pipelines" do
         pipeline = create(:orchestration_pipeline, name: "Old Name")
 
         patch orchestration_pipeline_path(pipeline), params: {
-          orchestration_pipeline: { name: "New Name" }
+          orchestration_pipeline: { name: "New Name", description: "New description" }
         }
 
         expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
-        expect(pipeline.reload.name).to eq("New Name")
+        expect(pipeline.reload).to have_attributes(name: "New Name", description: "New description")
       end
 
       it "updates initial_input_schema and redirects" do

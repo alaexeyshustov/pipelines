@@ -1,6 +1,7 @@
 require "rails_helper"
 require "rake"
 
+# Seeding behaviour is specified in spec/lib/evaluation/dataset_seeder_spec.rb; this only covers the task wiring.
 RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClass
   let(:task) { Rake::Task["evaluation:seed_dataset"] }
   let(:agent_name) { "Emails::ClassifyAgent" }
@@ -17,76 +18,21 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
     allow(Evaluation::ToolCallExtractor).to receive(:call).and_return([])
   end
 
-  def create_completed_action_run(chat: nil)
+  def create_completed_action_run
     create(:orchestration_action_run,
            step_action: step_action,
            pipeline_run: pipeline_run,
            status: "completed",
-           chat: chat,
+           chat: create(:chat),
            input: { "emails" => [ { "id" => "1", "subject" => "Job offer" } ] })
   end
 
-  context "when completed action runs with chats exist" do
-    let(:chat) { create(:chat) }
-    let(:action_run) { create_completed_action_run(chat: chat) }
+  it "seeds the agent's dataset with up to sample_size action runs" do
+    2.times { create_completed_action_run }
 
-    before { action_run }
+    expect { task.invoke(agent_name, "1") }.to output("Dataset '#{agent_name}': 1 created, 0 skipped.\n").to_stdout
 
-    it "creates a dataset named after the agent" do
-      task.invoke(agent_name, "1")
-
-      expect(Evaluation::Dataset.find_by(name: agent_name)).to be_present
-    end
-
-    it "creates dataset samples for each sampled action run" do
-      task.invoke(agent_name, "1")
-
-      dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_samples.count).to eq(1)
-    end
-
-    it "stores the action run input in the dataset sample" do
-      task.invoke(agent_name, "1")
-
-      dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_samples.first.input).to eq(action_run.input)
-    end
-  end
-
-  context "when run twice" do
-    let(:chat) { create(:chat) }
-    let(:action_run) { create_completed_action_run(chat: chat) }
-
-    before { action_run }
-
-    it "does not duplicate dataset samples" do
-      task.invoke(agent_name, "1")
-      task.reenable
-      task.invoke(agent_name, "1")
-
-      dataset = Evaluation::Dataset.find_by!(name: agent_name)
-      expect(dataset.dataset_samples.count).to eq(1)
-    end
-
-    it "does not duplicate the dataset" do
-      task.invoke(agent_name, "1")
-      task.reenable
-      task.invoke(agent_name, "1")
-
-      expect(Evaluation::Dataset.where(name: agent_name).count).to eq(1)
-    end
-  end
-
-  context "when no completed action runs exist" do
-    before { create(:orchestration_agent, name: agent_name) }
-
-    it "creates an empty dataset" do
-      task.invoke(agent_name, "10")
-
-      dataset = Evaluation::Dataset.find_by(name: agent_name)
-      expect(dataset).to be_present
-      expect(dataset.dataset_samples.count).to eq(0)
-    end
+    expect(Evaluation::Dataset.find_by!(name: agent_name).dataset_samples.count).to eq(1)
   end
 
   context "when the agent name is unknown" do
