@@ -28,6 +28,13 @@ RSpec.describe RuboCop::Cop::App::ComponentMustHavePreview, :config do
     end
   end
 
+  it "registers no offense for the abstract ApplicationComponent" do
+    expect_no_offenses(<<~RUBY, "/project/app/components/application_component.rb")
+      class ApplicationComponent < ViewComponent::Base
+      end
+    RUBY
+  end
+
   it "registers no offense for non-component files" do
     expect_no_offenses(<<~RUBY, "/project/app/components/ui/table_row.rb")
       class TableRow; end

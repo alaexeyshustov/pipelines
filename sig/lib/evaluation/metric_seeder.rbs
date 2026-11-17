@@ -1,0 +1,23 @@
+module Evaluation
+  class MetricSeeder
+    @agent_name: String
+
+    class Result < Data
+      attr_reader created: Integer
+      attr_reader updated: Integer
+
+      def self.new: (created: Integer, updated: Integer) -> Result
+    end
+
+    def self.call: (agent_name: String) -> Result
+
+    def initialize: (agent_name: String) -> void
+    def call: () -> Result
+
+    private
+
+    def existing_by_name: (Array[String] names) -> Hash[String, Metric]
+
+    def seed: (Metric? record, Hash[String, String] metric) -> void
+  end
+end

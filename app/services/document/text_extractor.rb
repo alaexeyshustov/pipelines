@@ -2,12 +2,14 @@ require "zip"
 
 # Turns a file's bytes into markdown text; shared by email attachments and Drive files.
 #
-#   Document::TextExtractor.call(data: bytes, mime_type: "application/pdf", filename: "cv.pdf")  # => "# CV ..."
+#   Document::TextExtractor.call(data: bytes, mime_type: "application/pdf", filename: "cv.pdf").text  # => "# CV ..."
 #
 # PDFs and images go through Mistral OCR (RubyLLM.ocr, key from MISTRAL_API_KEY); docx is read locally from
 # word/document.xml; text/plain passes through. A generic application/octet-stream type is
 # inferred from the filename (Document::FileType). Anything else raises Unsupported; provider errors propagate.
 class Document::TextExtractor
+  Result = Data.define(:text)
+
   class Unsupported < StandardError; end
 
   DOCX = Document::FileType::DOCX
@@ -31,14 +33,18 @@ class Document::TextExtractor
   def call
     raise Unsupported, "Cannot extract text from #{@mime_type.inspect}" unless Document::FileType.supported?(@mime_type)
 
+    Result.new(text: extract)
+  end
+
+  private
+
+  def extract
     case @mime_type
     when "text/plain" then @data.dup.force_encoding(Encoding::UTF_8).scrub
     when DOCX then docx_text
     else ocr_text
     end
   end
-
-  private
 
   def ocr_text
     raise Unsupported, "File too large to OCR (#{@data.bytesize} bytes)" if @data.bytesize > MAX_OCR_BYTES

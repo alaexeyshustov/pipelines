@@ -1,6 +1,12 @@
 class GistUploader
   GITHUB_API: String
 
+  class Result < Data
+    attr_reader url: String?
+
+    def self.new: (url: String?) -> instance
+  end
+
   class ApiError < StandardError
   end
 
@@ -9,10 +15,10 @@ class GistUploader
   @filename: String
 
   def self.from_env: (filename: String) -> GistUploader
-  def self.call: (String content, token: String, ?gist_id: String?, filename: String) -> String?
+  def self.call: (String content, token: String, ?gist_id: String?, filename: String) -> Result
 
   def initialize: (token: String, ?gist_id: String?, filename: String) -> void
-  def call: (String content) -> String?
+  def call: (String content) -> Result
 
   private
 

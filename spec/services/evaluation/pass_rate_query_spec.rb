@@ -16,15 +16,15 @@ RSpec.describe Evaluation::PassRateQuery do
   end
 
   it "returns the share of passed results, ignoring results without a verdict" do
-    expect(described_class.call(experiment_ids: [ experiment.id ])).to eq(experiment.id => 2.0 / 3)
+    expect(described_class.call(experiment_ids: [ experiment.id ]).by_experiment).to eq(experiment.id => 2.0 / 3)
   end
 
   it "omits experiments without verdicts" do
     other = create(:evaluation_experiment)
-    expect(described_class.call(experiment_ids: [ other.id ])).to eq({})
+    expect(described_class.call(experiment_ids: [ other.id ]).by_experiment).to eq({})
   end
 
   it "returns pass rates per metric" do
-    expect(Evaluation::MetricPassRateQuery.call(experiment: experiment)).to eq("accuracy" => 0.5, "tone" => 1.0)
+    expect(Evaluation::MetricPassRateQuery.call(experiment: experiment).by_metric).to eq("accuracy" => 0.5, "tone" => 1.0)
   end
 end

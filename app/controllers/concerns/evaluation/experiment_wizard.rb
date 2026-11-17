@@ -41,7 +41,7 @@ module Evaluation
         system_prompt: fork_prompt_params[:system_prompt] || based_on.system_prompt,
         user_prompt:   fork_prompt_params[:user_prompt]   || based_on.user_prompt,
         output_schema: fork_prompt_params[:output_schema] || based_on.output_schema
-      )
+      ).prompt
     end
 
     def render_wizard_error

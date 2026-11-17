@@ -2,13 +2,14 @@ module Evaluation
   # Tokens and cost of the LLM calls made for experiments (ruby_llm_usages rows owned by the experiment, see
   # UsageScope): sampling, judging and prompt improvement. One query per call, any number of experiments.
   #
-  #   Evaluation::ExperimentUsageQuery.call(experiment_ids: [1, 2])[1].cost  # => BigDecimal
+  #   Evaluation::ExperimentUsageQuery.call(experiment_ids: [1, 2]).by_experiment[1].cost  # => BigDecimal
   #
   # Only succeeded attempts are summed. Cost is the sum of recorded totals; attempts whose model has no
   # pricing contribute tokens but no cost. +models+ counts attempts per model that actually answered, so a
   # fallback shows up there. Experiments without usage map to EMPTY.
   class ExperimentUsageQuery
     Usage = Data.define(:input_tokens, :output_tokens, :total_tokens, :cache_read_tokens, :cost, :calls, :models)
+    Result = Data.define(:by_experiment)
 
     EMPTY = Usage.new(input_tokens: 0, output_tokens: 0, total_tokens: 0, cache_read_tokens: 0, cost: BigDecimal("0"),
                       calls: 0, models: {}).freeze
@@ -24,9 +25,10 @@ module Evaluation
     def call
       totals = totals_by_experiment
       models = models_by_experiment
-      Hash.new(EMPTY).merge(
+      by_experiment = Hash.new(EMPTY).merge(
         totals.to_h { |id, row| [ id, build_usage(row, models.fetch(id) { {} }) ] }
       )
+      Result.new(by_experiment:)
     end
 
     private

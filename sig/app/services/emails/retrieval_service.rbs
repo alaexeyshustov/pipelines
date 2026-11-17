@@ -4,14 +4,20 @@ module Emails
 
     type email_hash = Hash[String, String]
 
+    class Result < Data
+      attr_reader emails: Array[email_hash]
+
+      def self.new: (emails: Array[email_hash]) -> instance
+    end
+
     @provider: String
     @after_date: Date
     @before_date: Date?
 
-    def self.call: (provider: String, after_date: String | Date, ?before_date: String | Date | nil) -> Array[email_hash]
+    def self.call: (provider: String, after_date: String | Date, ?before_date: String | Date | nil) -> Result
 
     def initialize: (provider: String, after_date: String | Date, ?before_date: String | Date | nil) -> void
-    def call: () -> Array[email_hash]
+    def call: () -> Result
 
     private
 

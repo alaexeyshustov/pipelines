@@ -8,6 +8,7 @@ module RuboCop
 
         private
 
+        def nested_or_base?: (::RuboCop::Cop::_Node node) -> bool
         def component_file?: () -> bool
         def derive_preview_path: () -> String?
       end

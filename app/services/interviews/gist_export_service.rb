@@ -23,7 +23,7 @@ module Interviews
       token = ENV["GITHUB_TOKEN"]
       return Result.new(ok: false, message: "GITHUB_TOKEN is not configured.") if token.blank?
 
-      csv_content = Interviews::CsvExportService.new(ids: @ids).call
+      csv_content = Interviews::CsvExportService.call(ids: @ids).csv
       response    = patch_gist(token, csv_content)
 
       if response.is_a?(Net::HTTPSuccess)

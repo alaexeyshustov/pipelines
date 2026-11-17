@@ -73,7 +73,7 @@ One row per INBOX email, full body kept.
 FTS5 external-content virtual table over `subject`, `body`, `from_address` (rowid = `emails.id`). Insert/update/delete triggers (`emails_fts_ai/_au/_ad`) keep it in sync, including `update_all`/`delete_all`. The FTS5 shadow tables are stripped from `structure.sql` on dump (`lib/tasks/structure.rake`).
 
 ```ruby
-Email::SearchQuery.call("interview acme", limit: 20)
+Email::SearchQuery.call("interview acme", limit: 20).hits
 # => [#<data Hit email: Email, rank: -1.2, snippet: "... [[interview]] ...">]  (bm25, best first)
 ```
 
@@ -137,7 +137,7 @@ Document::Download.call(document)     # => File(data:, filename:, mime_type:), f
 FTS5 external-content virtual table over `title`, `text` (rowid = `documents.id`), triggers `documents_fts_ai/_au/_ad`; shadow tables stripped from `structure.sql` on dump.
 
 ```ruby
-Document::SearchQuery.call("lease rent", limit: 20)
+Document::SearchQuery.call("lease rent", limit: 20).hits
 # => [#<data Hit document: Document, rank: -1.2, snippet: "... [[rent]] ...">]  (bm25, best first)
 ```
 

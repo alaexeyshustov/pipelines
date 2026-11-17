@@ -1,43 +1,45 @@
 require "rails_helper"
 
 RSpec.describe Email::SearchQuery do
+  def search(*, **) = described_class.call(*, **).hits
+
   let!(:strong) { create(:email, subject: "Interview interview", body: "Interview schedule for next week") }
   let!(:weak) { create(:email, subject: "Hello", body: "Maybe an interview later, plus a long text " * 3) }
 
   before { create(:email, subject: "Newsletter", body: "Nothing relevant") }
 
   it "ranks better matches first" do
-    expect(described_class.call("interview").map(&:email)).to eq([ strong, weak ])
+    expect(search("interview").map(&:email)).to eq([ strong, weak ])
   end
 
   it "returns snippets with highlight markers" do
-    hit = described_class.call("schedule").first
+    hit = search("schedule").first
     expect(hit.snippet).to include("[[schedule]]")
   end
 
   it "exposes a bm25 rank where lower is better" do
-    first, second = described_class.call("interview")
+    first, second = search("interview")
     expect(first.rank).to be < second.rank
   end
 
   it "respects the limit" do
-    expect(described_class.call("interview", limit: 1).size).to eq(1)
+    expect(search("interview", limit: 1).size).to eq(1)
   end
 
   it "returns nothing for blank queries" do
-    expect(described_class.call("  ")).to eq([])
-    expect(described_class.call(nil)).to eq([])
+    expect(search("  ")).to eq([])
+    expect(search(nil)).to eq([])
   end
 
   [ %q("unbalanced), "foo AND", "NOT", "a OR (b", "x*", "col:val", "-", %q(it's) ].each do |query|
     it "does not raise on quotes and FTS operators: #{query}" do
-      expect { described_class.call(query) }.not_to raise_error
+      expect { search(query) }.not_to raise_error
     end
   end
 
   it "treats operator words as plain terms" do
     create(:email, subject: "Offer and terms", body: "x")
-    expect(described_class.call("offer AND terms").size).to eq(1)
+    expect(search("offer AND terms").size).to eq(1)
   end
 
   describe "mode: :semantic" do
@@ -53,7 +55,7 @@ RSpec.describe Email::SearchQuery do
     end
 
     it "returns the nearest emails first, with the cosine distance as rank" do
-      hits = described_class.call("apartment contract", mode: :semantic)
+      hits = search("apartment contract", mode: :semantic)
 
       expect(hits.map(&:email)).to eq([ near, far ])
       expect(hits.map(&:rank)).to eq([ 0.0, 1.0 ])
@@ -61,23 +63,23 @@ RSpec.describe Email::SearchQuery do
     end
 
     it "embeds the query with the Qwen3 instruction prefix" do
-      described_class.call("apartment contract", mode: :semantic)
+      search("apartment contract", mode: :semantic)
       expect(a_request(:post, EmbeddingHelpers::OLLAMA_EMBEDDINGS_URL).with(
         body: hash_including("input" => [ "Instruct: #{Embeddings::Client::QUERY_INSTRUCTION}\nQuery: apartment contract" ])
       )).to have_been_made
     end
 
     it "respects the limit" do
-      expect(described_class.call("apartment", limit: 1, mode: :semantic).map(&:email)).to eq([ near ])
+      expect(search("apartment", limit: 1, mode: :semantic).map(&:email)).to eq([ near ])
     end
 
     it "ignores emails embedded under another model" do
       embed_as(create(:email), unit_vector(0), model: "old-model")
-      expect(described_class.call("apartment", mode: :semantic).size).to eq(2)
+      expect(search("apartment", mode: :semantic).size).to eq(2)
     end
 
     it "returns nothing, without calling the model, for a blank query" do
-      expect(described_class.call("  ", mode: :semantic)).to eq([])
+      expect(search("  ", mode: :semantic)).to eq([])
       expect(a_request(:post, EmbeddingHelpers::OLLAMA_EMBEDDINGS_URL)).not_to have_been_made
     end
   end
@@ -96,27 +98,27 @@ RSpec.describe Email::SearchQuery do
     end
 
     it "fuses full-text and vector rankings, so a match in both comes first" do
-      hits = described_class.call("relocation", mode: :hybrid)
+      hits = search("relocation", mode: :hybrid)
 
       expect(hits.first.email).to eq(both)
       expect(hits.map(&:email)).to contain_exactly(both, text_only, semantic_only)
     end
 
     it "keeps snippets from the text match and none for vector-only hits" do
-      hits = described_class.call("relocation", mode: :hybrid).index_by(&:email)
+      hits = search("relocation", mode: :hybrid).index_by(&:email)
 
       expect(hits[both].snippet).to include("[[Relocation]]")
       expect(hits[semantic_only].snippet).to be_nil
     end
 
     it "ranks lower for better matches" do
-      ranks = described_class.call("relocation", mode: :hybrid).map(&:rank)
+      ranks = search("relocation", mode: :hybrid).map(&:rank)
       expect(ranks).to eq(ranks.sort)
       expect(ranks).to all(be < 0)
     end
 
     it "respects the limit" do
-      expect(described_class.call("relocation", limit: 2, mode: :hybrid).size).to eq(2)
+      expect(search("relocation", limit: 2, mode: :hybrid).size).to eq(2)
     end
   end
 end

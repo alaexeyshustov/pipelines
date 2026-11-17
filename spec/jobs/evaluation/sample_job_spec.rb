@@ -18,7 +18,7 @@ RSpec.describe Evaluation::SampleJob do
       end
     end)
     allow(Evaluation::Sampler).to receive(:call) do |experiment:, dataset_sample:, **|
-      create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_sample)
+      Evaluation::Sampler::Result.new(sample: create(:evaluation_sample, experiment: experiment, dataset_sample: dataset_sample))
     end
     allow(Evaluation::Grader).to receive(:call).and_return([])
     allow(Evaluation::Grader::ResultWriter).to receive(:call).and_return([])

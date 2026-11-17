@@ -14,7 +14,7 @@ RSpec.describe Evaluation::ExperimentUsageQuery do
     usage(experiment, model: "mistral-large-latest", input_tokens: 10, output_tokens: 5, total_cost: 0.002)
     usage(other, total_cost: 1)
 
-    result = described_class.call(experiment_ids: [ experiment.id, other.id ])
+    result = described_class.call(experiment_ids: [ experiment.id, other.id ]).by_experiment
 
     expect(result[experiment.id]).to have_attributes(
       input_tokens: 110, output_tokens: 55, total_tokens: 165, calls: 2, cost: BigDecimal("0.012"),
@@ -28,11 +28,11 @@ RSpec.describe Evaluation::ExperimentUsageQuery do
     usage(experiment, total_cost: nil)
     usage(nil)
 
-    expect(described_class.call(experiment_ids: [ experiment.id ])[experiment.id])
+    expect(described_class.call(experiment_ids: [ experiment.id ]).by_experiment[experiment.id])
       .to have_attributes(calls: 1, cost: 0, input_tokens: 100)
   end
 
   it "returns an empty usage for experiments without rows" do
-    expect(described_class.call(experiment_ids: [ experiment.id ])[experiment.id]).to eq(described_class::EMPTY)
+    expect(described_class.call(experiment_ids: [ experiment.id ]).by_experiment[experiment.id]).to eq(described_class::EMPTY)
   end
 end

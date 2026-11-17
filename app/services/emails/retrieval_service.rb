@@ -2,6 +2,8 @@ module Emails
   class RetrievalService
     PAGE_SIZE = 100
 
+    Result = Data.define(:emails)
+
     def self.call(provider:, after_date:, before_date: nil) = new(provider:, after_date:, before_date:).call
 
     def initialize(provider:, after_date:, before_date: nil)
@@ -19,7 +21,7 @@ module Emails
         offset += PAGE_SIZE
         break if page.size < PAGE_SIZE
       end
-      emails
+      Result.new(emails:)
     end
 
     private

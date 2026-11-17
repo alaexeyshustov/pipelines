@@ -42,7 +42,7 @@ RSpec.describe GistUploader do
       end
 
       it 'PATCHes the existing gist and returns html_url' do
-        expect(uploader.call(content)).to eq(html_url)
+        expect(uploader.call(content).url).to eq(html_url)
       end
 
       it 'sends the file content in the request body' do
@@ -65,7 +65,7 @@ RSpec.describe GistUploader do
       end
 
       it 'POSTs a new gist and returns html_url' do
-        expect(uploader.call(content)).to eq(html_url)
+        expect(uploader.call(content).url).to eq(html_url)
       end
 
       it 'includes description and public: false in the request body' do

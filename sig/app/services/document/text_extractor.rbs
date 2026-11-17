@@ -1,5 +1,11 @@
 class Document
   class TextExtractor
+    class Result < Data
+      attr_reader text: String
+
+      def self.new: (text: String) -> instance
+    end
+
     class Unsupported < StandardError
     end
 
@@ -11,17 +17,18 @@ class Document
     MAX_DOCX_XML_BYTES: Integer
     WORD_NS: Hash[String, String]
 
-    def self.call: (data: String, mime_type: String, filename: String) -> String
+    def self.call: (data: String, mime_type: String, filename: String) -> Result
 
     @data: String
     @mime_type: String?
     @filename: String
 
     def initialize: (data: String, mime_type: String, filename: String) -> void
-    def call: () -> String
+    def call: () -> Result
 
     private
 
+    def extract: () -> String
     def ocr_text: () -> String
     def docx_text: () -> String
     def docx_xml: () -> String

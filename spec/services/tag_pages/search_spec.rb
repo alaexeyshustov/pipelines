@@ -9,7 +9,7 @@ RSpec.describe TagPages::Search do
   end
 
   def search(**params)
-    described_class.call(tag:, filter: TagPages::FilterForm.new(params))
+    described_class.call(tag:, filter: TagPages::FilterForm.new(params)).rows
   end
 
   before do

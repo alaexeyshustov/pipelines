@@ -5,6 +5,8 @@ module Evaluation
   class PassRateQuery
     PASS_RATE = Arel.sql("AVG(CASE WHEN evaluation_evaluation_results.passed THEN 1.0 ELSE 0.0 END)")
 
+    Result = Data.define(:by_experiment)
+
     def self.call(experiment_ids:)
       new(experiment_ids:).call
     end
@@ -16,7 +18,7 @@ module Evaluation
     def call
       rows = EvaluationResult.where(experiment_id: @experiment_ids).where.not(passed: nil)
                              .group(:experiment_id).pluck(:experiment_id, PASS_RATE)
-      rows.to_h { |id, rate| [ Integer(id), Float(rate) ] }
+      Result.new(by_experiment: rows.to_h { |id, rate| [ Integer(id), Float(rate) ] })
     end
   end
 end

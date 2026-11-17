@@ -54,7 +54,7 @@ RSpec.describe "Ollama chat round-trip", :llm, type: :integration do # rubocop:d
 
       expect(agent.chat.reload.model).to have_attributes(model_id: LlmTestBackend.model_id, provider: "ollama")
       expect(output["answer"]).to(LlmTestBackend.live? ? be_a(String) : eq("pong"))
-      expect(Evaluation::ExperimentUsageQuery.call(experiment_ids: [ experiment.id ])[experiment.id])
+      expect(Evaluation::ExperimentUsageQuery.call(experiment_ids: [ experiment.id ]).by_experiment[experiment.id])
         .to have_attributes(calls: 1, cost: 0, total_tokens: be_positive)
     end
   end

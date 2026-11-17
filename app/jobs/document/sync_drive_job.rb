@@ -85,7 +85,7 @@ class Document::SyncDriveJob < ApplicationJob
     checksum = Digest::SHA256.hexdigest(file.data)
     return if known_bytes?(checksum, drive_entry, document, gone)
 
-    text = Document::TextExtractor.call(data: file.data, mime_type: file.mime_type, filename: entry.name)
+    text = Document::TextExtractor.call(data: file.data, mime_type: file.mime_type, filename: entry.name).text
     store(drive_entry.attributes(file, text, checksum), document)
   end
 

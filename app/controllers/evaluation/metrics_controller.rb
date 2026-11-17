@@ -30,7 +30,7 @@ module Evaluation
     end
 
     def generate
-      suggestions = Evaluation::MetricSuggester.call(agent_name: params[:agent_name])
+      suggestions = Evaluation::MetricSuggester.call(agent_name: params[:agent_name]).metrics
       render partial: "evaluation/metrics/suggestions",
              locals: { suggestions: suggestions, agent_name: params[:agent_name] }
     rescue Evaluation::MetricSuggester::Error => e

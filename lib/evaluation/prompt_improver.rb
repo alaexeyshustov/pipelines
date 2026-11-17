@@ -24,7 +24,7 @@ module Evaluation
         system_prompt: improved[:system_prompt],
         user_prompt: improved[:user_prompt].presence || current_prompt.user_prompt,
         output_schema: current_prompt.output_schema
-      )
+      ).prompt
     end
 
     private

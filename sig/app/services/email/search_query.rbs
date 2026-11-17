@@ -8,13 +8,19 @@ class Email
       def self.new: (email: Email, rank: Float, snippet: String?) -> instance
     end
 
-    def self.call: (String? query, ?limit: Integer, ?mode: Symbol) -> Array[Hit]
+    class Result < Data
+      attr_reader hits: Array[Hit]
+
+      def self.new: (hits: Array[Hit]) -> instance
+    end
+
+    def self.call: (String? query, ?limit: Integer, ?mode: Symbol) -> Result
 
     @query: String?
     @limit: Integer
     @mode: Symbol
 
     def initialize: (String? query, limit: Integer, mode: Symbol) -> void
-    def call: () -> Array[Hit]
+    def call: () -> Result
   end
 end

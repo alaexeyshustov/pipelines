@@ -1,9 +1,15 @@
 module Evaluation
   class MetricPassRateQuery
+    class Result < Data
+      attr_reader by_metric: Hash[String, Float]
+
+      def self.new: (by_metric: Hash[String, Float]) -> instance
+    end
+
     @experiment: Experiment
 
-    def self.call: (experiment: Experiment) -> Hash[String, Float]
+    def self.call: (experiment: Experiment) -> Result
     def initialize: (experiment: Experiment) -> void
-    def call: () -> Hash[String, Float]
+    def call: () -> Result
   end
 end

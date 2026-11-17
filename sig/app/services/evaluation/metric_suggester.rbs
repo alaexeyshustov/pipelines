@@ -13,13 +13,19 @@ module Evaluation
     }
     type entry = Hash[String, json_object_value]
 
-    def self.call: (agent_name: String, ?model: String?) -> Array[suggestion]
+    class Result < Data
+      attr_reader metrics: Array[suggestion]
+
+      def self.new: (metrics: Array[suggestion]) -> instance
+    end
+
+    def self.call: (agent_name: String, ?model: String?) -> Result
 
     @agent_name: String
     @model: String?
 
     def initialize: (agent_name: String, ?model: String?) -> void
-    def call: () -> Array[suggestion]
+    def call: () -> Result
 
     private
 

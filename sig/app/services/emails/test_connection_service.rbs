@@ -1,10 +1,18 @@
 module Emails
   class TestConnectionService
+    class Result < Data
+      attr_reader success: bool
+      attr_reader error: String?
+
+      def self.new: (success: bool, error: String?) -> instance
+      def success?: () -> bool
+    end
+
     @connector: EmailConnector
 
-    def self.call: (connector: EmailConnector) -> Emails::ConnectionTester::outcome
+    def self.call: (connector: EmailConnector) -> Result
     def initialize: (connector: EmailConnector) -> void
-    def call: () -> Emails::ConnectionTester::outcome
+    def call: () -> Result
 
     private
 

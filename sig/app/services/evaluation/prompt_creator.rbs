@@ -1,10 +1,16 @@
 module Evaluation
   class PromptCreator
+    class Result < Data
+      attr_reader prompt: Prompt
+
+      def self.new: (prompt: Prompt) -> instance
+    end
+
     @attributes: Hash[Symbol, String | json_object | nil]
 
-    def self.call: (name: String?, system_prompt: String?, user_prompt: String?, ?output_schema: json_object?) -> Prompt
+    def self.call: (name: String?, system_prompt: String?, user_prompt: String?, ?output_schema: json_object?) -> Result
 
     def initialize: (name: String?, system_prompt: String?, user_prompt: String?, ?output_schema: json_object?) -> void
-    def call: () -> Prompt
+    def call: () -> Result
   end
 end

@@ -85,12 +85,8 @@ module PipelineCLI
       def call(token: nil, gist_id: nil, filename: "interviews.csv", **)
         resolved_token = require_token(token)
         csv = interviews_csv
-        uploader = GistUploader.new(
-          token:    resolved_token,
-          gist_id:  gist_id || ENV["GIST_ID"],
-          filename: filename
-        )
-        puts "Uploaded: #{uploader.upload(csv)}"
+        result = GistUploader.call(csv, token: resolved_token, gist_id: gist_id || ENV["GIST_ID"], filename: filename)
+        puts "Uploaded: #{result.url}"
       rescue GistUploader::ApiError => e
         puts "Upload failed: #{e.message}"
         exit 1
@@ -122,4 +118,4 @@ module PipelineCLI
   end
 end
 
-Dry::CLI.new(PipelineCLI::Commands).call
+Dry::CLI.new(PipelineCLI::Commands).call if $PROGRAM_NAME == __FILE__

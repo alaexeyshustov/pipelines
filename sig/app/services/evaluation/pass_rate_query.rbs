@@ -2,10 +2,16 @@ module Evaluation
   class PassRateQuery
     PASS_RATE: Arel::Nodes::SqlLiteral
 
+    class Result < Data
+      attr_reader by_experiment: Hash[Integer, Float]
+
+      def self.new: (by_experiment: Hash[Integer, Float]) -> instance
+    end
+
     @experiment_ids: Array[Integer]
 
-    def self.call: (experiment_ids: Array[Integer]) -> Hash[Integer, Float]
+    def self.call: (experiment_ids: Array[Integer]) -> Result
     def initialize: (experiment_ids: Array[Integer]) -> void
-    def call: () -> Hash[Integer, Float]
+    def call: () -> Result
   end
 end

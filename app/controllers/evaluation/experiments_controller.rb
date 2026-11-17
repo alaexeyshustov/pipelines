@@ -7,7 +7,7 @@ module Evaluation
 
     def index
       @experiments = Experiment.order(created_at: :desc).includes(:prompt)
-      @usage_by_experiment = ExperimentUsageQuery.call(experiment_ids: @experiments.map(&:id))
+      @usage_by_experiment = ExperimentUsageQuery.call(experiment_ids: @experiments.map(&:id)).by_experiment
     end
 
     def show = load_experiment_stats(@experiment)
@@ -43,7 +43,7 @@ module Evaluation
         system_prompt: agent.prompt,
         user_prompt: "{{input}}",
         output_schema: agent.output_schema
-      )
+      ).prompt
 
       render json: { id: prompt.id, version: prompt.version }
     end

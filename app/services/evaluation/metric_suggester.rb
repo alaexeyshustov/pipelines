@@ -3,6 +3,8 @@ module Evaluation
   # only maps it to Metric columns: kind, levels (score: Array, choice: {option => {description, value}},
   # probability: nil), weight, minimum.
   class MetricSuggester
+    Result = Data.define(:metrics)
+
     class Error < StandardError; end
 
     def self.call(agent_name:, model: nil)
@@ -21,7 +23,7 @@ module Evaluation
       entries = StructuredOutput.from(query_llm(prompt_to_analyze))["metrics"]
       raise Error, "Expected a metrics array" unless entries.is_a?(Array)
 
-      entries.filter_map { |entry| build_metric(entry) if entry.is_a?(Hash) }
+      Result.new(metrics: entries.filter_map { |entry| build_metric(entry) if entry.is_a?(Hash) })
     rescue Error
       raise
     rescue StandardError => e

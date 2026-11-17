@@ -38,12 +38,15 @@ class Document::ExtractEmailAttachmentsJob < ApplicationJob
     checksum = Digest::SHA256.hexdigest(data)
     return if Document.exists?(checksum:)
 
-    text = Document::TextExtractor.call(data:, mime_type: attachment[:mime_type].to_s, filename: attachment[:filename])
-    document = ingest(email, attachment, checksum, text)
+    document = ingest(email, attachment, checksum, extract_text(data, attachment))
     return unless document.previously_new_record?
 
     Document::EmbedJob.perform_later(document.id)
     Document::TagJob.perform_later(document.id)
+  end
+
+  def extract_text(data, attachment)
+    Document::TextExtractor.call(data:, mime_type: attachment[:mime_type].to_s, filename: attachment[:filename]).text
   end
 
   def ingest(email, attachment, checksum, text)

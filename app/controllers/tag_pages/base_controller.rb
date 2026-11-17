@@ -10,7 +10,7 @@ module TagPages
       @tag = Tag.find_by(name: tag_name)
       @filter = FilterForm.new(params.permit(:q, :subtag, :type, :from, :to))
       @subtags = @tag ? @tag.subtags.order(:name) : []
-      @rows = Search.call(tag: @tag, filter: @filter)
+      @rows = Search.call(tag: @tag, filter: @filter).rows
     end
 
     private
