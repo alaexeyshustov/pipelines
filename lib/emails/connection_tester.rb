@@ -3,6 +3,7 @@ module Emails
   # Pure collaborator: performs no persistence; callers own status updates.
   class ConnectionTester
     UNKNOWN_PROVIDER = "Unknown provider".freeze
+    GENERIC_ERROR    = "Could not connect with the saved settings".freeze
 
     def initialize(provider:, configuration:, providers: Emails::PROVIDERS)
       @provider      = provider.to_s
@@ -17,7 +18,7 @@ module Emails
       run_provider_check(adapter_class)
       { success: true }
     rescue StandardError => e
-      { success: false, error: e.message }
+      { success: false, error: GENERIC_ERROR, exception: e }
     end
 
     private
@@ -29,23 +30,18 @@ module Emails
       end
     end
 
+    # from_env returns an authorized adapter; fetching the profile proves the token works.
     def connect_gmail_adapter(adapter_class)
-      adapter = adapter_class.from_env(
-        credentials_path: config_value(:credentials_path),
-        token_path: config_value(:token_path)
-      )
-      adapter.on_init
-      adapter.instance_variable_get(:@service).get_user_profile("me")
+      adapter_class.from_env.profile
     end
 
+    # Only the connector's own credentials: a blank one must not fall back to the server's YAHOO_* account.
     def connect_yahoo_adapter(adapter_class)
-      adapter = adapter_class.from_env(
-        host: config_value(:host),
-        port: config_value(:port).presence&.to_i,
-        username: config_value(:username),
-        password: config_value(:password)
-      )
-      adapter.list_messages(max_results: 1)
+      username = config_value(:username)
+      password = config_value(:password)
+      raise Emails::NotConfigured, "Yahoo connector has no stored username or password" if username.blank? || password.blank?
+
+      adapter_class.from_env(username:, password:).list_messages(max_results: 1)
     end
 
     def config_value(key)

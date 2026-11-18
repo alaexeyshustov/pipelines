@@ -1,4 +1,6 @@
 class EmailConnector < ApplicationRecord
+  ALLOWED_CONFIGURATION: Hash[String, Array[String]]
+
   type relation = _Relation[EmailConnector, Integer]
 
   def self.all: () -> relation
@@ -11,7 +13,11 @@ class EmailConnector < ApplicationRecord
   attr_accessor last_connected_at: Time?
   attr_accessor status: String?
 
+  def provider_changed?: () -> bool
+  def configuration_in_database: () -> Hash[String, json_object_value]?
+
   private
 
-  def convert_configuration_to_hash: () -> void
+  def normalize_configuration: () -> void
+  def stored_configuration: () -> Hash[String, json_object_value]
 end

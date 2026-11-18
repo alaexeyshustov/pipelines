@@ -21,8 +21,22 @@ RSpec.describe Emails::Adapters::ImapSession do
     it 'lazily connects and logs in with the configured credentials' do
       session.imap
 
-      expect(Net::IMAP).to have_received(:new).with('imap.mail.yahoo.com', port: 993, ssl: true)
+      expect(Net::IMAP).to have_received(:new).with('imap.mail.yahoo.com', port: 993, ssl: anything, open_timeout: anything)
       expect(imap).to have_received(:login).with('test@yahoo.com', 'secret')
+    end
+
+    it 'verifies the server certificate' do
+      session.imap
+
+      expect(Net::IMAP).to have_received(:new)
+        .with(anything, hash_including(ssl: { verify_mode: OpenSSL::SSL::VERIFY_PEER }))
+    end
+
+    it 'sets an explicit connect timeout shorter than the net-imap default of 30 seconds' do
+      session.imap
+
+      expect(Net::IMAP).to have_received(:new)
+        .with(anything, hash_including(open_timeout: satisfy { |seconds| seconds.positive? && seconds < 30 }))
     end
 
     it 'memoizes the connection across calls' do

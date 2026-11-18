@@ -1,6 +1,8 @@
 module Emails
   module Adapters
     class ImapSession
+      OPEN_TIMEOUT: Integer
+
       @imap_config: imap_config
       @mutex: Mutex
       @current_mailbox: String?

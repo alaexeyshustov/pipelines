@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe Emails::TestConnectionService do
-  let(:connector) { EmailConnector.create!(name: "Y", provider: "yahoo", configuration: { host: "h", port: 993 }) }
+  let(:connector) { EmailConnector.create!(name: "Y", provider: "yahoo", configuration: { username: "u", password: "p" }) }
 
   def stub_tester(outcome)
     tester = stub_const("FakeConnectionTester", Class.new do
@@ -26,6 +26,17 @@ RSpec.describe Emails::TestConnectionService do
 
     expect(result).to have_attributes(success: false, error: "nope")
     expect(connector.reload.status).to eq("failed")
+  end
+
+  it "logs the exception and returns only the generic message" do
+    io = StringIO.new
+    allow(Rails).to receive(:logger).and_return(Logger.new(io))
+    stub_tester({ success: false, error: "Generic failure", exception: RuntimeError.new("imap.internal.example refused") })
+
+    result = described_class.call(connector:)
+
+    expect(result).to have_attributes(success: false, error: "Generic failure")
+    expect(io.string).to include("imap.internal.example refused")
   end
 
   it "leaves status untouched for an unknown provider" do

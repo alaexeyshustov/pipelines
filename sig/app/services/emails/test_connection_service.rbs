@@ -16,6 +16,7 @@ module Emails
 
     private
 
+    def log_exception: (StandardError? exception) -> void
     def record_outcome: (Emails::ConnectionTester::outcome outcome) -> void
   end
 end

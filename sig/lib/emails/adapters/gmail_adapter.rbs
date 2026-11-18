@@ -1,6 +1,6 @@
 module Emails
   module Adapters
-    type gmail_options = { ?credentials_path: String?, ?token_path: String? }
+    type gmail_options = {}
     class GmailAdapter < BaseAdapter
       @session: GmailSession
       @labels: Array[label]

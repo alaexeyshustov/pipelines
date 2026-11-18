@@ -1,9 +1,12 @@
 module Emails
   module Adapters
-    type imap_options = { ?username: String?, ?password: String?, ?host: String?, ?port: Integer? }
+    type imap_options = { ?username: String?, ?password: String? }
     type imap_config = { host: String, port: Integer, username: String, password: String }
     class YahooAdapter < BaseAdapter
       include YahooInboxSync
+
+      IMAP_HOST: String
+      IMAP_PORT: Integer
 
       @account: String
       @session: ImapSession

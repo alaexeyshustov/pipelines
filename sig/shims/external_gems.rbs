@@ -206,7 +206,7 @@ module Google
       def initialize: (ClientId client_id, Array[String] scope, Stores::FileTokenStore token_store, ?legacy_callback_uri: String, ?callback_uri: String, ?code_verifier: String) -> void
       def get_credentials: (String user_id, ?Array[String] scope) -> Signet::OAuth2::Client?
       def get_and_store_credentials_from_code: (user_id: String, code: String, base_url: String) -> Signet::OAuth2::Client
-      def get_authorization_url: (?base_url: String) -> String
+      def get_authorization_url: (?base_url: String, ?state: String) -> String
     end
 
     module Stores
