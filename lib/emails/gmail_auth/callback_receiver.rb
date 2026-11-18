@@ -50,9 +50,12 @@ module Emails
         raw && CGI.unescape(raw)
       end
 
+      # Best effort: the browser may already have hung up, and the code (or the rejection) matters more than the page.
       def respond(client, heading, message)
         client.print "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n"
         client.print "<html><body><h1>#{heading}</h1><p>#{message}</p></body></html>"
+      rescue Errno::EPIPE, Errno::ECONNRESET, IOError
+        nil
       end
     end
   end
