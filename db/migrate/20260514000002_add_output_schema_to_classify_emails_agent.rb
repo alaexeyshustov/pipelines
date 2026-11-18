@@ -7,6 +7,12 @@
 #   2. Filter Emails steps that still hold the old "result.results" path would
 #      break — this migration unconditionally repoints them to "results".
 class AddOutputSchemaToClassifyEmailsAgent < ActiveRecord::Migration[8.1]
+  # Migration-local models: the app models track the current schema, not this migration's.
+  class MigrationAgent < ActiveRecord::Base
+    self.table_name = "orchestration_agents"
+    self.inheritance_column = nil
+  end
+
   CLASSIFY_SCHEMA = {
     "type"                 => "object",
     "additionalProperties" => false,
@@ -36,15 +42,15 @@ class AddOutputSchemaToClassifyEmailsAgent < ActiveRecord::Migration[8.1]
   }.freeze
 
   def up
-    Orchestration::Agent.find_by(name: "Emails::ClassifyAgent")
-      &.update!(output_schema: CLASSIFY_SCHEMA)
+    MigrationAgent.find_by(name: "Emails::ClassifyAgent")
+      &.update_columns(output_schema: CLASSIFY_SCHEMA)
 
     fix_filter_emails_path
   end
 
   def down
-    Orchestration::Agent.find_by(name: "Emails::ClassifyAgent")
-      &.update!(output_schema: nil)
+    MigrationAgent.find_by(name: "Emails::ClassifyAgent")
+      &.update_columns(output_schema: nil)
 
     restore_filter_emails_path
   end

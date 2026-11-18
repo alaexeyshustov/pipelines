@@ -1,4 +1,15 @@
 class MoveStoreEmailsOutputSchemaToAgent < ActiveRecord::Migration[8.1]
+  # Migration-local models: the app models track the current schema, not this migration's.
+  class MigrationAgent < ActiveRecord::Base
+    self.table_name = "orchestration_agents"
+    self.inheritance_column = nil
+  end
+
+  class MigrationAction < ActiveRecord::Base
+    self.table_name = "actions"
+    self.inheritance_column = nil
+  end
+
   # output_schema was on the Action, not the Agent record.
   # run_agent checks action.agent.output_schema to decide wrapping and to call with_schema.
   # With schema only on the action, the LLM received no structured-output guidance and
@@ -24,11 +35,11 @@ class MoveStoreEmailsOutputSchemaToAgent < ActiveRecord::Migration[8.1]
   }.freeze
 
   def up
-    Orchestration::Agent.find_by(name: "Records::StoreAgent")
-      &.update!(output_schema: SCHEMA)
+    MigrationAgent.find_by(name: "Records::StoreAgent")
+      &.update_columns(output_schema: SCHEMA)
 
-    Orchestration::Action.find_by(name: "Store Emails")
-      &.update!(output_schema: nil)
+    MigrationAction.find_by(name: "Store Emails")
+      &.update_columns(output_schema: nil)
   end
 
   def down
