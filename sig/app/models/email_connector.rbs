@@ -20,4 +20,5 @@ class EmailConnector < ApplicationRecord
 
   def normalize_configuration: () -> void
   def stored_configuration: () -> Hash[String, json_object_value]
+  def password_has_username: () -> void
 end

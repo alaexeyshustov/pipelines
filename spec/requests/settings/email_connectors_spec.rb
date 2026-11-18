@@ -152,6 +152,15 @@ RSpec.describe "Settings::EmailConnectors" do
 
       expect(connector.reload.configuration).to eq("username" => "me@yahoo.com", "password" => "rotated")
     end
+
+    it "rejects clearing the username and keeps the stored credentials" do
+      patch settings_email_connector_path(connector), params: { email_connector: {
+        configuration: { username: "", password: "" }
+      } }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(connector.reload.configuration).to eq("username" => "me@yahoo.com", "password" => "s3cret-pw")
+    end
   end
 
   describe "POST /settings/email_connectors/:id/setup" do

@@ -80,5 +80,23 @@ RSpec.describe EmailConnector do
 
       expect(yahoo.reload.configuration).to eq("username" => "me@yahoo.com", "password" => password)
     end
+
+    it "rejects clearing the username while a password is stored" do
+      expect(yahoo.update(configuration: { "username" => "", "password" => "" })).to be(false)
+      expect(yahoo.errors[:configuration]).to be_present
+      expect(yahoo.reload.configuration).to eq("username" => "me@yahoo.com", "password" => password)
+    end
+
+    it "rejects a new yahoo password without a username" do
+      connector = described_class.new(name: "Yahoo", provider: "yahoo", configuration: { "username" => "", "password" => "p" })
+
+      expect(connector).not_to be_valid
+    end
+
+    it "stores no blank keys when a yahoo connector is created with empty fields" do
+      connector = described_class.create!(name: "Yahoo", provider: "yahoo", configuration: { "username" => "", "password" => "" })
+
+      expect(connector.reload.configuration).to eq({})
+    end
   end
 end

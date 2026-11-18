@@ -29,7 +29,7 @@ snapshot:
   app/models/document_duplicate.rb: a2e03ef7a0b74b1b7e93bde2c23d3a40dea3d8620cb090b4d3f84e21a563cdc8
   app/models/email.rb: 61797b92c1e6dc2617a93bfaba4a643da644e4645e49ca6db2b28e4734f2e420
   app/models/email/sync_cursor.rb: 7aae72c185139e6f5338b03bbcdca11f2fd6500cf815c1c727fa3e2739d72fa4
-  app/models/email_connector.rb: da24c03713fa105da5dac50f292c440c4ce5f6f93bf4e5b8a87825551f9f6fe4
+  app/models/email_connector.rb: 2c96240f9b4d5733fdacda06ced0a6aa238f49964af6d9338efbf1bc8e0a6c71
   app/models/embedding.rb: 429243be249b9633d2cec19c35cfdafed50efb9cc47f8ad931c875874f3cdbf3
   app/models/evaluation/dataset.rb: b2413b10841d3e0558da95340a0f8047e82d08402496bfa6a572f699ad1e7c0e
   app/models/evaluation/dataset_sample.rb: 17b2872be49b1767cd00836ddc3b65ace387b5c417959992eb0c3a4cf2920fe5
