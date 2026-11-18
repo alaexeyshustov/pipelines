@@ -54,10 +54,64 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
       expect(chat).to have_received(:with_schema).with({ "type" => "object" })
     end
 
-    it 'applies the policy prompt as chat instructions' do
-      allow(chat).to receive(:with_instructions).and_return(chat)
-      builder.build
-      expect(chat).to have_received(:with_instructions).with("Classify this email")
+    # Assumes the planned constant Orchestration::RuntimeAgentBuilder::UNTRUSTED_INPUT_PREAMBLE (a String)
+    # and that the preamble and the prompt are joined into one instruction, preamble first.
+    describe 'untrusted input preamble' do
+      let(:preamble) { described_class::UNTRUSTED_INPUT_PREAMBLE }
+
+      def applied_instructions(built_chat)
+        captured = nil
+        allow(built_chat).to receive(:with_instructions) { |text, **| captured = text }.and_return(built_chat)
+        yield
+        captured
+      end
+
+      it 'defines a preamble that says input fields are data and instructions in them are ignored' do
+        expect(preamble).to be_a(String).and match(/data/i).and match(/ignore/i)
+      end
+
+      it 'puts the preamble before the agent prompt' do
+        text = applied_instructions(chat) { builder.build }
+
+        expect(text).to start_with(preamble)
+        expect(text).to end_with("Classify this email")
+        expect(text.index(preamble)).to be < text.index("Classify this email")
+      end
+
+      it 'puts the preamble before a prompt override' do
+        text = applied_instructions(chat) do
+          overridden = Orchestration::AgentResolutionPolicy::Result.new(
+            model: "mistral-large-latest", prompt: "Override prompt", tools: [], output_schema: nil
+          )
+          described_class.new(policy: overridden, chat: chat).build
+        end
+
+        expect(text).to start_with(preamble)
+        expect(text).to end_with("Override prompt")
+      end
+
+      it 'applies the preamble alone when the prompt is empty' do
+        text = applied_instructions(chat) do
+          empty = Orchestration::AgentResolutionPolicy::Result.new(model: nil, prompt: nil, tools: [], output_schema: nil)
+          described_class.new(policy: empty, chat: chat).build
+        end
+
+        expect(text.strip).to eq(preamble.strip)
+      end
+
+      it 'applies the preamble when the prompt is a blank string' do
+        text = applied_instructions(chat) do
+          blank = Orchestration::AgentResolutionPolicy::Result.new(model: nil, prompt: "   ", tools: [], output_schema: nil)
+          described_class.new(policy: blank, chat: chat).build
+        end
+
+        expect(text.strip).to eq(preamble.strip)
+      end
+
+      it 'does not repeat the preamble inside the prompt text' do
+        text = applied_instructions(chat) { builder.build }
+        expect(text.scan(preamble).size).to eq(1)
+      end
     end
 
     context 'when all policy fields are blank' do
@@ -85,10 +139,10 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
         expect(chat).not_to have_received(:with_schema)
       end
 
-      it 'does not call with_instructions' do
-        allow(chat).to receive(:with_instructions)
+      it 'still calls with_instructions, for the untrusted-input preamble' do
+        allow(chat).to receive(:with_instructions).and_return(chat)
         described_class.new(policy: policy, chat: chat).build
-        expect(chat).not_to have_received(:with_instructions)
+        expect(chat).to have_received(:with_instructions)
       end
     end
 

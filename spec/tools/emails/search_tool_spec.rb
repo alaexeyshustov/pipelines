@@ -44,4 +44,13 @@ RSpec.describe Emails::SearchTool do
       }
     ).to have_been_made
   end
+
+  it 'passes offset through to Emails.search_messages' do
+    allow(Emails).to receive(:search_messages).and_return([])
+
+    tool.execute(provider: 'gmail', query: 'job', max_results: 5, offset: 20)
+
+    expect(Emails).to have_received(:search_messages)
+      .with('gmail', 'job', max_results: 5, label: nil, offset: 20)
+  end
 end

@@ -1,7 +1,14 @@
 module Emails
   class AddLabelsTool < RubyLLM::Tool
+    BLOCKED_LABELS: Array[String]
+    ALLOWED_IMAP_FLAGS: Array[String]
+
     def self.readonly?: () -> bool
     def name: () -> String
-    def execute: (provider: String, message_id: String, label_ids: Array[String], ?mailbox: String) -> Emails::modify_result
+    def execute: (provider: String, message_id: String, label_ids: Array[String], ?mailbox: String) -> (Emails::modify_result | { error: String })
+
+    private
+
+    def rejected_label?: (String label) -> bool
   end
 end

@@ -61,19 +61,12 @@ module Orchestration
     def tools_must_be_valid
       return if tools.blank?
 
-      tools.each { |tool| validate_tool(tool) }
+      available = self.class.available_tools
+      tools.each { |tool| validate_tool(tool, available) }
     end
 
-    def validate_tool(tool)
-      namespace = tool.to_s.split("::").first
-      unless ALLOWED_TOOL_NAMESPACES.include?(namespace)
-        errors.add(:tools, "contains tool outside allowed namespaces: #{tool}")
-        return
-      end
-
-      tool.constantize
-    rescue NameError
-      errors.add(:tools, "contains invalid tool: #{tool}")
+    def validate_tool(tool, available)
+      errors.add(:tools, "contains invalid tool: #{tool}") unless available.include?(tool)
     end
 
     def ensure_not_referenced

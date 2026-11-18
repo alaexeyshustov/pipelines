@@ -12,7 +12,7 @@ RSpec.describe "Seeds: agent config backfill" do # rubocop:disable RSpec/Describ
   ]
 
   {
-    "Orchestration::Agents::EmailsClassifier"   => { model: "mistral-large-latest", tools: [ "Records::TempFileTool" ] },
+    "Orchestration::Agents::EmailsClassifier"   => { model: "mistral-large-latest", tools: [] },
     "Orchestration::Agents::RecordsNormalizer" => { model: "gpt-5.1",              tools: [ "Records::ListRowsTool", "Records::ReadRowsTool", "Records::UpdateRowsTool",
                                                                             "Records::ReadSchemaTool", "Records::SearchSimilarTool" ] }
   }.each do |agent_name, expected|
@@ -24,7 +24,7 @@ RSpec.describe "Seeds: agent config backfill" do # rubocop:disable RSpec/Describ
       end
 
       it "has exactly the expected tools" do
-        expect(agent.tools).to match_array(expected[:tools])
+        expect(Array(agent.tools)).to match_array(expected[:tools])
       end
 
       it "has prompt set" do

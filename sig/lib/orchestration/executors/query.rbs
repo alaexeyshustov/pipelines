@@ -5,6 +5,8 @@ module Orchestration
       extend Executable::ClassMethods
       extend Records::ModelResolver
 
+      EXTRA_COLUMNS: Array[String]
+
       @column_name: String
       @column_values: Array[json_object_value]
       @columns: Array[String]
@@ -14,6 +16,10 @@ module Orchestration
 
       def initialize: (table: String, column_name: String, column_values: Array[json_object_value], ?columns: Array[String]?) -> void
       def execute: () -> Hash[String, Array[json_object]]
+
+      private
+
+      def validate_columns: (_HasColumnNames model) -> void
     end
   end
 end

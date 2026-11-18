@@ -28,7 +28,7 @@ module Records
       duplicate = [] #: Array[{ existing_id: Integer }]
       invalids = [] #: Array[json_object]
       records.each do |row|
-        attrs = row.transform_keys(&:to_s).slice(*model.tool_column_names)
+        attrs = row.transform_keys(&:to_s).slice(*model.tool_writable_column_names)
         next if attrs.empty?
         accumulate_insert_result(insert_record(model, attrs), ids, duplicate, invalids)
       end

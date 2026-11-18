@@ -12,11 +12,14 @@ module Records
     parameter :column, type: :string, description: "Column to search (e.g. 'company', 'job_title')",  required: true
     parameter :value,  type: :string, description: "Value to find similar matches for", required: true
 
+    MAX_VALUE_LENGTH = 200
+
     def name = "search_similar"
 
     def execute(table:, column:, value:)
       model = resolve_model(table)
       return { error: "Unknown column #{column}" } unless model.tool_column_names.include?(column)
+      return { error: "value is too long (maximum #{MAX_VALUE_LENGTH} characters)" } if value.length > MAX_VALUE_LENGTH
 
       { matches: merged_matches(model, column, value) }
     rescue ModelNotFound => error
@@ -37,7 +40,7 @@ module Records
       quoted = conn.quote_column_name(column)
       sql    = build_substring_sql(quoted, model.table_name)
 
-      conn.select_all(model.sanitize_sql([ sql, { value: value, like: "%#{value}%" } ]))
+      conn.select_all(model.sanitize_sql([ sql, { value: value.downcase, like: "%#{model.sanitize_sql_like(value)}%" } ]))
           .filter_map { |row| map_substring_row(row, column) }
     end
 
@@ -46,7 +49,7 @@ module Records
         SELECT #{quoted}, GROUP_CONCAT(id) AS ids
         FROM #{table_name}
         WHERE #{quoted} IS NOT NULL AND #{quoted} != ''
-          AND (#{quoted} LIKE :like OR :value LIKE '%' || #{quoted} || '%')
+          AND (#{quoted} LIKE :like ESCAPE '\\' OR instr(:value, lower(#{quoted})) > 0)
         GROUP BY #{quoted}
         ORDER BY #{quoted}
       SQL

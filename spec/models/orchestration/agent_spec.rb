@@ -44,7 +44,20 @@ RSpec.describe Orchestration::Agent do
     it "rejects tools outside allowed namespaces" do
       agent.tools = [ "File" ]
       expect(agent).not_to be_valid
-      expect(agent.errors[:tools].first).to include("outside allowed namespaces")
+      expect(agent.errors[:tools]).to be_present
+    end
+
+    [ "Records::ModelResolver", "Records::FuzzyMatcher", "Emails::Adapters::GmailAdapter", "Emails::PROVIDER_NAMES", "Kernel" ].each do |name|
+      it "rejects #{name} because it is not in Agent.available_tools" do
+        agent.tools = [ name ]
+        expect(agent).not_to be_valid
+        expect(agent.errors[:tools].first).to include(name)
+      end
+    end
+
+    it "accepts every available tool" do
+      agent.tools = described_class.available_tools
+      expect(agent).to be_valid
     end
 
     it "rejects unknown constants within allowed namespaces" do

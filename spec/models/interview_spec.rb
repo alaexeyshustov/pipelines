@@ -134,5 +134,19 @@ RSpec.describe Interview do
     it 'returns COLUMN_NAMES' do
       expect(described_class.tool_column_names).to eq(Interview::COLUMN_NAMES)
     end
+
+    it 'includes id, because agents address rows by it' do
+      expect(described_class.tool_column_names).to include('id')
+    end
+  end
+
+  describe '.tool_writable_column_names' do
+    it 'is the readable columns without id' do
+      expect(described_class.tool_writable_column_names).to eq(Interview::COLUMN_NAMES - [ 'id' ])
+    end
+
+    it 'does not include id' do
+      expect(described_class.tool_writable_column_names).not_to include('id')
+    end
   end
 end

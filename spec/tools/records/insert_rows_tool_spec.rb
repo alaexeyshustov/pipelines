@@ -19,6 +19,19 @@ RSpec.describe Records::InsertRowsTool do
       expect(result[:duplicate]).to eq([ { existing_id: existing.id } ])
     end
 
+    it 'ignores a caller-supplied id and lets the database assign one' do
+      result = tool.execute(table: 'interviews', data: [ row.merge('id' => 987_654) ].to_json)
+
+      expect(result[:rows_added]).to eq(1)
+      expect(result[:ids]).not_to include(987_654)
+      expect(Interview.exists?(987_654)).to be false
+    end
+
+    it 'skips a row that has only an id' do
+      result = tool.execute(table: 'interviews', data: [ { 'id' => 5 } ].to_json)
+      expect(result[:rows_added]).to eq(0)
+    end
+
     it 'skips rows missing required columns' do
       result = tool.execute(table: 'interviews', data: [ { 'company' => 'Acme' } ].to_json)
       expect(result[:rows_added]).to eq(0)

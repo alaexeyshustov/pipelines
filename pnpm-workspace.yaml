@@ -6,3 +6,6 @@ auditConfig:
     # minimatch <11.0.1 DoS via globparts amplification. Dev-only, pulled in by
     # eslint, which still requires minimatch ^10. Remove once eslint moves to 11.
     - GHSA-g3hv-75wg-m249
+    # picomatch <=4.0.7 ReDoS via repeated extglobs, no patched version yet. Dev-only, pulled in by
+    # @herb-tools/linter. Remove once a fixed picomatch is released.
+    - GHSA-fc5q-39xc-vjpf
