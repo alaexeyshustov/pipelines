@@ -3,12 +3,7 @@ require 'rails_helper'
 RSpec.describe Emails::Adapters::GmailAdapter do
   include GmailHelpers
 
-  subject(:adapter) do
-    described_class.from_env(
-      credentials_path: GmailHelpers::CREDENTIALS_PATH,
-      token_path:       GmailHelpers.token_path
-    )
-  end
+  subject(:adapter) { described_class.from_env }
 
   before { setup_gmail }
   after  { teardown_gmail }
@@ -178,13 +173,21 @@ RSpec.describe Emails::Adapters::GmailAdapter do
 
   describe '.from_env' do
     it 'raises when the credentials file is missing' do
-      expect { described_class.from_env(credentials_path: '/nonexistent/path.json', token_path: GmailHelpers.token_path) }
+      ENV['GMAIL_CREDENTIALS_PATH'] = '/nonexistent/path.json'
+
+      expect { described_class.from_env }
         .to raise_error(Emails::NotConfigured, /Missing Gmail credentials/)
+    end
+
+    it 'ignores path options and uses the server config' do
+      adapter = described_class.from_env(credentials_path: '/nonexistent/path.json', token_path: '/nonexistent/token.yaml')
+
+      expect(adapter).to be_a(described_class)
     end
   end
 
   describe '.reset' do
-    let(:token_path) { Rails.root.join('token.yaml').to_s }
+    let(:token_path) { GmailHelpers.token_path }
 
     context 'when the token file exists' do
       before do
@@ -216,10 +219,7 @@ RSpec.describe Emails::Adapters::GmailAdapter do
     it 'returns a success message when the connection works',
        vcr: { cassette_name: 'emails/adapters/gmail/test_connection',
               record: :none, match_requests_on: %i[method path] } do
-      status = described_class.test_connection(
-        credentials_path: GmailHelpers::CREDENTIALS_PATH,
-        token_path:       GmailHelpers.token_path
-      )
+      status = described_class.test_connection
 
       expect(status).to match(/Gmail connection successful/)
     end

@@ -7,11 +7,13 @@ module Emails
       @credentials_path: String
       @token_path: String
 
-      def self.setup: (?gmail_options) -> void
-      def self.test_connection: (?gmail_options) -> String
+      def self.setup: () -> void
+      def self.test_connection: () -> String
       def self.reset: () -> void
-      def self.from_env: (?gmail_options) -> GmailAdapter
-      def self.paths_from_env: (gmail_options opts) -> { credentials_path: String, token_path: String }
+      def self.from_env: () -> GmailAdapter
+      def self.auth_from_env: () -> GmailAuth
+      def self.paths_from_env: () -> { credentials_path: String, token_path: String }
+      def self.token_path_from_env: () -> String
 
       def initialize: (credentials_path: String, token_path: String) -> void
       def authorize: (?interactive: bool) -> Signet::OAuth2::Client

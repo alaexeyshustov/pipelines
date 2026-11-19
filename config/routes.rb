@@ -128,10 +128,10 @@ Rails.application.routes.draw do
   end
 
   namespace :settings do
-    resources :email_connectors do
+    resources :email_connectors, except: :show do
       member do
         post :test
-        get :setup
+        post :setup
       end
       collection do
         get :oauth_callback

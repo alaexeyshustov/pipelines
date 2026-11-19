@@ -8,7 +8,7 @@ module Emails
       APPLICATION_NAME = "Application Pipeline"
       SCOPE = [ "https://www.googleapis.com/auth/gmail.modify" ].freeze
 
-      def self.setup(opts = {})
+      def self.setup
         Rails.logger.debug { <<~INSTRUCTIONS }
           Gmail setup:
           1. Create a project in Google Cloud Console.
@@ -18,21 +18,19 @@ module Emails
 
           Clearing any existing token and launching OAuth authorization flow...
         INSTRUCTIONS
-        new(**paths_from_env(opts)).authorize(interactive: true)
+        new(**paths_from_env).authorize(interactive: true)
         Rails.logger.debug "✓ Gmail OAuth token saved."
       end
 
-      def self.test_connection(opts = {})
-        adapter = from_env(opts)
-        adapter.on_init
-        adapter.instance_variable_get(:@service).get_user_profile("me")
+      def self.test_connection
+        from_env.profile
         "✓ Gmail connection successful"
       rescue StandardError => error
         "ERROR: Gmail connection failed - #{error.message}"
       end
 
       def self.reset
-        token_path = Rails.root.join("token.yaml").to_s
+        token_path = token_path_from_env
         if File.exist?(token_path)
           File.delete(token_path)
           Rails.logger.debug { "✓ Token deleted: #{token_path}" }
@@ -41,23 +39,32 @@ module Emails
         end
       end
 
-      def self.from_env(opts = {})
-        adapter = GmailAdapter.new(**paths_from_env(opts))
+      # The credentials and token paths are server config (ENV), never request or row input.
+      def self.from_env
+        adapter = GmailAdapter.new(**paths_from_env)
         adapter.on_init
         adapter
       end
 
-      def self.paths_from_env(opts)
-        root             = Rails.root
-        credentials_path = opts[:credentials_path] || ENV.fetch("GMAIL_CREDENTIALS_PATH", root.join("credentials.json").to_s)
-        token_path       = opts[:token_path]       || ENV.fetch("GMAIL_TOKEN_PATH", root.join("token.yaml").to_s)
+      # The OAuth flow over the configured paths; the web setup uses it for the authorization URL and code exchange.
+      def self.auth_from_env
+        new(**paths_from_env).auth
+      end
+
+      def self.paths_from_env
+        credentials_path = ENV.fetch("GMAIL_CREDENTIALS_PATH", Rails.root.join("credentials.json").to_s)
         unless File.exist?(credentials_path)
           raise Emails::NotConfigured, "Missing Gmail credentials file. Please create #{credentials_path} with your Google API credentials."
         end
 
-        { credentials_path:, token_path: }
+        { credentials_path:, token_path: token_path_from_env }
       end
       private_class_method :paths_from_env
+
+      def self.token_path_from_env
+        ENV.fetch("GMAIL_TOKEN_PATH", Rails.root.join("token.yaml").to_s)
+      end
+      private_class_method :token_path_from_env
 
       def initialize(credentials_path:, token_path:)
         @credentials_path = credentials_path

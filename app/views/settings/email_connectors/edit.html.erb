@@ -4,4 +4,11 @@
 
 <div class="bg-white shadow rounded-lg p-6">
   <%= render "form", email_connector: @email_connector %>
+
+  <% if @email_connector.provider == Emails::GMAIL %>
+    <div class="mt-6">
+      <%= button_to "Connect Gmail", setup_settings_email_connector_path(@email_connector), method: :post,
+          class: "bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer" %>
+    </div>
+  <% end %>
 </div>

@@ -3,20 +3,20 @@ require "google/apis/gmail_v1"
 module Emails
   module Adapters
     class GmailAdapter < BaseAdapter
-      def self.setup(opts = {})
-        GmailSession.setup(opts)
+      def self.setup(_opts = {})
+        GmailSession.setup
       end
 
-      def self.test_connection(opts = {})
-        GmailSession.test_connection(opts)
+      def self.test_connection(_opts = {})
+        GmailSession.test_connection
       end
 
       def self.reset
         GmailSession.reset
       end
 
-      def self.from_env(opts = {})
-        GmailSession.from_env(opts)
+      def self.from_env(_opts = {})
+        GmailSession.from_env
       end
 
       def initialize(credentials_path:, token_path:)

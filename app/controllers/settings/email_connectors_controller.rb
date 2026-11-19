@@ -1,12 +1,10 @@
 module Settings
   class EmailConnectorsController < ApplicationController
-    before_action :set_email_connector, only: %i[show edit update destroy test setup]
+    before_action :set_email_connector, only: %i[edit update destroy test setup]
+    before_action :require_gmail_connector, only: :setup
 
     def index
       @email_connectors = EmailConnector.all
-    end
-
-    def show
     end
 
     def new
@@ -48,45 +46,87 @@ module Settings
       end
     end
 
+    # A missing, malformed (googleauth parses it with MultiJson) or unreadable credentials file gets a generic alert.
     def setup
-      session[:oauth_connector_id] = @email_connector.id
-      redirect_to gmail_auth(@email_connector).authorization_url(callback_uri: oauth_callback_settings_email_connectors_url),
-                  allow_other_host: true
-    rescue Errno::ENOENT => e
+      state = SecureRandom.urlsafe_base64(32)
+      url   = Emails::Adapters::GmailSession.auth_from_env
+                                            .authorization_url(callback_uri: oauth_callback_settings_email_connectors_url, state:)
+      session[:gmail_oauth] = { connector_id: @email_connector.id, state: }
+      redirect_to url, allow_other_host: true
+    rescue Emails::NotConfigured, MultiJson::ParseError, JSON::ParserError, SystemCallError => e
+      log_setup_failure(e)
       redirect_to edit_settings_email_connector_path(@email_connector),
-                  alert: "Credentials file not found: #{e.message}. Please check the Credentials JSON Path."
+                  alert: "Gmail is not configured on the server. Check the server logs."
     end
 
     def oauth_callback
-      connector_id = session.delete(:oauth_connector_id)
-      unless connector_id
-        redirect_to settings_email_connectors_path, alert: "OAuth session expired. Please try again."
-        return
-      end
+      oauth     = session.delete(:gmail_oauth).to_h.with_indifferent_access
+      rejection = oauth_rejection(oauth)
+      return reject_oauth(*rejection) if rejection
 
-      connector = EmailConnector.find(connector_id)
-      gmail_auth(connector).exchange_code(code: params[:code], callback_uri: oauth_callback_settings_email_connectors_url)
-      redirect_to edit_settings_email_connector_path(connector), notice: "Gmail connected successfully."
+      @email_connector = EmailConnector.find_by(id: oauth[:connector_id])
+      return reject_oauth("Email connector no longer exists.", "connector #{oauth[:connector_id]} not found") unless @email_connector
+
+      exchange_gmail_code
     rescue StandardError => e
-      redirect_to edit_settings_email_connector_path(connector), alert: "OAuth failed: #{e.message}"
+      Rails.logger.error { "Gmail OAuth failed: #{e.class}: #{e.message}" }
+      oauth_failed("Gmail authorization failed. Check the server logs.")
     end
 
     private
 
-    def gmail_auth(connector)
-      configuration = connector.configuration
-      Emails::Adapters::GmailSession.new(
-        credentials_path: configuration["credentials_path"],
-        token_path:       configuration["token_path"]
-      ).auth
+    # A parser message can quote the file, which holds the OAuth client secret, so log only its class.
+    def log_setup_failure(error)
+      detail = error.is_a?(MultiJson::ParseError) || error.is_a?(JSON::ParserError) ? "" : ": #{error.message}"
+      Rails.logger.error { "Gmail setup failed: #{error.class}#{detail}" }
+    end
+
+    def oauth_state_valid?(expected)
+      expected.present? && ActiveSupport::SecurityUtils.secure_compare(params[:state].to_s, expected.to_s)
+    end
+
+    # Why the callback request must not proceed, as [alert, log reason], or nil.
+    def oauth_rejection(oauth)
+      return [ "OAuth session expired. Please try again.", oauth_state_problem(oauth[:state]) ] unless oauth_state_valid?(oauth[:state])
+
+      [ "Gmail authorization was not granted.", "Google returned error=#{params[:error].to_s.truncate(64).inspect}" ] if params[:error].present?
+    end
+
+    def oauth_state_problem(expected)
+      return "no OAuth state in session" if expected.blank?
+      return "callback has no state" if params[:state].blank?
+
+      "state mismatch"
+    end
+
+    def reject_oauth(message, reason)
+      Rails.logger.warn { "Gmail OAuth callback rejected: #{reason}" }
+      oauth_failed(message)
+    end
+
+    def exchange_gmail_code
+      Emails::Adapters::GmailSession.auth_from_env
+                                    .exchange_code(code: params[:code], callback_uri: oauth_callback_settings_email_connectors_url)
+      redirect_to edit_settings_email_connector_path(@email_connector), notice: "Gmail connected successfully."
+    end
+
+    def oauth_failed(message)
+      target = @email_connector ? edit_settings_email_connector_path(@email_connector) : settings_email_connectors_path
+      redirect_to target, alert: message
     end
 
     def set_email_connector
       @email_connector = EmailConnector.find(params[:id])
     end
 
+    def require_gmail_connector
+      return if @email_connector.provider == Emails::GMAIL
+
+      redirect_to edit_settings_email_connector_path(@email_connector), alert: "Only Gmail connectors are authorized with Google."
+    end
+
     def email_connector_params
-      params.expect(email_connector: [ :name, :provider, :enabled, configuration: {} ])
+      params.expect(email_connector: [ :name, :provider, :enabled, configuration: [ :username, :password ] ])
     end
   end
 end

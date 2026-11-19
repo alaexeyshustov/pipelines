@@ -41,4 +41,9 @@ Rails.application.configure do
   config.action_controller.raise_on_missing_callback_actions = true
 
   config.active_job.queue_adapter = :test
+
+  # Fixed, non-secret Active Record Encryption keys so specs never need the master key.
+  config.active_record.encryption.primary_key = "test-primary-key-0123456789abcdef"
+  config.active_record.encryption.deterministic_key = "test-deterministic-key-0123456789ab"
+  config.active_record.encryption.key_derivation_salt = "test-key-derivation-salt-0123456789"
 end

@@ -1,5 +1,3 @@
-require 'generators/ruby_llm/upgrade/legacy_content_sql'
-
 class BackfillRubyLLMV2Data < ActiveRecord::Migration[8.1]
   disable_ddl_transaction!
 
@@ -49,7 +47,10 @@ class BackfillRubyLLMV2Data < ActiveRecord::Migration[8.1]
 
   def backfill_message_content
     return mark_completed('message_content') unless column_exists?(:messages, :content_raw)
+    # Nothing to convert on a fresh database; the helper below only shipped with RubyLLM 2.0, so load it on demand.
+    return mark_completed('message_content') unless migration_record(:messages).where.not(content_raw: nil).exists?
 
+    require 'generators/ruby_llm/upgrade/legacy_content_sql'
     each_message_range('message_content') do |range|
       content_raw = message_value(:content_raw)
       raw_content = message_value(:raw_content)

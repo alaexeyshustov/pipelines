@@ -13,6 +13,13 @@ bundle exec archspec reflect --environment test
 - `bundle exec archspec check --reflect` refreshes stale facts before checking, but boots `development` by default; prefix it with `RAILS_ENV=test` (the committed facts are for `test`, and a worktree may have no development DB).
 - CI runs plain `check` and never boots the app, so stale facts fail CI rather than being regenerated there.
 
+## Active Record Encryption (`EmailConnector#configuration`)
+
+- `EmailConnector` encrypts `configuration` (Yahoo app password). Development and production read `active_record_encryption` (`primary_key`, `deterministic_key`, `key_derivation_salt`) from `config/credentials.yml.enc`; without them every `EmailConnector` read or write raises.
+- Setup: if `config/master.key` (gitignored) is lost, delete `config/credentials.yml.enc`; `bin/rails credentials:edit` then creates a new key and file. Generate the keys with `bin/rails db:encryption:init` and paste its output into `bin/rails credentials:edit`. Production sets `RAILS_MASTER_KEY`.
+- The test environment uses fixed, non-secret keys in `config/environments/test.rb`, so specs and CI need no master key.
+- Gmail OAuth tokens are not in the database: they live in the file at `GMAIL_TOKEN_PATH` (created `0600`) and are shared by every Gmail connector.
+
 ## Steep (`Steepfile`, `.claude/hooks/steep_check.sh`)
 
 - Steep checks `lib/`, `app/jobs`, `app/models`, `app/services` and `app/tools`. The `ignore` entries in `Steepfile` are known gaps: remove one when its files type-check, never add one to get a change through.
