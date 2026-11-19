@@ -14,8 +14,8 @@ sources:
 - "**/app/models/**/*.rb"
 snapshot:
   ".ruby-version": 365c845737dc111861176ea1d0246ce7b335768d8dbd2cea234c305b2983beba
-  Gemfile: bf004da958b5bbf38f4c937db66cd9ef45f8e1dba9b6fb84ea460c49b4f40418
-  Gemfile.lock: f67ec1c3a12fd458761e94db97f82f57632a493773f3ec3c0bf599fdd969352a
+  Gemfile: 2e47c91d50a1931fbf3b68cfaefd8a2fa3636d385519de33b50f5bb0b72fb9aa
+  Gemfile.lock: 299fa92d285bd71bac6d63f3103759c0d7c9ccd75c5b0fa06f5f15062cacade4
   app/models/application_record.rb: 12bf7d0eaefce4d50e0719991e19b48a36a7865aeb7ac745980584806155fdc1
   app/models/chat.rb: 4ebd698bb3b02213e2cf22af062db0ebbf8fe774cc13b038d5ce21c7ee975485
   app/models/concerns/batchable.rb: 1f2d8efb2eb497ece07f3cb43363c396e3a42dd4ad76ff2be01b2cf8604fec01
@@ -23,6 +23,7 @@ snapshot:
   app/models/concerns/fts_searchable.rb: 50bd137e2fea7d720ee1f82671b80ca5a2ea159d14e1da21c0acd3ae1b66e7c8
   app/models/concerns/searchable.rb: 40c1dff7275c6cf950410fced79d3ab9ae8fd66ea699e24e4dae67b8c6acf775
   app/models/concerns/taggable.rb: 98d630fb4329091ce3baf82d5339c4a82a56cd4c9397a7403fee3bfc050328c2
+  app/models/current.rb: 156f6bce9d586dc9f6b86d21168289c034eb30421794a2cafe10ec46031414f5
   app/models/document.rb: b1bee29a7af0f3e247176c4adf034a23051fa8663ed7adc1084d6d7dc0ec3cb9
   app/models/document/drive_entry.rb: 37a8a60e9a195793297b186201d983da179ea34561aa51159be82ffdbb02ff5e
   app/models/document/file_type.rb: f7480073960eba01a8dc26e8468c5580d251b75765127572b7cdd56b1f5071a0
@@ -52,18 +53,20 @@ snapshot:
   app/models/orchestration/schema_builder/serializer.rb: 88b74dc98846936866127c95c73fcbe17382f1314f685cf9f6e86ce03230f329
   app/models/orchestration/step.rb: 4f39f100fc511fa869360e4978b8b007314af808d8e22d1182493cf2db2c4920
   app/models/orchestration/step_action.rb: d12179ac81a5392e71f5dcc30e85ca4234c3c91a82439c8da5ba2ca6325f3041
+  app/models/session.rb: 35cfbd4a46c96c5258df4ab38ebdc5f197d5f14de0d9482ffba84ee939e090ac
   app/models/setting.rb: '05867ac14faeef87d1c4af0a1407c5f278b4f2eff1462d3f89baa53476404261'
   app/models/subtag.rb: b5d218740c6109c688db06710074627f77384a679036d6df715cbb786dd66299
   app/models/tag.rb: 265e7832b401cbf14525162971802670e52321e6b1c68bcd544de832469fa72a
   app/models/tagging.rb: 77803506ec48ac9f088282367435abe6dd938ad3305418801053f0c15fd79963
-  config/application.rb: d76105731ccca1452cd5e041bfaf30bd2ecca38814396893e95384bb55c04319
+  app/models/user.rb: 5bb1744c0b810300b7a0500536e93afb35d0ba4c0533eea10ec50c9c69cdc3bc
+  config/application.rb: 01260a18ed2d8ccb89a45cd20d6b60508467a19682160a09ce81ec584693b2de
   config/boot.rb: 129a59e499e2d551f78505c6d65bf1e568f09058353f61e167eba5af0e4ca242
   config/ci.rb: 721ea251ae3714fa98331e07c335d469b9e9b902cfc475f9e9ac50fe10c6fd72
   config/database.yml: ddba8855b1c19ca5df84a910731b5d0835cd5f90e806cc7c5a01e8104b8a96d3
   config/environment.rb: 73b2e731e02cedb9dc0335e1a35c3a2b7738032e3aa7e62ac32cbb8432b43c69
   config/environments/development.rb: 1044be7925d9d0001a5f5ef9544b5cafad428486a9e525f25748bc338528c448
-  config/environments/production.rb: b043a44f41a1fb2c074b26769c706ce3c8a40eb28a05f605a0972a9f57148d86
-  config/environments/test.rb: aa8828e3a614b1aab5c6016491d9862237319c9ad323de1dacaffebe0cc9f5cb
+  config/environments/production.rb: e14eef12b4f2aad88e1884814338f7ea61cedcb8c5ee80a58e78f40765ba0c07
+  config/environments/test.rb: 37496b8c4cca49da047eea7a83986772d0629a8a261ab7298af4e1bc9b8c15c4
   config/importmap.rb: e063c356463c79934ce80c5d458e2334214b5d4bedd454dcfc7c25e5831a377b
   config/initializers/active_job_logger.rb: 6158081cf3169400f2c81f3f1a54b0bae8589aaf9e919603cf9d223aafe9b144
   config/initializers/content_security_policy.rb: ce826e17b3fb793bff050c64f2d515da14b0a63b77f0144368646597075fbdd5
@@ -71,18 +74,18 @@ snapshot:
   config/initializers/filter_parameter_logging.rb: 4034b982447ad279f322984ce71a6ed3c4071a0b094120c6f2c35b5c96bb4029
   config/initializers/inflections.rb: 2eba6606afd45f7a45e0112fca908f5f717fa3e3e3707df10fd5f562fe8d74d1
   config/initializers/llm_models.rb: 6bcae16cc03c9b966bbf57b0b185007c0b9ccc9450cf9eb6fa5171bc49a217d8
-  config/initializers/mission_control.rb: d58acb3374ec766310dd30971df7df72c14401501bd11fd5e67aab963755fb57
+  config/initializers/mission_control.rb: 78eb0af3699733f31686f38ff8d3da24749bbbdc038f644991e516cc41836055
   config/initializers/neighbor.rb: e77ae41d00ee61a9c0ef90965e67163954cc11e31186d14f425d936acbd5b650
   config/initializers/orchestration.rb: 2280ac6ccc1c5b35f15b7cbcda0a4bc46765f6300a3ebb619ef22e91a9979996
   config/initializers/pagy.rb: a5a09c2675df3bb1d292dcb225b1f5ee92148f9f1f6fc990fb8667b90fdd3e49
   config/initializers/ruby_llm.rb: df8c2a7681dc51aedd78a3243db16b94933acea4f60d4676e5b18666ce2b85c6
-  config/initializers/ruby_llm_monitoring.rb: 9e0c0ff244a799b9e8c8ae081bb25584f04e5e7dbe7c87602ff1326caa418d7a
+  config/initializers/ruby_llm_monitoring.rb: 47cc6c09045952d65b6f2828292ccd0c454d2fc0e932108e9a4e9b6337c2df71
   config/initializers/view_component.rb: 5be366bfbc2294b04ac0489093fd02bc91f8348b622ed3a1aad91996d6768335
   config/locales/en.yml: ad72af216ad0a67a1155c685535698fdd2a7138810c7e6dcb5eab7f0cc1c5922
   config/puma.rb: d1f67568aa22ac7404904351aa738829623d45312a32dc560a4640bcf9eceb3d
   config/queue.yml: b850e3ac994276a0211a032c1d2865b97ea05fb948f326df58ea18ea7c60cb21
   config/recurring.yml: b88669d4686076293b67b0d0c3b3ec50f74e5adc8ea7efb9414b98f95559f839
-  config/routes.rb: e4e8dbb86f356566ae0fe68e9316a8c05af0dd09c29e645fc3bdb327225295f5
+  config/routes.rb: 1603b8dfd4564d21562805629577ce2aaa0c61a694eddd05002bbfdd53db788b
 references:
 - path: app/models/chat.rb
   line: 6
@@ -476,6 +479,14 @@ references:
   source_path: app/models/orchestration/step_action.rb
   source: Orchestration::StepAction
   target: Orchestration::Step
+- path: app/models/session.rb
+  line: 2
+  column: 3
+  end_line: 2
+  end_column: 19
+  source_path: app/models/session.rb
+  source: Session
+  target: User
 - path: app/models/subtag.rb
   line: 2
   column: 3
@@ -524,6 +535,14 @@ references:
   source_path: app/models/tagging.rb
   source: Tagging
   target: Tag
+- path: app/models/user.rb
+  line: 3
+  column: 3
+  end_line: 3
+  end_column: 42
+  source_path: app/models/user.rb
+  source: User
+  target: Session
 methods:
 - path: app/models/chat.rb
   line: 6
@@ -1225,6 +1244,20 @@ methods:
   visibility: public
   mode: if_missing
   signatures: []
+- path: app/models/session.rb
+  line: 2
+  column: 3
+  end_line: 2
+  end_column: 19
+  source_path: app/models/session.rb
+  owner: Session
+  names:
+  - user
+  - user=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
 - path: app/models/subtag.rb
   line: 2
   column: 3
@@ -1319,6 +1352,20 @@ methods:
   names:
   - taggable
   - taggable=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/user.rb
+  line: 3
+  column: 3
+  end_line: 3
+  end_column: 42
+  source_path: app/models/user.rb
+  owner: User
+  names:
+  - sessions
+  - sessions=
   scope: instance
   visibility: public
   mode: if_missing

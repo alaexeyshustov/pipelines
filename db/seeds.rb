@@ -154,3 +154,11 @@ end
 # == Tags and Subtags ==
 
 Tag.seed_defaults!
+
+# == Login user ==
+
+# The app sits behind a login; the single user comes from the environment (see lib/tasks/users.rake).
+if ENV["ADMIN_EMAIL"].present?
+  Rails.application.load_tasks unless Rake::Task.task_defined?("users:upsert")
+  Rake::Task["users:upsert"].invoke
+end

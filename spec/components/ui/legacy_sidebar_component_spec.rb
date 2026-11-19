@@ -105,4 +105,28 @@ RSpec.describe UI::LegacySidebarComponent, type: :component do
       expect(jobs_link["class"]).to include("font-medium")
     end
   end
+
+  context "with a signed in user" do
+    let(:component) { described_class.new(current_path: "/", user: build(:user, email_address: "admin@example.com")) }
+
+    it "shows the user's email" do
+      expect(rendered.text).to include("admin@example.com")
+    end
+
+    it "renders a sign out button that deletes the session" do
+      form = rendered.at_css("form[action='/session']")
+
+      expect(form.at_css("input[name='_method'][value='delete']")).to be_present
+      expect(form.at_css("button, input[type='submit']").then { |button| button.text.presence || button["value"] }).to eq("Sign out")
+    end
+  end
+
+  context "without a user" do
+    let(:component) { described_class.new(current_path: "/", user: nil) }
+
+    it "shows neither an email nor a sign out button" do
+      expect(rendered.text).not_to include("Sign out")
+      expect(rendered.css("form[action='/session']")).to be_empty
+    end
+  end
 end

@@ -21,6 +21,9 @@ Rails.application.configure do
   # Show full error reports.
   config.consider_all_requests_local = true
   config.cache_store = :null_store
+  # The login rate limit counts attempts in the controller cache store, which must really store in test.
+  # Rails.cache stays a null store; the specs clear this one before each request or system example.
+  config.action_controller.cache_store = :memory_store
 
   # Render exception templates for rescuable exceptions and raise for other exceptions.
   config.action_dispatch.show_exceptions = :rescuable

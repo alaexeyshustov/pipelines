@@ -42,6 +42,10 @@ module ApplicationPipeline
     # Use SQL schema format so FTS5 virtual tables and triggers are preserved correctly.
     config.active_record.schema_format = :sql
 
+    # turbo-rails' native-app routes (/recede_historical_location etc.) are drawn on ActionController::Base,
+    # outside the login. The app is not a native app, so leave them out (GH #255).
+    config.turbo.draw_routes = false
+
     config.active_job.queue_adapter = :solid_queue
     config.solid_queue.connects_to = { database: { writing: :queue } }
     # Required for fiber-based job execution: each fiber gets its own isolated state

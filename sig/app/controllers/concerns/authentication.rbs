@@ -1,0 +1,15 @@
+module Authentication
+  module ClassMethods
+    def allow_unauthenticated_access: (?only: Symbol | Array[Symbol], ?except: Symbol | Array[Symbol]) -> void
+  end
+
+  private
+
+  def require_authentication: () -> void
+  def resume_session: () -> Session?
+  def find_session_by_cookie: () -> Session?
+  def request_authentication: () -> void
+  def after_authentication_url: () -> String
+  def start_new_session_for: (User user) -> Session
+  def terminate_session: () -> void
+end
