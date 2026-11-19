@@ -123,6 +123,53 @@ RSpec.describe "Evaluation::Experiments" do
     end
   end
 
+  describe "GET /evaluation/experiments/:id (activation)" do
+    let(:prompt) { create(:orchestration_prompt, name: "ShowAgent") }
+
+    it "offers Activate for a completed experiment whose prompt is not active" do
+      experiment = create(:evaluation_experiment, status: :completed, prompt: prompt)
+      get evaluation_experiment_path(experiment)
+      expect(response.body).to include(activate_evaluation_experiment_path(experiment))
+    end
+
+    it "does not offer Activate for a pending experiment" do
+      experiment = create(:evaluation_experiment, status: :pending, prompt: prompt)
+      get evaluation_experiment_path(experiment)
+      expect(response.body).not_to include(activate_evaluation_experiment_path(experiment))
+    end
+
+    it "marks an active prompt and does not offer Activate again" do
+      prompt.activate!
+      experiment = create(:evaluation_experiment, status: :completed, prompt: prompt)
+      get evaluation_experiment_path(experiment)
+      expect(response.body).to include("Active")
+      expect(response.body).not_to include(activate_evaluation_experiment_path(experiment))
+    end
+
+    it "hides the Prompt vs Active diff when the experiment's prompt is the active one" do
+      prompt.activate!
+      experiment = create(:evaluation_experiment, status: :completed, prompt: prompt)
+      get evaluation_experiment_path(experiment)
+      expect(Nokogiri::HTML(response.body).css("[data-diff]")).to be_empty
+    end
+
+    it "diffs against the 'Agent default' when no version is active" do
+      experiment = create(:evaluation_experiment, status: :completed, prompt: prompt)
+      get evaluation_experiment_path(experiment)
+      expect(response.body).to include("Agent default")
+      expect(Nokogiri::HTML(response.body).css("[data-diff]").size).to eq(1)
+    end
+
+    it "diffs against the active version's label when another version is active" do
+      create(:orchestration_prompt, :active, name: "ShowAgent", version: 1, system_prompt: "live text")
+      prompt.update_columns(version: 2)
+      experiment = create(:evaluation_experiment, status: :completed, prompt: prompt)
+      get evaluation_experiment_path(experiment)
+      expect(response.body).not_to include("Agent default")
+      expect(response.body).to include("live text")
+    end
+  end
+
   describe "GET /evaluation/experiments/:id/compare/:candidate_id" do
     let(:baseline) { create(:evaluation_experiment, status: :completed) }
     let(:prompt) { baseline.prompt }
@@ -154,6 +201,33 @@ RSpec.describe "Evaluation::Experiments" do
       end
     end
 
+    context "when candidate is completed and the candidate prompt differs from the active one" do
+      let(:candidate) { create(:evaluation_experiment, status: :completed, prompt: prompt) }
+
+      before do
+        allow(Evaluation::Comparison).to receive(:call).and_return(
+          Evaluation::Comparison::ComparisonResult.new(
+            baseline_score: 0.6, candidate_score: 0.8, baseline_metrics: {}, candidate_metrics: {},
+            metric_deltas: {}, overall_delta: 0.2
+          )
+        )
+      end
+
+      it "adds a second diff of the candidate against 'Agent default' when nothing is active" do
+        get compare_evaluation_experiment_path(baseline, candidate_id: candidate.id)
+        expect(response.body).to include("Agent default")
+        expect(Nokogiri::HTML(response.body).css("[data-diff]").size).to eq(2)
+      end
+
+      it "diffs the candidate against the active version when one exists" do
+        create(:orchestration_prompt, :active, name: prompt.name, version: 0, system_prompt: "live text")
+        get compare_evaluation_experiment_path(baseline, candidate_id: candidate.id)
+        expect(response.body).not_to include("Agent default")
+        expect(response.body).to include("live text")
+        expect(Nokogiri::HTML(response.body).css("[data-diff]").size).to eq(2)
+      end
+    end
+
     context "when candidate is pending" do
       let(:candidate) { create(:evaluation_experiment, status: :pending, prompt: prompt) }
 
@@ -166,18 +240,42 @@ RSpec.describe "Evaluation::Experiments" do
   end
 
   describe "POST /evaluation/experiments/:id/activate" do
-    let(:experiment) { create(:evaluation_experiment) }
+    context "when the experiment is completed" do
+      let(:experiment) { create(:evaluation_experiment, status: :completed) }
 
-    it "redirects to show with notice" do
-      post activate_evaluation_experiment_path(experiment)
-      expect(response).to redirect_to(evaluation_experiment_path(experiment))
-      expect(flash[:notice]).to be_present
+      it "redirects to show with notice" do
+        post activate_evaluation_experiment_path(experiment)
+        expect(response).to redirect_to(evaluation_experiment_path(experiment))
+        expect(flash[:notice]).to be_present
+      end
+
+      it "marks the prompt as the active version" do
+        post activate_evaluation_experiment_path(experiment)
+        expect(experiment.prompt.reload).to have_attributes(active: true, activated_at: be_present)
+      end
+
+      it "deactivates the previously active version of the same agent" do
+        old = create(:orchestration_prompt, :active, name: experiment.prompt.name, version: 1)
+        experiment.prompt.update_columns(version: 2)
+
+        post activate_evaluation_experiment_path(experiment)
+
+        expect(old.reload.active).to be(false)
+        expect(Evaluation::Prompt.where(name: old.name, active: true)).to contain_exactly(experiment.prompt)
+      end
     end
 
-    it "marks the prompt as active in metadata" do
-      post activate_evaluation_experiment_path(experiment)
-      meta = JSON.parse(experiment.prompt.reload.metadata || "{}")
-      expect(meta["active"]).to be(true)
+    %i[pending running failed].each do |status|
+      context "when the experiment is #{status}" do
+        let(:experiment) { create(:evaluation_experiment, status: status) }
+
+        it "refuses with an alert and leaves the prompt inactive" do
+          post activate_evaluation_experiment_path(experiment)
+          expect(response).to redirect_to(evaluation_experiment_path(experiment))
+          expect(flash[:alert]).to be_present
+          expect(experiment.prompt.reload.active).to be(false)
+        end
+      end
     end
   end
 
@@ -479,12 +577,28 @@ RSpec.describe "Evaluation::Experiments" do
       expect(response.parsed_body).to eq([])
     end
 
-    it "treats malformed stored metadata as inactive instead of raising" do
+    it "reports active: false for an inactive version" do
+      get prompt_versions_evaluation_experiments_path, params: { agent_name: "classify_agent" }
+      expect(response.parsed_body.first["active"]).to be(false)
+    end
+
+    it "reports active: true from the column for the active version" do
+      prompt.activate!
+      get prompt_versions_evaluation_experiments_path, params: { agent_name: "classify_agent" }
+      expect(response.parsed_body.first).to include("id" => prompt.id, "active" => true)
+    end
+
+    it "ignores a legacy metadata flag" do
+      prompt.update_column(:metadata, '{"active":true}')
+      get prompt_versions_evaluation_experiments_path, params: { agent_name: "classify_agent" }
+      expect(response.parsed_body.first["active"]).to be(false)
+    end
+
+    it "does not raise on non-JSON metadata" do
       prompt.update_column(:metadata, "not json")
       get prompt_versions_evaluation_experiments_path, params: { agent_name: "classify_agent" }
       expect(response).to have_http_status(:ok)
-      data = response.parsed_body
-      expect(data.first["active"]).to be(false)
+      expect(response.parsed_body.first["active"]).to be(false)
     end
   end
 

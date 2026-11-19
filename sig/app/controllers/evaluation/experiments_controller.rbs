@@ -1,6 +1,7 @@
 module Evaluation
   class ExperimentsController < ApplicationController
     include Evaluation::ExperimentWizard
+    include Evaluation::ActivePromptLookup
 
     @experiments: Experiment::relation
     @experiment: Experiment
@@ -9,6 +10,7 @@ module Evaluation
     @metric_name: String?
     @justifications: Justification::relation
     @wizard_form: WizardForm
+    @active_prompt: PromptDiffer::promptish?
 
     def index: () -> void
     def show: () -> void

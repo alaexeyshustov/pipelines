@@ -82,8 +82,8 @@ RSpec.describe Evaluation::AgentSummaryQuery do
       end
     end
 
-    context "when a prompt has an active version in metadata" do
-      let(:prompt) { create(:orchestration_prompt, name: "VersionedAgent", metadata: '{"active":true}') }
+    context "when a prompt is the active version" do
+      let(:prompt) { create(:orchestration_prompt, :active, name: "VersionedAgent") }
 
       before { create(:evaluation_experiment, prompt: prompt, status: :completed) }
 
@@ -93,8 +93,8 @@ RSpec.describe Evaluation::AgentSummaryQuery do
       end
     end
 
-    context "when a prompt has no active version" do
-      let(:prompt) { create(:orchestration_prompt, name: "InactiveAgent", metadata: '{"active":false}') }
+    context "when the agent has no active version" do
+      let(:prompt) { create(:orchestration_prompt, name: "InactiveAgent") }
 
       before { create(:evaluation_experiment, prompt: prompt, status: :completed) }
 
@@ -103,45 +103,53 @@ RSpec.describe Evaluation::AgentSummaryQuery do
         expect(summary.active_prompt_version).to be_nil
       end
     end
+
+    context "when only a legacy metadata flag says active" do
+      let(:prompt) { create(:orchestration_prompt, name: "LegacyAgent", metadata: '{"active":true}') }
+
+      before { create(:evaluation_experiment, prompt: prompt, status: :completed) }
+
+      it "ignores the metadata and returns active_prompt_version as nil" do
+        expect(described_class.call.summaries.first.active_prompt_version).to be_nil
+      end
+    end
+
+    context "when a newer inactive version exists beside the active one" do
+      let(:active) { create(:orchestration_prompt, :active, name: "TwoVersions", version: 1) }
+
+      before do
+        create(:orchestration_prompt, name: "TwoVersions", version: 2)
+        create(:evaluation_experiment, prompt: active, status: :completed)
+      end
+
+      it "reports the active version, not the newest" do
+        expect(described_class.call.summaries.first.active_prompt_version).to eq(1)
+      end
+    end
   end
 
-  # Characterization of the private json_extract query. Locks in behavior across the
-  # extraction of Evaluation::Prompt.active_metadata_versions_for so the refactor is a no-op.
-  describe "#fetch_active_prompts (json_extract characterization)" do
+  describe "#fetch_active_prompts" do
     subject(:fetched) { described_class.new.send(:fetch_active_prompts, [ "AgentA" ]) }
 
-    it "returns prompts whose metadata has active: true" do
-      active = create(:orchestration_prompt, name: "AgentA", version: 1, metadata: '{"active":true}')
+    it "returns the active version of the requested agents" do
+      active = create(:orchestration_prompt, :active, name: "AgentA", version: 1)
+      create(:orchestration_prompt, name: "AgentA", version: 2)
       expect(fetched).to eq([ active ])
     end
 
-    it "excludes prompts whose metadata has active: false" do
-      create(:orchestration_prompt, name: "AgentA", version: 1, metadata: '{"active":false}')
+    it "excludes agents that have no active version" do
+      create(:orchestration_prompt, name: "AgentA", version: 1)
       expect(fetched).to eq([])
     end
 
-    it "excludes prompts whose metadata omits the active key" do
-      create(:orchestration_prompt, name: "AgentA", version: 1, metadata: '{"other":true}')
-      expect(fetched).to eq([])
-    end
-
-    # Current behavior: SQLite's json_extract raises on non-JSON metadata rather than
-    # treating it as inactive. Locked in so the extraction preserves it exactly.
-    it "raises when a matching prompt has malformed / non-JSON metadata" do
+    it "does not read the metadata column, so malformed metadata is harmless" do
       create(:orchestration_prompt, name: "AgentA", version: 1, metadata: "not-json")
-      expect { fetched }.to raise_error(ActiveRecord::StatementInvalid, /malformed JSON/)
+      expect { fetched }.not_to raise_error
     end
 
     it "excludes prompts for other agent names even when active" do
-      create(:orchestration_prompt, name: "AgentB", version: 1, metadata: '{"active":true}')
+      create(:orchestration_prompt, :active, name: "AgentB", version: 1)
       expect(fetched).to eq([])
-    end
-
-    it "orders returned prompts by version desc" do
-      v1 = create(:orchestration_prompt, name: "AgentA", version: 1, metadata: '{"active":true}')
-      v3 = create(:orchestration_prompt, name: "AgentA", version: 3, metadata: '{"active":true}')
-      v2 = create(:orchestration_prompt, name: "AgentA", version: 2, metadata: '{"active":true}')
-      expect(fetched).to eq([ v3, v2, v1 ])
     end
   end
 end

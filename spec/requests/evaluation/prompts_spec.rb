@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "Evaluation::Prompts" do
+  def activation_path(prompt, action) = "/evaluation/prompts/#{prompt.id}/#{action}"
+
   describe "GET /evaluation/prompts" do
     it "returns 200" do
       get evaluation_prompts_path
@@ -17,6 +19,78 @@ RSpec.describe "Evaluation::Prompts" do
       prompt = create(:orchestration_prompt)
       get evaluation_prompts_path
       expect(response.body).to include("v#{prompt.version}")
+    end
+  end
+
+  describe "GET /evaluation/prompts (activation controls)" do
+    it "shows an Active column header" do
+      create(:orchestration_prompt)
+      get evaluation_prompts_path
+      expect(response.body).to include("Active")
+    end
+
+    it "offers Activate for an inactive version and Deactivate for the active one" do
+      active = create(:orchestration_prompt, :active, name: "AgentA", version: 1)
+      inactive = create(:orchestration_prompt, name: "AgentA", version: 2)
+      get evaluation_prompts_path
+      expect(response.body).to include(activation_path(inactive, :activate), activation_path(active, :deactivate))
+      expect(response.body).not_to include(activation_path(active, :activate))
+    end
+  end
+
+  describe "POST /evaluation/prompts/:id/activate" do
+    context "when the version is a fresh draft" do
+      let(:prompt) { create(:orchestration_prompt, name: "AgentA") }
+
+      it "is refused with an alert and stays inactive" do
+        post activation_path(prompt, :activate)
+        expect(response).to redirect_to(evaluation_prompts_path)
+        expect(flash[:alert]).to be_present
+        expect(prompt.reload.active).to be(false)
+      end
+    end
+
+    context "when the version has a completed experiment" do
+      let(:prompt) { create(:orchestration_prompt, name: "AgentA", version: 2) }
+      let!(:old) { create(:orchestration_prompt, :active, name: "AgentA", version: 1) }
+
+      before { create(:evaluation_experiment, prompt: prompt, status: :completed) }
+
+      it "redirects with a notice" do
+        post activation_path(prompt, :activate)
+        expect(response).to redirect_to(evaluation_prompts_path)
+        expect(flash[:notice]).to be_present
+      end
+
+      it "activates it and deactivates the previous version" do
+        post activation_path(prompt, :activate)
+        expect(Evaluation::Prompt.where(id: [ prompt.id, old.id ]).order(:version).pluck(:active)).to eq([ false, true ])
+      end
+    end
+
+    context "when the version was activated before" do
+      let(:prompt) { create(:orchestration_prompt, name: "AgentA", activated_at: 1.day.ago) }
+
+      it "re-activates it without a completed experiment" do
+        post activation_path(prompt, :activate)
+        expect(prompt.reload.active).to be(true)
+      end
+    end
+  end
+
+  describe "POST /evaluation/prompts/:id/deactivate" do
+    it "deactivates the active version so the agent default applies" do
+      prompt = create(:orchestration_prompt, :active, name: "AgentA")
+      post activation_path(prompt, :deactivate)
+      expect(response).to redirect_to(evaluation_prompts_path)
+      expect(prompt.reload.active).to be(false)
+      expect(Evaluation::Prompt.active_for_agent("AgentA")).to be_nil
+    end
+
+    it "is a no-op for an inactive version" do
+      prompt = create(:orchestration_prompt, name: "AgentA", activated_at: 1.day.ago)
+      expect { post activation_path(prompt, :deactivate) }.not_to(change { prompt.reload.attributes })
+      expect(response).to redirect_to(evaluation_prompts_path)
     end
   end
 

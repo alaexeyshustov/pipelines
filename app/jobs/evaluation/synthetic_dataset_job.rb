@@ -37,7 +37,7 @@ module Evaluation
     end
 
     def fetch_system_prompt(agent_name)
-      Evaluation::Prompt.last_for_agent(agent_name)&.system_prompt.to_s
+      Evaluation::Prompt.latest_for_agent(agent_name)&.system_prompt.to_s
     end
 
     def fetch_few_shot_samples(agent_name)

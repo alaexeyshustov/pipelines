@@ -258,6 +258,8 @@ RSpec.describe Orchestration::PipelineRunner do
         Evaluation::Prompt.create!(
           name: "Orchestration::Agents::EmailsClassifier",
           system_prompt: "Custom Leva prompt for classifier",
+          active: true,
+          activated_at: Time.current,
           user_prompt: "{{input}}"
         )
         create(:orchestration_step_action, step: step1, action: action, position: 1)
@@ -279,6 +281,8 @@ RSpec.describe Orchestration::PipelineRunner do
         Evaluation::Prompt.create!(
           name: "Orchestration::Agents::EmailsClassifier",
           system_prompt: "Leva wins over agent prompt",
+          active: true,
+          activated_at: Time.current,
           user_prompt: "{{input}}"
         )
         create(:orchestration_step_action, step: step1, action: action, position: 1)
@@ -1287,16 +1291,41 @@ RSpec.describe Orchestration::PipelineRunner do
     context 'when separate runs resolve against updated prompt versions' do
       let(:second_run) { create(:orchestration_pipeline_run, pipeline: pipeline, status: "pending") }
 
-      it 'resolves the newest system_prompt on a fresh run without stale caching' do
-        create(:orchestration_prompt, name: agent_name, system_prompt: "prompt v1", version: 1)
-        first = capture_prompt_overrides
-        described_class.new(pipeline_run, prompt_resolver: Evaluation::ActivePromptResolver).run
-        expect(first).to include("prompt v1")
+      def run_with_resolver(run)
+        overrides = capture_prompt_overrides
+        described_class.new(run, prompt_resolver: Evaluation::ActivePromptResolver).run
+        overrides
+      end
+
+      it 'does not pick up a newly created inactive version' do
+        create(:orchestration_prompt, :active, name: agent_name, system_prompt: "prompt v1", version: 1)
+        expect(run_with_resolver(pipeline_run)).to include("prompt v1")
 
         create(:orchestration_prompt, name: agent_name, system_prompt: "prompt v2", version: 2)
-        second = capture_prompt_overrides
-        described_class.new(second_run, prompt_resolver: Evaluation::ActivePromptResolver).run
-        expect(second).to include("prompt v2")
+        second = run_with_resolver(second_run)
+
+        expect(second).to include("prompt v1")
+        expect(second).not_to include("prompt v2")
+      end
+
+      it 'picks up a newly activated version on a fresh run without stale caching' do
+        create(:orchestration_prompt, :active, name: agent_name, system_prompt: "prompt v1", version: 1)
+        expect(run_with_resolver(pipeline_run)).to include("prompt v1")
+
+        v2 = create(:orchestration_prompt, name: agent_name, system_prompt: "prompt v2", version: 2)
+        v2.activate!
+
+        expect(run_with_resolver(second_run)).to include("prompt v2")
+      end
+
+      it 'passes no override (so the agent prompt applies) when no version is active' do
+        action.agent.update!(prompt: "agent default prompt")
+        create(:orchestration_prompt, name: agent_name, system_prompt: "draft only", version: 1)
+
+        overrides = run_with_resolver(pipeline_run)
+
+        expect(overrides).not_to include("draft only")
+        expect(overrides.compact).to be_empty
       end
     end
 

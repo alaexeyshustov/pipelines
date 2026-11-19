@@ -3,10 +3,8 @@ require "rails_helper"
 RSpec.describe Evaluation::PromptDiffComponent, type: :component do
   subject(:rendered) { render_inline(component) }
 
-  let(:prompt_class) { Data.define(:name, :version, :system_prompt, :user_prompt) }
-
   let(:prompt_a) do
-    prompt_class.new(
+    build(:orchestration_prompt,
       name: "classify",
       version: 1,
       system_prompt: "You are an assistant.\nBe helpful.",
@@ -15,7 +13,7 @@ RSpec.describe Evaluation::PromptDiffComponent, type: :component do
   end
 
   let(:prompt_b) do
-    prompt_class.new(
+    build(:orchestration_prompt,
       name: "classify",
       version: 2,
       system_prompt: "You are an expert assistant.\nBe concise.",
@@ -47,6 +45,22 @@ RSpec.describe Evaluation::PromptDiffComponent, type: :component do
   it "shows version labels for both prompts" do
     expect(rendered.text).to include("v1")
     expect(rendered.text).to include("v2")
+  end
+
+  context "when one side is the agent default" do
+    let(:agent_default) do
+      Evaluation::AgentDefaultPrompt.new(system_prompt: "You are an assistant.\nBe helpful.", user_prompt: "")
+    end
+    let(:component) { described_class.new(prompt_a: agent_default, prompt_b: prompt_b) }
+
+    it "labels that side 'Agent default'" do
+      expect(rendered.text).to include("Agent default")
+      expect(rendered.text).to include("v2")
+    end
+
+    it "still renders the diff" do
+      expect(rendered.css(".bg-green-100").map(&:text).join).to include("You are an expert assistant.")
+    end
   end
 
   context "with identical prompts" do

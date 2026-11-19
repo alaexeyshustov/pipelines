@@ -1,0 +1,7 @@
+module Evaluation
+  module ActivePromptLookup
+    private
+
+    def active_prompt_for: (Prompt? prompt) -> PromptDiffer::promptish?
+  end
+end

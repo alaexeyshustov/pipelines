@@ -1,0 +1,9 @@
+module Evaluation
+  class AgentDefaultPrompt < Data
+    def self.new: (system_prompt: String?, user_prompt: String) -> AgentDefaultPrompt
+    attr_reader system_prompt: String?
+    attr_reader user_prompt: String
+
+    def label: () -> String
+  end
+end

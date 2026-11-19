@@ -90,6 +90,42 @@ RSpec.describe Evaluation::ExperimentDetailComponent, type: :component do
     end
   end
 
+  describe "header actions" do
+    let(:experiment) { create(:evaluation_experiment, status: :completed) }
+    let(:labels) { rendered.css("a, button").map { |n| n.text.strip } }
+
+    it "offers Improve Prompt and Activate for a completed experiment with an inactive prompt" do
+      expect(labels).to include("Improve Prompt", "Activate")
+    end
+
+    it "does not offer Activate once the prompt is active" do
+      experiment.prompt.activate!
+      expect(labels).not_to include("Activate")
+    end
+
+    it "does not offer Activate for an experiment that is not completed" do
+      experiment.update!(status: :pending)
+      expect(labels).not_to include("Activate")
+    end
+
+    context "when a newer completed experiment exists" do
+      before { create(:evaluation_experiment, status: :completed, prompt: experiment.prompt) }
+
+      it "offers View Comparison instead of Improve Prompt" do
+        expect(labels).to include("View Comparison")
+        expect(labels).not_to include("Improve Prompt")
+      end
+    end
+
+    context "when the newer experiment is not completed" do
+      before { create(:evaluation_experiment, status: :pending, prompt: experiment.prompt) }
+
+      it "offers neither Improve Prompt nor View Comparison" do
+        expect(labels).not_to include("View Comparison", "Improve Prompt")
+      end
+    end
+  end
+
   describe "scores and usage" do
     subject(:rendered) { render_inline(component(usage: usage, pass_rate: 0.75, metric_pass_rates: { "precision" => 0.5 })) }
 

@@ -72,10 +72,7 @@ module Evaluation
 
     def prompt_versions
       prompts = Prompt.metadata_versions_for(params[:agent_name])
-      render json: prompts.map { |p|
-        meta = JSON::Helpers.safe_parse(p.metadata, fallback: {})
-        { id: p.id, version: p.version, active: meta["active"] == true }
-      }
+      render json: prompts.map { |p| { id: p.id, version: p.version, active: p.active } }
     end
 
     def status_frame
@@ -111,6 +108,7 @@ module Evaluation
       return redirect_to evaluation_experiment_path(@experiment), alert: "Candidate experiment not found." unless @candidate
       return unless @candidate.completed?
 
+      @active_prompt = active_prompt_for(@candidate.prompt)
       @result = Comparison.call(
         baseline_experiment: @experiment,
         candidate_experiment: @candidate
@@ -121,9 +119,9 @@ module Evaluation
       prompt = @experiment.prompt
       return redirect_to evaluation_experiment_path(@experiment), alert: "This experiment has no associated prompt." unless prompt
 
-      meta = JSON.parse(prompt.metadata || "{}")
-      prompt.update!(metadata: meta.merge("active" => true).to_json)
+      return redirect_to evaluation_experiment_path(@experiment), alert: "Only a completed experiment can activate its prompt." unless @experiment.completed?
 
+      prompt.activate!
       redirect_to evaluation_experiment_path(@experiment),
                   notice: "Prompt v#{prompt.version} activated for #{prompt.name}."
     end

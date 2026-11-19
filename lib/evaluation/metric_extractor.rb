@@ -11,16 +11,14 @@ module Evaluation
     end
 
     def call
-      current_prompt = load_prompt!
-
-      response = MetricExtractionAgent.new.ask("Agent instructions:\n\n#{current_prompt.system_prompt}")
+      response = MetricExtractionAgent.new.ask("Agent instructions:\n\n#{system_prompt!}")
       metrics_from(response)
     end
 
     private
 
-    def load_prompt!
-      prompt = Prompt.last_for_agent(@agent_name)
+    def system_prompt!
+      prompt = Prompt.effective_system_prompt_for(@agent_name)
       raise ArgumentError, "No prompt found for agent: #{@agent_name}" if prompt.nil?
 
       prompt

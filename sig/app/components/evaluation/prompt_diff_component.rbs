@@ -1,10 +1,10 @@
 module Evaluation
   class PromptDiffComponent < ViewComponent::Base
-    @prompt_a: Evaluation::Prompt
-    @prompt_b: Evaluation::Prompt
+    @prompt_a: Evaluation::PromptDiffer::promptish
+    @prompt_b: Evaluation::PromptDiffer::promptish
     @differ: Evaluation::PromptDiffer
 
-    def initialize: (prompt_a: Evaluation::Prompt, prompt_b: Evaluation::Prompt) -> void
+    def initialize: (prompt_a: Evaluation::PromptDiffer::promptish, prompt_b: Evaluation::PromptDiffer::promptish) -> void
     def system_prompt_diff: () -> Array[Evaluation::PromptDiffer::Line]
     def user_prompt_diff: () -> Array[Evaluation::PromptDiffer::Line]
     def line_class: (Evaluation::PromptDiffer::Line line) -> String

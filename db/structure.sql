@@ -20,7 +20,7 @@ FOREIGN KEY ("chat_id")
   REFERENCES "chats" ("id")
 );
 CREATE TABLE IF NOT EXISTS "evaluation_datasets" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "description" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "agent_name" varchar /*application='ApplicationPipeline'*/);
-CREATE TABLE IF NOT EXISTS "evaluation_prompts" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "version" integer, "system_prompt" text, "user_prompt" text, "metadata" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "output_schema" json /*application='ApplicationPipeline'*/);
+CREATE TABLE IF NOT EXISTS "evaluation_prompts" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "name" varchar, "version" integer, "system_prompt" text, "user_prompt" text, "metadata" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "output_schema" json, "active" boolean DEFAULT FALSE NOT NULL, "activated_at" datetime(6) /*application='ApplicationPipeline'*/);
 CREATE TABLE IF NOT EXISTS "evaluation_metrics" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "agent_name" varchar NOT NULL, "name" varchar NOT NULL, "description" text NOT NULL, "weight" decimal DEFAULT 1.0 NOT NULL, "active" boolean DEFAULT TRUE NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "kind" varchar DEFAULT 'probability' NOT NULL, "levels" json, "minimum" float);
 CREATE UNIQUE INDEX "index_evaluation_metrics_on_agent_name_and_name" ON "evaluation_metrics" ("agent_name", "name") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "evaluation_justifications" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "evaluation_result_id" integer NOT NULL, "metric_name" varchar NOT NULL, "justification" text NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_517f4d40a2"
@@ -36,6 +36,7 @@ FOREIGN KEY ("pipeline_id")
 CREATE TABLE IF NOT EXISTS "evaluation_wizard_drafts" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "session_token" varchar NOT NULL, "step" integer DEFAULT 1 NOT NULL, "payload" json, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_evaluation_wizard_drafts_on_session_token" ON "evaluation_wizard_drafts" ("session_token") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_evaluation_prompts_on_name" ON "evaluation_prompts" ("name") /*application='ApplicationPipeline'*/;
+CREATE UNIQUE INDEX "index_evaluation_prompts_on_name_where_active" ON "evaluation_prompts" ("name") WHERE active /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_orchestration_pipelines_on_enabled_and_cron_expression" ON "orchestration_pipelines" ("enabled", "cron_expression") /*application='ApplicationPipeline'*/;
 CREATE INDEX "idx_on_pipeline_id_created_at_7642cfe1dd" ON "orchestration_pipeline_runs" ("pipeline_id", "created_at") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_orchestration_pipeline_runs_on_status" ON "orchestration_pipeline_runs" ("status") /*application='ApplicationPipeline'*/;
@@ -226,6 +227,7 @@ CREATE INDEX "index_ruby_llm_usages_on_status" ON "ruby_llm_usages" ("status") /
 CREATE INDEX "index_ruby_llm_usages_on_owner" ON "ruby_llm_usages" ("owner_type", "owner_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_ruby_llm_usages_on_workflow_id" ON "ruby_llm_usages" ("workflow_id") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20261119090000'),
 ('20261117090000'),
 ('20261116112431'),
 ('20261104090000'),

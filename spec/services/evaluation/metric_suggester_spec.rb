@@ -21,7 +21,7 @@ RSpec.describe Evaluation::MetricSuggester do
   let(:content) { JSON.generate({ metrics: entries }) }
 
   before do
-    create(:orchestration_prompt, name: agent_name, system_prompt: instructions)
+    create(:orchestration_agent, name: agent_name, prompt: instructions)
     stub_request(:post, %r{api\.openai\.com}).to_return(
       status: 200, headers: { "Content-Type" => "application/json" },
       body: {
@@ -74,6 +74,39 @@ RSpec.describe Evaluation::MetricSuggester do
     it "raises Error when no prompt exists" do
       expect { described_class.call(agent_name: "NonExistentAgent") }
         .to raise_error(described_class::Error, /No prompt found/)
+    end
+
+    context "when a version is active" do
+      before { create(:orchestration_prompt, :active, name: agent_name, system_prompt: "ACTIVE VERSION TEXT", version: 1) }
+
+      it "sends the active version instead of the agent prompt" do
+        described_class.call(agent_name: agent_name)
+        expect(WebMock).to(have_requested(:post, %r{api\.openai\.com}).with { |req|
+          texts = JSON.parse(req.body)["messages"].map { |m| m["content"].to_s }
+          texts.any? { |t| t.include?("ACTIVE VERSION TEXT") } && texts.none? { |t| t.include?(instructions) }
+        })
+      end
+
+      it "ignores a newer inactive draft" do
+        create(:orchestration_prompt, name: agent_name, system_prompt: "DRAFT TEXT", version: 2)
+        described_class.call(agent_name: agent_name)
+        expect(WebMock).to(have_requested(:post, %r{api\.openai\.com}).with { |req|
+          texts = JSON.parse(req.body)["messages"].map { |m| m["content"].to_s }
+          texts.any? { |t| t.include?("ACTIVE VERSION TEXT") } && texts.none? { |t| t.include?("DRAFT TEXT") }
+        })
+      end
+    end
+
+    context "when only an inactive draft exists" do
+      before { create(:orchestration_prompt, name: agent_name, system_prompt: "DRAFT TEXT", version: 1) }
+
+      it "uses the agent prompt, not the draft" do
+        described_class.call(agent_name: agent_name)
+        expect(WebMock).to(have_requested(:post, %r{api\.openai\.com}).with { |req|
+          texts = JSON.parse(req.body)["messages"].map { |m| m["content"].to_s }
+          texts.any? { |t| t.include?(instructions) } && texts.none? { |t| t.include?("DRAFT TEXT") }
+        })
+      end
     end
 
     context "when the output is not valid JSON" do
