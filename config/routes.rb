@@ -103,7 +103,7 @@ Rails.application.routes.draw do
         patch :toggle
       end
     end
-    resources :actions
+    resources :actions, except: :show
     resources :pipeline_imports, only: [ :create ]
     resources :pipeline_runs, only: [ :index ], controller: "all_pipeline_runs"
     resources :pipelines do
