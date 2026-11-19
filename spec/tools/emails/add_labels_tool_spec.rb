@@ -36,4 +36,33 @@ RSpec.describe Emails::AddLabelsTool do
     expect(Emails).to have_received(:modify_labels)
       .with('yahoo', '101', add: [ '\\Flagged' ], source_mailbox: 'Inbox')
   end
+
+  describe 'label policy' do
+    before { allow(Emails).to receive(:modify_labels).and_return(message_id: 'msg1', added: [], removed: []) }
+
+    [ 'TRASH', 'trash', 'SPAM', 'spam', 'Spam', '\\Deleted', '\\deleted', '\\Answered', '\\Draft' ].each do |label|
+      it "rejects #{label.inspect} and does not modify the message" do
+        result = tool.execute(provider: 'gmail', message_id: 'msg1', label_ids: [ label ])
+
+        expect(result).to include(:error)
+        expect(Emails).not_to have_received(:modify_labels)
+      end
+    end
+
+    it 'applies none of the labels when any one is rejected' do
+      result = tool.execute(provider: 'gmail', message_id: 'msg1', label_ids: [ 'STARRED', 'TRASH' ])
+
+      expect(result).to include(:error)
+      expect(Emails).not_to have_received(:modify_labels)
+    end
+
+    [ 'STARRED', '\\Flagged', '\\Seen', 'Label_1' ].each do |label|
+      it "allows #{label.inspect}" do
+        result = tool.execute(provider: 'gmail', message_id: 'msg1', label_ids: [ label ])
+
+        expect(result).not_to include(:error)
+        expect(Emails).to have_received(:modify_labels).with('gmail', 'msg1', add: [ label ], source_mailbox: 'INBOX')
+      end
+    end
+  end
 end

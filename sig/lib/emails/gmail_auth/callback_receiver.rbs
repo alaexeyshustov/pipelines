@@ -1,0 +1,21 @@
+module Emails
+  class GmailAuth
+    class CallbackReceiver
+      MAX_REQUEST_LINE: Integer
+
+      @server: TCPServer
+      @state: String
+      @timeout: Integer | Float
+
+      def initialize: (server: TCPServer, state: String, timeout: Integer | Float) -> void
+      def code: () -> String
+
+      private
+
+      def reply_to: (TCPSocket client) -> String
+      def code_from: (String? request_line) -> String
+      def param: (String? request_line, String name) -> String?
+      def respond: (TCPSocket client, String heading, String message) -> void
+    end
+  end
+end

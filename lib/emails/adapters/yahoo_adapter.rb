@@ -3,6 +3,9 @@ module Emails
     class YahooAdapter < BaseAdapter
       include YahooInboxSync
 
+      IMAP_HOST = "imap.mail.yahoo.com".freeze
+      IMAP_PORT = 993
+
       def self.setup(_opts = {})
         Rails.logger.debug "Yahoo setup:"
         Rails.logger.debug "1. Sign in to your Yahoo account and go to Account Security settings."
@@ -22,11 +25,9 @@ module Emails
       def self.from_env(opts = {})
         username = opts[:username] || ENV["YAHOO_USERNAME"]
         password = opts[:password] || ENV["YAHOO_APP_PASSWORD"]
-        host     = opts[:host]     || ENV.fetch("YAHOO_IMAP_HOST", "imap.mail.yahoo.com")
-        port     = opts[:port]     || ENV.fetch("YAHOO_IMAP_PORT", "993").to_i
         raise Emails::NotConfigured, "Missing Yahoo credentials. Set YAHOO_USERNAME and YAHOO_APP_PASSWORD." unless username && password
 
-        new(host:, port:, username:, password:)
+        new(host: IMAP_HOST, port: IMAP_PORT, username:, password:)
       end
 
       def initialize(host:, port:, username:, password:)

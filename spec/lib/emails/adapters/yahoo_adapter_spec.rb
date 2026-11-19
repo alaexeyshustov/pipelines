@@ -291,14 +291,30 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     it 'creates an adapter from explicit credentials' do
       allow(imap).to receive(:select)
 
-      adapter = described_class.from_env(
-        username: 'user@yahoo.com',
-        password: 'secret',
-        host:     'imap.mail.yahoo.com',
-        port:     993
-      )
+      adapter = described_class.from_env(username: 'user@yahoo.com', password: 'secret')
 
       expect(adapter).to be_a(described_class)
+    end
+
+    it 'uses the fixed Yahoo IMAP endpoint whatever host and port are passed' do
+      allow(Emails::Adapters::ImapSession).to receive(:new).and_call_original
+
+      described_class.from_env(username: 'u@yahoo.com', password: 'secret', host: 'attacker.example', port: 25)
+
+      expect(Emails::Adapters::ImapSession).to have_received(:new)
+        .with(host: 'imap.mail.yahoo.com', port: 993, username: 'u@yahoo.com', password: 'secret')
+    end
+
+    it 'does not accept an empty host' do
+      allow(Emails::Adapters::ImapSession).to receive(:new).and_call_original
+
+      described_class.from_env(username: 'u@yahoo.com', password: 'secret', host: '', port: 0)
+
+      expect(Emails::Adapters::ImapSession).to have_received(:new).with(hash_including(host: 'imap.mail.yahoo.com', port: 993))
+    end
+
+    it 'exposes the fixed endpoint as constants' do
+      expect([ described_class::IMAP_HOST, described_class::IMAP_PORT ]).to eq([ 'imap.mail.yahoo.com', 993 ])
     end
 
     it 'raises when credentials are missing' do
@@ -324,12 +340,7 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     end
 
     it 'returns a success message when the connection works' do
-      status = described_class.test_connection(
-        username: 'test@yahoo.com',
-        password: 'secret',
-        host:     'imap.mail.yahoo.com',
-        port:     993
-      )
+      status = described_class.test_connection(username: 'test@yahoo.com', password: 'secret')
 
       expect(status).to match(/Yahoo Mail connection successful/)
     end

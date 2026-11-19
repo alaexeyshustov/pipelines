@@ -1,5 +1,6 @@
 interface _HasColumnNames
   def tool_column_names: () -> Array[String]
+  def tool_writable_column_names: () -> Array[String]
   def all: () -> ActiveRecord::Relation
   def as_rows: (?ActiveRecord::Relation) -> Array[Hash[String, String?]]
   def create!: (*top) -> ApplicationRecord
@@ -8,6 +9,7 @@ interface _HasColumnNames
   def validators: () -> Array[ActiveModel::Validator]
   def where: (*top) -> ActiveRecord::Relation
   def sanitize_sql: (*top) -> String
+  def sanitize_sql_like: (String, ?String) -> String
   def connection: () -> _DBConnection
   def table_name: () -> String
   def to_s: () -> String

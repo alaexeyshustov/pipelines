@@ -156,7 +156,7 @@ RSpec.describe Emails::Adapters::DriveFileFetcher do
     end
 
     it "keeps the token apart from the Gmail one, which shares GmailAuth::USER_ID" do
-      expect(described_class.send(:token_path)).not_to eq(Emails::Adapters::GmailSession.send(:paths_from_env, credentials_path: GmailHelpers::CREDENTIALS_PATH)[:token_path])
+      expect(described_class.send(:token_path)).not_to eq(Emails::Adapters::GmailSession.send(:token_path_from_env))
     end
 
     it "raises NotConfigured without the credentials file" do

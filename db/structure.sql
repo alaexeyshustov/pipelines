@@ -226,6 +226,7 @@ CREATE INDEX "index_ruby_llm_usages_on_status" ON "ruby_llm_usages" ("status") /
 CREATE INDEX "index_ruby_llm_usages_on_owner" ON "ruby_llm_usages" ("owner_type", "owner_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_ruby_llm_usages_on_workflow_id" ON "ruby_llm_usages" ("workflow_id") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
+('20261117090000'),
 ('20261116112431'),
 ('20261104090000'),
 ('20261103120000'),

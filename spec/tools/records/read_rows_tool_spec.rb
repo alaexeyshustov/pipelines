@@ -20,5 +20,26 @@ RSpec.describe Records::ReadRowsTool do
     end
   end
 
+  describe 'column_name validation' do
+    before { create(:interview, company: 'Globex', job_title: 'Developer 1') }
+
+    it 'returns an error for an unknown column_name' do
+      result = tool.execute(table: 'interviews', column_name: 'nonexistent', column_value: 'x')
+      expect(result).to include(:error)
+      expect(result[:error]).to match(/Unknown column/)
+    end
+
+    it 'returns an error for a column_name that tries to inject SQL' do
+      result = tool.execute(table: 'interviews', column_name: 'company = company OR 1', column_value: 'x')
+      expect(result).to include(:error)
+    end
+
+    it 'still allows filtering by id' do
+      row = create(:interview, company: 'Other Co', job_title: 'Developer 2')
+      result = tool.execute(table: 'interviews', column_name: 'id', column_value: row.id.to_s)
+      expect(result[:row_count]).to eq(1)
+    end
+  end
+
   it_behaves_like 'a records tool that handles unknown tables'
 end

@@ -2,9 +2,10 @@ module Emails
   class GetTool < RubyLLM::Tool
     def self.readonly? = true
 
-    CACHE_DIR = Rails.root.join("tmp/cache/emails").freeze
+    BODY_LIMIT_BYTES = 32 * 1024
+    TRUNCATION_MARKER = "... [truncated]".freeze
 
-    description "Get the full content of a specific email by its message ID or IMAP UID."
+    description "Get the full content of a specific email by its message ID or IMAP UID. Long bodies are truncated to 32 KB."
 
     parameter :provider,   type: :string, description: 'Email provider: "gmail" or "yahoo"', required: true
     parameter :message_id, type: :string, description: "The message ID (Gmail string ID or Yahoo IMAP UID as string).", required: true
@@ -13,16 +14,18 @@ module Emails
     def name = "get_email"
 
     def execute(provider:, message_id:, label: nil)
-      cache_file = CACHE_DIR.join("#{provider}_#{message_id}_#{label}.json")
+      return { error: "Unknown provider #{provider.inspect}. Use one of: #{Emails::PROVIDER_NAMES.join(', ')}" } unless Emails::PROVIDER_NAMES.include?(provider)
 
-      if cache_file.exist?
-        JSON.parse(cache_file.read, symbolize_names: true) # : Emails::message
-      else
-        result = Emails.message(provider, message_id, label:)
-        FileUtils.mkdir_p(CACHE_DIR)
-        cache_file.write(result.to_json)
-        result
-      end
+      cap_body(Emails.message(provider, message_id, label:))
+    end
+
+    private
+
+    def cap_body(message)
+      body = message[:body]
+      return message unless body.is_a?(String) && body.bytesize > BODY_LIMIT_BYTES
+
+      message.merge(body: body.truncate_bytes(BODY_LIMIT_BYTES, omission: TRUNCATION_MARKER)) # : Emails::message
     end
   end
 end

@@ -1,8 +1,10 @@
 require "rails_helper"
 
 RSpec.describe Emails::GmailAuth do
-  let(:credentials_path) { "credentials.json" }
-  let(:token_path) { "token.yaml" }
+  include_context "with gmail paths from env"
+
+  let(:credentials_path) { gmail_credentials_path }
+  let(:token_path) { gmail_token_path }
   let(:callback_uri) { "http://localhost:3000/settings/email_connectors/oauth_callback" }
   let(:output) { StringIO.new }
   let(:auth) { described_class.new(credentials_path:, token_path:, scope: Emails::Adapters::GmailSession::SCOPE, output:) }
@@ -18,11 +20,11 @@ RSpec.describe Emails::GmailAuth do
   end
 
   describe "#authorization_url" do
-    it "returns the Google authorization URL for the given callback" do
+    it "returns the Google authorization URL for the given callback, carrying the caller's state" do
       url = "https://accounts.google.com/o/oauth2/auth?scope=gmail"
-      allow(authorizer).to receive(:get_authorization_url).with(base_url: callback_uri).and_return(url)
+      allow(authorizer).to receive(:get_authorization_url).with(base_url: callback_uri, state: "csrf-token").and_return(url)
 
-      expect(auth.authorization_url(callback_uri:)).to eq(url)
+      expect(auth.authorization_url(callback_uri:, state: "csrf-token")).to eq(url)
     end
   end
 
@@ -35,7 +37,7 @@ RSpec.describe Emails::GmailAuth do
       allow(tcp_server).to receive(:close)
       allow(TCPServer).to receive(:new).with("localhost", 0).and_return(tcp_server)
       allow(authorizer).to receive(:get_credentials).with(described_class::USER_ID).and_return(nil)
-      allow(authorizer).to receive(:get_authorization_url).with(base_url: "http://localhost:3000").and_return(auth_url)
+      allow(authorizer).to receive(:get_authorization_url).with(base_url: "http://localhost:3000", state: kind_of(String)).and_return(auth_url)
       allow(auth).to receive(:system)
     end
 
@@ -59,6 +61,22 @@ RSpec.describe Emails::GmailAuth do
         .to raise_error(described_class::InteractiveAuthorizationRequired, /#{Regexp.escape(auth_url)}/)
 
       expect(auth).not_to have_received(:system)
+      expect(tcp_server).to have_received(:close)
+    end
+
+    it "closes the socket when building the authorizer raises" do
+      allow(Google::Auth::UserAuthorizer).to receive(:new).and_raise(Errno::EACCES)
+
+      expect { auth.credentials(interactive: true) }.to raise_error(Errno::EACCES)
+      expect(tcp_server).to have_received(:close)
+    end
+
+    it "closes the socket when a token is already stored" do
+      allow(authorizer).to receive(:get_credentials).with(described_class::USER_ID)
+                                                    .and_return(Google::Auth::UserRefreshCredentials.allocate)
+
+      auth.credentials(interactive: true)
+
       expect(tcp_server).to have_received(:close)
     end
   end

@@ -11,6 +11,7 @@ class Interview < ApplicationRecord
   TRAILING_SEPARATORS: Regexp
   def self.normalize_name: (String? value) -> String
   def self.tool_column_names: () -> Array[String]
+  def self.tool_writable_column_names: () -> Array[String]
   def self.search: (String? q) -> relation
   def self.destroy_by_ids: (Array[Integer] | Array[String] ids) -> Array[Interview]
 

@@ -56,6 +56,39 @@ RSpec.describe Records::SearchSimilarTool do
       expect(result[:matches]).to eq([])
     end
 
+    it 'treats % in the value literally' do
+      create(:interview, company: '100% Remote Co', job_title: 'Dev')
+      result = tool.execute(table: 'interviews', column: 'company', value: '%')
+      expect(result[:matches].pluck(:value)).to eq([ '100% Remote Co' ])
+    end
+
+    it 'treats _ in the value literally' do
+      create(:interview, company: 'snake_case Inc', job_title: 'Dev')
+      result = tool.execute(table: 'interviews', column: 'company', value: '_')
+      expect(result[:matches].pluck(:value)).to eq([ 'snake_case Inc' ])
+    end
+
+    it 'does not let a wildcard-only value match every row' do
+      result = tool.execute(table: 'interviews', column: 'company', value: '%%')
+      expect(result[:matches]).to eq([])
+    end
+
+    it 'does not treat wildcards stored in the column as patterns for the value' do
+      create(:interview, company: 'A%', job_title: 'Dev')
+      result = tool.execute(table: 'interviews', column: 'company', value: 'Acme Corp Ltd')
+      expect(result[:matches].pluck(:value)).not_to include('A%')
+    end
+
+    it 'accepts a value of exactly 200 characters' do
+      result = tool.execute(table: 'interviews', column: 'company', value: 'a' * 200)
+      expect(result).not_to include(:error)
+    end
+
+    it 'returns an error for a value over 200 characters' do
+      result = tool.execute(table: 'interviews', column: 'company', value: 'a' * 201)
+      expect(result[:error]).to match(/too long|200/i)
+    end
+
     it 'returns an error for an unknown table' do
       result = tool.execute(table: 'unknown', column: 'company', value: 'Google')
       expect(result[:error]).to match(/Unknown table/)

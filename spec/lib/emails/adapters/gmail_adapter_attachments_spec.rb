@@ -4,7 +4,7 @@ RSpec.describe Emails::Adapters::GmailAdapter, "#attachments" do
   include GmailHelpers
 
   subject(:adapter) do
-    described_class.from_env(credentials_path: GmailHelpers::CREDENTIALS_PATH, token_path: GmailHelpers.token_path)
+    described_class.from_env
   end
 
   after  { teardown_gmail }

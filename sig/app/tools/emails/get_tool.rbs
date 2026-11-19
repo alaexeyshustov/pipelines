@@ -1,9 +1,14 @@
 module Emails
   class GetTool < RubyLLM::Tool
-    CACHE_DIR: Pathname
+    BODY_LIMIT_BYTES: Integer
+    TRUNCATION_MARKER: String
 
     def self.readonly?: () -> bool
     def name: () -> String
-    def execute: (provider: String, message_id: String, ?label: String?) -> Emails::message
+    def execute: (provider: String, message_id: String, ?label: String?) -> (Emails::message | { error: String })
+
+    private
+
+    def cap_body: (Emails::message message) -> Emails::message
   end
 end

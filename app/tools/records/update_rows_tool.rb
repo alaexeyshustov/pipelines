@@ -31,7 +31,7 @@ module Records
       raise ArgumentError, "data must be a JSON object" unless attrs.is_a?(Hash)
       return { status: "invalid_attributes" } if attrs.empty?
 
-      attrs = attrs.transform_keys(&:to_s).slice(*model.tool_column_names)
+      attrs = attrs.transform_keys(&:to_s).slice(*model.tool_writable_column_names)
       update!(record, attrs) unless attrs.empty?
       { status: "row_updated" }
     end

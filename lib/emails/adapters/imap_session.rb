@@ -1,6 +1,8 @@
 module Emails
   module Adapters
     class ImapSession
+      OPEN_TIMEOUT = 10
+
       def initialize(host:, port:, username:, password:)
         @imap_config     = { host:, port:, username:, password: }
         @mutex           = Mutex.new
@@ -21,7 +23,10 @@ module Emails
 
       def imap
         @imap ||= begin
-          conn = Net::IMAP.new(@imap_config[:host], port: @imap_config[:port], ssl: true)
+          conn = Net::IMAP.new(
+            @imap_config[:host], port: @imap_config[:port],
+            ssl: { verify_mode: OpenSSL::SSL::VERIFY_PEER }, open_timeout: OPEN_TIMEOUT
+          )
           conn.login(@imap_config[:username], @imap_config[:password])
           @current_mailbox = nil
           conn

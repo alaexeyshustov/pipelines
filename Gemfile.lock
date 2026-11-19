@@ -749,6 +749,7 @@ DEPENDENCIES
   mutant-rspec
   neighbor
   net-imap (~> 0.4)
+  nokogiri
   pagy
   parser (~> 3.3)
   propshaft

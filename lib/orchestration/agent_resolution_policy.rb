@@ -33,22 +33,9 @@ module Orchestration
     end
 
     def resolved_tools
-      return @tool_classes if @tool_classes.present?
+      return @tool_classes unless @tool_classes.nil?
 
-      agent_record.tools&.map { |tool| resolve_tool_class(tool) }
-    end
-
-    def resolve_tool_class(tool)
-      return tool if tool.is_a?(Class)
-
-      namespace = tool.to_s.split("::").first
-      unless Orchestration::Agent::ALLOWED_TOOL_NAMESPACES.include?(namespace)
-        raise ArgumentError, "Tool '#{tool}' is outside allowed namespaces (#{Orchestration::Agent::ALLOWED_TOOL_NAMESPACES.join(', ')})"
-      end
-
-      tool.constantize
-    rescue NameError
-      raise ArgumentError, "Unknown tool class: #{tool}"
+      agent_record.tools&.map { |tool| ToolResolver.lookup(tool) }
     end
 
     def resolved_output_schema

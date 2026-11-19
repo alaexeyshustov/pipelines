@@ -1,9 +1,10 @@
 module Emails
   class ConnectionTester
     type provider_class = singleton(Emails::Adapters::BaseAdapter)
-    type outcome = { success: bool, ?error: String? }
+    type outcome = { success: bool, ?error: String?, ?exception: StandardError }
 
     UNKNOWN_PROVIDER: String
+    GENERIC_ERROR: String
 
     @provider: String
     @configuration: ActiveSupport::HashWithIndifferentAccess[String, json_object_value]

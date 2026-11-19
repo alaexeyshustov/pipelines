@@ -17,6 +17,16 @@ RSpec.describe Records::UpdateRowsTool do
       expect(result).to eq(status: 'row_updated')
     end
 
+    it 'ignores id in the data and keeps the row id' do
+      original_id = interview.id
+
+      result = tool.execute(table: 'interviews', id: original_id.to_s, data: { id: 987_654, company: 'New Globex' }.to_json)
+
+      expect(result).to eq(status: 'row_updated')
+      expect(interview.reload).to have_attributes(id: original_id, company: 'New Globex')
+      expect(Interview.exists?(987_654)).to be false
+    end
+
     it 'reports update_failed instead of row_updated when validation fails' do
       create(:interview, company: 'Globex', job_title: 'Designer')
 

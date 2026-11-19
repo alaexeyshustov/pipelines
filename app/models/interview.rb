@@ -32,6 +32,9 @@ class Interview < ApplicationRecord
 
   def self.tool_column_names = COLUMN_NAMES
 
+  # Columns an LLM may write; the primary key is excluded.
+  def self.tool_writable_column_names = COLUMN_NAMES - [ "id" ]
+
   def self.as_rows(scope = all)
     scope.order(:company, :job_title).map do |r|
       COLUMN_NAMES.index_with { |col| r.public_send(col)&.to_s }
