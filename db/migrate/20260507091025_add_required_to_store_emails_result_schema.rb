@@ -1,10 +1,4 @@
 class AddRequiredToStoreEmailsResultSchema < ActiveRecord::Migration[8.1]
-  # Migration-local models: the app models track the current schema, not this migration's.
-  class MigrationAgent < ActiveRecord::Base
-    self.table_name = "orchestration_agents"
-    self.inheritance_column = nil
-  end
-
   # Mistral requires every object with "properties" to also declare a "required"
   # array listing all keys. The "result" object was missing this, causing:
   #   "In context=('properties', 'result'), 'required' is required to be
@@ -28,8 +22,9 @@ class AddRequiredToStoreEmailsResultSchema < ActiveRecord::Migration[8.1]
   }.freeze
 
   def up
-    MigrationAgent.find_by(name: "Records::StoreAgent")
-      &.update_columns(output_schema: SCHEMA)
+    execute <<~SQL.squish
+      UPDATE orchestration_agents SET output_schema = #{quote(SCHEMA.to_json)} WHERE name = 'Records::StoreAgent'
+    SQL
   end
 
   def down

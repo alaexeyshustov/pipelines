@@ -1,10 +1,4 @@
 class AddOutputSchemaToFilterEmailsAgent < ActiveRecord::Migration[8.1]
-  # Migration-local models: the app models track the current schema, not this migration's.
-  class MigrationAgent < ActiveRecord::Base
-    self.table_name = "orchestration_agents"
-    self.inheritance_column = nil
-  end
-
   # Without output_schema the runtime agent builder never calls with_schema(),
   # so Mistral is unconstrained and occasionally returns a bare array instead of
   # {"results":[...]}. IngestionExecutor's filter_by_ids then digs "result.results"
@@ -30,8 +24,9 @@ class AddOutputSchemaToFilterEmailsAgent < ActiveRecord::Migration[8.1]
   }.freeze
 
   def up
-    MigrationAgent.find_by(name: "Emails::FilterAgent")
-      &.update_columns(output_schema: SCHEMA)
+    execute <<~SQL.squish
+      UPDATE orchestration_agents SET output_schema = #{quote(SCHEMA.to_json)} WHERE name = 'Emails::FilterAgent'
+    SQL
   end
 
   def down

@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+# Prepare the databases only when starting the web server; the jobs container
+# waits for web to be healthy, so it never races the migration.
+case "$*" in
+  *"falcon serve"*) bin/rails db:prepare ;;
+esac
+
+exec "$@"
