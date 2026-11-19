@@ -66,7 +66,7 @@ snapshot:
   config/environment.rb: 73b2e731e02cedb9dc0335e1a35c3a2b7738032e3aa7e62ac32cbb8432b43c69
   config/environments/development.rb: 1044be7925d9d0001a5f5ef9544b5cafad428486a9e525f25748bc338528c448
   config/environments/production.rb: b043a44f41a1fb2c074b26769c706ce3c8a40eb28a05f605a0972a9f57148d86
-  config/environments/test.rb: aa8828e3a614b1aab5c6016491d9862237319c9ad323de1dacaffebe0cc9f5cb
+  config/environments/test.rb: 37496b8c4cca49da047eea7a83986772d0629a8a261ab7298af4e1bc9b8c15c4
   config/importmap.rb: e063c356463c79934ce80c5d458e2334214b5d4bedd454dcfc7c25e5831a377b
   config/initializers/active_job_logger.rb: 6158081cf3169400f2c81f3f1a54b0bae8589aaf9e919603cf9d223aafe9b144
   config/initializers/content_security_policy.rb: ce826e17b3fb793bff050c64f2d515da14b0a63b77f0144368646597075fbdd5
@@ -85,7 +85,7 @@ snapshot:
   config/puma.rb: d1f67568aa22ac7404904351aa738829623d45312a32dc560a4640bcf9eceb3d
   config/queue.yml: b850e3ac994276a0211a032c1d2865b97ea05fb948f326df58ea18ea7c60cb21
   config/recurring.yml: b88669d4686076293b67b0d0c3b3ec50f74e5adc8ea7efb9414b98f95559f839
-  config/routes.rb: e4e8dbb86f356566ae0fe68e9316a8c05af0dd09c29e645fc3bdb327225295f5
+  config/routes.rb: dd9708280b111f9b4a21541d3945633b376544dc456d316e6ca8dd13f484f8c1
 references:
 - path: app/models/chat.rb
   line: 6
