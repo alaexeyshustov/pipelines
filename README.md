@@ -57,7 +57,7 @@ LOOKBACK_MONTHS=3
 
 # Data export
 GITHUB_TOKEN=
-GIST_ID=              # existing Gist to update; omit to create a new one
+GIST_ID=              # hex id of an existing secret Gist; web/orchestration exports require it, the CLI creates a new Gist if omitted
 ```
 
 ---

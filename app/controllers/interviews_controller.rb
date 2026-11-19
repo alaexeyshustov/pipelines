@@ -56,9 +56,7 @@ class InterviewsController < ApplicationController
   end
 
   def export_gist
-    gist_id = params[:gist_id].to_s.strip
-
-    result = Interviews::GistExportService.new(ids: params[:ids], gist_id: gist_id).call
+    result = Interviews::GistExportService.call(ids: params[:ids])
     redirect_to interviews_index_with_filters, **flash_for(result)
   end
 

@@ -1,5 +1,7 @@
 class GistUploader
   GITHUB_API: String
+  API_VERSION: String
+  GIST_ID_FORMAT: Regexp
 
   class Result < Data
     attr_reader url: String?
@@ -8,6 +10,9 @@ class GistUploader
   end
 
   class ApiError < StandardError
+  end
+
+  class InvalidGistId < ApiError
   end
 
   @token: String
@@ -22,7 +27,10 @@ class GistUploader
 
   private
 
-  def request: (Symbol method, String path, _ToJson body) -> json_object
+  def validate_id: () -> void
+  def ensure_secret!: () -> void
+  def request: (Symbol method, String path, ?_ToJson? body) -> json_object
+  def parse_body: (Net::HTTPResponse res) -> json_object_value
   def build_http_client: (URI::Generic uri) -> Net::HTTP
-  def build_http_request: (Symbol method, URI::Generic uri, _ToJson body) -> (Net::HTTP::Post | Net::HTTP::Patch)
+  def build_http_request: (Symbol method, URI::Generic uri, _ToJson? body) -> (Net::HTTP::Get | Net::HTTP::Post | Net::HTTP::Patch)
 end
