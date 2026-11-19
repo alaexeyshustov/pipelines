@@ -15,8 +15,10 @@ module UI
     end
 
     @current_path: String
+    @user: User?
 
-    def initialize: (current_path: String) -> void
+    def initialize: (current_path: String, ?user: User?) -> void
+    def sign_out_path: () -> String
     def nav_groups: () -> Array[NavGroup]
     def group_open?: (NavGroup group) -> bool
     def active?: (String path) -> bool
