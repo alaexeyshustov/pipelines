@@ -12,7 +12,9 @@ linter:
   rules:
     actionview-prefer-qualified-partial-path: { enabled: false }
     html-input-require-autocomplete: { enabled: false }
-    html-require-script-nonce: { enabled: false } # re-enable with CSP
+    html-require-script-nonce: { enabled: true }
+    html-no-event-handler-attributes: { enabled: true }
+    html-no-inline-script-elements: { enabled: true }
 
 formatter:
   enabled: false

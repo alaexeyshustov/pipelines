@@ -3,7 +3,7 @@
   <input type="hidden" data-schema-builder-target="schemaData" value="<%= html_escape(json) %>">
 <% end %>
 
-<div class="schema-builder-node border border-gray-200 rounded-lg p-3 space-y-2">
+<div data-controller="auto-submit" class="schema-builder-node border border-gray-200 rounded-lg p-3 space-y-2">
   <div class="flex items-start gap-3">
     <div class="flex-shrink-0">
       <label class="block text-xs font-medium text-gray-500 mb-1">Type</label>
@@ -13,7 +13,7 @@
         <input type="hidden" name="path" value="<%= html_escape(path_json) %>">
         <select name="new_type"
                 class="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                onchange="this.form.requestSubmit()">
+                data-action="change->auto-submit#submit">
           <% if builder.type.nil? %>
             <option value="" selected disabled>— select type —</option>
           <% end %>
@@ -35,7 +35,7 @@
                value="<%= builder.description %>"
                placeholder="optional description"
                class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-               onblur="this.form.requestSubmit()">
+               data-action="blur->auto-submit#submit">
       </form>
     </div>
   </div>
@@ -49,7 +49,7 @@
         <input type="hidden" name="path" value="<%= html_escape(path_json) %>">
         <select name="builder[format]"
                 class="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                onchange="this.form.requestSubmit()">
+                data-action="change->auto-submit#submit">
           <option value="" <% if builder.format.blank? %>selected<% end %>>none</option>
           <% if builder.type == "string" %>
             <option value="date" <% if builder.format == "date" %>selected<% end %>>date</option>
@@ -71,7 +71,7 @@
                   rows="3"
                   placeholder="value1&#10;value2&#10;value3"
                   class="w-full border border-gray-300 rounded px-2 py-1 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  onblur="this.form.requestSubmit()"><%= builder.enum.join("\n") %></textarea>
+                  data-action="blur->auto-submit#submit"><%= builder.enum.join("\n") %></textarea>
       </form>
     </div>
   <% end %>
@@ -89,7 +89,7 @@
                  value="<%= builder.minimum %>"
                  step="<%= builder.type == 'integer' ? 1 : 'any' %>"
                  class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                 onblur="this.form.requestSubmit()">
+                 data-action="blur->auto-submit#submit">
         </form>
       </div>
       <div class="flex-1">
@@ -103,7 +103,7 @@
                  value="<%= builder.maximum %>"
                  step="<%= builder.type == 'integer' ? 1 : 'any' %>"
                  class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                 onblur="this.form.requestSubmit()">
+                 data-action="blur->auto-submit#submit">
         </form>
       </div>
     </div>
@@ -139,7 +139,7 @@
                            name="builder[required_checked]"
                            value="true"
                            <% if required?(prop_name) %>checked<% end %>
-                           onchange="this.form.requestSubmit()"
+                           data-action="change->auto-submit#submit"
                            class="rounded border-gray-300">
                     required
                   </form>
@@ -196,7 +196,7 @@
                  name="builder[additional_properties]"
                  value="true"
                  <% if builder.additional_properties == true %>checked<% end %>
-                 onchange="this.form.requestSubmit()"
+                 data-action="change->auto-submit#submit"
                  class="rounded border-gray-300">
           Allow additional properties
         </label>

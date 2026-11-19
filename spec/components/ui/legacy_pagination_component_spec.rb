@@ -37,4 +37,32 @@ RSpec.describe UI::LegacyPaginationComponent, type: :component do
       expect(rendered.to_html).to include("Next")
     end
   end
+
+  describe "href escaping" do
+    def render_with(path:, **opts)
+      req = ActionDispatch::Request.new(
+        "REQUEST_METHOD" => "GET", "PATH_INFO" => path, "QUERY_STRING" => "",
+        "rack.input" => StringIO.new, "SERVER_NAME" => "www.example.com", "SERVER_PORT" => "80"
+      )
+      pagy = Pagy::Offset.new(count: 75, limit: 25, page: 2, request: req, **opts)
+      render_inline(described_class.new(pagy: pagy))
+    end
+
+    # Unescaped, the quote closes href and the tag injects a <script> element.
+    it "escapes a hostile request path" do
+      rendered = render_with(path: '/items"><script>alert(1)</script>')
+
+      expect(rendered.css("script")).to be_empty
+      hrefs = rendered.css("a[href]").pluck("href")
+      expect(hrefs).to all(start_with('/items"><script>alert(1)</script>?page='))
+    end
+
+    it "escapes a hostile fragment" do
+      rendered = render_with(path: "/items", fragment: '#x"><script>alert(1)</script>')
+
+      expect(rendered.css("script")).to be_empty
+      hrefs = rendered.css("a[href]").pluck("href")
+      expect(hrefs).to all(end_with('#x"><script>alert(1)</script>'))
+    end
+  end
 end

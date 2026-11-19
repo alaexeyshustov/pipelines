@@ -162,4 +162,22 @@ RSpec.describe Orchestration::SchemaBuilderComponent, type: :component do
       expect(json_inputs.first&.attr("value")).to eq(json_val)
     end
   end
+
+  describe "inline handlers (CSP)" do
+    let(:component) do
+      described_class.new(builder: builder_for("type" => "object", "properties" => { "a" => { "type" => "string" } }))
+    end
+
+    it "renders no on* event attributes" do
+      inline = rendered.css("*").flat_map { |n| n.attribute_nodes.map(&:name) }.grep(/\Aon/i)
+      expect(inline).to be_empty
+    end
+
+    it "submits through the auto-submit controller" do
+      actions = rendered.css("[data-action]").pluck("data-action")
+      expect(actions).to include("change->auto-submit#submit")
+      expect(actions).to include("blur->auto-submit#submit")
+      expect(rendered.css("[data-controller~='auto-submit']")).to be_present
+    end
+  end
 end
