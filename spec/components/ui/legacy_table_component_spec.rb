@@ -22,8 +22,6 @@ RSpec.describe UI::LegacyTableComponent, type: :component do
       end
     end
 
-    before { render_inline(component) }
-
     it "renders a table element" do
       expect(rendered.css("table")).to be_present
     end
@@ -57,10 +55,7 @@ RSpec.describe UI::LegacyTableComponent, type: :component do
   context "when collection is empty" do
     let(:component) { described_class.new(collection: [], empty_message: "No records found.") }
 
-    before do
-      component.with_columns([ { label: "Name" }, { label: "Value" } ])
-      render_inline(component)
-    end
+    before { component.with_columns([ { label: "Name" }, { label: "Value" } ]) }
 
     it "renders the empty message" do
       expect(rendered.css("td").first.text.strip).to eq("No records found.")
@@ -78,10 +73,7 @@ RSpec.describe UI::LegacyTableComponent, type: :component do
   context "with compact style columns" do
     let(:component) { described_class.new(collection: []) }
 
-    before do
-      component.with_columns([ { label: "Status", style: :compact } ])
-      render_inline(component)
-    end
+    before { component.with_columns([ { label: "Status", style: :compact } ]) }
 
     it "renders compact header with distinct styling from default" do
       th = rendered.css("thead th").first
@@ -92,10 +84,7 @@ RSpec.describe UI::LegacyTableComponent, type: :component do
   context "with block content in column" do
     let(:component) { described_class.new(collection: []) }
 
-    before do
-      component.with_column { "<a href='/'>Link</a>".html_safe }
-      render_inline(component)
-    end
+    before { component.with_column { "<a href='/'>Link</a>".html_safe } }
 
     it "renders block content in the header cell" do
       expect(rendered.css("thead th a")).to be_present
@@ -105,23 +94,18 @@ RSpec.describe UI::LegacyTableComponent, type: :component do
   context "with key-derived label" do
     let(:component) { described_class.new(collection: []) }
 
-    before { render_inline(component) }
-
     it "derives label from a simple key" do
       component.with_columns([ { key: "company" } ])
-      render_inline(component)
       expect(rendered.css("thead th").first.text.strip).to eq("Company")
     end
 
     it "derives label from an underscored key" do
       component.with_columns([ { key: "agent_class" } ])
-      render_inline(component)
       expect(rendered.css("thead th").first.text.strip).to eq("Agent Class")
     end
 
     it "allows explicit label to override key" do
       component.with_columns([ { key: "status", label: "Current Status" } ])
-      render_inline(component)
       expect(rendered.css("thead th").first.text.strip).to eq("Current Status")
     end
   end
@@ -129,10 +113,7 @@ RSpec.describe UI::LegacyTableComponent, type: :component do
   context "with a custom cell proc" do
     let(:component) { described_class.new(collection: records) }
 
-    before do
-      component.with_columns([ { key: :name, label: "Name", cell: ->(r) { r.name.upcase } } ])
-      render_inline(component)
-    end
+    before { component.with_columns([ { key: :name, label: "Name", cell: ->(r) { r.name.upcase } } ]) }
 
     it "renders cell content via the proc" do
       expect(rendered.css("tbody td").first.text.strip).to eq("ACME CORP")
@@ -142,10 +123,7 @@ RSpec.describe UI::LegacyTableComponent, type: :component do
   context "with a column variant" do
     let(:component) { described_class.new(collection: records) }
 
-    before do
-      component.with_columns([ { key: :name, variant: :mono } ])
-      render_inline(component)
-    end
+    before { component.with_columns([ { key: :name, variant: :mono } ]) }
 
     it "applies the variant classes to the cells" do
       expect(rendered.css("tbody td").first["class"]).to eq("px-4 py-3 font-mono text-xs")
@@ -164,7 +142,6 @@ RSpec.describe UI::LegacyTableComponent, type: :component do
           props: ->(r) { { label: r.status, variant: :success } }
         }
       ])
-      render_inline(component)
     end
 
     it "renders the ViewComponent in the cell" do
@@ -190,8 +167,6 @@ RSpec.describe UI::LegacyTableComponent, type: :component do
         )
       end
     end
-
-    before { render_inline(component) }
 
     it "renders an empty action column header" do
       last_th = rendered.css("thead th").last
@@ -243,8 +218,6 @@ RSpec.describe UI::LegacyTableComponent, type: :component do
       end
     end
 
-    before { render_inline(component) }
-
     it "renders the select all button" do
       expect(rendered.css("button[data-batch-target='selectAllBtn']")).to be_present
     end
@@ -286,8 +259,6 @@ RSpec.describe UI::LegacyTableComponent, type: :component do
         ])
       end
     end
-
-    before { render_inline(component) }
 
     it "renders sort links in column headers" do
       expect(rendered.css("thead th a").size).to eq(2)
