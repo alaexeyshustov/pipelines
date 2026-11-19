@@ -10,6 +10,7 @@ RSpec.configure do |config|
       headless: true,
       browser_options: ENV["CI"] ? { "no-sandbox" => nil, "disable-dev-shm-usage" => nil, "disable-gpu" => nil } : {}
     }
+    page.driver.browser.evaluate_on_new_document(DisableAnimations::SCRIPT)
   end
 
   config.around(:each, type: :system) do |ex|

@@ -29,6 +29,7 @@ The system follows a pipeline-based architecture where data flows through severa
 - **SQLite**: Local database (FTS5 for email and document search).
 - **RubyLLM**: A unified client for multiple LLM providers.
 - **ViewComponent + Tailwind + Turbo**: For the Web UI.
+- **Content Security Policy**: enforced, script nonce only; see [ADR 0016](adr/0016-content-security-policy.md). No inline `<script>` or `on*=` handlers; use Stimulus.
 - **State machines**: Rails `enum` for simple states; AASM for complex workflows (currently only `Evaluation::Experiment`).
 
 ### Directory Structure

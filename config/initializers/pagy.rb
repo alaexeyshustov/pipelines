@@ -26,7 +26,7 @@ class Pagy
       next_label = Pagy::I18n.translate("pagy.aria_label.next")
 
       html = if previous
-               %(<a href="#{page_url(previous)}" rel="prev" aria-label="#{prev_label}" class="#{normal}">#{prev_text}</a>)
+               %(<a href="#{ERB::Util.h(page_url(previous))}" rel="prev" aria-label="#{prev_label}" class="#{normal}">#{prev_text}</a>)
       else
                %(<a role="link" aria-disabled="true" aria-label="#{prev_label}" class="#{ghost}">#{prev_text}</a>)
       end
@@ -34,7 +34,7 @@ class Pagy
       series(**).each do |item|
         html << case item
         when Integer
-                  %(<a href="#{page_url(item)}" class="#{normal}">#{page_label(item)}</a>)
+                  %(<a href="#{ERB::Util.h(page_url(item))}" class="#{normal}">#{page_label(item)}</a>)
         when String
                   %(<a role="link" aria-disabled="true" aria-current="page" class="#{active}">#{page_label(item)}</a>)
         when :gap
@@ -45,7 +45,7 @@ class Pagy
       end
 
       html << if self.next
-                %(<a href="#{page_url(self.next)}" rel="next" aria-label="#{next_label}" class="#{normal}">#{next_text}</a>)
+                %(<a href="#{ERB::Util.h(page_url(self.next))}" rel="next" aria-label="#{next_label}" class="#{normal}">#{next_text}</a>)
       else
                 %(<a role="link" aria-disabled="true" aria-label="#{next_label}" class="#{ghost}">#{next_text}</a>)
       end

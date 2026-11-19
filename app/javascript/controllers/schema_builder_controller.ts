@@ -37,10 +37,10 @@ export default class SchemaBuilderController extends Controller {
   toggleRaw() {
     this.showingRaw = !this.showingRaw;
     if (this.hasBuilderViewTarget) {
-      this.builderViewTarget.style.display = this.showingRaw ? 'none' : '';
+      this.builderViewTarget.classList.toggle('hidden', this.showingRaw);
     }
     if (this.hasRawViewTarget) {
-      this.rawViewTarget.style.display = this.showingRaw ? '' : 'none';
+      this.rawViewTarget.classList.toggle('hidden', !this.showingRaw);
       if (this.showingRaw && this.hasJsonTarget) {
         this.rawEditorTarget.value = this.prettyJson(this.jsonTarget.value);
       }
