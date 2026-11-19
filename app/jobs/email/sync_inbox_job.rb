@@ -67,7 +67,7 @@ class Email::SyncInboxJob < ApplicationJob
       [ message_id, outcome, email ] # : [String, String, Email?]
     end
     failed_ids = outcomes.select { |(_id, outcome, _email)| outcome == "failed" }.map(&:first)
-    [ Result.new(counts: counts_for(mode, ids.size, outcomes), email_ids: outcomes.filter_map { |(*, email)| email&.id }), failed_ids ]
+    [ Result.new(counts: counts_for(mode, ids.size, outcomes), email_ids: outcomes.filter_map { |(_id, _outcome, email)| email&.id }), failed_ids ]
   end
 
   def counts_for(mode, fetched, outcomes)
