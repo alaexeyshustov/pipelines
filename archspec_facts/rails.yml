@@ -14,8 +14,8 @@ sources:
 - "**/app/models/**/*.rb"
 snapshot:
   ".ruby-version": 365c845737dc111861176ea1d0246ce7b335768d8dbd2cea234c305b2983beba
-  Gemfile: bf004da958b5bbf38f4c937db66cd9ef45f8e1dba9b6fb84ea460c49b4f40418
-  Gemfile.lock: f67ec1c3a12fd458761e94db97f82f57632a493773f3ec3c0bf599fdd969352a
+  Gemfile: 2e47c91d50a1931fbf3b68cfaefd8a2fa3636d385519de33b50f5bb0b72fb9aa
+  Gemfile.lock: 299fa92d285bd71bac6d63f3103759c0d7c9ccd75c5b0fa06f5f15062cacade4
   app/models/application_record.rb: 12bf7d0eaefce4d50e0719991e19b48a36a7865aeb7ac745980584806155fdc1
   app/models/chat.rb: 4ebd698bb3b02213e2cf22af062db0ebbf8fe774cc13b038d5ce21c7ee975485
   app/models/concerns/batchable.rb: 1f2d8efb2eb497ece07f3cb43363c396e3a42dd4ad76ff2be01b2cf8604fec01
@@ -23,6 +23,7 @@ snapshot:
   app/models/concerns/fts_searchable.rb: 50bd137e2fea7d720ee1f82671b80ca5a2ea159d14e1da21c0acd3ae1b66e7c8
   app/models/concerns/searchable.rb: 40c1dff7275c6cf950410fced79d3ab9ae8fd66ea699e24e4dae67b8c6acf775
   app/models/concerns/taggable.rb: 98d630fb4329091ce3baf82d5339c4a82a56cd4c9397a7403fee3bfc050328c2
+  app/models/current.rb: 156f6bce9d586dc9f6b86d21168289c034eb30421794a2cafe10ec46031414f5
   app/models/document.rb: b1bee29a7af0f3e247176c4adf034a23051fa8663ed7adc1084d6d7dc0ec3cb9
   app/models/document/drive_entry.rb: 37a8a60e9a195793297b186201d983da179ea34561aa51159be82ffdbb02ff5e
   app/models/document/file_type.rb: f7480073960eba01a8dc26e8468c5580d251b75765127572b7cdd56b1f5071a0
@@ -52,10 +53,12 @@ snapshot:
   app/models/orchestration/schema_builder/serializer.rb: 88b74dc98846936866127c95c73fcbe17382f1314f685cf9f6e86ce03230f329
   app/models/orchestration/step.rb: 4f39f100fc511fa869360e4978b8b007314af808d8e22d1182493cf2db2c4920
   app/models/orchestration/step_action.rb: d12179ac81a5392e71f5dcc30e85ca4234c3c91a82439c8da5ba2ca6325f3041
+  app/models/session.rb: 35cfbd4a46c96c5258df4ab38ebdc5f197d5f14de0d9482ffba84ee939e090ac
   app/models/setting.rb: '05867ac14faeef87d1c4af0a1407c5f278b4f2eff1462d3f89baa53476404261'
   app/models/subtag.rb: b5d218740c6109c688db06710074627f77384a679036d6df715cbb786dd66299
   app/models/tag.rb: 265e7832b401cbf14525162971802670e52321e6b1c68bcd544de832469fa72a
   app/models/tagging.rb: 77803506ec48ac9f088282367435abe6dd938ad3305418801053f0c15fd79963
+  app/models/user.rb: 5bb1744c0b810300b7a0500536e93afb35d0ba4c0533eea10ec50c9c69cdc3bc
   config/application.rb: d76105731ccca1452cd5e041bfaf30bd2ecca38814396893e95384bb55c04319
   config/boot.rb: 129a59e499e2d551f78505c6d65bf1e568f09058353f61e167eba5af0e4ca242
   config/ci.rb: 721ea251ae3714fa98331e07c335d469b9e9b902cfc475f9e9ac50fe10c6fd72
@@ -476,6 +479,14 @@ references:
   source_path: app/models/orchestration/step_action.rb
   source: Orchestration::StepAction
   target: Orchestration::Step
+- path: app/models/session.rb
+  line: 2
+  column: 3
+  end_line: 2
+  end_column: 19
+  source_path: app/models/session.rb
+  source: Session
+  target: User
 - path: app/models/subtag.rb
   line: 2
   column: 3
@@ -524,6 +535,14 @@ references:
   source_path: app/models/tagging.rb
   source: Tagging
   target: Tag
+- path: app/models/user.rb
+  line: 3
+  column: 3
+  end_line: 3
+  end_column: 42
+  source_path: app/models/user.rb
+  source: User
+  target: Session
 methods:
 - path: app/models/chat.rb
   line: 6
@@ -1225,6 +1244,20 @@ methods:
   visibility: public
   mode: if_missing
   signatures: []
+- path: app/models/session.rb
+  line: 2
+  column: 3
+  end_line: 2
+  end_column: 19
+  source_path: app/models/session.rb
+  owner: Session
+  names:
+  - user
+  - user=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
 - path: app/models/subtag.rb
   line: 2
   column: 3
@@ -1319,6 +1352,20 @@ methods:
   names:
   - taggable
   - taggable=
+  scope: instance
+  visibility: public
+  mode: if_missing
+  signatures: []
+- path: app/models/user.rb
+  line: 3
+  column: 3
+  end_line: 3
+  end_column: 42
+  source_path: app/models/user.rb
+  owner: User
+  names:
+  - sessions
+  - sessions=
   scope: instance
   visibility: public
   mode: if_missing
