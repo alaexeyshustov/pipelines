@@ -19,12 +19,13 @@ module Evaluation
     private
 
     def generation_job_params
+      permitted = params.permit(:draft_token, :agent_name, :dataset_name, :count, :hints)
       {
-        draft_token:  params[:draft_token],
-        agent_name:   params[:agent_name],
-        dataset_name: params[:dataset_name],
-        count:        params[:count],
-        hints:        params[:hints]
+        draft_token:  permitted[:draft_token],
+        agent_name:   permitted[:agent_name],
+        dataset_name: permitted[:dataset_name],
+        count:        permitted[:count],
+        hints:        permitted[:hints]
       }
     end
 
@@ -33,7 +34,7 @@ module Evaluation
     end
 
     def resync_sample_size
-      params[:count]&.to_i || 20
+      Integer(params[:count].to_s, 10, exception: false)
     end
 
     def resync_error_stream(e)

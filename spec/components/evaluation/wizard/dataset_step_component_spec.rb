@@ -47,4 +47,17 @@ RSpec.describe Evaluation::Wizard::DatasetStepComponent, type: :component do
   it "renders a Next button" do
     expect(rendered.css("button[type='submit']").text).to include("Next")
   end
+
+  it "renders every count field with the Dataset sample limits and default" do
+    fields = rendered.css("input[name$='[count]'], input[name='count']")
+
+    limits = Evaluation::Dataset::SAMPLE_COUNT
+    expected = { "min" => limits.min.to_s, "max" => limits.max.to_s, "value" => Evaluation::Dataset::DEFAULT_SAMPLE_COUNT.to_s }
+
+    expect(fields.map { |f| f.attributes.slice(*expected.keys).transform_values(&:value) }).to all(eq(expected))
+  end
+
+  it "renders a count field for each dataset resync dialog and for synthetic generation" do
+    expect(rendered.css("input[type='number']").size).to eq(datasets.size + 1)
+  end
 end

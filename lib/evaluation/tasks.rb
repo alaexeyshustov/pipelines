@@ -13,7 +13,7 @@ module Evaluation
       agent_name = required(agent_name, "seed_dataset[AgentName,sample_size]")
       raise ArgumentError, "Unknown agent: #{agent_name}" unless Orchestration::Agent.exists?(name: agent_name)
 
-      result = DatasetSeeder.call(agent_name:, sample_size: (sample_size || 20).to_i)
+      result = DatasetSeeder.call(agent_name:, sample_size: Integer(sample_size.to_s, 10, exception: false))
       out.puts "Dataset '#{result.agent_name}': #{result.created} created, #{result.skipped} skipped."
     end
 

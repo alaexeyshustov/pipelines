@@ -28,6 +28,30 @@ RSpec.describe "Evaluation::Datasets" do
       expect(response.body).to include("dataset-count-#{dataset.id}")
     end
 
+    context "with more completed runs than the cap" do
+      before do
+        create_completed_agent_runs("Emails::ClassifyAgent", 55)
+      end
+
+      # The seeder finds or creates the dataset by agent name.
+      def seeded_count = Evaluation::Dataset.find_by!(name: "Emails::ClassifyAgent").dataset_samples.count
+
+      { "0" => 1, "-5" => 1, "abc" => 20, "" => 20, "10.5" => 20, "010" => 10, "10000" => 50 }.each do |count, expected|
+        it "seeds #{expected} samples for count=#{count.inspect}" do
+          post resync_evaluation_dataset_path(dataset), params: { count: count }
+
+          expect(response).to have_http_status(:ok)
+          expect(seeded_count).to eq(expected)
+        end
+      end
+
+      it "seeds the default 20 when count is absent" do
+        post resync_evaluation_dataset_path(dataset)
+
+        expect(seeded_count).to eq(20)
+      end
+    end
+
     context "when DatasetSeeder raises an error" do
       before do
         allow(Evaluation::DatasetSeeder).to receive(:call).and_raise(StandardError, "boom")
@@ -76,6 +100,21 @@ RSpec.describe "Evaluation::Datasets" do
       it "renders a turbo_stream error message" do
         post generate_evaluation_datasets_path, params: { agent_name: "Agent", dataset_name: "DS", count: 3 }
         expect(response.body).to include("boom")
+      end
+    end
+  end
+
+  describe "POST /evaluation/datasets/generate with structured hints" do
+    include ActiveJob::TestHelper
+
+    { "an array" => [ "x" ], "a hash" => { a: "x" } }.each do |label, hints|
+      it "responds 200 and enqueues the job when hints is #{label}" do
+        expect {
+          post generate_evaluation_datasets_path,
+               params: { draft_token: "t", agent_name: "Agent", dataset_name: "DS", count: 3, hints: hints }
+        }.to have_enqueued_job(Evaluation::SyntheticDatasetJob)
+
+        expect(response).to have_http_status(:ok)
       end
     end
   end

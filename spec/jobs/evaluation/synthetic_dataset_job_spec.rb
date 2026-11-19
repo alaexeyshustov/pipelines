@@ -160,27 +160,71 @@ RSpec.describe Evaluation::SyntheticDatasetJob do
       end
     end
 
-    context "when dataset_id is provided (resync)" do
-      let!(:existing_dataset) { create(:evaluation_dataset, name: "Existing", agent_name: agent_name) }
-      let!(:old_sample) { create(:evaluation_dataset_sample, dataset: existing_dataset) }
-      let(:resync_params) { { draft_token: draft_token, agent_name: agent_name, dataset_id: existing_dataset.id, count: 3 } }
-
-      it "does not create a new dataset" do
-        expect { described_class.perform_now(**resync_params) }.not_to change(Evaluation::Dataset, :count)
+    describe "count" do
+      def user_message_count
+        messages = nil
+        WebMock.assert_requested(:post, %r{api\.openai\.com}) { |req| messages = JSON.parse(req.body)["messages"] }
+        messages.filter_map { |m| m["content"].to_s[/## Number of examples to generate\n(\S+)/, 1] }.first
       end
 
-      it "destroys existing samples and replaces with generated ones" do
-        expect { described_class.perform_now(**resync_params) }
-          .to change(Evaluation::DatasetSample, :count).by(generated_inputs.size - 1)
+      { 0 => "1", -5 => "1", "0" => "1", "-5" => "1", "abc" => "20", "" => "20", nil => "20",
+        "10.5" => "20", "010" => "10", "10000" => "50", 10_000 => "50", "7" => "7" }.each do |count, expected|
+        it "puts #{expected} in the prompt for count=#{count.inspect}" do
+          described_class.perform_now(**params, count: count)
 
-        expect(existing_dataset.dataset_samples.reload).not_to include(old_sample)
-        expect(existing_dataset.dataset_samples.count).to eq(generated_inputs.size)
+          expect(user_message_count).to eq(expected)
+        end
+      end
+    end
+
+    describe "hints" do
+      def hints_in_prompt
+        text = nil
+        WebMock.assert_requested(:post, %r{api\.openai\.com}) do |req|
+          text = JSON.parse(req.body)["messages"].map { |m| m["content"].to_s }.join("\n")
+        end
+        text[/## Additional hints\n(.*?)(\n\n##|\z)/m, 1]
       end
 
-      it "does not update the wizard draft" do
-        described_class.perform_now(**resync_params)
+      it "truncates hints to 1000 characters" do
+        described_class.perform_now(**params, hints: "h" * 1500)
 
-        expect(wizard_draft.reload.payload).to be_nil
+        expect(hints_in_prompt.length).to eq(1000)
+      end
+
+      it "works with nil hints and omits the hints section" do
+        described_class.perform_now(**params, hints: nil)
+
+        expect(hints_in_prompt).to be_nil
+        expect(wizard_draft.reload.payload["dataset_generation"]["status"]).to eq("complete")
+      end
+    end
+
+    context "when the agent is unknown" do
+      it "sets the draft to error and creates no dataset" do
+        expect {
+          described_class.perform_now(**params, agent_name: "Not::AnAgent")
+        }.not_to change(Evaluation::Dataset, :count)
+
+        generation = wizard_draft.reload.payload["dataset_generation"]
+        expect(generation["status"]).to eq("error")
+        expect(generation["error_message"]).to include("Unknown agent")
+      end
+
+      it "does not call the LLM" do
+        described_class.perform_now(**params, agent_name: "Not::AnAgent")
+
+        expect(WebMock).not_to have_requested(:post, %r{api\.openai\.com})
+      end
+    end
+
+    context "when the dataset name is too long" do
+      it "sets the draft to error and creates no records" do
+        expect {
+          described_class.perform_now(**params, dataset_name: "n" * 256)
+        }.not_to change(Evaluation::DatasetSample, :count)
+
+        expect(wizard_draft.reload.payload["dataset_generation"]["status"]).to eq("error")
       end
     end
 

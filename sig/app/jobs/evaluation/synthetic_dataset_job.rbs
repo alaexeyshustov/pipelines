@@ -2,18 +2,19 @@ module Evaluation
   class SyntheticDatasetJob < ApplicationJob
     SYSTEM_PROMPT: String
     DEFAULT_MODEL: String
+    MAX_HINTS_LENGTH: Integer
 
-    def perform: (draft_token: String, agent_name: String, count: Integer, ?dataset_name: String?, ?dataset_id: Integer?, ?hints: String, ?model: String?) -> void
+    def perform: (draft_token: String, agent_name: String, count: Integer | String | nil, ?dataset_name: String?, ?hints: String?, ?model: String?) -> void
 
     private
 
-    def persist_results: (String draft_token, String agent_name, String? dataset_name, Integer? dataset_id, Array[json_object_value] inputs) -> void
+    def clamp_count: (Integer | String | nil) -> Integer
+    def persist_results: (String draft_token, String agent_name, String? dataset_name, Array[json_object_value] inputs) -> void
     def fetch_system_prompt: (String) -> String
     def fetch_few_shot_samples: (String) -> Array[json_object_value]
     def build_user_message: (system_prompt_text: String, count: Integer, hints: String, few_shot: Array[json_object_value]) -> String
     def call_llm: (String, String) -> Array[json_object_value]
     def create_dataset_with_records: (String?, String, Array[json_object_value]) -> Evaluation::Dataset
     def update_draft: (String, status: String, ?dataset_id: Integer?, ?error_message: String?) -> void
-    def resync_dataset: (Integer dataset_id, Array[json_object_value] inputs) -> void
   end
 end

@@ -2,13 +2,13 @@ module Evaluation
   class DatasetSeeder
     Result = Data.define(:agent_name, :created, :skipped)
 
-    def self.call(agent_name:, sample_size: 20)
+    def self.call(agent_name:, sample_size: nil)
       new(agent_name: agent_name, sample_size: sample_size).call
     end
 
-    def initialize(agent_name:, sample_size: 20)
+    def initialize(agent_name:, sample_size: nil)
       @agent_name = agent_name
-      @sample_size = sample_size
+      @sample_size = (sample_size || Dataset::DEFAULT_SAMPLE_COUNT).clamp(Dataset::SAMPLE_COUNT)
     end
 
     def call

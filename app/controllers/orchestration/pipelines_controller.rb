@@ -50,8 +50,8 @@ module Orchestration
 
     def toggle
       @pipeline.update!(enabled: !@pipeline.enabled)
-      redirect_to request.referer || orchestration_pipeline_path(@pipeline),
-                  notice: "Pipeline #{@pipeline.enabled? ? 'enabled' : 'disabled'}."
+      redirect_back_or_to orchestration_pipeline_path(@pipeline),
+                       notice: "Pipeline #{@pipeline.enabled? ? 'enabled' : 'disabled'}."
     end
 
     def update
