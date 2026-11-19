@@ -3,6 +3,7 @@ module Evaluation
   # PassRateQuery, MetricPassRateQuery).
   module ExperimentStats
     extend ActiveSupport::Concern
+    include Evaluation::ActivePromptLookup
 
     private
 
@@ -11,6 +12,7 @@ module Evaluation
       load_pass_rates(experiment)
       @metrics = experiment.agent_name ? Metric.for_agent(experiment.agent_name).order(:name).to_a : []
       @sample_count = experiment.samples.count
+      @active_prompt = active_prompt_for(experiment.prompt)
     end
 
     def load_pass_rates(experiment)

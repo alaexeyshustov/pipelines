@@ -32,7 +32,7 @@ module Evaluation
     def resolve_prompt
       agent_name = payload["agent_name"] #: String?
       @prompt_id = payload["prompt_id"].presence ||
-                   Prompt.last_for_agent(agent_name)&.id&.to_s
+                   Prompt.latest_for_agent(agent_name)&.id&.to_s
       @agent_name = Prompt.find_by(id: @prompt_id)&.name
     end
 

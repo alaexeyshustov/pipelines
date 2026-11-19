@@ -14,6 +14,26 @@ module Evaluation
       redirect_to compare_evaluation_experiment_path(exp_a, candidate_id: exp_b.id)
     end
 
+    def activate
+      prompt = Prompt.find(params[:id])
+      unless prompt.activatable?
+        return redirect_to evaluation_prompts_path, alert: "#{prompt.name} #{prompt.label} needs a completed experiment before it can be activated."
+      end
+
+      prompt.activate!
+      redirect_to evaluation_prompts_path, notice: "#{prompt.label} activated for #{prompt.name}."
+    end
+
+    def deactivate
+      prompt = Prompt.find(params[:id])
+      if prompt.active?
+        prompt.deactivate!
+        redirect_to evaluation_prompts_path, notice: "#{prompt.name} now uses the agent default prompt."
+      else
+        redirect_to evaluation_prompts_path, notice: "#{prompt.name} #{prompt.label} was not active."
+      end
+    end
+
     private
 
     def find_compare_prompts

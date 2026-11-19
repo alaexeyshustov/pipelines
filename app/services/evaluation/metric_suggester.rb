@@ -40,7 +40,7 @@ module Evaluation
     end
 
     def agent_system_prompt
-      Prompt.last_for_agent(@agent_name)&.system_prompt
+      Prompt.effective_system_prompt_for(@agent_name)
     end
 
     def build_metric(entry)

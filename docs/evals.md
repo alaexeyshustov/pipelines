@@ -12,7 +12,7 @@ Domain logic lives in `app/models/evaluation/`, `app/services/evaluation/`, `app
 
 - **Evaluation::Dataset**: A collection of input/expected-output pairs used for testing agents.
 - **Evaluation::DatasetSample**: A single test case within a dataset. Holds `input` (JSON fed to the agent) and `expected_tool_calls` (nullable JSON — present when seeded from a production run, absent for synthetic inputs). There is no reference-answer column.
-- **Evaluation::Prompt**: Versioned system instructions for an agent. Each version is an immutable snapshot of `system_prompt`, `user_prompt`, and `output_schema` captured at the moment the version was created. Also used by the orchestration subsystem to supply the active prompt to agents at runtime.
+- **Evaluation::Prompt**: Versioned system instructions for an agent. Each version is an immutable snapshot of `system_prompt`, `user_prompt`, and `output_schema` captured at the moment the version was created; only `active` and `activated_at` change afterwards. At most one version per agent is `active`; it supplies the system prompt to agents at runtime (see Prompt Versioning).
 - **Evaluation::Experiment**: A single run of the sampler and judge against a dataset. Carries `sample_model` (the agent model) and `evaluation_model` (the judge model). AASM state machine: `pending → running → completed` (or `failed`). One counter, `pending_samples_count`, tracks unfinished samples.
 - **Evaluation::Sample**: The sampler's output for one dataset sample. Holds `tool_calls` (tool name, arguments, result per call) and `output` (the agent's final response). Belongs to `Experiment`, `DatasetSample`, and `Prompt`. A sample exists only while its grading is pending or done: a failed sample is deleted.
 - **Evaluation::EvaluationResult**: One metric grade for one sample. `score` is **normalized 0.0..1.0** (higher is better); `raw` holds the native answer (`to_h`), `confidence` the judge's confidence (nil for probabilities), `passed` the verdict against `Metric#minimum` (nil when no minimum).
@@ -54,9 +54,15 @@ Domain logic lives in `app/models/evaluation/`, `app/services/evaluation/`, `app
 
 ## Prompt Versioning
 
-`Evaluation::Prompt` rows are immutable snapshots. A new version is created exclusively by `Evaluation::PromptImprover` when it generates an improved prompt. At creation time, `output_schema` is copied from the associated `Orchestration::Agent`, making the version a complete point-in-time snapshot of the agent's evaluation configuration.
+`Evaluation::Prompt` rows are immutable snapshots, apart from `active` and `activated_at`. New versions come from `Evaluation::PromptImprover` (improved prompts), agent snapshots and the wizard's fork; all three create the row through `Evaluation::PromptCreator`. At creation time, `output_schema` is copied from the associated `Orchestration::Agent`, making the version a complete point-in-time snapshot of the agent's evaluation configuration.
 
-`Evaluation::AutoEvalTriggerable` (included in `Evaluation::Prompt`) fires `Evaluation::PromptAutoEvalJob` after each new version is committed, automatically triggering a regression experiment.
+**Activation is explicit.** A new version never goes live by itself. `Prompt#activate!` makes one version `active` and deactivates the others for that agent (a partial unique index on `name WHERE active` enforces one). A version can be activated once it has a completed experiment or was activated before (`Prompt#activatable?`): from the experiment page, the comparison page, or the action column on the Prompts page (the Active column only shows the badge); the Prompts page also deactivates.
+
+**Fallback.** `Evaluation::ActivePromptResolver` serves the active version's `system_prompt` per run. With no active version it returns nil and the agent's own `Orchestration::Agent#prompt` applies; `Prompt.effective_system_prompt_for` (metric suggestion and extraction) follows the same rule. Experiment and comparison pages diff against the active version, or "Agent default" (`Evaluation::AgentDefaultPrompt`) when none is active.
+
+**Deploy.** The migration marks the newest version per agent active, so today's behaviour is unchanged on deploy. Review and deactivate any draft that should not be live.
+
+`Evaluation::PromptCreator` queues `Evaluation::PromptAutoEvalJob` after each new version is created, automatically triggering a regression experiment.
 
 ## Automated Evaluations
 

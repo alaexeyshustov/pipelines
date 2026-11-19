@@ -30,7 +30,7 @@ module Evaluation
       end
     end
 
-    def version_a = "v#{@prompt_a.version}"
-    def version_b = "v#{@prompt_b.version}"
+    def version_a = @prompt_a.label
+    def version_b = @prompt_b.label
   end
 end

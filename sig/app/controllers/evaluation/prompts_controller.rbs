@@ -4,6 +4,8 @@ module Evaluation
 
     def index: () -> void
     def compare: () -> void
+    def activate: () -> void
+    def deactivate: () -> void
 
     private
 

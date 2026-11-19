@@ -20,11 +20,18 @@
                                      class: "rounded border-gray-300 text-blue-600") } },
       { key: "name",       label: "Agent",   variant: :strong },
       { key: "version",    label: "Version", cell: ->(prompt) { "v#{prompt.version}" }, variant: :muted },
+      { label: "Active",
+        cell: ->(prompt) { prompt.active? ? tag.span("Active", class: "inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800") : "" } },
       { key: "created_at", label: "Created", cell: ->(prompt) { prompt.created_at.strftime("%b %d, %Y") }, variant: :muted }
     ]) %>
     <% table.with_action_column(
       actions: ->(prompt) {
-        [{ label: "Diff", url: evaluation_prompt_diff_path(prompt), variant: :primary }]
+        toggle = if prompt.active?
+          { label: "Deactivate", url: deactivate_evaluation_prompt_path(prompt), method: :post, variant: :danger }
+        else
+          { label: "Activate", url: activate_evaluation_prompt_path(prompt), method: :post, variant: :primary }
+        end
+        [{ label: "Diff", url: evaluation_prompt_diff_path(prompt), variant: :primary }, toggle]
       }
     ) %>
   <% end %>

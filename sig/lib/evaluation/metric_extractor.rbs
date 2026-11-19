@@ -9,7 +9,7 @@ module Evaluation
 
     private
 
-    def load_prompt!: () -> Prompt
+    def system_prompt!: () -> String
     def clean: (Hash[String, json_object_value] entry) -> Hash[String, String]?
     def metrics_from: (RubyLLM::Message response) -> Array[Hash[String, String]]
   end

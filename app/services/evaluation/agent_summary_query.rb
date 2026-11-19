@@ -116,7 +116,8 @@ module Evaluation
 
     def fetch_active_prompts(agent_names)
       Evaluation::Prompt
-        .active_metadata_versions_for(agent_names)
+        .active
+        .where(name: agent_names)
         .order(version: :desc)
         .to_a # : Array[Evaluation::Prompt]
     end

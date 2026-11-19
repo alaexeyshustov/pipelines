@@ -8,6 +8,11 @@ FactoryBot.define do
     sequence(:name) { |n| "agent_#{n}" }
     system_prompt { "System prompt" }
     user_prompt { "User prompt {{input}}" }
+
+    trait :active do
+      active { true }
+      activated_at { Time.current }
+    end
   end
 
   factory :evaluation_experiment, class: "Evaluation::Experiment" do

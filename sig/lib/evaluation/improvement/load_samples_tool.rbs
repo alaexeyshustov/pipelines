@@ -1,13 +1,19 @@
 module Evaluation
   module Improvement
     class LoadSamplesTool < ::RubyLLM::Tool
+      MAX_SAMPLES: Integer
+      MAX_CHARS: Integer
+      TAG: String
+      TRUNCATION_MARKER: String
+
       def name: () -> String
-      def execute: (experiment_id: Integer, ?number_of_samples: Integer) -> Array[{ input: json_object_value, output: String }]
+      def execute: (experiment_id: Integer, ?number_of_samples: Integer) -> Array[{ input: String, output: String }]
 
       private
 
       def load_samples: (Integer experiment_id, Integer number_of_samples) -> Array[Evaluation::Sample]
-      def filter_samples: (Array[Evaluation::Sample] samples) -> Array[{ input: json_object_value, output: String }]
+      def wrap: (String text) -> String
+      def filter_samples: (Array[Evaluation::Sample] samples) -> Array[{ input: String, output: String }]
     end
   end
 end

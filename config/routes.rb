@@ -55,6 +55,10 @@ Rails.application.routes.draw do
       collection do
         get :compare
       end
+      member do
+        post :activate
+        post :deactivate
+      end
     end
     get "prompts/:id/diff", to: "prompt_diffs#show", as: :prompt_diff
     resources :datasets, only: [] do

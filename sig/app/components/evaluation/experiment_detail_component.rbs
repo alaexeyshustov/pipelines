@@ -1,5 +1,7 @@
 module Evaluation
   class ExperimentDetailComponent < ViewComponent::Base
+    type header_action = { type: Symbol, label: String, url: String, variant: Symbol, ?method: Symbol }
+
     @dataset_samples: Array[DatasetSample]?
     @experiment: Experiment
 
@@ -12,12 +14,16 @@ module Evaluation
     @usage: ExperimentUsageQuery::Usage?
     @pass_rate: Float?
     @metric_pass_rates: Hash[String, Float]
+    @active_prompt: PromptDiffer::promptish?
 
-    def initialize: (experiment: Experiment, metrics: Array[Metric], sample_count: Integer, ?usage: ExperimentUsageQuery::Usage?, ?pass_rate: Float?, ?metric_pass_rates: Hash[String, Float]) -> void
+    def initialize: (experiment: Experiment, metrics: Array[Metric], sample_count: Integer, ?usage: ExperimentUsageQuery::Usage?, ?pass_rate: Float?, ?metric_pass_rates: Hash[String, Float], ?active_prompt: PromptDiffer::promptish?) -> void
 
     def before_render: () -> void
     def metrics: () -> Array[Metric]
     def sample_count: () -> Integer
+    def active_prompt: () -> PromptDiffer::promptish?
+    def prompt_active?: () -> bool
+    def active_prompt_diff?: () -> bool
     def per_metric_avg: () -> Hash[String, Float]
     def overall_avg: () -> Float?
     def overall_label: () -> String
@@ -37,6 +43,10 @@ module Evaluation
     def metric_weights: () -> Hash[String?, Float]
 
     def setup_header: () -> void
+    def header_actions: () -> Array[header_action]
+    def improve_action: () -> header_action?
+    def activate_action: () -> header_action?
+    def comparison_action: () -> header_action?
     def setup_metric_rows: () -> void
   end
 end

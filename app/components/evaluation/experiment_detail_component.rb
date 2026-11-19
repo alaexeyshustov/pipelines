@@ -7,14 +7,16 @@ module Evaluation
     }
 
     # metrics: the agent's Evaluation::Metric rows; usage: Evaluation::ExperimentUsageQuery::Usage;
-    # pass_rate / metric_pass_rates: Evaluation::PassRateQuery (callers load them).
-    def initialize(experiment:, metrics:, sample_count:, usage: nil, pass_rate: nil, metric_pass_rates: {})
+    # pass_rate / metric_pass_rates: Evaluation::PassRateQuery (callers load them);
+    # active_prompt: the live version of the agent (or an AgentDefaultPrompt), diffed against this experiment's prompt.
+    def initialize(experiment:, metrics:, sample_count:, usage: nil, pass_rate: nil, metric_pass_rates: {}, active_prompt: nil)
       @experiment = experiment
       @metrics = metrics
       @sample_count = sample_count
       @usage = usage
       @pass_rate = pass_rate
       @metric_pass_rates = metric_pass_rates
+      @active_prompt = active_prompt
     end
 
     def before_render
@@ -31,13 +33,29 @@ module Evaluation
 
     def setup_header
       with_header(title: @experiment.name, parent: { label: "Experiments", url: helpers.evaluation_experiments_path }) do |h|
-        unless @experiment.newer_experiment
-          h.with_action(type: :button, label: "Improve Prompt", url: helpers.improve_evaluation_experiment_path(@experiment), method: :post, variant: :primary)
-        end
-        if @experiment.newer_experiment&.completed?
-          h.with_action(type: :link, label: "View Comparison", url: helpers.compare_evaluation_experiment_path(@experiment, candidate_id: @experiment.newer_experiment.id), variant: :success)
-        end
+        header_actions.each { |action| h.with_action(**action) }
       end
+    end
+
+    def header_actions = [ improve_action, activate_action, comparison_action ].compact
+
+    def improve_action
+      return if @experiment.newer_experiment
+
+      { type: :button, label: "Improve Prompt", url: helpers.improve_evaluation_experiment_path(@experiment), method: :post, variant: :primary }
+    end
+
+    def activate_action
+      return unless @experiment.completed? && @experiment.prompt && !prompt_active?
+
+      { type: :button, label: "Activate", url: helpers.activate_evaluation_experiment_path(@experiment), method: :post, variant: :success }
+    end
+
+    def comparison_action
+      newer = @experiment.newer_experiment
+      return unless newer&.completed?
+
+      { type: :link, label: "View Comparison", url: helpers.compare_evaluation_experiment_path(@experiment, candidate_id: newer.id), variant: :success }
     end
 
     def setup_metric_rows
@@ -47,7 +65,7 @@ module Evaluation
 
     public
 
-    attr_reader :metrics, :sample_count
+    attr_reader :metrics, :sample_count, :active_prompt
 
     def per_metric_avg
       @per_metric_avg ||= @experiment.per_metric_averages
@@ -85,6 +103,11 @@ module Evaluation
 
       "#{sample_count} sampled, #{@experiment.pending_samples_count} pending"
     end
+
+    def prompt_active? = !!@experiment.prompt&.active?
+
+    # Only shown for a prompt that differs from what is live: the active version itself has nothing to diff.
+    def active_prompt_diff? = !!@active_prompt && !!@experiment.prompt && !prompt_active?
 
     def newer_experiment_active?
       newer = @experiment.newer_experiment
