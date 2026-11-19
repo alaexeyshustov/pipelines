@@ -1,11 +1,11 @@
 ---
 http_interactions:
 - request:
-    method: patch
-    uri: https://api.github.com/gists/notfound
+    method: get
+    uri: https://api.github.com/gists/deadbeef
     body:
       encoding: UTF-8
-      string: '{"files":{"interviews.csv":{"content":"id,company,job_title,status,applied_at,rejected_at,first_interview_at,second_interview_at,third_interview_at,fourth_interview_at\n"}}}'
+      string: ''
     headers:
       Authorization:
       - Bearer <GITHUB_TOKEN>
@@ -13,8 +13,6 @@ http_interactions:
       - application/vnd.github+json
       X-Github-Api-Version:
       - 2022-11-28
-      Content-Type:
-      - application/json
   response:
     status:
       code: 404

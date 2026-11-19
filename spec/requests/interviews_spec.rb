@@ -162,6 +162,18 @@ RSpec.describe "Interviews" do
       end
     end
 
+    context "when exporting a company that looks like a formula" do
+      let(:formula) { '=HYPERLINK("http://evil","x")' }
+
+      before do
+        post batch_interviews_path, params: { ids: [ create(:interview, company: formula).id ], batch_action: "export" }
+      end
+
+      it "prefixes the cell with a single quote" do
+        expect(CSV.parse(response.body, headers: true).first["company"]).to eq("'#{formula}")
+      end
+    end
+
     context "when exporting with no ids selected" do
       before do
         create(:interview, company: "Acme", job_title: "Backend", applied_at: "2026-01-10")
@@ -238,35 +250,42 @@ RSpec.describe "Interviews" do
   describe "POST /interviews/export_gist" do
     let!(:interview) { create(:interview, company: "Acme", job_title: "Backend", applied_at: "2026-01-10") }
 
-    context "when gist_id is missing" do
+    def stub_env(gist_id:)
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("GITHUB_TOKEN").and_return("fake-token")
+      allow(ENV).to receive(:[]).with("GIST_ID").and_return(gist_id)
+    end
+
+    context "when GIST_ID is not configured" do
+      before { stub_env(gist_id: nil) }
+
       it "redirects with alert" do
-        post export_gist_interviews_path, params: { gist_id: "" }
+        post export_gist_interviews_path, params: { ids: [ interview.id ] }
         expect(response).to redirect_to(interviews_path)
-        expect(flash[:alert]).to include("Gist ID")
+        expect(flash[:alert]).to include("GIST_ID")
       end
     end
 
-    context "when gist_id is present", vcr: { cassette_name: "interviews/gist_export/success" } do
-      before do
-        allow(ENV).to receive(:[]).and_call_original
-        allow(ENV).to receive(:[]).with("GITHUB_TOKEN").and_return("fake-token")
-      end
+    context "when GIST_ID is configured", vcr: { cassette_name: "interviews/gist_export/success" } do
+      before { stub_env(gist_id: "abc123") }
 
       it "redirects with notice on success" do
-        post export_gist_interviews_path, params: { ids: [ interview.id ], gist_id: "abc123" }
+        post export_gist_interviews_path, params: { ids: [ interview.id ] }
         expect(response).to redirect_to(interviews_path)
+        expect(flash[:notice]).to include("abc123")
+      end
+
+      it "ignores a gist_id param and uses GIST_ID" do
+        post export_gist_interviews_path, params: { ids: [ interview.id ], gist_id: "deadbeef" }
         expect(flash[:notice]).to include("abc123")
       end
     end
 
     context "when gist is not found", vcr: { cassette_name: "interviews/gist_export/not_found" } do
-      before do
-        allow(ENV).to receive(:[]).and_call_original
-        allow(ENV).to receive(:[]).with("GITHUB_TOKEN").and_return("fake-token")
-      end
+      before { stub_env(gist_id: "deadbeef") }
 
       it "redirects with alert on failure" do
-        post export_gist_interviews_path, params: { ids: [ interview.id ], gist_id: "notfound" }
+        post export_gist_interviews_path, params: { ids: [ interview.id ] }
         expect(response).to redirect_to(interviews_path)
         expect(flash[:alert]).to include("Not Found")
       end

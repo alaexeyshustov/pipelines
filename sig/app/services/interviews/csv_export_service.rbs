@@ -1,5 +1,7 @@
 module Interviews
   class CsvExportService
+    FORMULA_PREFIX: Regexp
+
     class Result < Data
       attr_reader csv: String
 
@@ -16,6 +18,7 @@ module Interviews
 
     private
 
+    def sanitize: (String | Date | nil value) -> (String | Date | nil)
     def scope: () -> Interview::relation
   end
 end

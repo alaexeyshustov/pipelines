@@ -2,6 +2,8 @@ require "csv"
 
 module Interviews
   class CsvExportService
+    FORMULA_PREFIX = /\A[=+\-@\t\r]/
+
     Result = Data.define(:csv)
 
     def self.call(ids:) = new(ids:).call
@@ -14,12 +16,16 @@ module Interviews
     def call
       csv = CSV.generate(headers: true) do |rows|
         rows << @columns
-        scope.each { |interview| rows << @columns.map { |col| interview.public_send(col) } }
+        scope.each { |interview| rows << @columns.map { |col| sanitize(interview.public_send(col)) } }
       end
       Result.new(csv:)
     end
 
     private
+
+    def sanitize(value)
+      value.is_a?(String) && value.match?(FORMULA_PREFIX) ? "'#{value}" : value
+    end
 
     def scope
       scope = @ids.present? ? Interview.where(id: @ids) : Interview.all

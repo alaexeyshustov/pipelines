@@ -6,11 +6,9 @@ module Orchestration
       include Executable
       extend Executable::ClassMethods
 
-      @gist_id: String?
+      def self.call: (**json_object_value) -> result
 
-      def self.call: (?gist_id: String?) -> result
-
-      def initialize: (?gist_id: String?) -> void
+      def initialize: (**json_object_value) -> void
       def execute: () -> result
     end
   end

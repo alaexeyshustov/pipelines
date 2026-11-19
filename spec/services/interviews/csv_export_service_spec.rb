@@ -63,5 +63,38 @@ RSpec.describe Interviews::CsvExportService do
       expect(row["rejected_at"]).to be_nil
       expect(row["first_interview_at"]).to be_nil
     end
+
+    describe "formula sanitising" do
+      def exported_row(**attrs)
+        interview = create(:interview, **attrs)
+        CSV.parse(described_class.call(ids: [ interview.id ]).csv, headers: true).first
+      end
+
+      [ "=", "+", "-", "@", "\t", "\r" ].each do |char|
+        it "prefixes company and job_title starting with #{char.inspect}" do
+          row = exported_row(company: "#{char}cmd", job_title: "#{char}title")
+          expect(row["company"]).to eq("'#{char}cmd")
+          expect(row["job_title"]).to eq("'#{char}title")
+        end
+      end
+
+      it "leaves values with a trigger character inside unchanged" do
+        row = exported_row(company: "A=B", job_title: "Backend")
+        expect(row["company"]).to eq("A=B")
+        expect(row["job_title"]).to eq("Backend")
+      end
+
+      it "leaves nil dates nil and keeps dates as ISO strings" do
+        row = exported_row(company: "Acme", applied_at: "2026-01-10")
+        expect(row["applied_at"]).to eq("2026-01-10")
+        expect(row["rejected_at"]).to be_nil
+      end
+
+      it "does not sanitise the header row" do
+        interview = create(:interview, company: "Acme")
+        header = CSV.parse(described_class.call(ids: [ interview.id ]).csv).first
+        expect(header).to eq(Interview::COLUMN_NAMES.without("id"))
+      end
+    end
   end
 end
