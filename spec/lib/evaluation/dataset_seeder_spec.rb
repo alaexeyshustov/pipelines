@@ -136,4 +136,24 @@ RSpec.describe Evaluation::DatasetSeeder do
       expect(result.skipped).to eq(1)
     end
   end
+
+  describe "sample_size limits" do
+    before do
+      create_completed_agent_runs(agent_name, 55)
+    end
+
+    {
+      "nil (default 20)" => [ nil, 20 ],
+      "zero (minimum 1)" => [ 0, 1 ],
+      "negative (minimum 1)" => [ -5, 1 ],
+      "10000 (maximum 50)" => [ 10_000, 50 ]
+    }.each do |label, (sample_size, expected)|
+      it "seeds #{expected} samples for #{label}" do
+        result = described_class.call(agent_name:, sample_size:)
+
+        expect(result.created).to eq(expected)
+        expect(Evaluation::Dataset.find_by!(name: agent_name).dataset_samples.count).to eq(expected)
+      end
+    end
+  end
 end

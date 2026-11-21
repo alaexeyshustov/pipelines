@@ -12,9 +12,9 @@ module Evaluation
       def self.new: (agent_name: String, created: Integer, skipped: Integer) -> Result
     end
 
-    def self.call: (agent_name: String, ?sample_size: Integer) -> Result
+    def self.call: (agent_name: String, ?sample_size: Integer?) -> Result
 
-    def initialize: (agent_name: String, ?sample_size: Integer) -> void
+    def initialize: (agent_name: String, ?sample_size: Integer?) -> void
     def call: () -> Result
 
     private

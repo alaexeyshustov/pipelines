@@ -1,21 +1,29 @@
 module Orchestration
   class PipelineImportForm < BaseForm
     interface _Upload
-      def read: () -> String
+      def read: (?Integer length) -> String?
+      def size: () -> Integer
     end
 
-    attr_reader file: _Upload?
+    # Untrusted params[:file]: an upload, or a String, nested params or Array the form rejects.
+    type file_param = _Upload | String | ActionController::Parameters | Array[String | ActionController::Parameters] | nil
+
+    attr_reader file: file_param
     attr_reader pipelines: Array[Pipeline]
+
+    MAX_BYTES: Integer
 
     @payload: json_value
 
-    def initialize: (file: _Upload?) -> void
+    def initialize: (file: file_param) -> void
     def save: () -> bool
 
     private
 
     def payload: () -> json_value
     def file_present: () -> void
+    def file_is_upload: () -> void
+    def file_within_size_limit: () -> void
     def file_is_json_object: () -> void
   end
 end

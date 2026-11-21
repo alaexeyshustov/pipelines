@@ -434,6 +434,34 @@ RSpec.describe "Orchestration::Pipelines" do
     end
   end
 
+  describe "PATCH /orchestration/pipelines/:id/toggle redirect target" do
+    let(:pipeline) { create(:orchestration_pipeline, enabled: true) }
+
+    it "falls back to the pipeline for an external Referer" do
+      patch toggle_orchestration_pipeline_path(pipeline), headers: { "Referer" => "https://evil.example/phish" }
+
+      expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
+    end
+
+    it "falls back to the pipeline for a protocol-relative Referer" do
+      patch toggle_orchestration_pipeline_path(pipeline), headers: { "Referer" => "//evil.example" }
+
+      expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
+    end
+
+    it "falls back to the pipeline without a Referer" do
+      patch toggle_orchestration_pipeline_path(pipeline)
+
+      expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
+    end
+
+    it "redirects back to a same-host Referer" do
+      patch toggle_orchestration_pipeline_path(pipeline), headers: { "Referer" => orchestration_pipelines_url }
+
+      expect(response).to redirect_to(orchestration_pipelines_url)
+    end
+  end
+
   describe "POST /orchestration/pipelines with cron_expression" do
     it "creates a pipeline with cron_expression" do
       post orchestration_pipelines_path, params: {

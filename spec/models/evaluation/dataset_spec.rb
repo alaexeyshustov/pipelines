@@ -37,4 +37,17 @@ RSpec.describe Evaluation::Dataset do
       expect(described_class.with_record_counts.map(&:name)).to eq(%w[Alpha Bravo Charlie])
     end
   end
+
+  describe "name length" do
+    it "accepts a 255 character name" do
+      expect(build(:evaluation_dataset, name: "a" * 255)).to be_valid
+    end
+
+    it "rejects a name longer than 255 characters" do
+      dataset = build(:evaluation_dataset, name: "a" * 256)
+
+      expect(dataset).not_to be_valid
+      expect(dataset.errors[:name]).to be_present
+    end
+  end
 end

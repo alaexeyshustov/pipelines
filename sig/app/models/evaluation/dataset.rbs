@@ -1,5 +1,8 @@
 module Evaluation
   class Dataset < ApplicationRecord
+    SAMPLE_COUNT: Range[Integer]
+    DEFAULT_SAMPLE_COUNT: Integer
+
     type relation = _Relation[Dataset, Integer]
 
     def self.table_name: () -> String
