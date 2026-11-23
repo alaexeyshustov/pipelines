@@ -10,6 +10,8 @@ pnpm e2e            # headless
 pnpm e2e:ui         # UI mode
 ```
 
+The app is behind a login: the `setup` project (`auth.setup.ts`) runs `users:upsert` with a throwaway test user, signs in and saves the session for the `chromium` project; `teardown` removes the user. Specs that seed data must remove it again (the test database is shared with RSpec).
+
 Playwright starts `bin/rails server` itself, or reuses one already on `E2E_PORT` (outside CI).
 
 ## Screenshots

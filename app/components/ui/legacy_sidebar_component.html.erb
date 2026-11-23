@@ -21,4 +21,11 @@
       </details>
     <% end %>
   </div>
+
+  <% if @user %>
+    <div class="border-t border-gray-200 px-4 py-3 text-sm" data-testid="sidebar-user">
+      <p class="truncate text-gray-600" title="<%= @user.email_address %>"><%= @user.email_address %></p>
+      <%= button_to "Sign out", sign_out_path, method: :delete, class: "mt-1 text-gray-500 hover:text-gray-900 underline cursor-pointer" %>
+    </div>
+  <% end %>
 </nav>

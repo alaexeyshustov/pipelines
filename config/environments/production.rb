@@ -57,11 +57,11 @@ Rails.application.configure do
   config.active_record.attributes_for_inspect = [ :id ]
 
   # Enable DNS rebinding protection and other `Host` header attacks.
-  # config.hosts = [
-  #   "example.com",     # Allow requests from example.com
-  #   /.*\.example\.com/ # Allow requests from subdomains like `www.example.com`
-  # ]
-  #
+  # APP_HOST is a comma-separated list of the hostnames the app is served on. It is not required at boot,
+  # so `assets:precompile` (which runs without env) works; while it is unset every host is allowed.
+  app_hosts = ENV.fetch("APP_HOST", "").split(",").map(&:strip).compact_blank
+  config.hosts.concat(app_hosts) if app_hosts.any?
+
   # Skip DNS rebinding protection for the default health check endpoint.
-  # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
 end

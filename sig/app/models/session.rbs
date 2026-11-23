@@ -1,0 +1,7 @@
+class Session < ApplicationRecord
+  def user_id: () -> Integer
+  def user: () -> User
+  def user=: (User) -> User
+  def ip_address: () -> String?
+  def user_agent: () -> String?
+end

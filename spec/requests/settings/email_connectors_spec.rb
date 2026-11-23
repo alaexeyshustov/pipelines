@@ -384,6 +384,7 @@ RSpec.describe "Settings::EmailConnectors" do
 
       it "logs an expired session" do
         reset!
+        sign_in_again
         log = capture_log
 
         get oauth_callback_settings_email_connectors_path, params: { code: "test_code", state: "anything" }
@@ -475,10 +476,47 @@ RSpec.describe "Settings::EmailConnectors" do
     context "when the session has expired" do
       it "redirects to the index with an alert" do
         reset!
+        sign_in_again
         get oauth_callback_settings_email_connectors_path, params: { code: "test_code", state: "anything" }
 
         expect(response).to redirect_to(settings_email_connectors_path)
       end
+    end
+  end
+
+  describe "OAuth callback after the login session lapsed" do
+    include_context "with gmail paths from env"
+
+    let(:connector) { EmailConnector.create!(name: "My Gmail", provider: "gmail") }
+    let(:callback_params) { { code: "test_code", state: } }
+    let!(:state) { start_oauth(connector) }
+    let(:token_url) { "https://oauth2.googleapis.com/token" }
+
+    before do
+      stub_google_token_exchange
+      Session.delete_all
+      get oauth_callback_settings_email_connectors_path, params: callback_params
+    end
+
+    it "sends the callback to the login page without exchanging the code" do
+      expect(response).to redirect_to(new_session_url)
+      expect(a_request(:post, token_url)).not_to have_been_made
+    end
+
+    it "returns to the callback URL after logging in" do
+      post session_path, params: { email_address: signed_in_user.email_address, password: signed_in_user.password }
+
+      expect(response).to redirect_to(oauth_callback_settings_email_connectors_url(callback_params))
+    end
+
+    it "still completes the exchange with the OAuth state kept through the login" do
+      post session_path, params: { email_address: signed_in_user.email_address, password: signed_in_user.password }
+      follow_redirect!
+
+      expect(a_request(:post, token_url).with(body: hash_including("code" => "test_code"))).to have_been_made.once
+      expect(response).to redirect_to(edit_settings_email_connector_path(connector))
+      follow_redirect!
+      expect(response.body).to include("Gmail connected successfully")
     end
   end
 
