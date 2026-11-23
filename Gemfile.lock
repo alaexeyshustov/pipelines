@@ -147,7 +147,7 @@ GEM
       bigdecimal
       rexml
     crass (1.0.8)
-    csv (3.3.5)
+    csv (3.3.7)
     cuprite (0.17)
       capybara (~> 3.0)
       ferrum (~> 0.17.0)
@@ -233,6 +233,7 @@ GEM
       concurrent-ruby (~> 1.1)
       webrick (~> 1.7)
       websocket-driver (~> 0.7)
+    ffi (1.17.4)
     ffi (1.17.4-arm64-darwin)
     ffi (1.17.4-x86_64-darwin)
     ffi (1.17.4-x86_64-linux-gnu)
@@ -281,6 +282,7 @@ GEM
     groupdate (6.8.0)
       activesupport (>= 7.2)
     hashdiff (1.2.1)
+    herb (0.11.1)
     herb (0.11.1-arm64-darwin)
     herb (0.11.1-x86_64-darwin)
     herb (0.11.1-x86_64-linux-gnu)
@@ -336,6 +338,7 @@ GEM
     method_source (1.1.0)
     metrics (0.15.0)
     mini_mime (1.1.5)
+    mini_portile2 (2.8.9)
     minitest (6.0.6)
       drb (~> 2.0)
       prism (~> 1.5)
@@ -377,6 +380,9 @@ GEM
     net-smtp (0.5.2)
       net-protocol
     nio4r (2.7.5)
+    nokogiri (1.19.7)
+      mini_portile2 (~> 2.8.2)
+      racc (~> 1.4)
     nokogiri (1.19.7-arm64-darwin)
       racc (~> 1.4)
     nokogiri (1.19.7-x86_64-darwin)
@@ -602,6 +608,7 @@ GEM
       simplecov (>= 0.22.0)
       tty-which (~> 0.5.0)
       virtus (~> 2.0)
+    rubydex (0.4.3)
     rubydex (0.4.3-arm64-darwin)
     rubydex (0.4.3-x86_64-darwin)
     rubydex (0.4.3-x86_64-linux)
@@ -635,6 +642,8 @@ GEM
     sqlite-vec (0.1.9-arm64-darwin)
     sqlite-vec (0.1.9-x86_64-darwin)
     sqlite-vec (0.1.9-x86_64-linux)
+    sqlite3 (2.10.2)
+      mini_portile2 (~> 2.8.0)
     sqlite3 (2.10.2-arm64-darwin)
     sqlite3 (2.10.2-x86_64-darwin)
     sqlite3 (2.10.2-x86_64-linux-gnu)
@@ -665,6 +674,7 @@ GEM
     tailwindcss-rails (4.4.0)
       railties (>= 7.0.0)
       tailwindcss-ruby (~> 4.0)
+    tailwindcss-ruby (4.2.1)
     tailwindcss-ruby (4.2.1-arm64-darwin)
     tailwindcss-ruby (4.2.1-x86_64-darwin)
     tailwindcss-ruby (4.2.1-x86_64-linux-gnu)
@@ -828,7 +838,7 @@ CHECKSUMS
   console (1.34.3) sha256=869fbd74697efc4c606f102d2812b0b008e4e7fd738a91c591e8577140ec0dcc
   crack (1.0.1) sha256=ff4a10390cd31d66440b7524eb1841874db86201d5b70032028553130b6d4c7e
   crass (1.0.8) sha256=7a0145c7a2c59f8e7923b3a69ce819c444823a00a5127d805298fea13be24efe
-  csv (3.3.5) sha256=6e5134ac3383ef728b7f02725d9872934f523cb40b961479f69cf3afa6c8e73f
+  csv (3.3.7) sha256=15a3f16f6628da8664d455eb634e7f22031bcf53044923caf56975109e71b9f8
   cuprite (0.17) sha256=b140d5dc70d08b97ad54bcf45cd95d0bd430e291e9dffe76fff851fddd57c12b
   date (3.6.0) sha256=18ac945c4e24ebd93534f8eab8c2fd8c5604b3e977105b3798d62a1e8d27b580
   declarative (0.0.20) sha256=8021dd6cb17ab2b61233c56903d3f5a259c5cf43c80ff332d447d395b17d9ff9
@@ -859,6 +869,7 @@ CHECKSUMS
   faraday-net_http (3.5.0) sha256=2e7094c34e38754ee048cc3df47376f8657005d9375f8473bce1c3b526a22e36
   faraday-retry (2.4.0) sha256=7b79c48fb7e56526faf247b12d94a680071ff40c9fda7cf1ec1549439ad11ebe
   ferrum (0.17.2) sha256=2c2540a850b211a46f4d81de21bfd62048f507e4c327d1807225c3823c17e6ee
+  ffi (1.17.4) sha256=bcd1642e06f0d16fc9e09ac6d49c3a7298b9789bcb58127302f934e437d60acf
   ffi (1.17.4-arm64-darwin) sha256=19071aaf1419251b0a46852abf960e77330a3b334d13a4ab51d58b31a937001b
   ffi (1.17.4-x86_64-darwin) sha256=aa70390523cf3235096cf64962b709b4cfbd5c082a2cb2ae714eb0fe2ccda496
   ffi (1.17.4-x86_64-linux-gnu) sha256=9d3db14c2eae074b382fa9c083fe95aec6e0a1451da249eab096c34002bc752d
@@ -878,6 +889,7 @@ CHECKSUMS
   googleauth (1.16.2) sha256=15009502e2e38af71948cda918f230e27d327f6882a1e47967a5a4664930a638
   groupdate (6.8.0) sha256=16f90ea18ca981c38e41e592416480b28353aa5e5cc3e7cb13a68b8fb5d40510
   hashdiff (1.2.1) sha256=9c079dbc513dfc8833ab59c0c2d8f230fa28499cc5efb4b8dd276cf931457cd1
+  herb (0.11.1) sha256=7a5a74c4931b341a2b7b7f5a530616801f5721a633d2655f002156ff553cd2d7
   herb (0.11.1-arm64-darwin) sha256=c5d3c1d5f88a504bcfa6a4bb52f56650dc40345e23cdf051b02f3390cf184d9e
   herb (0.11.1-x86_64-darwin) sha256=f73cad010299bf998bd4ead676b80ae2c1f0ff5487a2ef852e8d83652f74ced0
   herb (0.11.1-x86_64-linux-gnu) sha256=e3104c5dab07300a2ea6fc3898014cf57db978fbf09f5554a2a6ef6c46f973f8
@@ -908,6 +920,7 @@ CHECKSUMS
   method_source (1.1.0) sha256=181301c9c45b731b4769bc81e8860e72f9161ad7d66dd99103c9ab84f560f5c5
   metrics (0.15.0) sha256=61ded5bac95118e995b1bc9ed4a5f19bc9814928a312a85b200abbdac9039072
   mini_mime (1.1.5) sha256=8681b7e2e4215f2a159f9400b5816d85e9d8c6c6b491e96a12797e798f8bccef
+  mini_portile2 (2.8.9) sha256=0cd7c7f824e010c072e33f68bc02d85a00aeb6fce05bb4819c03dfd3c140c289
   minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
   mission_control-jobs (1.1.0) sha256=b13da9cde3344fec7c744b79d2a34c3ecd454f45d4d593d4c968ba762315e84c
   multi_json (1.21.2) sha256=245531eaf54bdba57aba515ff08b4503505c5e09911daa89c5a561e2f85bea8e
@@ -921,6 +934,7 @@ CHECKSUMS
   net-protocol (0.4.0) sha256=f9f90c8c6f64794a45160bf422177a336db12809de3beeeaa26b88fcd2e8c853
   net-smtp (0.5.2) sha256=35103cc04d6b2d94632f9928ede07483c24b70b9c0db1f231fea43909b678f3c
   nio4r (2.7.5) sha256=6c90168e48fb5f8e768419c93abb94ba2b892a1d0602cb06eef16d8b7df1dca1
+  nokogiri (1.19.7) sha256=abe94507c54cb18f872777b16bdca4aad32b1abdc4c52fe843f1c80fbdf992b8
   nokogiri (1.19.7-arm64-darwin) sha256=f27d7f25f4873fbc3aa35a2cc2fb680c98555fec1925348da439d0869d541142
   nokogiri (1.19.7-x86_64-darwin) sha256=508e81e8c5f84aaa240dce981bf1c43faae60808726f0ce7024ee92effc5cafe
   nokogiri (1.19.7-x86_64-linux-gnu) sha256=25865ccb462f714e712fdf8906fde07849cb6704a808e3d629d75baa5af5dd3b
@@ -991,6 +1005,7 @@ CHECKSUMS
   ruby_llm-monitoring (0.4.0) sha256=e5ca2893f2e34a2d45a1107a12a5728239caf1e2e044ee979d85746893bb5488
   ruby_parser (3.22.0) sha256=1eb4937cd9eb220aa2d194e352a24dba90aef00751e24c8dfffdb14000f15d23
   rubycritic (5.0.0) sha256=7f3877556d7f52bf0980496b7c907a827a9592ba690b80a593403a60bd6cfb42
+  rubydex (0.4.3) sha256=2af3c35cb82de9db627b373efa9c6355e93924625ffab708e27dd9efbf08fad5
   rubydex (0.4.3-arm64-darwin) sha256=6d9735367e2c9e4caece42da2732fa7492c68507aa97a58afc41f58296013cdb
   rubydex (0.4.3-x86_64-darwin) sha256=f70c6ee8988e20dbc29a69e2b283ebbd6483ea89bf10a806dd8696c3710af71b
   rubydex (0.4.3-x86_64-linux) sha256=550138ee5a5c005066560321cfe003130a111468821d8ef7cf30826742b1c2f5
@@ -1009,6 +1024,7 @@ CHECKSUMS
   sqlite-vec (0.1.9-arm64-darwin) sha256=f319ab08757741811c6f2f7d2b58c1b9009460e899e1b69d99fdab288286d9bf
   sqlite-vec (0.1.9-x86_64-darwin) sha256=8a8d16c86c8d011359b0ab6f933dc9859f1cc265be6a8a9ac20ecd06cb3b8d32
   sqlite-vec (0.1.9-x86_64-linux) sha256=772389c3bf68e7976cfdd8e7c74e820245007e03294808b9b05cdbbf5b02f398
+  sqlite3 (2.10.2) sha256=f1ea68cd3287f8a49f39a088ac9e4bd0ef4e7f394c3d4a60dd4c7e44b0566964
   sqlite3 (2.10.2-arm64-darwin) sha256=5b0d235ea037e6dcd1b8387a19d73be571917db9f93044d35741cf933a21a37d
   sqlite3 (2.10.2-x86_64-darwin) sha256=fd2c67b49d313031af112e172c83ab321681a2b4996bf882eefac50be7bea08f
   sqlite3 (2.10.2-x86_64-linux-gnu) sha256=ca92731ab464df9cae503fa1a439a549e2724f6953c8c05a7769b59366e38f15
@@ -1020,6 +1036,7 @@ CHECKSUMS
   strscan (3.1.8) sha256=aae2db611a225559f21ffbb71765c9a4e60fd262534a9ea84f4f11c7f32f679e
   tailwind_merge (1.5.6) sha256=bf9b492446af3caafb4a4976465153eb800f6b4df2538974dee0e4acc5457530
   tailwindcss-rails (4.4.0) sha256=efa2961351a52acebe616e645a81a30bb4f27fde46cc06ce7688d1cd1131e916
+  tailwindcss-ruby (4.2.1) sha256=95886a1e24b42d76792c787d34e47098b53cb3b5a6363845bca4486f52b2e66a
   tailwindcss-ruby (4.2.1-arm64-darwin) sha256=bcf222fb8542cf5433925623e5e7b257897fbb8291a2350daae870a32f2eeb91
   tailwindcss-ruby (4.2.1-x86_64-darwin) sha256=b737b84f80941628d03c703b31abb204151b9d0a494d58ed06fd8220a5162f1b
   tailwindcss-ruby (4.2.1-x86_64-linux-gnu) sha256=201d0e5e5d4aba52cae4ee4bd1acd497d2790c83e7f15da964aab8ec93876831
