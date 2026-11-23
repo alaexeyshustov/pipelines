@@ -36,11 +36,12 @@ RSpec.describe Evaluation::PromptImprover do
     it "creates a new version of the prompt with the improved texts and enqueues its auto evaluation", :llm do
       stub_request(:post, %r{api\.openai\.com}).to_return(stub_llm(content: JSON.generate({ system_prompt: "Better.", user_prompt: "Improved {{input}}" })))
       result = nil
-      expect { result = described_class.call(experiment: experiment) }.to change(Evaluation::Prompt, :count).by(1)
+      expect { result = described_class.call(experiment: experiment) }
+        .to change(Evaluation::Prompt, :count).by(1)
+        .and(have_enqueued_job(Evaluation::PromptAutoEvalJob).with { |prompt_id:| expect(prompt_id).to eq(result.id) })
 
       texts = LlmTestBackend.live? ? { system_prompt: be_present, user_prompt: be_present } : { system_prompt: "Better.", user_prompt: "Improved {{input}}" }
       expect(result).to have_attributes(name: agent_name, version: prompt.version + 1, **texts)
-      expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: result.id).once
     end
 
     it "keeps the original user_prompt when the LLM returns an empty one" do

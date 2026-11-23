@@ -3,10 +3,6 @@ require "rails_helper"
 RSpec.describe SchedulerJob do
   let(:cron_expression) { "* * * * *" } # every minute
 
-  before do
-    allow(PipelineRunJob).to receive(:perform_later)
-  end
-
   describe "#perform" do
     context "when a pipeline is enabled with a cron_expression and is due" do
       let!(:pipeline) do
@@ -25,8 +21,8 @@ RSpec.describe SchedulerJob do
       end
 
       it "enqueues PipelineRunJob for the created run" do
-        described_class.new.perform
-        expect(PipelineRunJob).to have_received(:perform_later).with(Orchestration::PipelineRun.last.id)
+        expect { described_class.new.perform }
+          .to(have_enqueued_job(PipelineRunJob).with { |id| expect(id).to eq(Orchestration::PipelineRun.last.id) })
       end
     end
 
@@ -36,9 +32,7 @@ RSpec.describe SchedulerJob do
 
         expect {
           described_class.new.perform
-        }.not_to change(Orchestration::PipelineRun, :count)
-
-        expect(PipelineRunJob).not_to have_received(:perform_later)
+        }.to not_change(Orchestration::PipelineRun, :count).and not_have_enqueued_job(PipelineRunJob)
       end
     end
 
@@ -48,9 +42,7 @@ RSpec.describe SchedulerJob do
 
         expect {
           described_class.new.perform
-        }.not_to change(Orchestration::PipelineRun, :count)
-
-        expect(PipelineRunJob).not_to have_received(:perform_later)
+        }.to not_change(Orchestration::PipelineRun, :count).and not_have_enqueued_job(PipelineRunJob)
       end
     end
 
@@ -61,9 +53,7 @@ RSpec.describe SchedulerJob do
 
         expect {
           described_class.new.perform
-        }.not_to change(Orchestration::PipelineRun, :count)
-
-        expect(PipelineRunJob).not_to have_received(:perform_later)
+        }.to not_change(Orchestration::PipelineRun, :count).and not_have_enqueued_job(PipelineRunJob)
       end
     end
 
@@ -73,8 +63,8 @@ RSpec.describe SchedulerJob do
         pipeline.update_column(:created_at, 2.hours.ago)
         create(:orchestration_pipeline_run, pipeline: pipeline, status: "pending")
 
-        expect { described_class.new.perform }.not_to change(Orchestration::PipelineRun, :count)
-        expect(PipelineRunJob).not_to have_received(:perform_later)
+        expect { described_class.new.perform }
+          .to not_change(Orchestration::PipelineRun, :count).and not_have_enqueued_job(PipelineRunJob)
       end
     end
 

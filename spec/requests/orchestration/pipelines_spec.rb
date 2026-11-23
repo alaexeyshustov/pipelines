@@ -373,11 +373,8 @@ RSpec.describe "Orchestration::Pipelines" do
 
     it "enqueues PipelineRunJob with the pipeline_run_id" do
       pipeline = create(:orchestration_pipeline)
-      allow(PipelineRunJob).to receive(:perform_later)
-
-      post run_orchestration_pipeline_path(pipeline)
-
-      expect(PipelineRunJob).to have_received(:perform_later).with(Orchestration::PipelineRun.last.id)
+      expect { post run_orchestration_pipeline_path(pipeline) }
+        .to(have_enqueued_job(PipelineRunJob).with { |id| expect(id).to eq(Orchestration::PipelineRun.last.id) })
     end
 
     it "redirects to pipeline show page with a notice" do
