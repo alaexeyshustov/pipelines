@@ -2,12 +2,15 @@ import { expect, test } from '@playwright/test';
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
-const PIPELINE = 'Applications Workflow';
-const STEP_COUNT = 10;
+const PIPELINE = 'Email Ingestion';
+const STEP_COUNT = 1;
+
+// Without ADMIN_EMAIL the seeds create no login user, and nothing here would remove one.
+const { ADMIN_EMAIL: _email, ADMIN_PASSWORD: _password, ...seedEnv } = process.env;
 
 const rails = (args: string) =>
   execSync(`bin/rails ${args}`, {
-    env: { ...process.env, RAILS_ENV: 'test' },
+    env: { ...seedEnv, RAILS_ENV: 'test' },
     stdio: 'pipe',
   });
 
@@ -21,6 +24,8 @@ const RESET = [
   'Orchestration::Action',
   'Orchestration::Agent',
   'Evaluation::Dataset',
+  'Subtag',
+  'Tag',
 ]
   .map((model) => `${model}.destroy_all`)
   .join(';');

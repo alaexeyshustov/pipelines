@@ -4,4 +4,10 @@ module ActiveRecord
     def exists?: (*top) -> bool
                | ...
   end
+
+  class Base
+    # has_secure_password (bcrypt) and authenticate_by are not in the collection's ActiveRecord signatures.
+    def self.has_secure_password: (?Symbol attribute, ?validations: bool, ?reset_token: bool | Integer) -> void
+    def self.authenticate_by: (Hash[Symbol, String] | ActionController::Parameters attributes) -> instance?
+  end
 end

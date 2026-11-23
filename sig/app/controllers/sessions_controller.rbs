@@ -1,0 +1,9 @@
+class SessionsController < ApplicationController
+  def new: () -> void
+  def create: () -> void
+  def destroy: () -> void
+
+  private
+
+  def credentials: () -> ActionController::Parameters
+end

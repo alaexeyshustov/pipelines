@@ -3,8 +3,13 @@ module UI
     NavItem = Data.define(:label, :path)
     NavGroup = Data.define(:label, :items)
 
-    def initialize(current_path:)
+    def initialize(current_path:, user: nil)
       @current_path = current_path
+      @user = user
+    end
+
+    def sign_out_path
+      helpers.main_app.session_path
     end
 
     def nav_groups
