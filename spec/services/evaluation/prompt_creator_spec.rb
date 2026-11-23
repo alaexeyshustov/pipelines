@@ -9,14 +9,13 @@ RSpec.describe Evaluation::PromptCreator do
     end
 
     it "enqueues PromptAutoEvalJob for the new prompt" do
-      prompt = described_class.call(**attributes).prompt
-
-      expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: prompt.id)
+      expect { described_class.call(**attributes) }
+        .to(have_enqueued_job(Evaluation::PromptAutoEvalJob).with { |prompt_id:| expect(prompt_id).to eq(Evaluation::Prompt.last.id) })
     end
 
     it "raises and does not enqueue when the prompt is invalid" do
-      expect { described_class.call(**attributes, user_prompt: "") }.to raise_error(ActiveRecord::RecordInvalid)
-      expect(Evaluation::PromptAutoEvalJob).not_to have_received(:perform_later)
+      expect { described_class.call(**attributes, user_prompt: "") }
+        .to raise_error(ActiveRecord::RecordInvalid).and not_have_enqueued_job(Evaluation::PromptAutoEvalJob)
     end
   end
 end

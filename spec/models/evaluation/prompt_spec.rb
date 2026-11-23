@@ -2,10 +2,9 @@ require "rails_helper"
 
 RSpec.describe Evaluation::Prompt do
   it "does not enqueue PromptAutoEvalJob on create or update (enqueue lives in Evaluation::PromptCreator)" do
-    prompt = create(:orchestration_prompt)
-    prompt.update!(system_prompt: "Updated prompt text")
-
-    expect(Evaluation::PromptAutoEvalJob).not_to have_received(:perform_later)
+    expect {
+      create(:orchestration_prompt).update!(system_prompt: "Updated prompt text")
+    }.not_to have_enqueued_job(Evaluation::PromptAutoEvalJob)
   end
 
   it "increments the version for new prompts with the same name" do

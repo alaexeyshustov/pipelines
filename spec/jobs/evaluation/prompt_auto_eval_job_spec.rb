@@ -42,9 +42,7 @@ RSpec.describe Evaluation::PromptAutoEvalJob do
     end
 
     it "enqueues Evaluation::ExperimentJob for the new experiment" do
-      allow(Evaluation::ExperimentJob).to receive(:perform_later)
-      described_class.perform_now(prompt_id: new_prompt.id)
-      expect(Evaluation::ExperimentJob).to have_received(:perform_later).once
+      expect { described_class.perform_now(prompt_id: new_prompt.id) }.to have_enqueued_job(Evaluation::ExperimentJob).once
     end
 
     context "when no completed experiment exists for the prompt name" do
@@ -57,9 +55,7 @@ RSpec.describe Evaluation::PromptAutoEvalJob do
       end
 
       it "does not enqueue Evaluation::ExperimentJob" do
-        allow(Evaluation::ExperimentJob).to receive(:perform_later)
-        described_class.perform_now(prompt_id: new_prompt.id)
-        expect(Evaluation::ExperimentJob).not_to have_received(:perform_later)
+        expect { described_class.perform_now(prompt_id: new_prompt.id) }.not_to have_enqueued_job(Evaluation::ExperimentJob)
       end
 
       it "logs that the prompt was skipped" do

@@ -70,13 +70,12 @@ RSpec.describe "Evaluation::Datasets" do
   end
 
   describe "POST /evaluation/datasets/generate" do
-    before { allow(Evaluation::SyntheticDatasetJob).to receive(:perform_later) }
-
     it "enqueues a SyntheticDatasetJob with the given params" do
-      post generate_evaluation_datasets_path,
-           params: { draft_token: "tok123", agent_name: "Emails::ClassifyAgent",
-                     dataset_name: "Test dataset", count: 5, hints: "Focus on edge cases" }
-      expect(Evaluation::SyntheticDatasetJob).to have_received(:perform_later).with(
+      expect {
+        post generate_evaluation_datasets_path,
+             params: { draft_token: "tok123", agent_name: "Emails::ClassifyAgent",
+                       dataset_name: "Test dataset", count: 5, hints: "Focus on edge cases" }
+      }.to have_enqueued_job(Evaluation::SyntheticDatasetJob).with(
         hash_including(agent_name: "Emails::ClassifyAgent", draft_token: "tok123",
                        dataset_name: "Test dataset")
       )
