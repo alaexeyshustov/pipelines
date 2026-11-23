@@ -48,7 +48,8 @@ RSpec.configure do |config|
   # Live LLM regression gate (spec/evals): opt in with EVALS=1, see docs/evals.md.
   config.filter_run_excluding eval: true unless ENV["EVALS"] == "1"
 
-  config.before do
+  # System specs perform jobs inline; keep the auto-eval LLM run out of them.
+  config.before(type: :system) do
     allow(Evaluation::PromptAutoEvalJob).to receive(:perform_later)
   end
 

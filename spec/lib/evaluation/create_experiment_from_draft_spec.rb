@@ -7,7 +7,6 @@ RSpec.describe Evaluation::CreateExperimentFromDraft do
 
   before do
     create(:evaluation_metric, agent_name: prompt.name, active: metric_active)
-    allow(Evaluation::ExperimentJob).to receive(:perform_later)
   end
 
   def build_draft(payload)
@@ -46,8 +45,8 @@ RSpec.describe Evaluation::CreateExperimentFromDraft do
       end
 
       it "enqueues ExperimentJob" do
-        experiment = described_class.call(draft: draft)
-        expect(Evaluation::ExperimentJob).to have_received(:perform_later).with(experiment)
+        expect { described_class.call(draft: draft) }
+          .to(have_enqueued_job(Evaluation::ExperimentJob).with { |experiment| expect(experiment).to eq(Evaluation::Experiment.last) })
       end
 
       it "destroys the draft" do

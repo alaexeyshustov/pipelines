@@ -331,7 +331,6 @@ RSpec.describe "Evaluation::Experiments" do
 
       before do
         create(:evaluation_metric, agent_name: prompt.name, active: true)
-        allow(Evaluation::ExperimentJob).to receive(:perform_later)
       end
 
       def navigate_to_step4(prompt:, dataset:)
@@ -350,8 +349,8 @@ RSpec.describe "Evaluation::Experiments" do
 
       it "enqueues Evaluation::ExperimentJob on completion" do
         navigate_to_step4(prompt: prompt, dataset: dataset)
-        post evaluation_experiments_path, params: { current_step: 4 }
-        expect(Evaluation::ExperimentJob).to have_received(:perform_later).once
+        expect { post evaluation_experiments_path, params: { current_step: 4 } }
+          .to have_enqueued_job(Evaluation::ExperimentJob).once
       end
 
       it "clears wizard_token from session on completion" do
@@ -515,12 +514,12 @@ RSpec.describe "Evaluation::Experiments" do
     end
 
     it "enqueues PromptAutoEvalJob for the forked prompt" do
-      post fork_prompt_evaluation_experiments_path,
-           params: { based_on_prompt_id: based_on.id,
-                     system_prompt: "Updated.", user_prompt: "{{input}}" },
-           as: :json
-
-      expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: Evaluation::Prompt.last.id)
+      expect {
+        post fork_prompt_evaluation_experiments_path,
+             params: { based_on_prompt_id: based_on.id,
+                       system_prompt: "Updated.", user_prompt: "{{input}}" },
+             as: :json
+      }.to(have_enqueued_job(Evaluation::PromptAutoEvalJob).with { |prompt_id:| expect(prompt_id).to eq(Evaluation::Prompt.last.id) })
     end
 
     it "returns the new prompt id and version" do
@@ -681,11 +680,11 @@ RSpec.describe "Evaluation::Experiments" do
     before { agent }
 
     it "enqueues PromptAutoEvalJob for the snapshot prompt" do
-      post snapshot_agent_prompt_evaluation_experiments_path,
-           params: { agent_name: "Emails::ClassifyAgent" },
-           as: :json
-
-      expect(Evaluation::PromptAutoEvalJob).to have_received(:perform_later).with(prompt_id: Evaluation::Prompt.last.id)
+      expect {
+        post snapshot_agent_prompt_evaluation_experiments_path,
+             params: { agent_name: "Emails::ClassifyAgent" },
+             as: :json
+      }.to(have_enqueued_job(Evaluation::PromptAutoEvalJob).with { |prompt_id:| expect(prompt_id).to eq(Evaluation::Prompt.last.id) })
     end
 
     it "creates a new evaluation prompt" do
