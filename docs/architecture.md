@@ -29,6 +29,7 @@ The system follows a pipeline-based architecture where data flows through severa
 - **SQLite**: Local database (FTS5 for email and document search).
 - **RubyLLM**: A unified client for multiple LLM providers.
 - **ViewComponent + Tailwind + Turbo**: For the Web UI.
+- **Content Security Policy**: enforced, script nonce only; see [ADR 0016](adr/0016-content-security-policy.md). No inline `<script>` or `on*=` handlers; use Stimulus.
 - **State machines**: Rails `enum` for simple states; AASM for complex workflows (currently only `Evaluation::Experiment`).
 
 ### Directory Structure
@@ -47,7 +48,7 @@ The system follows a pipeline-based architecture where data flows through severa
 Layer order and subsystem boundaries are declared in [Archspec.rb](../Archspec.rb) and enforced by `bundle exec archspec check` (CI and pre-commit). Layers, top to bottom: interface, application, tools, domain, infra; orchestration must not use evaluation. Known violations are baselined in `archspec_todo.yml` (shrink it, never grow it). See [ADR 0011](adr/0011-archspec-layers.md).
 
 ## Authentication
-The whole app, including the `/jobs` and `/monitoring` engines, is behind a login (default deny). `ApplicationController` includes the `Authentication` concern; only `sessions#new` and `sessions#create` (and `/up`) are open. One user, created by `bin/rails users:upsert` from `ADMIN_EMAIL` and `ADMIN_PASSWORD`; no sign-up, no password reset. `spec/requests/route_authentication_spec.rb` walks every route to prove it. See [ADR 0016](adr/0016-authentication-default-deny.md).
+The whole app, including the `/jobs` and `/monitoring` engines, is behind a login (default deny). `ApplicationController` includes the `Authentication` concern; only `sessions#new` and `sessions#create` (and `/up`) are open. One user, created by `bin/rails users:upsert` from `ADMIN_EMAIL` and `ADMIN_PASSWORD`; no sign-up, no password reset. `spec/requests/route_authentication_spec.rb` walks every route to prove it. See [ADR 0017](adr/0017-authentication-default-deny.md).
 
 ## AI Agents
 Agents are first-class citizens, defined in `lib/orchestration/agents/`. They utilize `orchestration_prompts` for versioned system instructions and `orchestration_agents` for tool access configuration.

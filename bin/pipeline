@@ -84,8 +84,8 @@ module PipelineCLI
 
       def call(token: nil, gist_id: nil, filename: "interviews.csv", **)
         resolved_token = require_token(token)
-        csv = interviews_csv
-        result = GistUploader.call(csv, token: resolved_token, gist_id: gist_id || ENV["GIST_ID"], filename: filename)
+        csv = Interviews::CsvExportService.call(ids: nil).csv
+        result = GistUploader.call(csv, token: resolved_token, gist_id: gist_id.presence || ENV["GIST_ID"], filename: filename)
         puts "Uploaded: #{result.url}"
       rescue GistUploader::ApiError => e
         puts "Upload failed: #{e.message}"
@@ -100,15 +100,6 @@ module PipelineCLI
 
         puts "ERROR: GitHub token required. Pass --token or set $GITHUB_TOKEN."
         exit 1
-      end
-
-      def interviews_csv
-        headers = Interview::COLUMN_NAMES
-        rows    = Interview.as_rows
-        CSV.generate(headers: true) do |c|
-          c << headers
-          rows.each { |r| c << headers.map { |h| r[h] } }
-        end
       end
     end
 

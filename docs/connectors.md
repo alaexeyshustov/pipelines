@@ -43,8 +43,8 @@ The GitHub connector is used to export processed data (like the job interview tr
 -   **Authentication**: Personal Access Token (PAT).
 -   **Configuration**:
     -   `GITHUB_TOKEN`: Your GitHub Personal Access Token with `gist` scope.
-    -   `GIST_ID`: (Optional) The ID of an existing Gist to update. If not provided, a new Gist will be created.
+    -   `GIST_ID`: Hex ID of an existing Gist. The web and orchestration exports use only this variable and refuse to update public gists. The CLI's `--gist_id` overrides it, and the CLI creates a new private Gist if none is set.
 -   **Features**:
-    -   Creating new private Gists.
-    -   Updating existing Gists.
-    -   CSV export support (via `Interviews::GistExportService`).
+    -   Creating new private Gists (CLI only).
+    -   Updating existing secret Gists; the ID must be hex and public gists are refused.
+    -   CSV export support (via `Interviews::GistExportService`). Both entry points share `Interviews::CsvExportService`: there is no `id` column, rows are ordered by `applied_at` descending, and cells that could be read as formulas are prefixed with `'`.

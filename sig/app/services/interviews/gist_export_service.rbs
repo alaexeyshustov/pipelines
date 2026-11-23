@@ -1,7 +1,5 @@
 module Interviews
   class GistExportService
-    GITHUB_API_URI: String
-
     class Result
       attr_reader ok: bool
       attr_reader message: String
@@ -11,17 +9,10 @@ module Interviews
     end
 
     @ids: Array[String] | Array[Integer] | nil
-    @gist_id: String
 
-    def self.call: (ids: Array[String] | Array[Integer] | nil, gist_id: String) -> Result
+    def self.call: (ids: Array[String] | Array[Integer] | nil) -> Result
 
-    def initialize: (ids: Array[String] | Array[Integer] | nil, gist_id: String) -> void
+    def initialize: (ids: Array[String] | Array[Integer] | nil) -> void
     def call: () -> Result
-
-    private
-
-    def build_error_result: (Net::HTTPResponse response) -> Result
-    def parse_error_body: (String body) -> json_object?
-    def patch_gist: (String token, String csv_content) -> Net::HTTPResponse
   end
 end

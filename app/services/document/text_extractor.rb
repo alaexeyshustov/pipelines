@@ -66,7 +66,8 @@ class Document::TextExtractor
       raise Unsupported, "Unreadable docx: no #{DOCX_XML}" unless entry
       raise Unsupported, "docx text too large (#{entry.size} bytes)" if entry.size > MAX_DOCX_XML_BYTES
 
-      xml = entry.get_input_stream.read.to_s
+      xml = entry.get_input_stream.read(MAX_DOCX_XML_BYTES + 1).to_s
+      raise Unsupported, "docx text too large (over #{MAX_DOCX_XML_BYTES} bytes)" if xml.bytesize > MAX_DOCX_XML_BYTES
     end
     xml
   end

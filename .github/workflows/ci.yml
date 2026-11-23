@@ -164,6 +164,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RAILS_ENV: test
+      CSP_NETWORK_SPECS: "1"
     steps:
       - uses: actions/checkout@v7
 

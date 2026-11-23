@@ -112,7 +112,7 @@
 ### 6. Docs
 
 - Files:
-  - `docs/adr/0016-authentication-default-deny.md`: default-deny; single user with no sign-up and no reset; engines gated by the shared concern, and why not a route constraint (404 instead of a redirect); OAuth relies on `same_site: :lax` and on no `reset_session`
+  - `docs/adr/0017-authentication-default-deny.md`: default-deny; single user with no sign-up and no reset; engines gated by the shared concern, and why not a route constraint (404 instead of a redirect); OAuth relies on `same_site: :lax` and on no `reset_session`
   - `docs/architecture.md`: a short "Authentication" section
 - Accept: the docs link to the ADR. On GitHub: tick the #255 scope items and mark #240 SEC-02 as resolved.
 

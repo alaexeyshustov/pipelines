@@ -10,30 +10,33 @@ module Evaluation
     PROMPT
 
     DEFAULT_MODEL = LlmModels.evaluation
+    MAX_HINTS_LENGTH = 1000
 
-    def perform(draft_token:, agent_name:, count:, dataset_name: nil, dataset_id: nil, hints: "", model: nil)
+    def perform(draft_token:, agent_name:, count:, dataset_name: nil, hints: "", model: nil)
       model   = model || DEFAULT_MODEL
+      raise ArgumentError, "Unknown agent: #{agent_name}" unless Evaluation::Prompt.exists?(name: agent_name)
+
       inputs  = call_llm(build_user_message(
         system_prompt_text: fetch_system_prompt(agent_name),
-        count: count, hints: hints,
+        count: clamp_count(count), hints: hints.to_s.truncate(MAX_HINTS_LENGTH),
         few_shot: fetch_few_shot_samples(agent_name)
       ), model)
 
-      persist_results(draft_token, agent_name, dataset_name, dataset_id, inputs)
+      persist_results(draft_token, agent_name, dataset_name, inputs)
     rescue StandardError => e
       logger.error("[SyntheticDatasetJob] Failed for draft #{draft_token}: #{e.message}")
-      update_draft(draft_token, status: "error", error_message: e.message) unless dataset_id
+      update_draft(draft_token, status: "error", error_message: e.message)
     end
 
     private
 
-    def persist_results(draft_token, agent_name, dataset_name, dataset_id, inputs)
-      if dataset_id
-        resync_dataset(dataset_id, inputs)
-      else
-        dataset = create_dataset_with_records(dataset_name, agent_name, inputs)
-        update_draft(draft_token, status: "complete", dataset_id: dataset.id)
-      end
+    def clamp_count(count)
+      (Integer(count.to_s, 10, exception: false) || Evaluation::Dataset::DEFAULT_SAMPLE_COUNT).clamp(Evaluation::Dataset::SAMPLE_COUNT)
+    end
+
+    def persist_results(draft_token, agent_name, dataset_name, inputs)
+      dataset = create_dataset_with_records(dataset_name, agent_name, inputs)
+      update_draft(draft_token, status: "complete", dataset_id: dataset.id)
     end
 
     def fetch_system_prompt(agent_name)
@@ -85,15 +88,6 @@ module Evaluation
 
         inputs.each { |input| Evaluation::DatasetSample.create!(dataset: dataset, input: input) }
 
-        dataset
-      end
-    end
-
-    def resync_dataset(dataset_id, inputs)
-      ActiveRecord::Base.transaction do
-        dataset = Evaluation::Dataset.find(dataset_id)
-        dataset.dataset_samples.delete_all
-        inputs.each { |input| Evaluation::DatasetSample.create!(dataset: dataset, input: input) }
         dataset
       end
     end

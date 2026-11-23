@@ -92,6 +92,24 @@ RSpec.describe Document::TextExtractor do
       .to raise_error(Document::TextExtractor::Unsupported, /too large/)
   end
 
+  # Rewrites the uncompressed-size field of the local file header and the central directory entry.
+  def with_forged_docx_size(data, size)
+    forged = data.dup
+    { "PK\x03\x04".b => 22, "PK\x01\x02".b => 24 }.each do |signature, field|
+      forged[forged.index(signature) + field, 4] = [ size ].pack("V")
+    end
+    forged
+  end
+
+  it "refuses a docx whose real inflated size exceeds the limit while the zip header claims a small size" do
+    stub_const("#{described_class}::MAX_DOCX_XML_BYTES", 1000)
+    xml = %(<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>#{'<w:p/>' * 2000}</w:body></w:document>)
+    data = Zip::OutputStream.write_buffer { |zip| zip.put_next_entry("word/document.xml"); zip.write(xml) }.string
+
+    expect { extract(data: with_forged_docx_size(data, 10), mime_type: described_class::DOCX, filename: "a.docx") }
+      .to raise_error(Document::TextExtractor::Unsupported, /too large/)
+  end
+
   it "separates text across line breaks, tabs and paragraphs in docx" do
     xml = %(<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>) +
           %(<w:p><w:r><w:t>One</w:t><w:br/><w:t>Two</w:t><w:tab/><w:t>Three</w:t></w:r></w:p><w:p><w:r><w:t>Four</w:t></w:r></w:p></w:body></w:document>)

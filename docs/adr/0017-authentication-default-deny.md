@@ -1,4 +1,4 @@
-# ADR 0016: Authentication, default deny
+# ADR 0017: Authentication, default deny
 
 ## Status
 Accepted (GH #255; resolves SEC-02 in #240; unblocks #213)

@@ -40,4 +40,16 @@ RSpec.describe "evaluation:seed_dataset" do # rubocop:disable RSpec/DescribeClas
       expect { task.invoke("Unknown::Agent", "10") }.to raise_error(ArgumentError, /Unknown agent/)
     end
   end
+
+  context "with more completed runs than the cap" do
+    before { create_completed_agent_runs(agent_name, 55) }
+
+    it "seeds the default 20 when sample_size is not a number" do
+      expect { task.invoke(agent_name, "abc") }.to output("Dataset '#{agent_name}': 20 created, 0 skipped.\n").to_stdout
+    end
+
+    it "caps sample_size at 50" do
+      expect { task.invoke(agent_name, "200") }.to output("Dataset '#{agent_name}': 50 created, 0 skipped.\n").to_stdout
+    end
+  end
 end

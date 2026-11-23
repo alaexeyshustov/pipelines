@@ -60,6 +60,22 @@ RSpec.describe "Orchestration pipeline export/import" do
       expect(flash[:alert]).to include("Unknown agent keyword: x")
     end
 
+    it "redirects with an alert when the file param is a plain String instead of an upload" do
+      post orchestration_pipeline_imports_path, params: { file: '{"format":"pipeline_export"}' }
+
+      expect(response).to redirect_to(orchestration_pipelines_path)
+      expect(flash[:alert]).to be_present
+    end
+
+    it "redirects with an alert when the upload is over the size limit" do
+      stub_const("Orchestration::PipelineImportForm::MAX_BYTES", 10)
+
+      post orchestration_pipeline_imports_path, params: { file: file }
+
+      expect(response).to redirect_to(orchestration_pipelines_path)
+      expect(flash[:alert]).to match(/too large/i)
+    end
+
     it "redirects with an alert when no file is given" do
       post orchestration_pipeline_imports_path
 

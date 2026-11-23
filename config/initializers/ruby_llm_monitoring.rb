@@ -14,4 +14,10 @@ Rails.application.config.to_prepare do
     subscriber.send(:remove_const, :FILTERED_PAYLOAD_KEYS)
     subscriber.const_set(:FILTERED_PAYLOAD_KEYS, keys)
   end
+
+  # The engine's importmap pins scripts from ga.jspm.io. Allow that host for
+  # /monitoring only, never application-wide (docs/adr/0016-content-security-policy.md).
+  RubyLLM::Monitoring::ApplicationController.content_security_policy do |policy|
+    policy.script_src :self, "https://ga.jspm.io"
+  end
 end
