@@ -145,12 +145,14 @@ bin/rails server
 The root `Dockerfile` builds the production image (Kamal uses it too). `compose.yaml` runs it locally as a smoke test: `web` (Falcon, runs `db:prepare` on start) and `jobs` (`bin/jobs`) share the `storage` volume.
 
 ```bash
-cp .env.docker.example .env.docker   # fill in SECRET_KEY_BASE and an LLM key
+cp .env.docker.example .env.docker   # fill in SECRET_KEY_BASE, ADMIN_EMAIL, ADMIN_PASSWORD and an LLM key
 docker compose up --build            # builds linux/amd64; web on 127.0.0.1:3000 only
 curl -i http://127.0.0.1:3000/up     # 200 once booted
 docker compose run --rm web bin/rails runner 'p ActiveRecord::Base.connection.select_value("select vec_version()")'
 docker compose --profile ollama up   # optional local embeddings (see compose.yaml)
 ```
+
+The whole app is behind a login. `ADMIN_EMAIL` and `ADMIN_PASSWORD` define the single user; the seeds create it, but they only run when `db:prepare` creates the database. On an existing `storage` volume, or to change the password, run `docker compose run --rm web bin/rails users:upsert`.
 
 To check the image carries no secrets: `docker run --rm --entrypoint ls pipelines:latest -a /app`.
 

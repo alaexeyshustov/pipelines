@@ -1,0 +1,10 @@
+class User < ApplicationRecord
+  def self.upsert_login!: (email_address: String, password: String) -> User
+
+  def email_address: () -> String
+  def email_address=: (String) -> String
+  def password_digest: () -> String
+  def password: () -> String?
+  def password=: (String) -> String
+  def sessions: () -> ActiveRecord::Associations::CollectionProxy
+end

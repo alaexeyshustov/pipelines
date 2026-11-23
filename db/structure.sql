@@ -226,8 +226,17 @@ CREATE INDEX "index_ruby_llm_usages_on_message_type_and_message_id" ON "ruby_llm
 CREATE INDEX "index_ruby_llm_usages_on_status" ON "ruby_llm_usages" ("status") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_ruby_llm_usages_on_owner" ON "ruby_llm_usages" ("owner_type", "owner_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_ruby_llm_usages_on_workflow_id" ON "ruby_llm_usages" ("workflow_id") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "users" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "email_address" varchar NOT NULL, "password_digest" varchar NOT NULL, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
+CREATE UNIQUE INDEX "index_users_on_email_address" ON "users" ("email_address") /*application='ApplicationPipeline'*/;
+CREATE TABLE IF NOT EXISTS "sessions" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "user_id" integer NOT NULL, "ip_address" varchar, "user_agent" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_758836b4f0"
+FOREIGN KEY ("user_id")
+  REFERENCES "users" ("id")
+);
+CREATE INDEX "index_sessions_on_user_id" ON "sessions" ("user_id") /*application='ApplicationPipeline'*/;
 INSERT INTO "schema_migrations" (version) VALUES
 ('20261119090000'),
+('20261119071332'),
+('20261119071330'),
 ('20261117090000'),
 ('20261116112431'),
 ('20261104090000'),

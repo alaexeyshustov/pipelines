@@ -47,6 +47,9 @@ gem "mission_control-jobs"
 gem "dotenv-rails"
 gem "dry-cli"
 
+# Authentication
+gem "bcrypt", "~> 3.1"
+
 group :development, :test do
   gem "simplecov", require: false
   gem "reline"

@@ -6,6 +6,7 @@ const out = (name: string) => `tmp/screenshots/primitives/${name}.png`;
 async function open(page: Page, name: string) {
   const response = await page.goto(primitiveUrl(name));
   expect(response?.ok(), `GET ${primitiveUrl(name)}`).toBeTruthy();
+  await expect(page).not.toHaveURL(/\/session\/new/);
   const root = page.locator('[data-preview-root]');
   await expect(root).toBeVisible();
   return root;
