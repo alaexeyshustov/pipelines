@@ -1,5 +1,7 @@
 module Settings
   class EmailConnectorsController < ApplicationController
+    FILE_QUOTING_ERRORS: Array[singleton(StandardError)]
+
     @email_connectors: EmailConnector::relation
     @email_connector: EmailConnector?
 

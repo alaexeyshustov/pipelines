@@ -224,7 +224,7 @@ RSpec.describe "Settings::EmailConnectors" do
 
         expect(response).to redirect_to(edit_settings_email_connector_path(connector))
         expect(flash[:alert]).to eq("Gmail is not configured on the server. Check the server logs.")
-        expect(log.string).to match(/Gmail setup failed: (MultiJSON::ParseError|JSON::ParserError)/)
+        expect(log.string).to match(/Gmail setup failed: Google::Auth::InitializationError/)
       end
 
       it "does not log the file contents" do

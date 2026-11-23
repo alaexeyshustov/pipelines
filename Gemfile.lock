@@ -337,7 +337,6 @@ GEM
     method_source (1.1.0)
     metrics (0.15.0)
     mini_mime (1.1.5)
-    mini_portile2 (2.8.9)
     minitest (6.0.6)
       drb (~> 2.0)
       prism (~> 1.5)
@@ -351,6 +350,7 @@ GEM
       railties (>= 7.1)
       stimulus-rails
       turbo-rails
+    multi_json (1.21.2)
     multipart-post (2.4.1)
     mutant (0.16.0)
       diff-lcs (>= 1.6, < 3)
@@ -378,9 +378,6 @@ GEM
     net-smtp (0.5.2)
       net-protocol
     nio4r (2.7.5)
-    nokogiri (1.19.7)
-      mini_portile2 (~> 2.8.2)
-      racc (~> 1.4)
     nokogiri (1.19.7-arm64-darwin)
       racc (~> 1.4)
     nokogiri (1.19.7-x86_64-darwin)
@@ -636,8 +633,6 @@ GEM
     sqlite-vec (0.1.9-arm64-darwin)
     sqlite-vec (0.1.9-x86_64-darwin)
     sqlite-vec (0.1.9-x86_64-linux)
-    sqlite3 (2.10.2)
-      mini_portile2 (~> 2.8.0)
     sqlite3 (2.10.2-arm64-darwin)
     sqlite3 (2.10.2-x86_64-darwin)
     sqlite3 (2.10.2-x86_64-linux-gnu)
@@ -751,6 +746,7 @@ DEPENDENCIES
   liquid
   mail (~> 2.8)
   mission_control-jobs
+  multi_json
   mutant
   mutant-rspec
   neighbor
@@ -913,9 +909,9 @@ CHECKSUMS
   method_source (1.1.0) sha256=181301c9c45b731b4769bc81e8860e72f9161ad7d66dd99103c9ab84f560f5c5
   metrics (0.15.0) sha256=61ded5bac95118e995b1bc9ed4a5f19bc9814928a312a85b200abbdac9039072
   mini_mime (1.1.5) sha256=8681b7e2e4215f2a159f9400b5816d85e9d8c6c6b491e96a12797e798f8bccef
-  mini_portile2 (2.8.9) sha256=0cd7c7f824e010c072e33f68bc02d85a00aeb6fce05bb4819c03dfd3c140c289
   minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
   mission_control-jobs (1.1.0) sha256=b13da9cde3344fec7c744b79d2a34c3ecd454f45d4d593d4c968ba762315e84c
+  multi_json (1.21.2) sha256=245531eaf54bdba57aba515ff08b4503505c5e09911daa89c5a561e2f85bea8e
   multipart-post (2.4.1) sha256=9872d03a8e552020ca096adadbf5e3cb1cd1cdd6acd3c161136b8a5737cdb4a8
   mutant (0.16.0) sha256=651dfbf4e0c32bb918e823505d41348070d7f3f76430cf046696b06e3887b9c4
   mutant-rspec (0.16.0) sha256=14d2a26a18ae2f8d58610cd26e4be6c2b8eb3ca8a158db0e34b8c96efa8c51b8
@@ -926,7 +922,6 @@ CHECKSUMS
   net-protocol (0.4.0) sha256=f9f90c8c6f64794a45160bf422177a336db12809de3beeeaa26b88fcd2e8c853
   net-smtp (0.5.2) sha256=35103cc04d6b2d94632f9928ede07483c24b70b9c0db1f231fea43909b678f3c
   nio4r (2.7.5) sha256=6c90168e48fb5f8e768419c93abb94ba2b892a1d0602cb06eef16d8b7df1dca1
-  nokogiri (1.19.7) sha256=abe94507c54cb18f872777b16bdca4aad32b1abdc4c52fe843f1c80fbdf992b8
   nokogiri (1.19.7-arm64-darwin) sha256=f27d7f25f4873fbc3aa35a2cc2fb680c98555fec1925348da439d0869d541142
   nokogiri (1.19.7-x86_64-darwin) sha256=508e81e8c5f84aaa240dce981bf1c43faae60808726f0ce7024ee92effc5cafe
   nokogiri (1.19.7-x86_64-linux-gnu) sha256=25865ccb462f714e712fdf8906fde07849cb6704a808e3d629d75baa5af5dd3b
@@ -1014,7 +1009,6 @@ CHECKSUMS
   sqlite-vec (0.1.9-arm64-darwin) sha256=f319ab08757741811c6f2f7d2b58c1b9009460e899e1b69d99fdab288286d9bf
   sqlite-vec (0.1.9-x86_64-darwin) sha256=8a8d16c86c8d011359b0ab6f933dc9859f1cc265be6a8a9ac20ecd06cb3b8d32
   sqlite-vec (0.1.9-x86_64-linux) sha256=772389c3bf68e7976cfdd8e7c74e820245007e03294808b9b05cdbbf5b02f398
-  sqlite3 (2.10.2) sha256=f1ea68cd3287f8a49f39a088ac9e4bd0ef4e7f394c3d4a60dd4c7e44b0566964
   sqlite3 (2.10.2-arm64-darwin) sha256=5b0d235ea037e6dcd1b8387a19d73be571917db9f93044d35741cf933a21a37d
   sqlite3 (2.10.2-x86_64-darwin) sha256=fd2c67b49d313031af112e172c83ab321681a2b4996bf882eefac50be7bea08f
   sqlite3 (2.10.2-x86_64-linux-gnu) sha256=ca92731ab464df9cae503fa1a439a549e2724f6953c8c05a7769b59366e38f15
