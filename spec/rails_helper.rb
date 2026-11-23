@@ -3,14 +3,14 @@ if ENV['COVERAGE']
   require 'simplecov'
   SimpleCov.start 'rails' do
     minimum_coverage 90
-    add_filter '/spec/'
-    add_filter '/config/'
-    add_filter '/db/'
-    add_filter '/vendor/'
-    add_filter '/lib/pipeline/'
-    add_filter '/app/schemas/'
-    add_filter '/lib/pipeline.rb'
-    add_filter '/lib/view_primitives/' # vendored gem components, also excluded from RuboCop and Steep
+    skip '/spec/'
+    skip '/config/'
+    skip '/db/'
+    skip '/vendor/'
+    skip '/lib/pipeline/'
+    skip '/app/schemas/'
+    skip '/lib/pipeline.rb'
+    skip '/lib/view_primitives/' # vendored gem components, also excluded from RuboCop and Steep
   end
 end
 
