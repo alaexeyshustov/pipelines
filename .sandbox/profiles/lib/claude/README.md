@@ -17,8 +17,12 @@ settings, so `--dangerously-skip-permissions` does not switch them off.
 ## Limits
 
 - These are pattern matches on the command text, not a sandbox.
-- `cat`, `ruby -e`, scripts, and `curl` with `GH_TOKEN` get around them, as do
-  command substitutions inside double quotes.
+- Pushes and GitHub writes nested in `$(...)`/backticks inside double quotes,
+  `bash|sh|zsh -c`, `eval` or `xargs` are caught by a raw-text scan that always
+  asks (never blocks), so quoted mentions such as `echo "gh pr merge"` ask too.
+- Not caught: scripts written to disk and then run, `ruby -e`, `cat`, `curl`
+  with `GH_TOKEN`, aliases and shell functions, variable-built commands
+  (`$cmd push`), and commands split across string concatenation.
 - Root in the container can edit `/etc/claude-code`.
 - The real control is keeping secrets out of the mount: `init-worktree` skips
   `.env*`, `credentials.json` and `*token.yaml`, and secrets arrive through

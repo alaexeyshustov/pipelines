@@ -30,6 +30,14 @@ module Guard
 
   GH_API_FIELD_FLAGS = %w[-f -F --field --raw-field --input].freeze
 
+  GIT_PUSH_TEXT = /\bgit(?:\s+-\S+(?:\s+[^-\s]\S*)?)*\s+push\b/
+  GH_WRITE_TEXT = Regexp.union(
+    GH_WRITES.map do |group, actions|
+      /\bgh\s+(?:-\S+\s+)*#{group}\s+(?:-\S+\s+)*(?:#{actions.join("|")})\b/
+    end
+  )
+  GH_API_WRITE_TEXT = /\bgh\s+api\b[^\n;&|]*\s(?:-X\s*(?!GET\b)\S|--method(?:=|\s+)(?!GET\b)\S|-[fF]\s|--(?:field|raw-field|input)\b)/i
+
   module_function
 
   # Splits a shell command into segments of unquoted words. Operators and
@@ -183,9 +191,18 @@ module Guard
     end
   end
 
+  # Fallback for text the parser cannot see into: `$(...)` inside double
+  # quotes, `bash -c`, `eval`, `xargs` and plain quoted mentions. Always asks,
+  # never blocks, so a nested force push still goes to the user.
+  def mentions_write(command)
+    return unless command.match?(GIT_PUSH_TEXT) || command.match?(GH_WRITE_TEXT) || command.match?(GH_API_WRITE_TEXT)
+
+    [:ask, "This command mentions git push or a GitHub write (possibly nested); confirm it."]
+  end
+
   def judge(command)
     verdicts = segments(command).filter_map { |words| judge_segment(words) }
-    verdicts.find { |kind, _| kind == :block } || verdicts.first
+    verdicts.find { |kind, _| kind == :block } || verdicts.first || mentions_write(command)
   rescue UnparseableCommand
     [:ask, "Could not parse this command; confirm it."] if command.match?(/\bgit\b.*\bpush\b|\bgh\b/m)
   end

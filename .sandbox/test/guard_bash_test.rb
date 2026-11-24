@@ -117,8 +117,6 @@ class GuardBashTest < Minitest::Test
     "rtk git status",
     "bundle exec rspec",
     "echo \"git reset --hard is blocked\"",
-    "echo 'git push --force is blocked'",
-    "echo \"gh pr merge is asked\"",
     "grep -r 'git clean -fd' docs",
     "gh pr view 1",
     "gh pr list",
@@ -138,6 +136,69 @@ class GuardBashTest < Minitest::Test
     "rtk gh pr view 1",
     "cd a && gh pr view 1",
     "cd a && git status"
+  ].freeze
+
+  # Nested or indirect forms the parser cannot see into. Fail closed: raw text
+  # mentioning git push or a gh write asks (never allows, never blocks).
+  NESTED_ASKED = [
+    "echo \"$(git push)\"",
+    "echo \"$(git push --force)\"",
+    "echo \"$(git push -f origin main)\"",
+    "echo \"`git push`\"",
+    "x=\"`git push --force`\"",
+    "x=\"`gh pr comment 1 -b hi`\"",
+    "echo \"$(gh pr comment 1 -b hi)\"",
+    "echo \"$(gh pr merge 1)\"",
+    "echo \"$(gh pr create --title t)\"",
+    "echo \"$(gh api -X POST repos/o/r/issues)\"",
+    "bash -c \"git push\"",
+    "bash -c 'git push'",
+    "bash -c 'git push --force'",
+    "bash -c \"git push -f origin main\"",
+    "sh -c 'git push'",
+    "sh -c \"git push --force\"",
+    "zsh -c 'git push'",
+    "zsh -c \"git push -f\"",
+    "bash -c 'gh pr comment 1 -b hi'",
+    "bash -c \"gh pr merge 1\"",
+    "sh -c 'gh pr create --title t'",
+    "zsh -c \"gh api -X POST repos/o/r/issues\"",
+    "bash -c 'cd a && git push'",
+    "eval \"git push\"",
+    "eval 'git push --force'",
+    "eval \"gh pr merge 1\"",
+    "eval 'gh pr comment 1 -b hi'",
+    "eval \"gh pr create --title t\"",
+    "eval 'gh api -X POST repos/o/r/issues'",
+    "echo origin | xargs git push",
+    "echo origin | xargs git push --force",
+    "echo 1 | xargs gh pr merge",
+    "echo 1 | xargs -I{} gh pr comment {} -b hi",
+    "env bash -c 'git push'",
+    "env bash -c \"git push --force\"",
+    "env FOO=1 sh -c 'gh pr merge 1'",
+    "sudo bash -c 'gh issue create --title t'",
+    "echo \"gh pr merge is asked\"",
+    "echo 'git push --force is blocked'"
+  ].freeze
+
+  # Reads and plain commands must not be caught by the fail-closed rule.
+  NESTED_ALLOWED = [
+    "bash -c \"gh issue view 1\"",
+    "bash -c 'gh pr list'",
+    "sh -c 'git status'",
+    "zsh -c \"git log -1\"",
+    "eval \"git status\"",
+    "eval 'gh pr view 1'",
+    "echo \"$(git status)\"",
+    "echo \"`git log -1`\"",
+    "echo \"$(gh pr view 1)\"",
+    "echo \"$(gh api repos/o/r/issues)\"",
+    "echo origin | xargs git fetch",
+    "echo 1 | xargs gh pr view",
+    "env bash -c 'ls -la'",
+    "echo \"git reset --hard is blocked\"",
+    "echo \"gh issue view is allowed\""
   ].freeze
 
   BLOCKED.each_with_index do |command, index|
@@ -164,6 +225,27 @@ class GuardBashTest < Minitest::Test
 
   ALLOWED.each_with_index do |command, index|
     define_method("test_allows_#{index}_#{command.gsub(/\W+/, "_")[0, 40]}") do
+      stdout, stderr, status = run_guard(command)
+
+      assert_equal 0, status.exitstatus, "expected allow for #{command.inspect}: #{stderr}"
+      assert_empty stdout, "allow must print nothing for #{command.inspect}"
+    end
+  end
+
+  NESTED_ASKED.each_with_index do |command, index|
+    define_method("test_nested_asks_#{index}_#{command.gsub(/\W+/, "_")[0, 40]}") do
+      stdout, stderr, status = run_guard(command)
+
+      assert_equal 0, status.exitstatus, "expected ask (not block) for #{command.inspect}: #{stderr}"
+      refute_empty stdout, "expected ask for #{command.inspect}, got allow"
+      output = JSON.parse(stdout)["hookSpecificOutput"]
+      assert_equal "ask", output["permissionDecision"], "expected ask for #{command.inspect}"
+      refute_empty output["permissionDecisionReason"].to_s
+    end
+  end
+
+  NESTED_ALLOWED.each_with_index do |command, index|
+    define_method("test_nested_allows_#{index}_#{command.gsub(/\W+/, "_")[0, 40]}") do
       stdout, stderr, status = run_guard(command)
 
       assert_equal 0, status.exitstatus, "expected allow for #{command.inspect}: #{stderr}"
