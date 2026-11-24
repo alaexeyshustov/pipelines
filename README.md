@@ -158,29 +158,9 @@ To check the image carries no secrets: `docker run --rm --entrypoint ls pipeline
 
 ---
 
-## Sandbox (OrbStack)
+## Sandbox
 
-An isolated Linux machine for running the app without touching your local environment.
-
-**First-time setup:**
-
-```bash
-# Create the machine (OrbStack required)
-orb create ubuntu pipeline-sandbox
-
-# Run the setup script inside it
-orb -m pipeline-sandbox -- sudo bash /work/sandbox/setup.sh
-```
-
-The script installs Ruby, Node, Rust, pnpm, bun, Claude Code, and the rubydex MCP server.
-
-**Connect:**
-
-```bash
-orb -m pipeline-sandbox
-```
-
-The `/work` directory is automatically mounted to the project root.
+Per-issue Podman sandboxes for Claude Code live in `.sandbox/`; see [ADR 0001](.sandbox/docs/adr/0001-podman-sandbox-for-github-issues.md).
 
 ---
 

@@ -12,7 +12,8 @@ The local subset of CI (`.github/workflows/ci.yml`); RubyCritic and mutant stay 
 - `bundle exec rubocop` and `bundle exec archspec check --check-todo`
 - `bundle exec rbs -r optparse validate`, `bundle exec steep check`, `bundle exec bin/rbs_audit coverage --threshold=90`
 - `bundle exec rigor check` (setup in [Gotchas](docs/claude/gotchas.md#rigor-rigordistyml-rigor-baselineyml))
-- `bundle exec brakeman --no-pager`
+- `bundle exec brakeman --no-pager` and `bundle exec bundle-audit check --update` (needs network)
+- `for t in .sandbox/test/*_test.rb; do ruby "$t" || exit 1; done`
 - JS changed: `pnpm lint` and `pnpm format:check`
 
 ## Role subagents (`.claude/agents/`)

@@ -1,0 +1,627 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Claude Code PreToolUse hook for the Bash tool (see ../README.md).
+#   block: exit 2, reason on stderr
+#   ask:   exit 0, permissionDecision "ask" JSON on stdout
+#   allow: exit 0, no output
+# Pattern matching only: it is a seatbelt, not a sandbox. It fails closed: any
+# error, odd payload or over-deep nesting asks, and it never exits 1.
+#
+# Layout: Tokenizer (text -> Segments), Wrappers (strip `sudo`, `env`, ...),
+# Judge (one verdict per Segment, recursing into `bash -c`, `eval`, `xargs`
+# and substitutions) and Hook (stdin payload -> verdict -> exit code).
+
+require "json"
+require "shellwords"
+require "strscan"
+
+# Raised when the command text cannot be tokenized (unterminated quote...).
+class UnparseableCommand < StandardError; end
+
+# Raised when quotes or nested commands go deeper than Guard::MAX_NESTING.
+class TooDeep < StandardError; end
+
+module Guard
+  MAX_NESTING = 20
+
+  Heredoc = Struct.new(:delimiter, :strip_tabs, :quoted, :body)
+  # One simple command: its words, whether it ran inside a quoted
+  # substitution (so a block is downgraded to an ask) and its heredocs.
+  Segment = Struct.new(:words, :nested, :heredocs)
+
+  # Text that mentions a guarded git operation or gh, used when it cannot be
+  # parsed. Two linear scans, not one backtracking pattern.
+  def self.guarded_text?(text)
+    text.match?(/\bgh\b/) ||
+      (text.match?(/\bgit\b/) && text.match?(/\b(?:reset|clean|branch|checkout|restore|push)\b/))
+  end
+
+  # Splits a shell command into Segments of unquoted words. Operators, parens
+  # and unquoted substitutions end a segment, redirections and their targets
+  # are dropped, heredoc bodies are data. Substitutions inside double quotes
+  # become nested Segments.
+  class Tokenizer
+    PLAIN = /[^ \t\n;|&()`'"\\\#\$<>]+/
+    DOUBLE_QUOTED_PLAIN = /[^"\\$`]+/
+
+    def self.segments(command)
+      segments = []
+      Parser.new(StringScanner.new(command), segments, [], terminator: nil, nested: false, depth: 0).run
+      segments
+    end
+
+    # Parses commands up to the end of input or `terminator`.
+    class Parser
+      def initialize(scanner, segments, pending, terminator:, nested:, depth:, backticks: false)
+        raise TooDeep if depth > MAX_NESTING
+
+        @scanner = scanner
+        @segments = segments
+        @pending = pending
+        @terminator = terminator
+        @nested = nested
+        @in_backticks = backticks
+        @depth = depth
+        @parens = 0
+        @arithmetic = nil
+        @discard = false
+        @word = nil
+        start_segment
+      end
+
+      def run
+        loop do
+          if @scanner.eos?
+            raise UnparseableCommand if @terminator
+
+            break
+          end
+          break if step == :done
+        end
+        flush_segment
+      end
+
+      private
+
+      def start_segment
+        @segment = Segment.new([], @nested, [])
+      end
+
+      def append(text)
+        (@word ||= +"") << text
+      end
+
+      def flush_word
+        word = @word
+        @word = nil
+        return unless word
+
+        if @discard
+          @discard = false
+        else
+          @segment.words << word
+        end
+      end
+
+      def flush_segment
+        flush_word
+        @segments << @segment unless @segment.words.empty?
+        @discard = false
+        start_segment
+      end
+
+      # A redirection ends the word before it (dropping an fd number such as
+      # the 2 of `2>&1`) and discards the word after it (the target).
+      def redirect
+        @word = nil if @word&.match?(/\A\d+\z/)
+        flush_word
+        @discard = !@scanner.check(/\(/)
+      end
+
+      # Returns :done when the substitution being parsed has ended.
+      def step
+        if @scanner.scan(PLAIN) then append(@scanner.matched)
+        elsif @scanner.scan("$'") then ansi_c_quoted
+        elsif @scanner.scan("'") then single_quoted
+        elsif @scanner.scan(/\$?"/) then append(read_double_quoted)
+        elsif @scanner.scan("\\") then escape
+        elsif @word.nil? && @scanner.check("#") then @scanner.skip(/[^\n]*/)
+        else operator
+        end
+      end
+
+      def single_quoted
+        append(@scanner.scan_until(/'/)&.chomp("'") || raise(UnparseableCommand))
+      end
+
+      # `$'...'` honours backslash escapes, so `\'` does not end the string.
+      def ansi_c_quoted
+        append(@scanner.scan(/(?:[^'\\]|\\.)*'/m)&.chomp("'")&.gsub(/\\(['\\])/, '\1') || raise(UnparseableCommand))
+      end
+
+      def escape
+        if @scanner.scan("\n") then nil
+        elsif @scanner.scan(/./m) then append(@scanner.matched)
+        else append("\\")
+        end
+      end
+
+      def operator
+        if @scanner.scan(/[ \t]+/)
+          flush_word
+        elsif @scanner.scan("\n")
+          flush_segment
+          read_heredoc_bodies
+        elsif @scanner.scan("$((") || (@segment.words.empty? && @word.nil? && @scanner.scan("(("))
+          start_arithmetic
+        elsif @scanner.scan("$(")
+          @parens += 1
+          flush_segment
+        elsif @arithmetic && @scanner.scan(/<<=?/)
+          append(@scanner.matched)
+        elsif @scanner.scan(/<<<|<<-?|<[&>]|&>>?|>>?[&|]?|</)
+          redirection(@scanner.matched)
+        elsif @terminator != "`" && @scanner.scan("`")
+          backticks
+        elsif @scanner.scan(/[;|&`()]/)
+          return close_group(@scanner.matched)
+        else
+          append(@scanner.getch)
+        end
+        nil
+      end
+
+      # `$((...))` and `((...))`: a `<<` inside is a shift, not a heredoc.
+      def start_arithmetic
+        flush_segment
+        @arithmetic = @parens if @arithmetic.nil?
+        @parens += 2
+      end
+
+      # Unquoted backticks: the body (with escaped backtick, backslash and $ unescaped) is
+      # parsed as commands; backticks inside a backtick body are nested code.
+      def backticks
+        body = @scanner.scan(/(?:[^`\\]|\\.)*`/m)&.chomp("`") || raise(UnparseableCommand)
+        flush_segment
+        Parser.new(StringScanner.new(body.gsub(/\\([`\\$])/, '\1')), @segments, [],
+                   terminator: nil, nested: @nested || @in_backticks, depth: @depth + 1, backticks: true).run
+      end
+
+      def redirection(operator)
+        if operator.start_with?("<<") && operator != "<<<"
+          read_heredoc_delimiter(strip_tabs: operator == "<<-")
+        else
+          redirect
+        end
+      end
+
+      # Returns :done when `char` closes the substitution being parsed.
+      def close_group(char)
+        flush_segment
+        case char
+        when "(" then @parens += 1
+        when ")"
+          return :done if @parens.zero? && @terminator == ")"
+
+          @parens -= 1 if @parens.positive?
+          @arithmetic = nil if @arithmetic == @parens
+        when "`" then return :done if @terminator == "`"
+        end
+        nil
+      end
+
+      # Text of a double-quoted string; `$(...)` and backticks inside it are
+      # parsed as nested commands but stay in the text as written.
+      def read_double_quoted
+        text = +""
+        loop do
+          text << @scanner.matched if @scanner.scan(DOUBLE_QUOTED_PLAIN)
+          if @scanner.scan('"') then return text
+          elsif @scanner.scan("\\\n") then next
+          elsif @scanner.scan(/\\(.)/m) then text << @scanner[1]
+          elsif @scanner.check("$(") then text << substitution("$(", ")")
+          elsif @scanner.check("`") then text << substitution("`", "`")
+          elsif @scanner.scan(/[$\\]/) then text << @scanner.matched
+          else raise UnparseableCommand
+          end
+        end
+      end
+
+      def substitution(opener, closer)
+        start = @scanner.pos
+        @scanner.scan(opener)
+        Parser.new(@scanner, @segments, @pending, terminator: closer, nested: true, depth: @depth + 1).run
+        @scanner.string.byteslice(start, @scanner.pos - start)
+      end
+
+      def read_heredoc_delimiter(strip_tabs:)
+        @scanner.skip(/[ \t]*/)
+        delimiter = +""
+        quoted = false
+        until @scanner.eos? || @scanner.check(/[ \t\n;|&()<>]/)
+          if @scanner.scan(/\$?(['"])(.*?)\1/m)
+            quoted = true
+            delimiter << @scanner[2]
+          elsif @scanner.scan(/\\(.)/m)
+            quoted = true
+            delimiter << @scanner[1]
+          else
+            delimiter << @scanner.getch
+          end
+        end
+        raise UnparseableCommand if delimiter.empty?
+
+        heredoc = Heredoc.new(delimiter, strip_tabs, quoted, +"")
+        @segment.heredocs << heredoc
+        @pending << heredoc
+      end
+
+      # Reads lines up to the end line; false when the input ends first.
+      def read_heredoc_body(heredoc)
+        until @scanner.eos?
+          line = @scanner.scan(/[^\n]*\n?/)
+          terminator = heredoc.strip_tabs ? line.sub(/\A\t+/, "") : line
+          return true if terminator.delete_suffix("\n") == heredoc.delimiter
+
+          heredoc.body << line
+        end
+        false
+      end
+
+      def read_heredoc_bodies
+        until @pending.empty?
+          heredoc = @pending.shift
+          raise UnparseableCommand unless read_heredoc_body(heredoc)
+        end
+      end
+    end
+  end
+
+  # Peels commands that run another command (`sudo -u root`, `timeout 5`...)
+  # and shell prefixes (`VAR=1`, `!`, `then`) off a segment's words.
+  module Wrappers
+    NAMES = %w[rtk env command sudo exec time nohup nice timeout builtin].freeze
+    KEYWORDS = %w[! { if then else elif do while until].freeze
+    VALUE_OPTIONS = {
+      "env" => %w[-u -C --unset --chdir],
+      "sudo" => %w[-u -g -h -p -C -D -R -r -t -U],
+      "exec" => %w[-a],
+      "nice" => %w[-n],
+      "timeout" => %w[-s -k --signal --kill-after]
+    }.freeze
+    POSITIONALS = { "timeout" => 1 }.freeze
+    ASSIGNMENT = /\A[A-Za-z_][A-Za-z0-9_]*=/
+
+    module_function
+
+    def strip(words)
+      words = words.dup
+      loop do
+        words.shift while words.first&.match?(ASSIGNMENT) || KEYWORDS.include?(words.first)
+        break unless NAMES.include?(File.basename(words.first.to_s))
+
+        wrapper = File.basename(words.shift)
+        words.shift if wrapper == "rtk" && words.first == "proxy"
+        skip_options(wrapper, words)
+        words.shift(POSITIONALS.fetch(wrapper, 0))
+      end
+      words
+    end
+
+    def skip_options(wrapper, words)
+      while words.first&.start_with?("-")
+        option = words.shift
+        break if option == "--"
+
+        words.shift if VALUE_OPTIONS.fetch(wrapper, []).include?(option)
+      end
+    end
+  end
+
+  # Verdicts are [:block, reason] or [:ask, reason]; no verdict means allow.
+  class Judge
+    SHELLS = %w[bash sh zsh].freeze
+    # Where a command starts inside `xargs` arguments such as `-n 1 git ...`.
+    COMMAND_WORDS = (Wrappers::NAMES + SHELLS + %w[eval git gh]).freeze
+
+    GIT_OPTIONS_WITH_VALUE = %w[-C -c --git-dir --work-tree --namespace --exec-path --config-env].freeze
+    GH_OPTIONS_WITH_VALUE = %w[-R --repo --hostname].freeze
+    # Read-only gh commands; every other gh invocation asks. `true` allows any action.
+    GH_READS = {
+      "issue" => %w[view list status], "pr" => %w[view list diff status checks],
+      "run" => %w[view list watch], "release" => %w[view list], "repo" => %w[view],
+      "auth" => %w[status], "search" => true, "help" => true
+    }.freeze
+    # gh top-level commands; the text scan only looks at mentions of these.
+    GH_GROUPS = %w[
+      agent-task alias api attestation auth browse cache codespace completion config copilot extension gist
+      gpg-key issue label licenses org pr preview project release repo ruleset run search secret ssh-key
+      status variable workflow
+    ].freeze
+
+    WRAPPED = %w[git gh].freeze
+    EMBEDDED_WORDS = 40
+
+    GIT_PUSH_TEXT = /\bgit(?:\s+-\S+(?:\s+[^-\s]\S*)?)*\s+push\b/
+    GH_TEXT = /\bgh\b([^\n;&|`()]*)/
+    TOO_DEEP = [:ask, "Command nesting is too deep to inspect; confirm it."].freeze
+
+    def initialize
+      @memo = {}
+    end
+
+    # The most severe verdict for a command, or nil to allow it.
+    def call(command)
+      found = verdicts(command, 0)
+      found.find { |kind, _| kind == :block } || found.first
+    end
+
+    private
+
+    # Verdicts of a command text. Memoized so a text reachable through several
+    # nesting paths is judged once (otherwise `bash -c "$(...)"` chains blow up).
+    def verdicts(text, depth)
+      return [TOO_DEEP] if depth > MAX_NESTING
+
+      @memo[[text, depth.zero?]] ||= begin
+        segments = Tokenizer.segments(text)
+        found = segments.flat_map { |segment| segment_verdicts(segment, depth) }
+        found = [mentions_write(segments)].compact if found.empty? && depth.zero?
+        found
+      rescue UnparseableCommand
+        [unparseable(text)].compact
+      rescue TooDeep
+        [TOO_DEEP]
+      end
+    end
+
+    # Nested code is never executed by us nor trusted: its block becomes an ask.
+    def segment_verdicts(segment, depth)
+      words = Wrappers.strip(segment.words)
+      direct = judge_words(words)
+      direct = [:ask, direct.last] if direct && segment.nested
+      nested = nested_texts(words, segment.heredocs).flat_map { |text| verdicts(text, depth + 1) }
+      asks = (nested + embedded_verdicts(words)).map { |_, reason| [:ask, reason] }
+      [direct, *asks].compact
+    end
+
+    # A bare `git`/`gh` word after the command word means an unknown wrapper
+    # (`watch git push`, `find -exec git push`): judge from there, never block.
+    def embedded_verdicts(words)
+      (1...words.length).filter_map do |index|
+        judge_words(words[index, EMBEDDED_WORDS]) if WRAPPED.include?(File.basename(words[index]))
+      end
+    end
+
+    def judge_words(words)
+      case File.basename(words.first.to_s)
+      when "git" then judge_git(words)
+      when "gh" then judge_gh(words.drop(1))
+      end
+    end
+
+    # Command strings this segment will run: `bash -c`, `eval`, `xargs`,
+    # a shell fed a heredoc, and unquoted heredoc bodies that expand `$(...)`.
+    def nested_texts(words, heredocs)
+      texts = heredocs.select { |heredoc| !heredoc.quoted && heredoc.body.match?(/\$\(|`/) }.map(&:body)
+      case File.basename(words.first.to_s)
+      when *SHELLS then texts + shell_texts(words, heredocs)
+      when "eval" then texts << words.drop(1).join(" ")
+      when "xargs" then texts + xargs_texts(words)
+      else texts
+      end
+    end
+
+    def shell_texts(words, heredocs)
+      position = words.index { |word| word.match?(/\A-[a-z]*c[a-z]*\z/) }
+      position ? [words[position + 1].to_s] : heredocs.map(&:body)
+    end
+
+    def xargs_texts(words)
+      start = words.index { |word| COMMAND_WORDS.include?(File.basename(word)) }
+      start ? [words.drop(start).shelljoin] : []
+    end
+
+    # --- git ---------------------------------------------------------------
+
+    # Skips every `-...` option before the subcommand and the value of those
+    # that take a separate one.
+    def strip_git_options(words)
+      words = words.dup
+      words.shift(GIT_OPTIONS_WITH_VALUE.include?(words.first) ? 2 : 1) while words.first&.start_with?("-")
+      words
+    end
+
+    def alias_option?(words)
+      words.each_cons(2).any? { |option, value| option == "-c" && value.start_with?("alias.") }
+    end
+
+    def short_flag?(word, letter)
+      word.match?(/\A-[A-Za-z]+\z/) && word.include?(letter)
+    end
+
+    def flag?(options, long, letter)
+      options.include?(long) || options.any? { |option| short_flag?(option, letter) }
+    end
+
+    # Returns [:block, reason], [:ask, reason] or nil. Only words before `--`
+    # are options (`git push -- -f` pushes a refspec called -f).
+    def judge_git(words)
+      return [:ask, "git -c alias.* can run any git command; confirm it."] if alias_option?(words)
+
+      subcommand, *args = strip_git_options(words.drop(1))
+      options = args.take_while { |arg| arg != "--" }
+      operands = options + args.drop(options.length + 1)
+      case subcommand
+      when "push", "send-pack" then judge_git_push(options)
+      when "reset" then [:block, "git reset --hard is blocked."] if options.include?("--hard")
+      when "clean" then judge_git_clean(options)
+      when "branch" then judge_git_branch(options)
+      when "checkout" then judge_git_checkout(options, operands)
+      when "restore" then judge_git_restore(options, operands)
+      end
+    end
+
+    def judge_git_push(options)
+      if flag?(options, "--force", "f")
+        [:block, "git push --force/-f is blocked. Use --force-with-lease and ask the user."]
+      else
+        [:ask, "git push needs confirmation."]
+      end
+    end
+
+    def judge_git_clean(options)
+      return if flag?(options, "--dry-run", "n")
+
+      [:block, "git clean -f is blocked."] if flag?(options, "--force", "f")
+    end
+
+    def judge_git_branch(options)
+      if options.any? { |option| short_flag?(option, "D") }
+        [:block, "git branch -D is blocked. Use -d."]
+      elsif flag?(options, "--delete", "d") && flag?(options, "--force", "f")
+        [:block, "git branch --delete --force is blocked. Use -d."]
+      end
+    end
+
+    def whole_tree?(operands)
+      operands.any? { |operand| [".", ":/"].include?(operand) }
+    end
+
+    def judge_git_checkout(options, operands)
+      if flag?(options, "--force", "f")
+        [:block, "git checkout -f discards local changes and is blocked."]
+      elsif whole_tree?(operands.last(1))
+        [:block, "git checkout . discards all working-tree changes and is blocked."]
+      end
+    end
+
+    # `--staged` alone only touches the index.
+    def judge_git_restore(options, operands)
+      return if flag?(options, "--staged", "S") && !flag?(options, "--worktree", "W")
+
+      [:block, "git restore . discards all working-tree changes and is blocked."] if whole_tree?(operands)
+    end
+
+    # --- gh ----------------------------------------------------------------
+
+    # Words that are neither options nor the value of a global option.
+    def gh_positionals(args)
+      skip_value = false
+      args.reject do |arg|
+        was_value = skip_value
+        skip_value = !was_value && GH_OPTIONS_WITH_VALUE.include?(arg)
+        was_value || skip_value || arg.start_with?("-")
+      end
+    end
+
+    # Allowlist: only known reads pass, every other gh invocation asks.
+    def judge_gh(args)
+      group, action = gh_positionals(args)
+      return if group.nil?
+      return judge_gh_api(args) if group == "api"
+
+      reads = GH_READS[group]
+      return if reads == true || reads&.include?(action)
+
+      [:ask, "gh #{[group, action].compact.join(" ")} is not on the read-only list and needs confirmation."]
+    end
+
+    def judge_gh_api(args)
+      method = nil
+      args.each_with_index do |arg, position|
+        case arg
+        when "-X", "--method" then method = args[position + 1]
+        when /\A--method=(.+)\z/, /\A-[A-Za-z]*X(.+)\z/ then method = Regexp.last_match(1)
+        end
+      end
+      field = args.any? { |arg| arg.match?(/\A-[A-Za-z]*[fF]|\A--(?:field|raw-field|input)(?:=|\z)|method-override/i) }
+      return unless field || (method && method.upcase != "GET")
+
+      [:ask, "gh api with a write method or fields writes to GitHub and needs confirmation."]
+    end
+
+    # --- text scan and unparseable input -------------------------------------
+
+    # Last resort for text the parser only sees as arguments, such as
+    # `echo "gh pr merge"`. Always asks, never blocks.
+    def mentions_write(segments)
+      text = segments.map { |segment| segment.words.drop(1).join(" ") }.join("\n")
+      return unless text.match?(GIT_PUSH_TEXT) || gh_mention?(text)
+
+      [:ask, "This command mentions git push or a GitHub write (possibly nested); confirm it."]
+    end
+
+    def gh_mention?(text)
+      text.scan(GH_TEXT).any? do |(rest)|
+        args = rest.split
+        GH_GROUPS.include?(gh_positionals(args).first) && judge_gh(args)
+      end
+    end
+
+    def unparseable(text)
+      [:ask, "Could not parse this command; confirm it."] if Guard.guarded_text?(text)
+    end
+  end
+
+  # Reads the hook payload and turns it into a verdict or nil.
+  module Hook
+    ERROR_VERDICT = [:ask, "The sandbox guard failed on this command; confirm it."].freeze
+
+    module_function
+
+    def verdict(raw)
+      payload = parse(raw)
+      return [:ask, "Could not parse the hook input; confirm it."] if payload.nil? && Guard.guarded_text?(raw)
+      return if payload.nil?
+      return [:ask, "Unexpected hook input; confirm it."] unless payload.is_a?(Hash)
+      return unless payload["tool_name"] == "Bash"
+
+      input = payload["tool_input"]
+      return [:ask, "Unexpected tool input; confirm it."] unless input.nil? || input.is_a?(Hash)
+
+      command = input&.fetch("command", nil)
+      Judge.new.call(command) if command.is_a?(String)
+    end
+
+    def parse(raw)
+      JSON.parse(raw)
+    rescue JSON::ParserError
+      nil
+    end
+
+    # Any failure (deep recursion, odd encodings...) asks instead of allowing.
+    def safe_verdict(raw)
+      verdict(raw)
+    rescue StandardError, SystemStackError, NoMemoryError
+      ERROR_VERDICT
+    end
+  end
+end
+
+raw = begin
+  $stdin.binmode.read.to_s.force_encoding(Encoding::UTF_8)
+rescue StandardError
+  +""
+end
+# Bytes that are not UTF-8 cannot be trusted to read the way the shell will,
+# so a block on such input is only an ask.
+damaged = !raw.valid_encoding?
+kind, reason = Guard::Hook.safe_verdict(raw.scrub)
+exit 0 unless kind
+
+kind = :ask if damaged
+
+if kind == :block
+  warn "Blocked by sandbox guard: #{reason}"
+  exit 2
+end
+
+puts JSON.generate(
+  hookSpecificOutput: {
+    hookEventName: "PreToolUse",
+    permissionDecision: "ask",
+    permissionDecisionReason: reason
+  }
+)

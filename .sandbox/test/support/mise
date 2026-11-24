@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Stub for the two mise calls init-worktree makes. STUB_MISE_RUBY_VERSION
+# is the version reported (default 4.0.9).
+version="${STUB_MISE_RUBY_VERSION:-4.0.9}"
+
+case "$1" in
+  current) printf '%s\n' "$version" ;;
+  exec) printf 'ruby %s (stub)\n' "$version" ;;
+  *) echo "Unexpected mise command: $*" >&2; exit 1 ;;
+esac

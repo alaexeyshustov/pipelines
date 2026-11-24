@@ -13,6 +13,10 @@ Usage: .sandbox/bin/attach-worktree [issue-or-scratch-name] [profile] [--profile
 
 profile defaults to claude-matt. Available profiles live as directories under
 .sandbox/profiles/.
+
+Set SANDBOX_OP_ENVIRONMENT to a 1Password Environment name or ID to pass its
+secrets into a newly launched container (needs `op signin` or
+OP_SERVICE_ACCOUNT_TOKEN on the host).
 USAGE
 }
 
@@ -149,6 +153,52 @@ else
   printf 'Warning: gh is not installed on the host; `gh` will be unauthenticated in the sandbox.\n' >&2
 fi
 
+# Secrets from a 1Password Environment, when SANDBOX_OP_ENVIRONMENT names one
+# (by name or ID). The host has no 1Password desktop app to mount a .env file,
+# so the CLI reads the Environment -- signed in with `op signin` or a service
+# account's OP_SERVICE_ACCOUNT_TOKEN. Each secret is exported only to `podman
+# run` (with_op_secrets) and passed by name, like GH_TOKEN, so no value appears
+# on a command line and no other host command sees it.
+op_secret_names=()
+op_secret_values=()
+op_secret_env=()
+op_secrets_fingerprint=""
+if [[ -n "${SANDBOX_OP_ENVIRONMENT:-}" ]]; then
+  command -v op >/dev/null \
+    || fail "SANDBOX_OP_ENVIRONMENT is set but the 1Password CLI (op) is not installed"
+  op_secrets_json="$(op environment secret list "$SANDBOX_OP_ENVIRONMENT" --reveal --format=json)" \
+    || fail "Cannot read 1Password Environment $SANDBOX_OP_ENVIRONMENT. Run \`eval \"\$(op signin)\"\` or set OP_SERVICE_ACCOUNT_TOKEN."
+  # "NAME <base64 value>" lines: macOS bash 3.2 cannot read NUL-separated pairs
+  # from a command whose failure it can still detect, and Base64 keeps
+  # multi-line values on one line. Names that configure podman, the dynamic
+  # linker or bash are refused: even unset on the host, they would change how
+  # podman itself runs.
+  op_secret_lines="$(ruby -rjson -rbase64 -e '
+    JSON.parse(STDIN.read).each do |secret|
+      name = secret.fetch("name")
+      abort "Invalid 1Password secret name: #{name}" unless name.match?(/\A[A-Z_][A-Z0-9_]*\z/)
+      if name.match?(/\A(?:(?:DYLD|LD|BASH|CONTAINERS?|PODMAN|XDG|SSH|SANDBOX)_|(?:ENV|SHELLOPTS|TMPDIR)\z)/)
+        abort "1Password secret #{name} would configure host tools; rename it"
+      end
+      puts "#{name} #{Base64.strict_encode64(secret.fetch("value").to_s)}"
+    end' <<< "$op_secrets_json")" \
+    || fail "Unexpected output from op environment secret list"
+  while read -r name encoded_value; do
+    [[ -n "$name" ]] || continue
+    # A secret named like a host variable (PATH, HOME) would change how podman runs.
+    [[ -z "${!name+set}" ]] \
+      || fail "1Password secret $name shadows a host environment variable; rename it or unset it on the host"
+    # The trailing x keeps a value's own trailing newlines from being stripped.
+    value="$(printf '%s' "$encoded_value" | base64 --decode && printf x)" \
+      || fail "Cannot decode 1Password secret $name"
+    op_secret_names+=("$name")
+    op_secret_values+=("${value%x}")
+    op_secret_env+=(--env "$name")
+  done <<< "$op_secret_lines"
+  # Part of the launch configuration, so a changed secret replaces the container.
+  op_secrets_fingerprint="$(printf '%s' "$op_secrets_json" | sha256sum | awk '{print $1}')"
+fi
+
 directory_fingerprint() {
   local dir
   for dir in "$@"; do
@@ -157,7 +207,7 @@ directory_fingerprint() {
 }
 
 image_tag="pipelines-${profile}-agent-${sandbox_arch}:$(directory_fingerprint "$profile_dir" "$lib_dir")"
-launch_config_tag="$(cksum "${BASH_SOURCE[0]}" | awk '{print $1 "-" $2}')"
+launch_config_tag="$(cksum "${BASH_SOURCE[0]}" | awk '{print $1 "-" $2}')${op_secrets_fingerprint:+-${op_secrets_fingerprint:0:16}}"
 
 if ! podman image exists "$image_tag"; then
   printf 'Building %s agent image: %s\n' "$profile" "$image_tag"
@@ -224,6 +274,15 @@ run_agent_container() {
   return "$status"
 }
 
+# Runs a command in a subshell with the 1Password secrets exported.
+with_op_secrets() (
+  local index
+  for index in "${!op_secret_names[@]}"; do
+    export "${op_secret_names[index]}=${op_secret_values[index]}"
+  done
+  "$@"
+)
+
 container_status_code=0
 
 printf 'Forwarding http://127.0.0.1:%s to the sandbox port 3000\n' "$host_port"
@@ -242,7 +301,7 @@ case "$container_status" in
     ;;
   '')
     printf 'Launching sandbox container: %s\n' "$container_name"
-    run_agent_container podman run --interactive --tty \
+    run_agent_container with_op_secrets podman run --interactive --tty \
       --platform "$sandbox_platform" \
       --name "$container_name" \
       --label "io.pipelines.sandbox.agent-image=$image_tag" \
@@ -257,6 +316,7 @@ case "$container_status" in
       --env 'BINDING=0.0.0.0' \
       --publish "127.0.0.1:$host_port:3000" \
       "${gh_token_mount[@]+"${gh_token_mount[@]}"}" \
+      "${op_secret_env[@]+"${op_secret_env[@]}"}" \
       --mount "type=bind,src=$repo_root,dst=$repo_root" \
       --mount "type=bind,src=$git_common_dir,dst=$git_common_dir" \
       --mount "type=volume,src=$bundle_volume,dst=/bundle" \
