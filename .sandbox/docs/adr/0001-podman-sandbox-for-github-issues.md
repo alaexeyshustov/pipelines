@@ -18,7 +18,7 @@ claude setup-token                     # once per host; save to ~/.claude-contai
 .sandbox/bin/attach-worktree 42 claude-omcc
 .sandbox/bin/recreate-worktree 42 --dry-run
 .sandbox/bin/db_helper cleanup_finished   # removes sandboxes whose issues are closed
-ruby .sandbox/test/db_helper_test.rb
+for t in .sandbox/test/*_test.rb; do ruby "$t" || exit 1; done   # every test file
 ```
 
 ## Decision
@@ -44,8 +44,26 @@ ruby .sandbox/test/db_helper_test.rb
   separate nested repo). Helpers always resolve the primary checkout through
   the Git common directory, so they are not copied into worktrees; instead
   `init-worktree` copies the untracked files listed in `.worktreeinclude`
-  (`.env`, Google credentials, dev databases), skipping `node_modules`, which
-  lives on a per-container volume.
+  (dev databases), skipping `node_modules`, which lives on a per-container
+  volume, and the secrets (`.env`, `.env.*`, `credentials.json`,
+  `*token.yaml`). A basename filter in `init-worktree` enforces this;
+  `.worktreeinclude` stays as is because Claude Code's host worktrees still
+  use it. Secrets reach the container through `SANDBOX_OP_ENVIRONMENT`
+  (1Password Environment, #334). Worktrees created earlier keep their copies.
+- **Guards** are baked into the image as Claude Code managed settings
+  (`/etc/claude-code/managed-settings.json`) plus the Ruby hook
+  `/usr/local/lib/claude-hooks/guard-bash`, sourced from
+  `profiles/lib/claude/`. `/root/.claude` is an agent-writable volume, so it
+  cannot hold them. They deny Reads of `credentials.json`, `*token.yaml` and
+  `config/*.key` (`.env*` and `storage/**` stay readable: worktrees get no
+  `.env*`, and keys come from the 1Password Environment); block force pushes,
+  `reset --hard`, `clean -f`, `branch -D`, `checkout .` and `restore .`; and
+  ask before any `git push` or `gh` write. Probe (2026-11-24, Claude Code
+  2.1.303): managed settings load, a hook `ask` is honoured under
+  `--dangerously-skip-permissions` (also after rtk's rewrite), exit 2 blocks,
+  and the Read denies apply. The limits are pattern matching only; see
+  `profiles/lib/claude/README.md`. The real control is keeping secrets out of
+  the mount.
 - `CLAUDE_CONFIG_DIR=/root/.claude` keeps `.claude.json` on the profile's
   home volume, so onboarding and session history survive container rebuilds.
 - **Containers run as `linux/amd64`** (Rosetta on Apple Silicon). sqlite-vec

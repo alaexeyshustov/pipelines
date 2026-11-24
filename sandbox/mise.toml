@@ -1,6 +1,0 @@
-[tools]
-ruby = "4"
-node = "lts"
-pnpm = "latest"
-bun = "latest"
-rust = "latest"

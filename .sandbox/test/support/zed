@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Stub for `zed -n <path>`: records the call instead of opening a window.
+[[ -z "${STUB_ZED_LOG:-}" ]] || printf '%s\n' "$*" >> "$STUB_ZED_LOG"
+exit 0
