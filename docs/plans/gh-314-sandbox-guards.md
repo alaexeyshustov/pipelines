@@ -60,6 +60,13 @@ Run `rtk init -g --auto-patch`, then `claude --dangerously-skip-permissions`, an
 
 If (1) or (2) fails, change ask to block. If (4) or (5) fails, use the config-dir fallback. Record the result in the ADR.
 
+
+**Result (2026-11-24, Claude Code 2.1.303, rtk hook installed):** managed settings at `/etc/claude-code/managed-settings.json` load. Under `claude -p --dangerously-skip-permissions`:
+- hook `ask` refuses the command (no prompter in `-p`), so bypass does not override `ask`; this holds after the rtk rewrite too;
+- exit 2 blocks;
+- `Read(**/.env*)` is refused.
+
+The plan stands. The interactive prompt itself is checked in step 6.
 ### 2. Container guard (red first)
 **Files**
 - `.sandbox/profiles/lib/claude/managed-settings.json`
