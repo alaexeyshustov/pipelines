@@ -1,7 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe Emails::SearchTool do
-  subject(:tool) { described_class.new }
+  subject(:tool) { described_class.new(message_scope: scope) }
+
+  let(:scope) { Emails::MessageScope.new }
 
   include_context 'with gmail configured'
 
@@ -52,5 +54,26 @@ RSpec.describe Emails::SearchTool do
 
     expect(Emails).to have_received(:search_messages)
       .with('gmail', 'job', max_results: 5, label: nil, offset: 20)
+  end
+
+  it 'records the returned messages in the scope without changing the result' do
+    result = tool.execute(provider: 'gmail', query: 'job')
+
+    expect(result.first).to include(id: 'msg1')
+    expect(scope.allow?(provider: 'gmail', message_id: 'msg1')).to be true
+    expect(scope.allow?(provider: 'gmail', message_id: 'other')).to be false
+  end
+
+  it 'passes a non-array result through and records nothing' do
+    allow(Emails).to receive(:search_messages)
+      .with('gmail', 'job', max_results: 10, offset: 0, label: nil)
+      .and_return({ error: 'boom' })
+
+    expect(tool.execute(provider: 'gmail', query: 'job')).to eq(error: 'boom')
+    expect(scope.allow?(provider: 'gmail', message_id: 'msg1')).to be false
+  end
+
+  it 'builds without arguments' do
+    expect { described_class.new }.not_to raise_error
   end
 end

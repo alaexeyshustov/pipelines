@@ -1,9 +1,15 @@
 require 'rails_helper'
 
 RSpec.describe Emails::GetTool do
-  subject(:tool) { described_class.new }
+  subject(:tool) { described_class.new(message_scope: scope) }
 
   include_context 'with gmail configured'
+
+  let(:scope) do
+    Emails::MessageScope.new.tap do |message_scope|
+      message_scope.record([ { id: 'msg_abc', provider: 'gmail', labels: [ 'INBOX' ] } ])
+    end
+  end
 
   let(:message_path) { %r{gmail\.googleapis\.com/gmail/v1/users/me/messages/msg_abc} }
 
@@ -44,6 +50,46 @@ RSpec.describe Emails::GetTool do
 
     expect(a_request(:get, message_path)).to have_been_made.twice
     expect(cache_dir).not_to exist
+  end
+
+  context 'with message scope' do
+    before { allow(Emails).to receive(:message).and_return(id: 'x', provider: 'yahoo', subject: 's') }
+
+    it 'refuses every id on an unscoped tool without any Gmail request' do
+      result = described_class.new.execute(provider: 'gmail', message_id: 'msg_abc')
+
+      expect(result).to include(error: match(/list_emails|search_emails/))
+      expect(Emails).not_to have_received(:message)
+      expect(a_request(:get, message_path)).not_to have_been_made
+    end
+
+    it 'refuses an id outside the scope without calling Emails.message' do
+      result = tool.execute(provider: 'gmail', message_id: 'msg_other')
+
+      expect(result).to include(error: match(/list_emails|search_emails/))
+      expect(Emails).not_to have_received(:message)
+    end
+
+    context 'with a Yahoo message listed in Sent' do
+      before { scope.record([ { id: '101', provider: 'yahoo', labels: [ 'Sent' ] } ]) }
+
+      it 'fetches it from the listed mailbox' do
+        tool.execute(provider: 'yahoo', message_id: '101', label: 'Sent')
+
+        expect(Emails).to have_received(:message).with('yahoo', '101', label: 'Sent')
+      end
+
+      it 'refuses it from another mailbox, with no label, or with a validity-prefixed id' do
+        [
+          { message_id: '101', label: nil },
+          { message_id: '101', label: 'Archive' },
+          { message_id: '9:101', label: 'Sent' }
+        ].each do |args|
+          expect(tool.execute(provider: 'yahoo', **args)).to include(:error)
+        end
+        expect(Emails).not_to have_received(:message)
+      end
+    end
   end
 
   context 'with an unknown provider' do

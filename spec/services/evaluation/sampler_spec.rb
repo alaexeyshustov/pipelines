@@ -175,6 +175,65 @@ RSpec.describe Evaluation::Sampler do
       end
     end
 
+    context "when the agent has email tools and is given ids that were never listed" do
+      include_context "with gmail configured"
+
+      let(:orchestration_agent) do
+        create(:orchestration_agent,
+               name: "Emails::ClassifyAgent",
+               model: "mistral-large-latest",
+               tools: [ "Emails::GetTool", "Emails::AddLabelsTool" ])
+      end
+
+      let(:dataset_sample) do
+        create(:evaluation_dataset_sample,
+               dataset: experiment.dataset,
+               input: { "emails" => [ { "id" => "msg_unlisted", "provider" => "gmail" } ] })
+      end
+
+      def tool_call_response(call_id, name, arguments)
+        {
+          id: "chatcmpl-#{call_id}", object: "chat.completion", model: "mistral-large-latest",
+          choices: [ {
+            index: 0,
+            message: {
+              role: "assistant", content: nil,
+              tool_calls: [ { id: call_id, type: "function",
+                              function: { name: name, arguments: arguments.to_json } } ]
+            },
+            finish_reason: "tool_calls"
+          } ],
+          usage: { prompt_tokens: 100, completion_tokens: 20, total_tokens: 120 }
+        }
+      end
+
+      before do
+        stub_request(:get, %r{gmail\.googleapis\.com/gmail/v1/users/me/messages/msg_unlisted})
+          .to_return(status: 200, body: gmail_message_json(id: "msg_unlisted"), headers: { "Content-Type" => "application/json" })
+        stub_request(:post, %r{gmail\.googleapis\.com/gmail/v1/users/me/messages/msg_unlisted/modify})
+          .to_return(status: 200, body: { id: "msg_unlisted", labelIds: [ "STARRED" ] }.to_json, headers: { "Content-Type" => "application/json" })
+        responses = [
+          tool_call_response("call_1", "add_labels", { provider: "gmail", message_id: "msg_unlisted", label_ids: [ "STARRED" ] }),
+          tool_call_response("call_2", "get_email", { provider: "gmail", message_id: "msg_unlisted" }),
+          mistral_final_response
+        ].map { |body| { status: 200, body: body.to_json, headers: { "Content-Type" => "application/json" } } }
+        stub_request(:post, "https://api.mistral.ai/v1/chat/completions").to_return(*responses)
+      end
+
+      it "still blocks the write tool with the sentinel" do
+        add_labels = sample.tool_calls.find { |call| call["tool_name"] == "add_labels" }
+
+        expect(add_labels["result"]).to eq("[write tool blocked during sampling]")
+      end
+
+      it "refuses the unlisted get_email id without any Gmail request" do
+        get_email = sample.tool_calls.find { |call| call["tool_name"] == "get_email" }
+
+        expect(get_email["result"]).to match(/list_emails|search_emails/)
+        expect(a_request(:any, /gmail\.googleapis\.com/)).not_to have_been_made
+      end
+    end
+
     context "when the agent returns output without calling any tools" do
       let(:mistral_no_tool_response) do
         {

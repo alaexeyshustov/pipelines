@@ -34,7 +34,7 @@ Domain logic lives in `app/models/evaluation/`, `app/services/evaluation/`, `app
 
 ## Sampler
 
-`Evaluation::Sampler` (`app/services/evaluation/sampler.rb`) runs the agent as the body of a native `RubyLLM::Evaluation` (`evaluator false`: sampling only) built from `DatasetCases.for_sample`, and persists the captured `Evidence` (messages, tool calls, results) as an `Evaluation::Sample`. Write tools (`readonly?` false) are replaced by a no-op returning `"[write tool blocked during sampling]"`.
+`Evaluation::Sampler` (`app/services/evaluation/sampler.rb`) runs the agent as the body of a native `RubyLLM::Evaluation` (`evaluator false`: sampling only) built from `DatasetCases.for_sample`, and persists the captured `Evidence` (messages, tool calls, results) as an `Evaluation::Sample`. Write tools (`readonly?` false) are replaced by a no-op returning `"[write tool blocked during sampling]"`. `Emails::GetTool` reads are limited to ids the agent listed in the same chat, so a dataset input that only carries ids gets a refusal ([ADR 0018](adr/0018-email-tools-scoped-to-chat.md)).
 
 ## Grading
 

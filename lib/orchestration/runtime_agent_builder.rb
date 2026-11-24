@@ -28,7 +28,7 @@ module Orchestration
 
     def apply_tools(agent)
       tools = @policy.tools
-      agent.with_tools(nil).with_tools(*tools) if tools.present?
+      agent.with_tools(nil).with_tools(*Emails::MessageScope.new.bind(tools)) if tools.present?
     end
 
     def apply_schema(agent)

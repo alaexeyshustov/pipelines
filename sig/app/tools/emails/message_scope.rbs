@@ -1,0 +1,25 @@
+module Emails
+  class MessageScope
+    interface _ScopedToolClass
+      def message_scoped?: () -> bool
+      def new: (message_scope: MessageScope) -> RubyLLM::Tool
+    end
+
+    INBOX: String
+
+    def self.refusal: (String | Integer message_id) -> { error: String }
+
+    @keys: Set[Array[String]]
+    @mutex: Mutex
+
+    def initialize: () -> void
+    def record: (Array[Emails::message] messages) -> Array[Emails::message]
+    def allow?: (provider: String, message_id: String, ?mailbox: String?) -> bool
+    def bind: (Array[singleton(RubyLLM::Tool)]) -> Array[singleton(RubyLLM::Tool) | RubyLLM::Tool]
+
+    private
+
+    def key_for: (Object? message) -> Array[String]?
+    def normalize_mailbox: (String? mailbox) -> String
+  end
+end

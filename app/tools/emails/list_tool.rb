@@ -1,6 +1,7 @@
 module Emails
   class ListTool < RubyLLM::Tool
     def self.readonly? = true
+    def self.message_scoped? = true
 
     description "List recent emails from Gmail or Yahoo Mail inbox."
 
@@ -13,11 +14,16 @@ module Emails
 
     def name = "list_emails"
 
+    def initialize(message_scope: MessageScope.new)
+      super()
+      @message_scope = message_scope
+    end
+
     def execute(provider:, max_results: 10, after_date: nil, before_date: nil, offset: 0, label: nil)
       parsed_after  = after_date  ? Date.parse(after_date)  : nil
       parsed_before = before_date ? Date.parse(before_date) : nil
 
-      Emails.list_messages(
+      messages = Emails.list_messages(
         provider,
         max_results:  max_results,
         after_date:   parsed_after,
@@ -25,6 +31,7 @@ module Emails
         offset:       offset,
         label:        label
       )
+      @message_scope.record(messages)
     end
   end
 end

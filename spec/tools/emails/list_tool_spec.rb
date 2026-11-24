@@ -1,7 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe Emails::ListTool do
-  subject(:tool) { described_class.new }
+  subject(:tool) { described_class.new(message_scope: scope) }
+
+  let(:scope) { Emails::MessageScope.new }
 
   include_context 'with gmail configured'
 
@@ -43,5 +45,17 @@ RSpec.describe Emails::ListTool do
         URI.decode_www_form(URI.parse(req.uri).query.to_s).to_h['q']&.include?('after:')
       }
     ).to have_been_made
+  end
+
+  it 'records the returned messages in the scope without changing the result' do
+    result = tool.execute(provider: 'gmail')
+
+    expect(result.first).to include(id: 'msg1')
+    expect(scope.allow?(provider: 'gmail', message_id: 'msg1')).to be true
+    expect(scope.allow?(provider: 'gmail', message_id: 'other')).to be false
+  end
+
+  it 'builds without arguments' do
+    expect { described_class.new }.not_to raise_error
   end
 end

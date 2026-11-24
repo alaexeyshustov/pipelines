@@ -48,6 +48,63 @@ RSpec.describe Orchestration::RuntimeAgentBuilder do
       expect(chat).to have_received(:with_tools).with(Records::TempFileTool).ordered
     end
 
+    context 'with message-scoped email tools' do
+      let(:policy) do
+        Orchestration::AgentResolutionPolicy::Result.new(
+          model: nil, prompt: nil, tools: [ Emails::ListTool, Emails::GetTool ], output_schema: nil
+        )
+      end
+
+      def tools_of(agent) = agent.chat.to_llm.tools
+
+      def build_agent = described_class.new(policy: policy, chat: create(:chat)).build
+
+      before do
+        allow(Emails).to receive(:list_messages)
+          .with('gmail', max_results: 10, after_date: nil, before_date: nil, offset: 0, label: nil)
+          .and_return([ { id: 'm1', provider: 'gmail', labels: [ 'INBOX' ] } ])
+        allow(Emails).to receive(:message)
+          .with('gmail', 'm1', label: nil)
+          .and_return({ id: 'm1', provider: 'gmail', subject: 's' })
+      end
+
+      it 'attaches tool instances rather than classes' do
+        tools = tools_of(builder.build)
+
+        expect(tools[:list_emails]).to be_an_instance_of(Emails::ListTool)
+        expect(tools[:get_email]).to be_an_instance_of(Emails::GetTool)
+      end
+
+      it 'lets the get tool fetch an id listed through the same build' do
+        tools = tools_of(builder.build)
+        tools[:list_emails].execute(provider: 'gmail')
+
+        expect(tools[:get_email].execute(provider: 'gmail', message_id: 'm1')).to include(id: 'm1')
+      end
+
+      it 'refuses an id that was never listed' do
+        tools = tools_of(builder.build)
+
+        expect(tools[:get_email].execute(provider: 'gmail', message_id: 'm1')).to include(:error)
+        expect(Emails).not_to have_received(:message)
+      end
+
+      it 'gives separate builds separate scopes' do
+        tools_a = tools_of(build_agent)
+        tools_b = tools_of(build_agent)
+        tools_a[:list_emails].execute(provider: 'gmail')
+
+        expect(tools_b[:get_email].execute(provider: 'gmail', message_id: 'm1')).to include(:error)
+        expect(tools_a[:get_email].execute(provider: 'gmail', message_id: 'm1')).not_to include(:error)
+      end
+
+      it 'leaves policy.tools as classes' do
+        builder.build
+
+        expect(policy.tools).to eq([ Emails::ListTool, Emails::GetTool ])
+      end
+    end
+
     it 'applies the policy output schema to the agent' do
       allow(chat).to receive(:with_schema).and_return(chat)
       builder.build

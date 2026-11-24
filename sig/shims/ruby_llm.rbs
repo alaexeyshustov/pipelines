@@ -40,7 +40,7 @@ module RubyLLM
 
     def with_model: (String model, ?provider: Symbol?, ?assume_model_exists: bool) -> self
     def with_schema: (singleton(::Schematist::Schema) | json_object schema) -> self
-    def with_tools: (*singleton(Tool)? tools) -> self
+    def with_tools: (*(singleton(Tool) | Tool)? tools) -> self
     def chat: () -> Chat
     def id: () -> String?
     def ask: (String prompt) -> Message
