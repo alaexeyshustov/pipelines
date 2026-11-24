@@ -1,11 +1,13 @@
 module Emails
   class AddLabelsTool < RubyLLM::Tool
     def self.readonly? = false
+    def self.message_scoped? = true
 
     BLOCKED_LABELS     = %w[trash spam].freeze
     ALLOWED_IMAP_FLAGS = [ "\\Flagged", "\\Seen" ].freeze
 
     description "Add one or more labels/flags to a specific email. " \
+                "The message ID must come from list_emails or search_emails earlier in this chat. " \
                 'Gmail: use label IDs (e.g. "STARRED"). ' \
                 'Yahoo: use folder names to label messages (e.g. "applications"); ' \
                 'IMAP flags like "\\Flagged" or "\\Seen" are only for starred/read state.'
@@ -17,9 +19,15 @@ module Emails
 
     def name = "add_labels"
 
+    def initialize(message_scope: MessageScope.new)
+      super()
+      @message_scope = message_scope
+    end
+
     def execute(provider:, message_id:, label_ids:, mailbox: "INBOX")
       rejected = label_ids.select { |label| rejected_label?(label) }
       return { error: "Labels not allowed: #{rejected.join(', ')}. Only #{ALLOWED_IMAP_FLAGS.join(' and ')} flags are permitted; TRASH and SPAM are blocked." } if rejected.any?
+      return MessageScope.refusal(message_id) unless @message_scope.allow?(provider:, message_id:, mailbox:)
 
       Emails.modify_labels(provider, message_id, add: label_ids, source_mailbox: mailbox)
     end

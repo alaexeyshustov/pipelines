@@ -1,6 +1,10 @@
 module Emails
   class SearchTool < RubyLLM::Tool
     def self.readonly?: () -> bool
+    def self.message_scoped?: () -> bool
+    @message_scope: MessageScope
+
+    def initialize: (?message_scope: MessageScope) -> void
     def name: () -> String
     def execute: (provider: String, query: String, ?max_results: Integer, ?offset: Integer, ?label: String?) -> Array[Emails::message]
   end

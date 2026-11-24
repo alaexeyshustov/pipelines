@@ -1,7 +1,7 @@
 # ADR 0008: Sampler uses real tool calls with write-blocking
 
 ## Status
-Accepted
+Accepted. Amended by [ADR 0018](0018-email-tools-scoped-to-chat.md): sampling `get_email` reads are limited to ids the agent listed in the same chat.
 
 ## Context
 

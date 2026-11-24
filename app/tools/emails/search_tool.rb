@@ -1,6 +1,7 @@
 module Emails
   class SearchTool < RubyLLM::Tool
     def self.readonly? = true
+    def self.message_scoped? = true
 
     description "Search Gmail or Yahoo Mail using a query string and return matching emails."
 
@@ -12,8 +13,13 @@ module Emails
 
     def name = "search_emails"
 
+    def initialize(message_scope: MessageScope.new)
+      super()
+      @message_scope = message_scope
+    end
+
     def execute(provider:, query:, max_results: 10, offset: 0, label: nil)
-      Emails.search_messages(provider, query, max_results:, offset:, label:)
+      @message_scope.record(Emails.search_messages(provider, query, max_results:, offset:, label:))
     end
   end
 end

@@ -46,6 +46,43 @@ RSpec.describe Orchestration::SamplingGateway do
       expect(received).to eq([ Records::TempFileTool ])
     end
 
+    context "with message-scoped email tools" do
+      let(:orchestration_agent) do
+        create(:orchestration_agent,
+               name: "Emails::ClassifyAgent",
+               model: "mistral-large-latest",
+               tools: [ "Emails::ListTool", "Emails::GetTool", "Emails::AddLabelsTool" ])
+      end
+
+      it "binds scoped tool instances on the built agent" do
+        tools = described_class.build(agent_name: "Emails::ClassifyAgent", pipeline_model: nil).chat.to_llm.tools
+
+        expect(tools[:get_email]).to be_an_instance_of(Emails::GetTool)
+        expect(tools[:list_emails]).to be_an_instance_of(Emails::ListTool)
+      end
+
+      it "binds a subclass returned by the tool_transform as an instance of that subclass" do
+        stub_const("BlockedAddLabelsTool", Class.new(Emails::AddLabelsTool))
+        transform = ->(tools) { tools.map { |tool| tool == Emails::AddLabelsTool ? BlockedAddLabelsTool : tool } }
+
+        built = described_class.build(agent_name: "Emails::ClassifyAgent", pipeline_model: nil, tool_transform: transform)
+
+        expect(built.chat.to_llm.tools[:add_labels]).to be_an_instance_of(BlockedAddLabelsTool)
+      end
+
+      it "still hands the tool_transform the resolved classes" do
+        received = nil
+        transform = lambda { |tools|
+          received = tools
+          tools
+        }
+
+        described_class.build(agent_name: "Emails::ClassifyAgent", pipeline_model: nil, tool_transform: transform)
+
+        expect(received).to eq([ Emails::ListTool, Emails::GetTool, Emails::AddLabelsTool ])
+      end
+    end
+
     context "with a pipeline_model and prompt_override" do
       let(:build_args) do
         {
