@@ -46,7 +46,29 @@ class ClaudeGuardSettingsTest < Minitest::Test
       containerfile = File.read(File.expand_path("../profiles/#{profile}/Containerfile", __dir__))
 
       assert_match(%r{^COPY\s+--from=lib\s+claude/managed-settings\.json\s+#{Regexp.escape(MANAGED_SETTINGS_TARGET)}\s*$}, containerfile)
-      assert_match(%r{^COPY\s+--from=lib\s+claude/hooks/guard-bash\s+#{Regexp.escape(GUARD_TARGET)}\s*$}, containerfile)
+      assert_match(%r{^COPY\s+--from=lib\s+claude/hooks/guard-bash\s+#{Regexp.escape(GUARD_TARGET)}\s*$|^COPY\s+(?=.*--from=lib)(?=.*--chmod=0?7[5-7][5-7]).*claude/hooks/guard-bash\s+#{Regexp.escape(GUARD_TARGET)}\s*$}, containerfile)
+    end
+
+    define_method("test_#{profile}_containerfile_installs_the_guard_executable") do
+      containerfile = File.read(File.expand_path("../profiles/#{profile}/Containerfile", __dir__))
+      target = Regexp.escape(GUARD_TARGET)
+      chmod_flag = %r{^COPY\s+(?=.*--from=lib)(?=.*--chmod=0?7[5-7][5-7]\b).*claude/hooks/guard-bash\s+#{target}\s*$}
+      chmod_run = %r{^RUN\s.*chmod\s+(\+x|0?7[5-7][5-7]|a\+x|u\+x)\s+#{target}}
+
+      assert(containerfile.match?(chmod_flag) || containerfile.match?(chmod_run),
+        "#{profile} Containerfile must COPY --chmod=0755 or chmod +x #{GUARD_TARGET}")
+    end
+  end
+
+  DOCUMENTED_LIMITS = ["| sh", "| bash", "bash <<<", "bash <(", "find -exec"].freeze
+
+  DOCUMENTED_LIMITS.each do |limit|
+    define_method("test_readme_limits_mentions_#{limit.gsub(/\W+/, "_")}") do
+      readme = File.read(File.join(LIB, "README.md"))
+      limits = readme[/^## Limits\b.*?(?=^## |\z)/m]
+
+      refute_nil limits, "README has no Limits section"
+      assert_includes limits, limit, "README Limits section must mention #{limit.inspect}"
     end
   end
 
