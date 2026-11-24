@@ -8,6 +8,7 @@
 # Pattern matching only: it is a seatbelt, not a sandbox.
 
 require "json"
+require "shellwords"
 
 class UnparseableCommand < StandardError; end
 
@@ -15,6 +16,11 @@ module Guard
   WRAPPERS = %w[rtk env command sudo exec].freeze
   GIT_OPTIONS_WITH_VALUE = %w[-C -c --git-dir --work-tree --namespace].freeze
   GIT_FLAG_OPTIONS = %w[--no-pager -p -P --paginate --no-replace-objects --bare --no-optional-locks].freeze
+
+  GH_OPTIONS_WITH_VALUE = %w[-R --repo --hostname].freeze
+  SHELLS = %w[bash sh zsh].freeze
+  # Where a command starts inside `xargs` arguments such as `-n 1 git ...`.
+  COMMAND_WORDS = (WRAPPERS + SHELLS + %w[eval git gh]).freeze
 
   GH_WRITES = {
     "pr" => %w[comment create merge review edit close ready reopen update-branch lock unlock],
@@ -30,10 +36,11 @@ module Guard
 
   GH_API_FIELD_FLAGS = %w[-f -F --field --raw-field --input].freeze
 
+  GH_GLOBAL_TEXT = /(?:(?:-R|--repo|--hostname)\s+\S+|-\S+)\s+/
   GIT_PUSH_TEXT = /\bgit(?:\s+-\S+(?:\s+[^-\s]\S*)?)*\s+push\b/
   GH_WRITE_TEXT = Regexp.union(
     GH_WRITES.map do |group, actions|
-      /\bgh\s+(?:-\S+\s+)*#{group}\s+(?:-\S+\s+)*(?:#{actions.join("|")})\b/
+      /\bgh\s+#{GH_GLOBAL_TEXT}*#{group}\s+#{GH_GLOBAL_TEXT}*(?:#{actions.join("|")})\b/
     end
   )
   GH_API_WRITE_TEXT = /\bgh\s+api\b[^\n;&|]*\s(?:-X\s*(?!GET\b)\S|--method(?:=|\s+)(?!GET\b)\S|-[fF]\s|--(?:field|raw-field|input)\b)/i
@@ -158,13 +165,22 @@ module Guard
   end
 
   def judge_gh(words)
-    positional = words.drop(1).reject { |word| word.start_with?("-") }
-    group, action = positional
+    group, action = gh_positionals(words.drop(1))
     return judge_gh_api(words.drop(1)) if group == "api"
 
     return unless GH_WRITES.fetch(group, []).include?(action)
 
     [:ask, "gh #{group} #{action} writes to GitHub and needs confirmation."]
+  end
+
+  # Words that are neither options nor the value of a global option.
+  def gh_positionals(args)
+    skip_value = false
+    args.reject do |arg|
+      was_value = skip_value
+      skip_value = !was_value && GH_OPTIONS_WITH_VALUE.include?(arg)
+      was_value || skip_value || arg.start_with?("-")
+    end
   end
 
   def judge_gh_api(args)
@@ -191,20 +207,73 @@ module Guard
     end
   end
 
-  # Fallback for text the parser cannot see into: `$(...)` inside double
-  # quotes, `bash -c`, `eval`, `xargs` and plain quoted mentions. Always asks,
-  # never blocks, so a nested force push still goes to the user.
-  def mentions_write(command)
-    return unless command.match?(GIT_PUSH_TEXT) || command.match?(GH_WRITE_TEXT) || command.match?(GH_API_WRITE_TEXT)
+  # Command strings the segment will run: `bash -c`, `eval`, `xargs`.
+  def nested_commands(words)
+    words = strip_wrappers(words)
+    case words.first
+    when *SHELLS
+      position = words.index { |word| word.match?(/\A-[a-z]*c[a-z]*\z/) }
+      position ? [words[position + 1].to_s] : []
+    when "eval" then [words.drop(1).join(" ")]
+    when "xargs"
+      start = words.index { |word| COMMAND_WORDS.include?(word) }
+      start ? [words.drop(start).shelljoin] : []
+    else []
+    end
+  end
+
+  # Bodies of `$(...)` and backticks left inside a double-quoted word.
+  def substitutions(word)
+    bodies = word.scan(/`([^`]*)`/).flatten
+    start = word.index("$(")
+    while start
+      depth = 1
+      cursor = start + 2
+      while depth.positive? && cursor < word.length
+        depth += 1 if word[cursor] == "("
+        depth -= 1 if word[cursor] == ")"
+        cursor += 1
+      end
+      bodies << word[(start + 2)...(cursor - 1)].to_s
+      start = word.index("$(", start + 2)
+    end
+    bodies
+  end
+
+  # Nested code is never executed by us nor trusted: a block becomes an ask.
+  def nested_verdicts(command)
+    verdicts_for(segments(command)).map { |_, reason| [:ask, reason] }
+  rescue UnparseableCommand
+    [unparseable(command)].compact
+  end
+
+  def verdicts_for(segments)
+    direct = segments.filter_map { |words| judge_segment(words) }
+    nested = segments.flat_map do |words|
+      nested_commands(words) + words.flat_map { |word| substitutions(word) }
+    end
+    direct + nested.flat_map { |command| nested_verdicts(command) }
+  end
+
+  # Last resort for text the parser only sees as arguments, such as
+  # `echo "gh pr merge"`. Always asks, never blocks.
+  def mentions_write(segments)
+    text = segments.map { |words| words.drop(1).join(" ") }.join("\n")
+    return unless text.match?(GIT_PUSH_TEXT) || text.match?(GH_WRITE_TEXT) || text.match?(GH_API_WRITE_TEXT)
 
     [:ask, "This command mentions git push or a GitHub write (possibly nested); confirm it."]
   end
 
-  def judge(command)
-    verdicts = segments(command).filter_map { |words| judge_segment(words) }
-    verdicts.find { |kind, _| kind == :block } || verdicts.first || mentions_write(command)
-  rescue UnparseableCommand
+  def unparseable(command)
     [:ask, "Could not parse this command; confirm it."] if command.match?(/\bgit\b.*\bpush\b|\bgh\b/m)
+  end
+
+  def judge(command)
+    segments = segments(command)
+    verdicts = verdicts_for(segments)
+    verdicts.find { |kind, _| kind == :block } || verdicts.first || mentions_write(segments)
+  rescue UnparseableCommand
+    unparseable(command)
   end
 end
 

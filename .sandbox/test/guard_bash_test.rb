@@ -273,7 +273,146 @@ class GuardBashTest < Minitest::Test
     assert_empty stdout
   end
 
+  GH_GLOBAL_PREFIXES = ["-R o/r", "--repo o/r", "--repo=o/r", "-Ro/r", "--hostname h"].freeze
+  GH_WRITE_TAILS = ["issue comment 1 -b x", "pr merge 1", "pr create --title t", "api -X POST repos/o/r/issues"].freeze
+  GH_READ_TAILS = ["issue view 1", "pr list"].freeze
+  GH_CONTEXTS = [
+    ->(cmd) { cmd },
+    ->(cmd) { "bash -c \"#{cmd}\"" },
+    ->(cmd) { "eval \"#{cmd}\"" },
+    ->(cmd) { "echo \"$(#{cmd})\"" }
+  ].freeze
+
+  DESTRUCTIVE_GIT = [
+    "git reset --hard", "git clean -f", "git clean -fd", "git branch -D x", "git checkout .", "git restore ."
+  ].freeze
+  GIT_NEST_CONTEXTS = [
+    ->(cmd) { "bash -c '#{cmd}'" },
+    ->(cmd) { "sh -c '#{cmd}'" },
+    ->(cmd) { "eval \"#{cmd}\"" },
+    ->(cmd) { "echo \"$(#{cmd})\"" },
+    ->(cmd) { "echo \"`#{cmd}`\"" },
+    ->(cmd) { "echo x | xargs #{cmd}" }
+  ].freeze
+
+  # Extra cases by group. Expected outcome is the plan's intent.
+  GH_GLOBAL_ASKED = GH_GLOBAL_PREFIXES.product(GH_WRITE_TAILS, GH_CONTEXTS).map do |prefix, tail, context|
+    context.call("gh #{prefix} #{tail}")
+  end.freeze
+  GH_GLOBAL_ALLOWED = GH_GLOBAL_PREFIXES.product(GH_READ_TAILS, GH_CONTEXTS).map do |prefix, tail, context|
+    context.call("gh #{prefix} #{tail}")
+  end.freeze
+
+  NESTED_DESTRUCTIVE_ASKED = DESTRUCTIVE_GIT.product(GIT_NEST_CONTEXTS).map { |cmd, context| context.call(cmd) }.freeze
+  NESTED_SAFE_GIT_ALLOWED = [
+    "bash -c 'git reset --soft HEAD~1'",
+    "eval \"git clean -n\"",
+    "sh -c 'git branch -d merged'",
+    "bash -c 'git checkout main'",
+    "echo \"$(git restore file.rb)\"",
+    "echo x | xargs git clean -n"
+  ].freeze
+
+  QUOTED_GLOBAL_ASKED = [
+    "git -C \"a b\" push",
+    "bash -c 'git -C \"a b\" push'",
+    "eval \"git -C 'a b' push\""
+  ].freeze
+  QUOTED_GLOBAL_BLOCKED = [
+    "git -c \"user.name=x y\" push --force",
+    "git -C \"a b\" push -f"
+  ].freeze
+
+  EDGE_ASKED = [
+    "git push \\",
+    "echo \"a\\\"b\" && git push",
+    "# x\ngit push",
+    "gh api repos/o/r/issues --method=POST",
+    "gh api repos/o/r/issues --method POST",
+    "gh api repos/o/r/issues -XPOST",
+    "gh api repos/o/r/issues --field=a=b",
+    "gh api repos/o/r/issues --raw-field=a=b",
+    "gh api repos/o/r/issues --input=f",
+    "bash -c 'gh api -X POST repos/o/r/issues'"
+  ].freeze
+  EDGE_ALLOWED = [
+    "echo a\\ b",
+    "git\\ push",
+    "echo a\\",
+    "# git push",
+    "git status # git push",
+    "echo a#b",
+    "git commit -m \"fix push bug\"",
+    "gh api repos/o/r/issues -X GET",
+    "gh api repos/o/r/issues --method=GET",
+    "bash -c 'gh api -X GET repos/o/r/issues'",
+    "eval \"gh api --method=GET repos/o/r/issues\""
+  ].freeze
+
+  {
+    "gh_global_asks" => [GH_GLOBAL_ASKED, :ask],
+    "nested_destructive_asks" => [NESTED_DESTRUCTIVE_ASKED, :ask],
+    "quoted_global_asks" => [QUOTED_GLOBAL_ASKED, :ask],
+    "edge_asks" => [EDGE_ASKED, :ask],
+    "gh_global_allows" => [GH_GLOBAL_ALLOWED, :allow],
+    "nested_safe_git_allows" => [NESTED_SAFE_GIT_ALLOWED, :allow],
+    "edge_allows" => [EDGE_ALLOWED, :allow],
+    "quoted_global_blocks" => [QUOTED_GLOBAL_BLOCKED, :block]
+  }.each do |group, (commands, outcome)|
+    commands.each_with_index do |command, index|
+      define_method("test_#{group}_#{index}_#{command.gsub(/\W+/, "_")[0, 40]}") do
+        assert_outcome outcome, run_guard(command), command
+      end
+    end
+  end
+
+  def test_empty_stdin_is_allowed
+    assert_outcome :allow, run_payload(""), "empty stdin"
+  end
+
+  def test_non_json_without_git_or_gh_is_allowed
+    assert_outcome :allow, run_payload("hello world"), "non-json plain"
+  end
+
+  def test_non_json_with_git_push_asks
+    assert_outcome :ask, run_payload("not json: git push origin"), "non-json git push"
+  end
+
+  def test_json_null_is_allowed
+    assert_outcome :allow, run_payload("null"), "json null"
+  end
+
+  def test_non_bash_tool_with_push_command_is_allowed
+    payload = JSON.generate(tool_name: "Read", tool_input: { command: "git push" })
+    assert_outcome :allow, run_payload(payload), "non-Bash tool"
+  end
+
+  def test_non_string_command_is_allowed
+    payload = JSON.generate(tool_name: "Bash", tool_input: { command: ["git", "push"] })
+    assert_outcome :allow, run_payload(payload), "array command"
+  end
+
+  def test_missing_tool_input_is_allowed
+    assert_outcome :allow, run_payload(JSON.generate(tool_name: "Bash")), "no tool_input"
+  end
+
   private
+
+  def assert_outcome(outcome, result, label)
+    stdout, stderr, status = result
+    case outcome
+    when :allow
+      assert_equal 0, status.exitstatus, "expected allow for #{label}: #{stderr}"
+      assert_empty stdout, "expected allow for #{label}, got #{stdout}"
+    when :ask
+      assert_equal 0, status.exitstatus, "expected ask (not block) for #{label}: #{stderr}"
+      refute_empty stdout, "expected ask for #{label}, got allow"
+      assert_equal "ask", JSON.parse(stdout).dig("hookSpecificOutput", "permissionDecision"), "expected ask for #{label}"
+    when :block
+      assert_equal 2, status.exitstatus, "expected block for #{label}: #{stdout} #{stderr}"
+      refute_empty stderr.strip
+    end
+  end
 
   def run_guard(command)
     run_payload(JSON.generate(tool_name: "Bash", tool_input: { command: command }))

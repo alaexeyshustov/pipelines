@@ -17,9 +17,12 @@ settings, so `--dangerously-skip-permissions` does not switch them off.
 ## Limits
 
 - These are pattern matches on the command text, not a sandbox.
-- Pushes and GitHub writes nested in `$(...)`/backticks inside double quotes,
-  `bash|sh|zsh -c`, `eval` or `xargs` are caught by a raw-text scan that always
-  asks (never blocks), so quoted mentions such as `echo "gh pr merge"` ask too.
+- Code nested in `bash|sh|zsh -c`, `eval`, `xargs` and `$(...)`/backticks inside
+  double quotes is parsed with the same rules, but a block becomes an ask
+  (never blocks, never allows). A plain quoted mention such as
+  `echo "git reset --hard"` is only an argument and passes.
+- Pushes and GitHub writes mentioned in any argument text (`echo "gh pr merge"`,
+  `python -c '...git push...'`, heredoc bodies) ask through a last-resort text scan.
 - Not caught: scripts written to disk and then run, `ruby -e`, `cat`, `curl`
   with `GH_TOKEN`, aliases and shell functions, variable-built commands
   (`$cmd push`), and commands split across string concatenation.
