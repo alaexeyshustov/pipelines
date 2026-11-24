@@ -13,6 +13,10 @@ Usage: .sandbox/bin/attach-worktree [issue-or-scratch-name] [profile] [--profile
 
 profile defaults to claude-matt. Available profiles live as directories under
 .sandbox/profiles/.
+
+Set SANDBOX_OP_ENVIRONMENT to a 1Password Environment name or ID to pass its
+secrets into a newly launched container (needs `op signin` or
+OP_SERVICE_ACCOUNT_TOKEN on the host).
 USAGE
 }
 
@@ -149,6 +153,41 @@ else
   printf 'Warning: gh is not installed on the host; `gh` will be unauthenticated in the sandbox.\n' >&2
 fi
 
+# Secrets from a 1Password Environment, when SANDBOX_OP_ENVIRONMENT names one
+# (by name or ID). The host has no 1Password desktop app to mount a .env file,
+# so the CLI reads the Environment -- signed in with `op signin` or a service
+# account's OP_SERVICE_ACCOUNT_TOKEN -- and each secret is exported and passed
+# by name, like GH_TOKEN, so no value appears on a command line.
+op_secret_env=()
+op_secrets_fingerprint=""
+if [[ -n "${SANDBOX_OP_ENVIRONMENT:-}" ]]; then
+  command -v op >/dev/null \
+    || fail "SANDBOX_OP_ENVIRONMENT is set but the 1Password CLI (op) is not installed"
+  op_secrets_json="$(op environment secret list "$SANDBOX_OP_ENVIRONMENT" --reveal --format=json)" \
+    || fail "Cannot read 1Password Environment $SANDBOX_OP_ENVIRONMENT. Run \`eval \"\$(op signin)\"\` or set OP_SERVICE_ACCOUNT_TOKEN."
+  # NAME=<shell-escaped value> lines: macOS bash 3.2 cannot read NUL-separated
+  # pairs from a command whose failure it can still detect.
+  op_secret_assignments="$(ruby -rjson -rshellwords -e '
+    JSON.parse(STDIN.read).each do |secret|
+      name = secret.fetch("name")
+      abort "Invalid 1Password secret name: #{name}" unless name.match?(/\A[A-Za-z_][A-Za-z0-9_]*\z/)
+      puts "#{name}=#{Shellwords.escape(secret.fetch("value").to_s)}"
+    end' <<< "$op_secrets_json")" \
+    || fail "Unexpected output from op environment secret list"
+  while IFS= read -r assignment; do
+    [[ -n "$assignment" ]] || continue
+    name="${assignment%%=*}"
+    # Exported here, a secret named like a host variable (PATH, HOME) would
+    # change how the rest of this script runs.
+    [[ -z "${!name+set}" ]] \
+      || fail "1Password secret $name shadows a host environment variable; rename it or unset it on the host"
+    eval "export $assignment"
+    op_secret_env+=(--env "$name")
+  done <<< "$op_secret_assignments"
+  # Part of the launch configuration, so a changed secret replaces the container.
+  op_secrets_fingerprint="$(printf '%s' "$op_secrets_json" | sha256sum | awk '{print $1}')"
+fi
+
 directory_fingerprint() {
   local dir
   for dir in "$@"; do
@@ -157,7 +196,7 @@ directory_fingerprint() {
 }
 
 image_tag="pipelines-${profile}-agent-${sandbox_arch}:$(directory_fingerprint "$profile_dir" "$lib_dir")"
-launch_config_tag="$(cksum "${BASH_SOURCE[0]}" | awk '{print $1 "-" $2}')"
+launch_config_tag="$(cksum "${BASH_SOURCE[0]}" | awk '{print $1 "-" $2}')${op_secrets_fingerprint:+-${op_secrets_fingerprint:0:16}}"
 
 if ! podman image exists "$image_tag"; then
   printf 'Building %s agent image: %s\n' "$profile" "$image_tag"
@@ -257,6 +296,7 @@ case "$container_status" in
       --env 'BINDING=0.0.0.0' \
       --publish "127.0.0.1:$host_port:3000" \
       "${gh_token_mount[@]+"${gh_token_mount[@]}"}" \
+      "${op_secret_env[@]+"${op_secret_env[@]}"}" \
       --mount "type=bind,src=$repo_root,dst=$repo_root" \
       --mount "type=bind,src=$git_common_dir,dst=$git_common_dir" \
       --mount "type=volume,src=$bundle_volume,dst=/bundle" \

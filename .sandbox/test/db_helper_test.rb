@@ -314,6 +314,48 @@ class DbHelperAttachTest < Minitest::Test
     assert_includes overridden_run, "--memory 5g"
   end
 
+  # The host has no 1Password desktop app to mount a .env, so attach reads the
+  # Environment with the CLI and passes each secret by name, never by value.
+  def test_attach_passes_1password_environment_secrets_by_name
+    env_log = File.join(@temporary_directory, "podman-env.log")
+    attached, calls = attach_logging_podman(
+      "GH-134",
+      "SANDBOX_OP_ENVIRONMENT" => "pipelines-dev",
+      "STUB_OP_ENVIRONMENTS" => JSON.generate("pipelines-dev" => { "OPENAI_API_KEY" => "sk-'se cret'$HOME" }),
+      "STUB_PODMAN_ENV_LOG" => env_log
+    )
+    run = calls.find { _1.start_with?("run ") }
+
+    assert attached.fetch(2).success?, attached.fetch(1)
+    assert_includes run, "--env OPENAI_API_KEY "
+    refute_includes run, "se cret"
+    assert_includes File.readlines(env_log, chomp: true), "OPENAI_API_KEY=sk-'se cret'$HOME"
+  end
+
+  def test_attach_stops_when_the_1password_environment_cannot_be_read
+    attached, calls = attach_logging_podman(
+      "GH-135", "SANDBOX_OP_ENVIRONMENT" => "pipelines-dev", "STUB_OP_FAILURE" => "true"
+    )
+
+    refute attached.fetch(2).success?
+    assert_includes attached.fetch(1), "op signin"
+    assert_nil(calls.find { _1.start_with?("run ") })
+  end
+
+  # A secret named like a host variable (PATH, HOME) would change how attach
+  # itself runs once exported.
+  def test_attach_refuses_a_1password_secret_that_shadows_a_host_variable
+    attached, calls = attach_logging_podman(
+      "GH-136",
+      "SANDBOX_OP_ENVIRONMENT" => "pipelines-dev",
+      "STUB_OP_ENVIRONMENTS" => JSON.generate("pipelines-dev" => { "HOME" => "/tmp/elsewhere" })
+    )
+
+    refute attached.fetch(2).success?
+    assert_includes attached.fetch(1), "HOME"
+    assert_nil(calls.find { _1.start_with?("run ") })
+  end
+
   private
 
   # Registers the worktree, attaches it with the podman stub logging its
@@ -322,7 +364,7 @@ class DbHelperAttachTest < Minitest::Test
     run_helper("register_worktree", identifier, worktree_root, "--ticket=#{identifier}")
     log = File.join(@temporary_directory, "podman.log")
     attached = run_attach(identifier, { "STUB_PODMAN_LOG" => log }.merge(environment))
-    [ attached, File.readlines(log, chomp: true) ]
+    [ attached, File.exist?(log) ? File.readlines(log, chomp: true) : [] ]
   end
 
   def assert_amd64_run(run)
