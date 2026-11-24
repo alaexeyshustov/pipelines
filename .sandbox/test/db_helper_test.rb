@@ -81,6 +81,15 @@ module DbHelperTestSupport
     )
   end
 
+  # Registers the worktree, attaches it with the podman stub logging its
+  # calls, and returns the attach result with the logged podman calls.
+  def attach_logging_podman(identifier, environment = {})
+    run_helper("register_worktree", identifier, worktree_root, "--ticket=#{identifier}")
+    log = File.join(@temporary_directory, "podman.log")
+    attached = run_attach(identifier, { "STUB_PODMAN_LOG" => log }.merge(environment))
+    [ attached, File.exist?(log) ? File.readlines(log, chomp: true) : [] ]
+  end
+
   def assert_success(result, expected_stdout)
     stdout, stderr, status = result
     assert status.success?, stderr
@@ -316,19 +325,106 @@ class DbHelperAttachTest < Minitest::Test
 
   private
 
-  # Registers the worktree, attaches it with the podman stub logging its
-  # calls, and returns the attach result with the logged podman calls.
-  def attach_logging_podman(identifier, environment = {})
-    run_helper("register_worktree", identifier, worktree_root, "--ticket=#{identifier}")
-    log = File.join(@temporary_directory, "podman.log")
-    attached = run_attach(identifier, { "STUB_PODMAN_LOG" => log }.merge(environment))
-    [ attached, File.readlines(log, chomp: true) ]
-  end
-
   def assert_amd64_run(run)
     assert_includes run, "--platform linux/amd64"
     assert_match %r{src=pipelines-claude-matt-[a-z0-9-]+-bundle-amd64,dst=/bundle}, run
     assert_match %r{src=pipelines-claude-matt-[a-z0-9-]+-node-modules-amd64,dst=#{Regexp.escape(File.realpath(worktree_root))}/node_modules}, run
+  end
+end
+
+class DbHelperAttachOnePasswordTest < Minitest::Test
+  include DbHelperTestSupport
+
+  # The host has no 1Password desktop app to mount a .env, so attach reads the
+  # Environment with the CLI and passes each secret by name, never by value.
+  def test_attach_passes_1password_environment_secrets_by_name
+    attached, calls = attach_with_secrets("GH-134", "OPENAI_API_KEY" => "sk-'se cret'$HOME")
+    run = calls.find { _1.start_with?("run ") }
+
+    assert attached.fetch(2).success?, attached.fetch(1)
+    assert_includes run, "--env OPENAI_API_KEY "
+    refute_includes run, "se cret"
+    assert_includes podman_environment, "OPENAI_API_KEY=sk-'se cret'$HOME"
+  end
+
+  # PEM keys and JSON credentials span lines and often end with a newline.
+  def test_attach_passes_a_multi_line_1password_secret_intact
+    private_key = "-----BEGIN KEY-----\nline2=foo 'bar'\n-----END KEY-----\n"
+    attached, = attach_with_secrets("GH-137", "PRIVATE_KEY" => private_key)
+
+    assert attached.fetch(2).success?, attached.fetch(1)
+    assert_equal [ "PRIVATE_KEY=#{private_key}" ], podman_environment
+  end
+
+  def test_attach_stops_when_the_1password_environment_cannot_be_read
+    attached, calls = attach_with_secrets("GH-135", {}, "STUB_OP_FAILURE" => "true")
+
+    refute attached.fetch(2).success?
+    assert_includes attached.fetch(1), "op signin"
+    assert_nil(calls.find { _1.start_with?("run ") })
+  end
+
+  def test_attach_refuses_an_invalid_1password_secret_name
+    attached, calls = attach_with_secrets("GH-138", "BAD-NAME" => "value")
+
+    refute attached.fetch(2).success?
+    assert_includes attached.fetch(1), "Invalid 1Password secret name: BAD-NAME"
+    assert_nil(calls.find { _1.start_with?("run ") })
+  end
+
+  # A secret named like a host variable (PATH, HOME) would change how podman
+  # runs once exported.
+  def test_attach_refuses_a_1password_secret_that_shadows_a_host_variable
+    attached, calls = attach_with_secrets("GH-136", "HOME" => "/tmp/elsewhere")
+
+    refute attached.fetch(2).success?
+    assert_includes attached.fetch(1), "HOME"
+    assert_nil(calls.find { _1.start_with?("run ") })
+  end
+
+  # Unset on the host, BASH_ENV would still make every bash script attach runs
+  # -- db_helper among them -- source a file of the secret's choosing.
+  def test_attach_refuses_a_1password_secret_that_configures_host_tools
+    marker = File.join(@temporary_directory, "bash-env-sourced")
+    File.write(bash_env = File.join(@temporary_directory, "bash-env"), "touch #{marker}\n")
+    attached, calls = attach_with_secrets("GH-139", "BASH_ENV" => bash_env)
+
+    refute attached.fetch(2).success?
+    assert_includes attached.fetch(1), "BASH_ENV"
+    refute_path_exists marker
+    assert_nil(calls.find { _1.start_with?("run ") })
+  end
+
+  def test_attach_relaunches_the_container_when_a_1password_secret_changes
+    launch_configs = { "GH-140" => "old", "GH-141" => "new" }.map do |identifier, value|
+      attached, calls = attach_with_secrets(identifier, "API_KEY" => value)
+      assert attached.fetch(2).success?, attached.fetch(1)
+      calls.reverse.find { _1.start_with?("run ") }[/io\.pipelines\.sandbox\.launch-config=\S+/]
+    end
+
+    refute_equal(*launch_configs)
+  end
+
+  private
+
+  def attach_with_secrets(identifier, secrets, environment = {})
+    attach_logging_podman(
+      identifier,
+      {
+        "SANDBOX_OP_ENVIRONMENT" => "pipelines-dev",
+        "STUB_OP_ENVIRONMENTS" => JSON.generate("pipelines-dev" => secrets),
+        "STUB_PODMAN_ENV_LOG" => podman_environment_log
+      }.merge(environment)
+    )
+  end
+
+  def podman_environment_log
+    File.join(@temporary_directory, "podman-env.log")
+  end
+
+  # NAME=value for each variable the podman stub saw passed by name.
+  def podman_environment
+    File.read(podman_environment_log).split("\0")
   end
 end
 

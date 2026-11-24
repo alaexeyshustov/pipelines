@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+# Stub for `op environment secret list <environment> --reveal --format=json`.
+# STUB_OP_ENVIRONMENTS describes Environments as JSON: {"<id>": {"<name>": "<value>"}}.
+
+require "json"
+
+abort "[ERROR] no active session found for account my" if ENV["STUB_OP_FAILURE"] == "true"
+abort "Unexpected op command: #{ARGV.join(" ")}" unless ARGV[0, 3] == %w[environment secret list] && ARGV[4..] == %w[--reveal --format=json]
+
+environments = JSON.parse(ENV.fetch("STUB_OP_ENVIRONMENTS", "{}"))
+secrets = environments.fetch(ARGV.fetch(3)) { abort "[ERROR] \"#{ARGV.fetch(3)}\" isn't an environment." }
+
+puts JSON.generate(secrets.map { |name, value| { name: name, value: value, concealed: true } })
