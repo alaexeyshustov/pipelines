@@ -6,7 +6,9 @@ Containerfiles (`/etc/claude-code/managed-settings.json`,
 the agent-writable config volume (`/root/.claude`) and merge with rtk's user
 settings, so `--dangerously-skip-permissions` does not switch them off.
 
-- Read denies: `.env*`, `credentials.json`, `*token.yaml`, `config/*.key`, `storage/**`.
+- Read denies: `credentials.json`, `*token.yaml`, `config/*.key`. `.env*` and
+  `storage/**` are readable: worktrees get no `.env*` and keys come from the
+  1Password Environment.
 - `guard-bash` blocks (exit 2): `git push --force`/`-f`, `git reset --hard`,
   `git clean -f` (not with `-n`), `git branch -D` / `--delete --force`,
   `git checkout -f`, `git checkout .` / `HEAD .`, `git restore .` / `:/`

@@ -54,8 +54,9 @@ for t in .sandbox/test/*_test.rb; do ruby "$t" || exit 1; done   # every test fi
   (`/etc/claude-code/managed-settings.json`) plus the Ruby hook
   `/usr/local/lib/claude-hooks/guard-bash`, sourced from
   `profiles/lib/claude/`. `/root/.claude` is an agent-writable volume, so it
-  cannot hold them. They deny Reads of `.env*`, `credentials.json`,
-  `*token.yaml`, `config/*.key` and `storage/**`; block force pushes,
+  cannot hold them. They deny Reads of `credentials.json`, `*token.yaml` and
+  `config/*.key` (`.env*` and `storage/**` stay readable: worktrees get no
+  `.env*`, and keys come from the 1Password Environment); block force pushes,
   `reset --hard`, `clean -f`, `branch -D`, `checkout .` and `restore .`; and
   ask before any `git push` or `gh` write. Probe (2026-11-24, Claude Code
   2.1.303): managed settings load, a hook `ask` is honoured under

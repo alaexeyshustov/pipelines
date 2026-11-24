@@ -8,11 +8,9 @@ class ClaudeGuardSettingsTest < Minitest::Test
   PROFILES = %w[claude-matt claude-omcc].freeze
 
   EXPECTED_DENIES = [
-    "Read(**/.env*)",
     "Read(**/credentials.json)",
     "Read(**/*token.yaml)",
-    "Read(**/config/*.key)",
-    "Read(**/storage/**)"
+    "Read(**/config/*.key)"
   ].freeze
 
   MANAGED_SETTINGS_TARGET = "/etc/claude-code/managed-settings.json".freeze

@@ -35,11 +35,10 @@ No Archspec layer applies. `Archspec.rb` scans only `app/` and `lib/`, and `.rub
   - `gh api` with a non-GET `-X`/`--method`, or with `-f`/`-F`/`--field`/`--raw-field`/`--input` (this includes `api graphql`).
 - **Allow:** `gh` reads (`view`, `list`, `diff`, `status`, `checks`, `search`, and plain or `-X GET` `api`) and everything else.
 - **Read denies (managed, so `**/`-anchored):**
-  - `Read(**/.env*)` — this also hides `.env.docker.example`, which is accepted;
   - `Read(**/credentials.json)`;
   - `Read(**/*token.yaml)`;
-  - `Read(**/config/*.key)`;
-  - `Read(**/storage/**)`.
+  - `Read(**/config/*.key)`.
+  - Changed 2026-11-24: `.env*` and `storage/**` stay readable. Worktrees get no `.env*`, and keys come from the 1Password Environment (#334).
 - **Worktree secrets:** a basename filter is hard-coded in `init-worktree` for `.env`, `.env.*`, `credentials.json` and `*token.yaml`. `.worktreeinclude` stays as is, because Claude Code's host worktrees still need it.
   - Existing worktrees keep their copies; the ADR notes this.
 - **Sandbox tests:** the Definition of done runs every file with `for t in .sandbox/test/*_test.rb; do ruby "$t" || exit 1; done`.
