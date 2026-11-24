@@ -53,7 +53,7 @@ module Guard
 
     # Parses commands up to the end of input or `terminator`.
     class Parser
-      def initialize(scanner, segments, pending, terminator:, nested:, depth:)
+      def initialize(scanner, segments, pending, terminator:, nested:, depth:, backticks: false)
         raise TooDeep if depth > MAX_NESTING
 
         @scanner = scanner
@@ -61,8 +61,10 @@ module Guard
         @pending = pending
         @terminator = terminator
         @nested = nested
+        @in_backticks = backticks
         @depth = depth
         @parens = 0
+        @arithmetic = nil
         @discard = false
         @word = nil
         start_segment
@@ -120,7 +122,8 @@ module Guard
       # Returns :done when the substitution being parsed has ended.
       def step
         if @scanner.scan(PLAIN) then append(@scanner.matched)
-        elsif @scanner.scan(/\$?'/) then single_quoted
+        elsif @scanner.scan("$'") then ansi_c_quoted
+        elsif @scanner.scan("'") then single_quoted
         elsif @scanner.scan(/\$?"/) then append(read_double_quoted)
         elsif @scanner.scan("\\") then escape
         elsif @word.nil? && @scanner.check("#") then @scanner.skip(/[^\n]*/)
@@ -130,6 +133,11 @@ module Guard
 
       def single_quoted
         append(@scanner.scan_until(/'/)&.chomp("'") || raise(UnparseableCommand))
+      end
+
+      # `$'...'` honours backslash escapes, so `\'` does not end the string.
+      def ansi_c_quoted
+        append(@scanner.scan(/(?:[^'\\]|\\.)*'/m)&.chomp("'")&.gsub(/\\(['\\])/, '\1') || raise(UnparseableCommand))
       end
 
       def escape
@@ -145,17 +153,39 @@ module Guard
         elsif @scanner.scan("\n")
           flush_segment
           read_heredoc_bodies
+        elsif @scanner.scan("$((") || (@segment.words.empty? && @word.nil? && @scanner.scan("(("))
+          start_arithmetic
         elsif @scanner.scan("$(")
           @parens += 1
           flush_segment
-        elsif @scanner.scan(/<<<|<<-?|&>>?|>>?[&|]?|</)
+        elsif @arithmetic && @scanner.scan(/<<=?/)
+          append(@scanner.matched)
+        elsif @scanner.scan(/<<<|<<-?|<[&>]|&>>?|>>?[&|]?|</)
           redirection(@scanner.matched)
+        elsif @terminator != "`" && @scanner.scan("`")
+          backticks
         elsif @scanner.scan(/[;|&`()]/)
           return close_group(@scanner.matched)
         else
           append(@scanner.getch)
         end
         nil
+      end
+
+      # `$((...))` and `((...))`: a `<<` inside is a shift, not a heredoc.
+      def start_arithmetic
+        flush_segment
+        @arithmetic = @parens if @arithmetic.nil?
+        @parens += 2
+      end
+
+      # Unquoted backticks: the body (with escaped backtick, backslash and $ unescaped) is
+      # parsed as commands; backticks inside a backtick body are nested code.
+      def backticks
+        body = @scanner.scan(/(?:[^`\\]|\\.)*`/m)&.chomp("`") || raise(UnparseableCommand)
+        flush_segment
+        Parser.new(StringScanner.new(body.gsub(/\\([`\\$])/, '\1')), @segments, [],
+                   terminator: nil, nested: @nested || @in_backticks, depth: @depth + 1, backticks: true).run
       end
 
       def redirection(operator)
@@ -175,6 +205,7 @@ module Guard
           return :done if @parens.zero? && @terminator == ")"
 
           @parens -= 1 if @parens.positive?
+          @arithmetic = nil if @arithmetic == @parens
         when "`" then return :done if @terminator == "`"
         end
         nil
@@ -209,7 +240,7 @@ module Guard
         delimiter = +""
         quoted = false
         until @scanner.eos? || @scanner.check(/[ \t\n;|&()<>]/)
-          if @scanner.scan(/(['"])(.*?)\1/m)
+          if @scanner.scan(/\$?(['"])(.*?)\1/m)
             quoted = true
             delimiter << @scanner[2]
           elsif @scanner.scan(/\\(.)/m)
@@ -226,16 +257,22 @@ module Guard
         @pending << heredoc
       end
 
+      # Reads lines up to the end line; false when the input ends first.
+      def read_heredoc_body(heredoc)
+        until @scanner.eos?
+          line = @scanner.scan(/[^\n]*\n?/)
+          terminator = heredoc.strip_tabs ? line.sub(/\A\t+/, "") : line
+          return true if terminator.delete_suffix("\n") == heredoc.delimiter
+
+          heredoc.body << line
+        end
+        false
+      end
+
       def read_heredoc_bodies
         until @pending.empty?
           heredoc = @pending.shift
-          until @scanner.eos?
-            line = @scanner.scan(/[^\n]*\n?/)
-            terminator = heredoc.strip_tabs ? line.sub(/\A\t+/, "") : line
-            break if terminator.chomp == heredoc.delimiter
-
-            heredoc.body << line
-          end
+          raise UnparseableCommand unless read_heredoc_body(heredoc)
         end
       end
     end

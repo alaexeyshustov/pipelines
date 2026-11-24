@@ -40,7 +40,7 @@ class GuardBashHardeningTest < Minitest::Test
     assert_outcome :ask, run_payload(payload, env: { "LANG" => "C", "LC_ALL" => "C" }), "invalid bytes"
   end
 
-  def test_fail_closed_invalid_utf8_without_locale
+  def test_fail_closed_invalid_utf8_reset_hard_under_lang_c
     payload = "{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git reset --hard \xFF\"}}".b
     assert_outcome :ask, run_payload(payload, env: { "LANG" => "C", "LC_ALL" => "C" }), "invalid bytes reset"
   end

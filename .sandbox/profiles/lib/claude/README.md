@@ -42,6 +42,14 @@ settings, so `--dangerously-skip-permissions` does not switch them off.
   run, `ruby -e`, `cat`, `curl` with `GH_TOKEN`, aliases and shell functions,
   variable-built commands (`$cmd push`), `$'\x70ush'` escapes, and commands
   split across string concatenation.
+- Destructive git the guard does not recognise passes: `reset --merge`,
+  `stash drop`, `branch -M`, `update-ref -d`, `worktree remove --force`,
+  `checkout -- '*'`, and anything behind a git alias (`alias.`, config or
+  `-c`; `-c alias.*` asks). Also not seen: `${IFS}` in place of a space and
+  code in an interpreter (`python -c`, `ruby -e`).
+- Over-asking is kept on purpose: a quoted mention of `git push` or a GitHub
+  write inside an argument (an `rg`/`grep` pattern, a commit message) asks
+  through the text scan, because the guard cannot tell it from a nested command.
 - Root in the container can edit `/etc/claude-code`.
 - The real control is keeping secrets out of the mount: `init-worktree` skips
   `.env*`, `credentials.json` and `*token.yaml`, and secrets arrive through

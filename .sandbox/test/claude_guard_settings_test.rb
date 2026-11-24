@@ -18,6 +18,27 @@ class ClaudeGuardSettingsTest < Minitest::Test
   MANAGED_SETTINGS_TARGET = "/etc/claude-code/managed-settings.json".freeze
   GUARD_TARGET = "/usr/local/lib/claude-hooks/guard-bash".freeze
 
+  README = File.join(LIB, "README.md")
+
+  [ "reset --merge", "stash drop", "branch -M", "update-ref -d", "worktree remove --force",
+    "checkout -- '*'", "alias.", "${IFS}", "python -c" ].each do |term|
+    define_method("test_readme_limits_mentions_#{term.gsub(/\W+/, "_")}") do
+      assert_includes limits_section, term
+    end
+  end
+
+  def test_readme_limits_says_quoted_push_and_gh_mentions_ask
+    text = limits_section
+    assert_match(/quoted/i, text)
+    assert_match(/rg|grep/, text)
+    assert_match(/commit message/i, text)
+    assert_match(/\bask/, text)
+  end
+
+  def limits_section
+    File.read(README)[/^## Limits\n(.*?)(?=^## |\z)/m, 1].to_s
+  end
+
   def test_managed_settings_is_valid_json
     assert File.file?(SETTINGS), "missing #{SETTINGS}"
     assert_kind_of Hash, settings
