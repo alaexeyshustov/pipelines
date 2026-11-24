@@ -27,11 +27,12 @@ case "$1" in
     esac
     ;;
   run)
-    # STUB_PODMAN_ENV_LOG: record NAME=value for each `--env NAME` passed by name.
+    # STUB_PODMAN_ENV_LOG: record NAME=value, NUL-terminated, for each `--env NAME`
+    # passed by name.
     if [[ -n "${STUB_PODMAN_ENV_LOG:-}" ]]; then
       previous=""
       for arg in "$@"; do
-        [[ "$previous" == --env && "$arg" != *=* ]] && printf '%s=%s\n' "$arg" "${!arg-}" >> "$STUB_PODMAN_ENV_LOG"
+        [[ "$previous" == --env && "$arg" != *=* ]] && printf '%s=%s\0' "$arg" "${!arg-}" >> "$STUB_PODMAN_ENV_LOG"
         previous="$arg"
       done
     fi

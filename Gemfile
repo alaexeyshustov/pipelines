@@ -16,6 +16,8 @@ gem "ruby_llm-monitoring"
 # Email providers
 gem "google-apis-gmail_v1"
 gem "googleauth"
+# representable (via google-apis-core) requires multi_json without declaring it; googleauth >= 1.17 no longer pulls it in
+gem "multi_json"
 gem "pstore"
 gem "net-imap", "~> 0.4"
 gem "mail", "~> 2.8"

@@ -1,5 +1,8 @@
 module Settings
   class EmailConnectorsController < ApplicationController
+    # Errors whose message can quote the Gmail credentials file (see #log_setup_failure).
+    FILE_QUOTING_ERRORS = [ Google::Auth::InitializationError, MultiJson::ParseError, JSON::ParserError ].freeze
+
     before_action :set_email_connector, only: %i[edit update destroy test setup]
     before_action :require_gmail_connector, only: :setup
 
@@ -46,14 +49,15 @@ module Settings
       end
     end
 
-    # A missing, malformed (googleauth parses it with MultiJson) or unreadable credentials file gets a generic alert.
+    # A missing, malformed (googleauth >= 1.17 wraps the parser error in InitializationError) or unreadable credentials
+    # file gets a generic alert.
     def setup
       state = SecureRandom.urlsafe_base64(32)
       url   = Emails::Adapters::GmailSession.auth_from_env
                                             .authorization_url(callback_uri: oauth_callback_settings_email_connectors_url, state:)
       session[:gmail_oauth] = { connector_id: @email_connector.id, state: }
       redirect_to url, allow_other_host: true
-    rescue Emails::NotConfigured, MultiJson::ParseError, JSON::ParserError, SystemCallError => e
+    rescue Emails::NotConfigured, Google::Auth::InitializationError, MultiJson::ParseError, JSON::ParserError, SystemCallError => e
       log_setup_failure(e)
       redirect_to edit_settings_email_connector_path(@email_connector),
                   alert: "Gmail is not configured on the server. Check the server logs."
@@ -77,7 +81,7 @@ module Settings
 
     # A parser message can quote the file, which holds the OAuth client secret, so log only its class.
     def log_setup_failure(error)
-      detail = error.is_a?(MultiJson::ParseError) || error.is_a?(JSON::ParserError) ? "" : ": #{error.message}"
+      detail = FILE_QUOTING_ERRORS.any? { |klass| error.is_a?(klass) } ? "" : ": #{error.message}"
       Rails.logger.error { "Gmail setup failed: #{error.class}#{detail}" }
     end
 
