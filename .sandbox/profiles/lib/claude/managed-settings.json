@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(**/.env*)",
+      "Read(**/credentials.json)",
+      "Read(**/*token.yaml)",
+      "Read(**/config/*.key)",
+      "Read(**/storage/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "/usr/local/lib/claude-hooks/guard-bash" }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,226 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Claude Code PreToolUse hook for the Bash tool (see ../README.md).
+#   block: exit 2, reason on stderr
+#   ask:   exit 0, permissionDecision "ask" JSON on stdout
+#   allow: exit 0, no output
+# Pattern matching only: it is a seatbelt, not a sandbox.
+
+require "json"
+
+class UnparseableCommand < StandardError; end
+
+module Guard
+  WRAPPERS = %w[rtk env command sudo exec].freeze
+  GIT_OPTIONS_WITH_VALUE = %w[-C -c --git-dir --work-tree --namespace].freeze
+  GIT_FLAG_OPTIONS = %w[--no-pager -p -P --paginate --no-replace-objects --bare --no-optional-locks].freeze
+
+  GH_WRITES = {
+    "pr" => %w[comment create merge review edit close ready reopen update-branch lock unlock],
+    "issue" => %w[comment create edit close reopen delete transfer lock unlock pin unpin develop],
+    "release" => %w[create delete edit upload delete-asset],
+    "repo" => %w[create delete edit rename archive unarchive fork sync deploy-key],
+    "workflow" => %w[run enable disable],
+    "run" => %w[rerun cancel delete],
+    "label" => %w[create edit delete clone],
+    "secret" => %w[set delete],
+    "variable" => %w[set delete]
+  }.freeze
+
+  GH_API_FIELD_FLAGS = %w[-f -F --field --raw-field --input].freeze
+
+  module_function
+
+  # Splits a shell command into segments of unquoted words. Operators and
+  # command substitutions end a segment; quoted text stays inside one word.
+  def segments(command)
+    result = []
+    words = []
+    word = nil
+    quote = nil
+    index = 0
+
+    flush_word = lambda do
+      words << word if word
+      word = nil
+    end
+    flush_segment = lambda do
+      flush_word.call
+      result << words unless words.empty?
+      words = []
+    end
+
+    while index < command.length
+      char = command[index]
+      if quote == "'"
+        char == "'" ? quote = nil : (word += char)
+      elsif quote == '"'
+        if char == '"'
+          quote = nil
+        elsif char == "\\" && index + 1 < command.length
+          index += 1
+          word += command[index]
+        else
+          word += char
+        end
+      elsif char == "'" || char == '"'
+        quote = char
+        word ||= +""
+      elsif char == "\\" && index + 1 < command.length
+        index += 1
+        word = (word || +"") + command[index]
+      elsif char == "#" && word.nil?
+        index += 1 while index < command.length && command[index] != "\n"
+        next
+      elsif " \t".include?(char)
+        flush_word.call
+      elsif "\n;|&()`".include?(char)
+        flush_segment.call
+      elsif char == "$" && command[index + 1] == "("
+        flush_segment.call
+        index += 1
+      else
+        word = (word || +"") + char
+      end
+      index += 1
+    end
+    raise UnparseableCommand if quote
+
+    flush_segment.call
+    result
+  end
+
+  def strip_wrappers(words)
+    words = words.dup
+    loop do
+      words.shift while words.first&.match?(/\A[A-Za-z_][A-Za-z0-9_]*=/)
+      break unless WRAPPERS.include?(words.first)
+
+      wrapper = words.shift
+      words.shift while %w[env sudo].include?(wrapper) && words.first&.start_with?("-")
+    end
+    words
+  end
+
+  def strip_git_options(words)
+    words = words.dup
+    loop do
+      first = words.first
+      if GIT_OPTIONS_WITH_VALUE.include?(first)
+        words.shift(2)
+      elsif first&.match?(/\A--(git-dir|work-tree|namespace)=/) || GIT_FLAG_OPTIONS.include?(first)
+        words.shift
+      else
+        break
+      end
+    end
+    words
+  end
+
+  def short_flag?(word, letter)
+    word.match?(/\A-[A-Za-z]+\z/) && word.include?(letter)
+  end
+
+  # Returns [:block, reason], [:ask, reason] or nil.
+  def judge_git(words)
+    subcommand, *args = strip_git_options(words.drop(1))
+    case subcommand
+    when "push"
+      if args.include?("--force") || args.any? { |arg| short_flag?(arg, "f") }
+        [:block, "git push --force/-f is blocked. Use --force-with-lease and ask the user."]
+      else
+        [:ask, "git push needs confirmation."]
+      end
+    when "reset"
+      [:block, "git reset --hard is blocked."] if args.include?("--hard")
+    when "clean"
+      if args.include?("--force") || args.any? { |arg| short_flag?(arg, "f") }
+        [:block, "git clean -f is blocked."]
+      end
+    when "branch"
+      [:block, "git branch -D is blocked. Use -d."] if args.any? { |arg| short_flag?(arg, "D") }
+    when "checkout"
+      if args.last == "." && (args.length == 1 || args[-2] == "--")
+        [:block, "git checkout . discards all working-tree changes and is blocked."]
+      end
+    when "restore"
+      [:block, "git restore . discards all working-tree changes and is blocked."] if args.include?(".")
+    end
+  end
+
+  def judge_gh(words)
+    positional = words.drop(1).reject { |word| word.start_with?("-") }
+    group, action = positional
+    return judge_gh_api(words.drop(1)) if group == "api"
+
+    return unless GH_WRITES.fetch(group, []).include?(action)
+
+    [:ask, "gh #{group} #{action} writes to GitHub and needs confirmation."]
+  end
+
+  def judge_gh_api(args)
+    method = nil
+    args.each_with_index do |arg, position|
+      case arg
+      when "-X", "--method" then method = args[position + 1]
+      when /\A--method=(.+)\z/, /\A-X(.+)\z/ then method = Regexp.last_match(1)
+      end
+    end
+    field = args.any? do |arg|
+      GH_API_FIELD_FLAGS.include?(arg) || arg.match?(/\A--(field|raw-field|input)=/)
+    end
+    return unless field || (method && method.upcase != "GET")
+
+    [:ask, "gh api with a write method or fields writes to GitHub and needs confirmation."]
+  end
+
+  def judge_segment(words)
+    words = strip_wrappers(words)
+    case words.first
+    when "git" then judge_git(words)
+    when "gh" then judge_gh(words)
+    end
+  end
+
+  def judge(command)
+    verdicts = segments(command).filter_map { |words| judge_segment(words) }
+    verdicts.find { |kind, _| kind == :block } || verdicts.first
+  rescue UnparseableCommand
+    [:ask, "Could not parse this command; confirm it."] if command.match?(/\bgit\b.*\bpush\b|\bgh\b/m)
+  end
+end
+
+raw = $stdin.read
+payload = begin
+  JSON.parse(raw)
+rescue JSON::ParserError
+  nil
+end
+
+if payload.nil?
+  verdict = [:ask, "Could not parse the hook input; confirm it."] if raw.match?(/\bgit\b.*\bpush\b|\bgh\b/m)
+else
+  exit 0 unless payload["tool_name"] == "Bash"
+
+  command = payload.dig("tool_input", "command")
+  exit 0 unless command.is_a?(String)
+
+  verdict = Guard.judge(command)
+end
+
+exit 0 unless verdict
+
+kind, reason = verdict
+if kind == :block
+  warn "Blocked by sandbox guard: #{reason}"
+  exit 2
+end
+
+puts JSON.generate(
+  hookSpecificOutput: {
+    hookEventName: "PreToolUse",
+    permissionDecision: "ask",
+    permissionDecisionReason: reason
+  }
+)

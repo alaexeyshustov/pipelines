@@ -59,6 +59,8 @@ RUN set -eux; \
     rtk --version
 
 COPY --from=lib session-common.sh /usr/local/lib/session-common.sh
+COPY --from=lib claude/managed-settings.json /etc/claude-code/managed-settings.json
+COPY --from=lib claude/hooks/guard-bash /usr/local/lib/claude-hooks/guard-bash
 COPY claude-session /usr/local/bin/claude-session
 
 RUN chmod +x /usr/local/bin/claude-session
