@@ -40,8 +40,11 @@ settings, so `--dangerously-skip-permissions` does not switch them off.
   here-strings, `bash <(...)` process substitution, `find -exec` with anything
   but a bare `git`/`gh` word (`-exec sh -c`), scripts written to disk and then
   run, `ruby -e`, `cat`, `curl` with `GH_TOKEN`, aliases and shell functions,
-  variable-built commands (`$cmd push`), `$'\x70ush'` escapes, and commands
-  split across string concatenation.
+  variable-built commands (`$cmd push`), `$'\x70ush'` escapes, commands
+  split across string concatenation, and escaped backticks nested in a
+  backtick substitution inside double quotes
+  (``echo "`echo \`git reset --hard\``"``; pushes and GitHub writes there still
+  ask through the text scan).
 - Destructive git the guard does not recognise passes: `reset --merge`,
   `stash drop`, `branch -M`, `update-ref -d`, `worktree remove --force`,
   `checkout -- '*'`, and anything behind a git alias (`alias.`, config or
@@ -55,4 +58,4 @@ settings, so `--dangerously-skip-permissions` does not switch them off.
   `.env*`, `credentials.json` and `*token.yaml`, and secrets arrive through
   `SANDBOX_OP_ENVIRONMENT`.
 
-Tests: `ruby .sandbox/test/guard_bash_test.rb` and `guard_bash_hardening_test.rb`.
+Tests: `for t in .sandbox/test/*_test.rb; do ruby "$t" || exit 1; done`.
