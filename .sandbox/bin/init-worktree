@@ -62,7 +62,8 @@ db_helper="${db_helper:-$repo_root/.sandbox/bin/db_helper}"
 # helpers always run from the primary copy. What a worktree lacks are the
 # untracked local files the app needs (.env, Google credentials, dev
 # databases), listed in .worktreeinclude -- the same list Claude Code uses
-# for its own worktrees. Existing files are never overwritten.
+# for its own worktrees. Secrets are skipped (they reach the container through
+# SANDBOX_OP_ENVIRONMENT) and existing files are never overwritten.
 install_sandbox_files() {
   local include_list="$repo_root/.worktreeinclude"
   local entry source destination
@@ -74,6 +75,9 @@ install_sandbox_files() {
     [[ -n "$entry" && "$entry" != \#* ]] || continue
     # node_modules lives on a per-container volume.
     [[ "$entry" != node_modules ]] || continue
+    case "${entry##*/}" in
+      .env | .env.* | credentials.json | *token.yaml) continue ;;
+    esac
 
     source="$repo_root/$entry"
     destination="$worktree_path/$entry"
