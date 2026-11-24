@@ -8,9 +8,6 @@ gem "neighbor"
 gem "aasm", "~> 6.0"
 gem "view_component", "~> 4.6"
 
-# Evaluation framework
-gem "liquid"
-
 # LLM
 gem "ruby_llm", "~> 2.2.2"
 gem "schematist"
@@ -60,6 +57,7 @@ end
 
 group :development do
   gem "brakeman", require: false
+  gem "bundler-audit", require: false
   gem "mutant", require: false
   gem "mutant-rspec", require: false
   # parser 3.x does not yet support Ruby 4.0 — emits a parser/current warning on every mutant run.
