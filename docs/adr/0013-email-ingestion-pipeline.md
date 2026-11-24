@@ -1,7 +1,7 @@
 # ADR 0013: Email ingestion pipeline
 
 ## Status
-Accepted (GH #222, part of #215)
+Partially superseded by [0018](0018-ingestion-steps-in-pipeline.md): "Where orchestration lives", "Errors and retries per stage" and the "One pipeline step per stage" alternative. The cursor, backfill, idempotency and rescan decisions stand (0018 changes how the cursor and a date window combine). Accepted (GH #222, part of #215)
 
 ## Context
 

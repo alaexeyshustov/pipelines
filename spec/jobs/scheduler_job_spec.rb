@@ -57,6 +57,53 @@ RSpec.describe SchedulerJob do
       end
     end
 
+    context "when a pipeline's active run may have died" do
+      let!(:pipeline) do
+        create(:orchestration_pipeline, enabled: true, cron_expression: cron_expression).tap { |p| p.update_column(:created_at, 2.hours.ago) }
+      end
+
+      it "does not schedule while the run's heartbeat is recent" do
+        create(:orchestration_pipeline_run, pipeline: pipeline, status: "running", started_at: 1.hour.ago, heartbeat_at: 1.minute.ago)
+
+        expect { described_class.new.perform }
+          .to not_change(Orchestration::PipelineRun, :count).and not_have_enqueued_job(PipelineRunJob)
+      end
+
+      it "schedules when the run's heartbeat is stale" do
+        create(:orchestration_pipeline_run, pipeline: pipeline, status: "running", started_at: 1.hour.ago, heartbeat_at: 11.minutes.ago)
+
+        expect { described_class.new.perform }.to change(Orchestration::PipelineRun, :count).by(1).and have_enqueued_job(PipelineRunJob)
+      end
+
+      it "falls back to started_at without a heartbeat: recent blocks" do
+        create(:orchestration_pipeline_run, pipeline: pipeline, status: "running", started_at: 5.minutes.ago)
+
+        expect { described_class.new.perform }.not_to change(Orchestration::PipelineRun, :count)
+      end
+
+      it "falls back to started_at without a heartbeat: stale does not block" do
+        create(:orchestration_pipeline_run, pipeline: pipeline, status: "running", started_at: 11.minutes.ago)
+
+        expect { described_class.new.perform }.to change(Orchestration::PipelineRun, :count).by(1)
+      end
+
+      it "falls back to created_at when the run never started: a stale pending run does not block" do
+        create(:orchestration_pipeline_run, pipeline: pipeline, status: "pending", created_at: 11.minutes.ago)
+
+        expect { described_class.new.perform }.to change(Orchestration::PipelineRun, :count).by(1)
+      end
+
+      it "still issues a fixed number of queries with the stale check" do
+        create(:orchestration_pipeline_run, pipeline: pipeline, status: "running", heartbeat_at: 1.minute.ago)
+        query_count = 0
+        counter = ->(*, **) { query_count += 1 }
+
+        ActiveSupport::Notifications.subscribed(counter, "sql.active_record") { described_class.new.perform }
+
+        expect(query_count).to be <= 12
+      end
+    end
+
     context "when a pipeline already has a pending run" do
       it "does not enqueue another run" do
         pipeline = create(:orchestration_pipeline, enabled: true, cron_expression: cron_expression)

@@ -1,0 +1,8 @@
+module Orchestration
+  class Current < ActiveSupport::CurrentAttributes
+    def self.pipeline_run: () -> PipelineRun?
+    def self.pipeline_run=: (PipelineRun?) -> PipelineRun?
+    def self.set: [T] (?pipeline_run: PipelineRun?) { () -> T } -> T
+    def self.reset: () -> void
+  end
+end

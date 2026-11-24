@@ -16,4 +16,15 @@ RSpec.describe ApplicationJob do
       expect(rails_log_paths).not_to include(job_log_path)
     end
   end
+
+  describe "::TRANSPORT_ERRORS" do
+    it "lists the connection and timeout errors that jobs retry once" do
+      expect(described_class::TRANSPORT_ERRORS).to contain_exactly(RubyLLM::ConnectionError, Net::OpenTimeout, Net::ReadTimeout)
+    end
+
+    it "is the list Evaluation::SampleJob and Document::TagJob use, not a copy of their own" do
+      expect(Evaluation::SampleJob::TRANSPORT_ERRORS).to equal(described_class::TRANSPORT_ERRORS)
+      expect(Document::TagJob::TRANSPORT_ERRORS).to equal(described_class::TRANSPORT_ERRORS)
+    end
+  end
 end

@@ -1,0 +1,39 @@
+module Orchestration
+  module Executors
+    class EmailsList
+      include Executable
+      extend Executable::ClassMethods
+
+      type output = Hash[String, Array[Integer] | Hash[String, json_object]]
+
+      DATE_FORMAT: Regexp
+
+      class ProviderFailure < StandardError
+      end
+
+      @providers: Array[String]?
+      @date_from: String | Date | nil
+      @date_to: String | Date | nil
+
+      def self.call: (providers: Array[String], ?date_from: String | Date | nil, ?date_to: String | Date | nil, **json_object_value) -> output
+      def self.run_hints: () -> Hash[String, String]
+
+      def initialize: (providers: Array[String], ?date_from: String | Date | nil, ?date_to: String | Date | nil, **json_object_value) -> void
+      def execute: () -> output
+
+      private
+
+      def failed_entry: (String mode, String message) -> Hash[String, String | Integer]
+
+      def list: (String provider, Date? date_from, Date? date_to, Array[Integer] new_ids) -> json_object
+      def worked?: (json_object entry) -> bool
+      def backlog_ids: (Array[String] providers) -> Array[Integer]
+      def failure_message: (Hash[String, json_object] report, output output) -> String
+      def validated_input: () -> [Array[String], Date?, Date?]
+      def validated_providers: () -> Array[String]
+      def validate_dates: (Date? date_from, Date? date_to) -> void
+      def reject_future: (String field, Date? date) -> void
+      def parse_date: (String | Date | nil value, String field) -> Date?
+    end
+  end
+end

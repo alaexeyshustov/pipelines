@@ -24,9 +24,9 @@ module Emails
         @inbox.uids_after(last_uid)
       end
 
-      # UIDs of INBOX messages received on or after +date+, ascending.
-      def inbox_uids_since(date)
-        @inbox.uids_since(date)
+      # UIDs of INBOX messages received from +from+ until the day of +before+ (exclusive), ascending.
+      def inbox_uids_since(from, before: nil)
+        @inbox.uids_since(from, before:)
       end
 
       # A message with +body+, +html_body+, a parsed +date+ (Time) and a "<uid_validity>:<uid>" id. A bare UID is

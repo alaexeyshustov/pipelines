@@ -1,0 +1,14 @@
+module Orchestration
+  class RunHints
+    @pipeline: Pipeline
+
+    def self.call: (Pipeline pipeline) -> Hash[String, String]
+
+    def initialize: (Pipeline pipeline) -> void
+    def call: () -> Hash[String, String]
+
+    private
+
+    def first_executor: () -> _AgentCallable?
+  end
+end

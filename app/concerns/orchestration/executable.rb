@@ -15,6 +15,21 @@ module Orchestration
         end
       end
 
+      # Declares the shape of the hash +call+ returns, so the validator and the steps list can check the paths a later
+      # step maps from this one. Every declared key is required; unlike input_schema it is not checked against
+      # +initialize+.
+      def output_schema(**properties)
+        if properties.any?
+          @_output_schema_properties = properties.deep_stringify_keys
+          @_output_schema = nil
+        else
+          declared = @_output_schema_properties
+          return nil unless declared
+
+          @_output_schema ||= { "type" => "object", "properties" => declared, "required" => declared.keys }
+        end
+      end
+
       private
 
       def build_input_schema!

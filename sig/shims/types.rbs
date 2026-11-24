@@ -1,6 +1,8 @@
 
 interface _AgentCallable
   def call: (**json_object_value) -> json_object
+  def input_schema: () -> json_object?
+  def output_schema: () -> json_object?
 end
 
 # Orchestration's PromptResolver port: resolves an agent name to its system prompt.

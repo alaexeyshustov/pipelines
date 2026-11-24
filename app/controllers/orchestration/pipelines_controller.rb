@@ -12,6 +12,7 @@ module Orchestration
       @steps = @pipeline.steps_with_actions
       @actions = Orchestration::Action.order(:name)
       @latest_run = @pipeline.latest_run
+      @run_hints = Orchestration::RunHints.call(@pipeline)
     end
     def new
       @pipeline = Orchestration::Pipeline.new

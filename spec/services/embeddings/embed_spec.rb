@@ -44,6 +44,31 @@ RSpec.describe Embeddings::Embed do
     expect(a_request(:post, url)).to have_been_made.once
   end
 
+  it "re-embeds an unchanged digest when force: is set, keeping one embedding" do
+    email = create(:email)
+    described_class.call([ email ])
+
+    result = described_class.call([ email ], force: true)
+
+    expect(result).to have_attributes(embedded: 1, unchanged: 0)
+    expect(email.embeddings.count).to eq(1)
+    expect(a_request(:post, url)).to have_been_made.twice
+  end
+
+  it "still skips records without text when force: is set" do
+    email = create(:email, subject: nil, body: nil)
+
+    expect(described_class.call([ email ], force: true)).to have_attributes(embedded: 0, skipped: 1)
+    expect(a_request(:post, url)).not_to have_been_made
+  end
+
+  it "does not re-embed unchanged records by default (force: false)" do
+    email = create(:email)
+    described_class.call([ email ])
+
+    expect(described_class.call([ email ], force: false)).to have_attributes(embedded: 0, unchanged: 1)
+  end
+
   it "re-embeds when the text changed, keeping one embedding" do
     email = create(:email, body: "first")
     described_class.call([ email ])

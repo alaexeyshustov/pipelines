@@ -8,16 +8,19 @@ module Orchestration
 
       def recent_first: () -> PipelineRun::relation
       def in_progress: () -> PipelineRun::relation
+      def blocking: () -> PipelineRun::relation
     end
 
     STATUSES: Array[String]
     ACTIVE_STATUSES: Array[String]
     TERMINAL_STATUSES: Array[String]
     TRIGGERED_BY: Array[String]
+    STALE_AFTER: ActiveSupport::Duration
 
     def self.table_name: () -> String
     def self.recent_first: () -> relation
     def self.in_progress: () -> relation
+    def self.blocking: () -> relation
 
     def status: () -> String?
     def status=: (String?) -> String?
@@ -25,6 +28,8 @@ module Orchestration
     def triggered_by=: (String?) -> String?
     def started_at: () -> Time?
     def started_at=: (Time?) -> Time?
+    def heartbeat_at: () -> Time?
+    def heartbeat_at=: (Time?) -> Time?
     def finished_at: () -> Time?
     def finished_at=: (Time?) -> Time?
     def error: () -> String?

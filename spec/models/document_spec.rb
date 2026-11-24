@@ -18,12 +18,44 @@ RSpec.describe Document do
   end
 
   describe ".awaiting_tagging" do
-    it "returns untagged Documents stored before the cutoff" do
-      stale = create(:document, created_at: 2.hours.ago, tagged_at: nil)
-      create(:document, created_at: 2.hours.ago, tagged_at: 1.hour.ago)
-      create(:document, created_at: 10.minutes.ago, tagged_at: nil)
+    it "returns pending and failed Documents stored before the cutoff" do
+      stale = create(:document, created_at: 2.hours.ago, classification_status: "pending")
+      failed = create(:document, created_at: 2.hours.ago, classification_status: "failed")
+      create(:document, created_at: 2.hours.ago, classification_status: "tagged")
+      create(:document, created_at: 2.hours.ago, classification_status: "untagged")
+      create(:document, created_at: 10.minutes.ago, classification_status: "pending")
 
-      expect(described_class.awaiting_tagging(before: 1.hour.ago)).to eq([ stale ])
+      expect(described_class.awaiting_tagging(before: 1.hour.ago)).to contain_exactly(stale, failed)
+    end
+  end
+
+  describe ".without_embedding" do
+    include EmbeddingHelpers
+
+    it "returns the Documents with no embedding for the model" do
+      embedded = create(:document)
+      bare = create(:document)
+      embed_as(embedded, unit_vector(0), model: "m1")
+
+      expect(described_class.without_embedding(model: "m1")).to eq([ bare ])
+    end
+  end
+
+  describe "#classification_status" do
+    it "is pending by default" do
+      expect(create(:document).reload).to be_pending
+    end
+
+    it "is an enum of pending, tagged, untagged and failed" do
+      expect(described_class.classification_statuses.keys).to eq(%w[pending tagged untagged failed])
+      expect(create(:document, classification_status: "tagged")).to be_tagged
+    end
+
+    it "rejects an unknown value with a validation error" do
+      document = build(:document, classification_status: "bogus")
+
+      expect(document).not_to be_valid
+      expect(document.errors[:classification_status]).to be_present
     end
   end
 
@@ -94,9 +126,9 @@ RSpec.describe Document do
       expect(indexed("invoice")).to be_empty
     end
 
-    it "keeps the index intact when only tagged_at changes" do
+    it "keeps the index intact when only classification_status changes" do
       document = create(:document, title: "Lease agreement")
-      document.update!(tagged_at: Time.current)
+      document.update!(classification_status: "tagged")
       expect(indexed("lease")).to eq([ document.id ])
     end
 

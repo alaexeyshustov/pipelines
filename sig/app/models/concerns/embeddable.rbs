@@ -19,6 +19,7 @@ module Embeddable
 
   module ClassMethods
     def polymorphic_name: () -> String
+    def without_embedding: (model: String) -> ActiveRecord::Relation
     def fts_search: (String? query, ?limit: Integer) -> Array[FtsSearchable::Match]
     def semantic_search: (String? query, ?limit: Integer) -> Array[Embedding]
     def hybrid_search: (String? query, ?limit: Integer) -> Array[Hybrid]

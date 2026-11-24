@@ -1,0 +1,77 @@
+class Email
+  class InboxSync
+    type counts = Hash[String, String | Integer]
+
+    class Result
+      attr_reader mode: String
+      attr_reader counts: counts
+      attr_reader email_ids: Array[Integer]
+
+      def self.new: (mode: String, counts: counts, email_ids: Array[Integer]) -> Result
+    end
+
+    class Failure < StandardError
+      attr_reader mode: String
+
+      def initialize: (StandardError error, String mode) -> void
+    end
+
+    class GmailInbox
+      @profile: { email_address: String, history_id: String }
+
+      def initialize: () -> void
+      def cursor: () -> SyncCursor
+      def incremental_ids: (SyncCursor cursor) -> Array[String]
+      def window_ids: (Time | ActiveSupport::TimeWithZone from, (Time | ActiveSupport::TimeWithZone)? before) -> Array[String]
+      def position: (String _mode) -> SyncCursor::position
+    end
+
+    class YahooInbox
+      @status: Emails::Adapters::ImapInboxReader::Status?
+      @uids: Array[Integer]
+
+      def initialize: () -> void
+      def cursor: () -> SyncCursor
+      def incremental_ids: (SyncCursor cursor) -> Array[String]
+      def window_ids: (Time | ActiveSupport::TimeWithZone from, (Time | ActiveSupport::TimeWithZone)? before) -> Array[String]
+      def position: (String mode) -> SyncCursor::position
+
+      private
+
+      def ids_for: (Array[Integer] uids) -> Array[String]
+      def read_status: () -> Emails::Adapters::ImapInboxReader::Status
+      def uid_validity: () -> Integer
+      def status: () -> Emails::Adapters::ImapInboxReader::Status
+    end
+
+    type inbox = GmailInbox | YahooInbox
+
+    INBOXES: Hash[String, singleton(GmailInbox) | singleton(YahooInbox)]
+
+    @provider: String
+    @date_from: Date?
+    @date_to: Date?
+    @mode: String?
+
+    def self.call: (provider: String, date_from: Date?, date_to: Date?) -> Result
+
+    def initialize: (provider: String, date_from: Date?, date_to: Date?) -> void
+    def call: () -> Result
+
+    private
+
+    def run: (inbox inbox, SyncCursor cursor) -> Result
+    def today: () -> Date
+    def open_end?: () -> bool
+    def window_start: (SyncCursor cursor) -> Date?
+    def list: (inbox inbox, SyncCursor cursor) -> [String, Array[String]]
+    def incremental?: (Date window_start) -> bool
+    def incremental: (inbox inbox, SyncCursor cursor, Date window_start) -> [String, Array[String]]
+    def window: (inbox inbox, String mode, Date from, ?(Time | ActiveSupport::TimeWithZone)? before) -> [String, Array[String]]
+    def hold_cursor?: (SyncCursor cursor, Array[String] failed_ids) -> bool
+    def store_all: (String mode, Array[String] ids) -> [Result, Array[String]]
+    def counts_for: (String mode, Integer fetched, Array[[String, String, Email?]] outcomes) -> counts
+    def store: (String message_id, Set[String] known) -> [String, Email?]
+    def attributes_for: (Emails::full_message message) -> Hash[Symbol, String | Time | nil]
+  end
+end

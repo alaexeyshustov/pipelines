@@ -1,0 +1,23 @@
+module Tags
+  class Classify
+    class Result
+      attr_reader status: String
+      attr_reader error: String?
+
+      def self.new: (status: String, error: String?) -> instance
+    end
+
+    @item: Email | Document
+    @force: bool
+
+    def self.call: (Email | Document item, ?force: bool) -> Result
+
+    def initialize: (Email | Document item, force: bool) -> void
+    def call: () -> Result
+
+    private
+
+    def due?: () -> bool
+    def mark: (String status) -> String
+  end
+end

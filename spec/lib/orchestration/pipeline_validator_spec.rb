@@ -360,4 +360,73 @@ RSpec.describe Orchestration::PipelineValidator do
       end
     end
   end
+
+  describe 'against the output_schema of a service step' do
+    let(:service_action) { create(:orchestration_action, :service_kind, agent_class: "Orchestration::Executors::EmailsClassify") }
+    let(:consumer)       { create(:orchestration_action, :service_kind, agent_class: "Orchestration::Executors::EmailsEmbed") }
+    let(:step2)          { create(:orchestration_step, pipeline: pipeline, position: 2) }
+
+    before do
+      create(:orchestration_step_action, step: step, position: 1, output_key: "classify_emails", action: service_action,
+                                         input_mapping: { "email_ids" => { "value" => [] } })
+    end
+
+    def consumer_result(path)
+      create(:orchestration_step_action, step: step2, position: 1, output_key: "embed_emails", action: consumer,
+                                         input_mapping: { "email_ids" => { "from" => "classify_emails", "path" => path } })
+      validator.validate.find { |result| result.output_key == "embed_emails" }
+    end
+
+    it 'accepts a path that exists in the service output schema' do
+      expect(consumer_result("tagged").errors).to be_empty
+    end
+
+    it 'returns invalid_path for a path the service output does not have' do
+      error = consumer_result("nonexistent").errors.first
+
+      expect(error).to have_attributes(code: :invalid_path, mapping_key: "email_ids", from: "classify_emails", path: "nonexistent")
+    end
+
+    it 'still reads an agent action\'s output schema from the agent' do
+      agent_action = create(:orchestration_action,
+                            agent: create(:orchestration_agent, output_schema: { "type" => "object", "properties" => { "result" => { "type" => "string" } } }))
+      create(:orchestration_step_action, step: step2, position: 1, output_key: "agent_out", action: agent_action, input_mapping: nil)
+      step3 = create(:orchestration_step, pipeline: pipeline, position: 3)
+      create(:orchestration_step_action, step: step3, position: 1, output_key: "after", action: consumer,
+                                         input_mapping: { "email_ids" => { "from" => "agent_out", "path" => "missing" } })
+
+      expect(validator.validate.find { |r| r.output_key == "after" }.errors.map(&:code)).to eq([ :invalid_path ])
+    end
+
+    it 'does not complain about a service without an output_schema' do
+      plain = create(:orchestration_action, :service_kind, agent_class: "Orchestration::Executors::DriveDocumentsSync")
+      create(:orchestration_step_action, step: step2, position: 1, output_key: "drive", action: plain, input_mapping: nil)
+      step3 = create(:orchestration_step, pipeline: pipeline, position: 3)
+      create(:orchestration_step_action, step: step3, position: 1, output_key: "after", action: consumer,
+                                         input_mapping: { "email_ids" => { "from" => "drive", "path" => "any.path" } })
+
+      expect(validator.validate.find { |r| r.output_key == "after" }.errors).to be_empty
+    end
+  end
+
+  describe '.output_schema_for' do
+    it 'returns the agent output schema for an agent action' do
+      schema = { "type" => "object", "properties" => { "result" => { "type" => "string" } } }
+      action = create(:orchestration_action, agent: create(:orchestration_agent, output_schema: schema))
+
+      expect(described_class.output_schema_for(action)).to eq(schema)
+    end
+
+    it 'returns the executor output schema for a service action' do
+      action = create(:orchestration_action, :service_kind, agent_class: "Orchestration::Executors::EmailsEmbed")
+
+      expect(described_class.output_schema_for(action)).to eq(Orchestration::Executors::EmailsEmbed.output_schema)
+    end
+
+    it 'returns nil for a service without an output schema' do
+      action = create(:orchestration_action, :service_kind, agent_class: "Orchestration::Executors::DriveDocumentsSync")
+
+      expect(described_class.output_schema_for(action)).to be_nil
+    end
+  end
 end

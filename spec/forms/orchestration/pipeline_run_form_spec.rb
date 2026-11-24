@@ -43,6 +43,37 @@ RSpec.describe Orchestration::PipelineRunForm do
       end
     end
 
+    context "when the active run's job died (heartbeat)" do
+      before { allow(PipelineRunJob).to receive(:perform_later) }
+
+      it "is blocked by a running run with a recent heartbeat" do
+        create(:orchestration_pipeline_run, pipeline: pipeline, status: "running", started_at: 1.hour.ago, heartbeat_at: 2.minutes.ago)
+
+        expect(form.save).to be false
+        expect(form.errors.full_messages).to include("A run is already pending.")
+      end
+
+      it "is not blocked by a running run whose heartbeat is older than 10 minutes" do
+        create(:orchestration_pipeline_run, pipeline: pipeline, status: "running", started_at: 1.minute.ago, heartbeat_at: 11.minutes.ago)
+
+        expect { expect(form.save).to be true }.to change(Orchestration::PipelineRun, :count).by(1)
+      end
+
+      it "falls back to started_at when there is no heartbeat: recent blocks, stale does not" do
+        recent = create(:orchestration_pipeline_run, pipeline: pipeline, status: "running", started_at: 5.minutes.ago)
+        expect(form.save).to be false
+
+        recent.update!(started_at: 11.minutes.ago)
+        expect(described_class.new(pipeline: pipeline).save).to be true
+      end
+
+      it "falls back to created_at when there is neither: a stale pending run does not block" do
+        create(:orchestration_pipeline_run, pipeline: pipeline, status: "pending", created_at: 11.minutes.ago)
+
+        expect(form.save).to be true
+      end
+    end
+
     context "when a running run already exists" do
       before { create(:orchestration_pipeline_run, pipeline: pipeline, status: "running") }
 

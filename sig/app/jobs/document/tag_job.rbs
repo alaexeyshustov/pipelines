@@ -1,8 +1,8 @@
 class Document
   class TagJob < ApplicationJob
     REQUEUE_AFTER: ActiveSupport::Duration
-    TRANSPORT_ERRORS: Array[singleton(StandardError)]
+    TRANSPORT_ERRORS: Array[singleton(Exception)]
 
-    def perform: (Integer document_id) -> void
+    def perform: (Integer document_id, ?force: bool) -> void
   end
 end

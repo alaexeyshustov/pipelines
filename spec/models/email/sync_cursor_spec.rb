@@ -162,4 +162,38 @@ RSpec.describe Email::SyncCursor do
       expect(cursor.last_rescan_at).not_to be_nil
     end
   end
+
+  describe "#usable?" do
+    it "is true for a Gmail cursor with a history id and last_synced_at" do
+      expect(build(:email_sync_cursor, provider: "gmail", history_id: "100", last_synced_at: Time.current)).to be_usable
+    end
+
+    it "is true for an IMAP cursor with uid_validity, last_uid and last_synced_at" do
+      expect(build(:email_sync_cursor, provider: "yahoo", uid_validity: 7, last_uid: 3, last_synced_at: Time.current)).to be_usable
+    end
+
+    it "is false when the position is there but last_synced_at is not" do
+      expect(build(:email_sync_cursor, provider: "gmail", history_id: "100", last_synced_at: nil)).not_to be_usable
+    end
+
+    it "is false for a row that only counts failed runs" do
+      expect(create(:email_sync_cursor, failed_runs: 2)).not_to be_usable
+    end
+
+    it "is false for an IMAP cursor with uid_validity but no last_uid" do
+      expect(build(:email_sync_cursor, provider: "yahoo", uid_validity: 7, last_uid: nil, last_synced_at: Time.current)).not_to be_usable
+    end
+
+    it "is false for an unsaved cursor of a new mailbox" do
+      expect(described_class.for(provider: "gmail", account: "new@example.com")).not_to be_usable
+    end
+
+    it "becomes true after advance!" do
+      cursor = create(:email_sync_cursor, provider: "gmail")
+
+      cursor.advance!(history_id: "9")
+
+      expect(cursor).to be_usable
+    end
+  end
 end

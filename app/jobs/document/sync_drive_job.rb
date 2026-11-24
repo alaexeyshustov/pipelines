@@ -3,8 +3,9 @@
 # source_ref["drive_file_id"]; Google Docs are exported as docx. Returns a summary of counts.
 #
 # Tagging is not done here: a new or changed Document is queued for embedding and for Document::TagJob, and a
-# changed one gets tagged_at cleared so it is tagged again. Tagging that failed leaves tagged_at NULL, so every scan
-# also queues Document::TagJob for the Drive Documents still untagged after Document::TagJob::REQUEUE_AFTER ("requeued").
+# changed one goes back to classification_status "pending" so it is tagged again. Tagging that failed leaves the
+# status "failed", so every scan also queues Document::TagJob for the Drive Documents still pending or failed after
+# Document::TagJob::REQUEUE_AFTER ("requeued").
 #
 # Document#checksum is always the SHA256 of the bytes (like email attachments), so the same file from email and Drive
 # is one Document. Drive's md5Checksum is kept in source_ref["md5"] only to detect changes: a file is unchanged (not

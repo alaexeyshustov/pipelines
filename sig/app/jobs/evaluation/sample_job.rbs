@@ -1,6 +1,6 @@
 module Evaluation
   class SampleJob < ApplicationJob
-    TRANSPORT_ERRORS: Array[singleton(StandardError)]
+    TRANSPORT_ERRORS: Array[singleton(Exception)]
 
     def perform: (Integer experiment_id, Integer dataset_sample_id) -> void
     def release_slot: (Integer experiment_id, Integer dataset_sample_id) -> void

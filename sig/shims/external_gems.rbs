@@ -151,6 +151,12 @@ module Google
 
       class History
         def messages_added: () -> Array[HistoryMessageAdded]?
+        def labels_added: () -> Array[HistoryLabelAdded]?
+      end
+
+      class HistoryLabelAdded
+        def message: () -> Message?
+        def label_ids: () -> Array[String]?
       end
 
       class HistoryMessageAdded

@@ -11,6 +11,11 @@ module Embeddable
   end
 
   class_methods do
+    # Records with no embedding under +model+, whatever its digest (a changed text is Embeddings::Embed's business).
+    def without_embedding(model:)
+      where.not(id: Embedding.where(embeddable_type: polymorphic_name, model:).select(:embeddable_id))
+    end
+
     # The +limit+ records nearest in meaning to +query+ under the configured embedding model, nearest first, as
     # Embeddings (+neighbor_distance+ is cosine distance, 0 = same direction). Embeds the query with one model call.
     # Called on a relation (+Email.where(...).semantic_search(q)+) it only considers records inside that relation;

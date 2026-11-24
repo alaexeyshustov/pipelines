@@ -48,8 +48,8 @@ module Emails
     fetch(provider_name).inbox_message_ids_since(history_id)
   end
 
-  def self.inbox_message_ids_after(provider_name, date)
-    fetch(provider_name).inbox_message_ids_after(date)
+  def self.inbox_message_ids_after(provider_name, from, before: nil)
+    fetch(provider_name).inbox_message_ids_after(from, before:)
   end
 
   def self.account(provider_name)
@@ -64,8 +64,8 @@ module Emails
     fetch(provider_name).inbox_uids_after(last_uid)
   end
 
-  def self.inbox_uids_since(provider_name, date)
-    fetch(provider_name).inbox_uids_since(date)
+  def self.inbox_uids_since(provider_name, from, before: nil)
+    fetch(provider_name).inbox_uids_since(from, before:)
   end
 
   def self.fetch_message(provider_name, message_id)

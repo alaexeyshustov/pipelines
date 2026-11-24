@@ -20,7 +20,7 @@ module Orchestration
     end
 
     def run_in_progress?
-      pipeline_runs.in_progress.exists?
+      pipeline_runs.blocking.exists?
     end
 
     def enabled_steps

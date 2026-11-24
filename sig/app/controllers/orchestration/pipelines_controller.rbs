@@ -5,6 +5,7 @@ module Orchestration
     @steps: Step::relation
     @actions: Action::relation
     @latest_run: PipelineRun?
+    @run_hints: Hash[String, String]
 
     def index: () -> void
     def new: () -> void

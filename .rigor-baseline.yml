@@ -259,15 +259,6 @@ ignored:
 - file: app/jobs/document/embed_job.rb
   rule: plugin.activejob.job-call
   count: 1
-- file: app/jobs/document/extract_email_attachments_job.rb
-  rule: def.override-param-narrowed
-  count: 1
-- file: app/jobs/document/extract_email_attachments_job.rb
-  rule: plugin.activerecord.model-call
-  count: 1
-- file: app/jobs/document/extract_email_attachments_job.rb
-  rule: plugin.activejob.job-call
-  count: 2
 - file: app/jobs/document/sync_drive_job.rb
   rule: plugin.activerecord.model-call
   count: 2
@@ -284,21 +275,6 @@ ignored:
   rule: def.override-param-narrowed
   count: 1
 - file: app/jobs/email/embed_job.rb
-  rule: plugin.activerecord.model-call
-  count: 1
-- file: app/jobs/email/process_job.rb
-  rule: def.override-param-narrowed
-  count: 1
-- file: app/jobs/email/process_job.rb
-  rule: plugin.activerecord.model-call
-  count: 1
-- file: app/jobs/email/process_job.rb
-  rule: plugin.activejob.job-call
-  count: 3
-- file: app/jobs/email/sync_inbox_job.rb
-  rule: def.override-param-narrowed
-  count: 1
-- file: app/jobs/email/sync_inbox_job.rb
   rule: plugin.activerecord.model-call
   count: 1
 - file: app/jobs/evaluation/experiment_job.rb
@@ -325,12 +301,6 @@ ignored:
 - file: app/jobs/evaluation/synthetic_dataset_job.rb
   rule: plugin.activerecord.model-call
   count: 3
-- file: app/jobs/interview/extract_job.rb
-  rule: def.override-param-narrowed
-  count: 1
-- file: app/jobs/interview/extract_job.rb
-  rule: plugin.activerecord.model-call
-  count: 1
 - file: app/jobs/pipeline_run_job.rb
   rule: def.override-param-narrowed
   count: 1
@@ -409,9 +379,6 @@ ignored:
 - file: lib/orchestration/executors/drive_documents_sync.rb
   rule: plugin.activejob.job-call
   count: 1
-- file: lib/orchestration/executors/emails_sync.rb
-  rule: plugin.activejob.job-call
-  count: 3
 - file: lib/orchestration/provider_error_response.rb
   rule: def.return-type-mismatch
   count: 1

@@ -62,8 +62,16 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     it "returns the UIDs of INBOX messages on or after the date, ascending" do
       allow(imap).to receive(:uid_search).and_return([ 5, 3 ])
 
-      expect(adapter.inbox_uids_since(Date.new(2026, 1, 1))).to eq([ 3, 5 ])
+      expect(adapter.inbox_uids_since(Time.utc(2026, 1, 1))).to eq([ 3, 5 ])
       expect(imap).to have_received(:uid_search).with([ "SINCE", "01-Jan-2026" ])
+    end
+
+    it "adds BEFORE from the upper bound (the day after date_to)" do
+      allow(imap).to receive(:uid_search).and_return([ 3 ])
+
+      adapter.inbox_uids_since(Time.utc(2026, 1, 1), before: Time.utc(2026, 1, 11))
+
+      expect(imap).to have_received(:uid_search).with([ "SINCE", "01-Jan-2026", "BEFORE", "11-Jan-2026" ])
     end
   end
 

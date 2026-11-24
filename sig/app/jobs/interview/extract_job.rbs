@@ -1,7 +1,0 @@
-class Interview
-  class ExtractJob < ApplicationJob
-    TRANSPORT_ERRORS: Array[singleton(StandardError)]
-
-    def perform: (Integer email_id) -> void
-  end
-end

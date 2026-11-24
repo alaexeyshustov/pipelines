@@ -49,11 +49,35 @@ RSpec.describe Email do
   end
 
   describe ".awaiting_tagging" do
-    it "returns untagged emails stored before the cutoff" do
-      old = create(:email, created_at: 2.hours.ago, tagged_at: nil)
-      create(:email, created_at: 2.hours.ago, tagged_at: Time.current)
-      create(:email, created_at: 5.minutes.ago, tagged_at: nil)
-      expect(described_class.awaiting_tagging(before: 1.hour.ago)).to eq([ old ])
+    it "returns pending and failed emails stored before the cutoff" do
+      pending_email = create(:email, created_at: 2.hours.ago, classification_status: "pending")
+      failed_email = create(:email, created_at: 2.hours.ago, classification_status: "failed")
+      create(:email, created_at: 2.hours.ago, classification_status: "tagged")
+      create(:email, created_at: 2.hours.ago, classification_status: "untagged")
+      create(:email, created_at: 5.minutes.ago, classification_status: "pending")
+
+      expect(described_class.awaiting_tagging(before: 1.hour.ago)).to contain_exactly(pending_email, failed_email)
+    end
+  end
+
+  describe ".without_embedding" do
+    include EmbeddingHelpers
+
+    it "returns the emails with no embedding for the model, whatever the digest of other models" do
+      embedded = create(:email)
+      other_model = create(:email)
+      bare = create(:email)
+      embed_as(embedded, unit_vector(0), model: "m1")
+      embed_as(other_model, unit_vector(1), model: "m2")
+
+      expect(described_class.without_embedding(model: "m1")).to contain_exactly(other_model, bare)
+    end
+
+    it "composes with other scopes" do
+      tagged = create(:email, classification_status: "tagged")
+      create(:email, classification_status: "pending")
+
+      expect(described_class.tagged.without_embedding(model: "m1")).to eq([ tagged ])
     end
   end
 
@@ -86,9 +110,9 @@ RSpec.describe Email do
       expect(indexed("rejection")).to eq([ email.id ])
     end
 
-    it "keeps the index intact when only tagged_at changes" do
+    it "keeps the index intact when only classification_status changes" do
       email = create(:email, subject: "Interview invitation")
-      email.update!(tagged_at: Time.current)
+      email.update!(classification_status: "tagged")
       expect(indexed("interview")).to eq([ email.id ])
       expect { described_class.connection.execute("INSERT INTO emails_fts(emails_fts, rank) VALUES('integrity-check', 1)") }
         .not_to raise_error
@@ -116,12 +140,25 @@ RSpec.describe Email do
     end
   end
 
-  describe "#tagged_at" do
-    it "is nil by default and can be set" do
-      email = create(:email)
-      expect(email.tagged_at).to be_nil
-      email.update!(tagged_at: Time.zone.now)
-      expect(email.reload.tagged_at).not_to be_nil
+  describe "#classification_status" do
+    it "is pending by default" do
+      expect(create(:email).reload).to be_pending
+    end
+
+    it "is an enum of pending, tagged, untagged and failed with unprefixed predicates and scopes" do
+      expect(described_class.classification_statuses).to eq(
+        "pending" => "pending", "tagged" => "tagged", "untagged" => "untagged", "failed" => "failed"
+      )
+      email = create(:email, classification_status: "untagged")
+      expect(email).to be_untagged
+      expect(described_class.untagged).to eq([ email ])
+    end
+
+    it "rejects an unknown value with a validation error" do
+      email = build(:email, classification_status: "bogus")
+
+      expect(email).not_to be_valid
+      expect(email.errors[:classification_status]).to be_present
     end
   end
 

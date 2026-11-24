@@ -10,6 +10,7 @@ class Email
 
     def advance!: (?history_id: String?, ?uid_validity: Integer?, ?last_uid: Integer?) -> void
     def reset!: (?history_id: String?, ?uid_validity: Integer?, ?last_uid: Integer?) -> void
+    def usable?: () -> bool
 
     def provider: () -> String
     def provider=: (String) -> String

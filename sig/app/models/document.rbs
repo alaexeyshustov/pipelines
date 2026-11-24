@@ -7,6 +7,7 @@ class Document < ApplicationRecord
   include Embeddable
   extend FtsSearchable::ClassMethods
   extend Embeddable::ClassMethods
+  extend Taggable::ClassMethods
 
   SOURCES: Array[String]
 
@@ -24,8 +25,6 @@ class Document < ApplicationRecord
   def source_url=: (String?) -> String?
   def source_ref: () -> Hash[String, String | Integer | bool | nil]
   def source_ref=: (Hash[String | Symbol, String | Integer | bool | nil]) -> Hash[String, String | Integer | bool | nil]
-  def tagged_at: () -> Time?
-  def tagged_at=: (Time?) -> Time?
   def email: () -> Email?
   def email=: (Email?) -> Email?
   def document_duplicates: () -> ActiveRecord::Relation
@@ -34,6 +33,5 @@ class Document < ApplicationRecord
   def openable_source_uri: () -> URI::HTTP?
   def embedding_parts: () -> Array[String?]
 
-  def self.awaiting_tagging: (before: Time | ActiveSupport::TimeWithZone) -> ActiveRecord::Relation
   def self.ingest!: (Hash[Symbol | String, String | Hash[Symbol | String, String?] | Integer | Email | nil] attributes) -> Document
 end

@@ -52,9 +52,20 @@ RSpec.describe Emails::Adapters::BaseAdapter do
   end
 
   {
+    inbox_message_ids_after: [ Time.utc(2026, 1, 1), { before: Time.utc(2026, 1, 2) } ],
+    inbox_uids_since: [ Time.utc(2026, 1, 1), { before: Time.utc(2026, 1, 2) } ]
+  }.each do |method_name, (from, opts)|
+    describe "##{method_name} with before:" do
+      it 'accepts the upper bound keyword and raises NotImplementedError' do
+        expect { adapter.public_send(method_name, from, **opts) }.to raise_error(NotImplementedError, /#{method_name} is not implemented/)
+      end
+    end
+  end
+
+  {
     attachment: [ 'm1', 'a1' ], attachments: [ 'm1' ], profile: [], inbox_message_ids_since: [ 'h1' ],
-    inbox_message_ids_after: [ Date.new(2026, 1, 1) ], account: [], inbox_status: [], inbox_uids_after: [ 1 ],
-    inbox_uids_since: [ Date.new(2026, 1, 1) ], fetch_message: [ 'm1' ]
+    inbox_message_ids_after: [ Time.utc(2026, 1, 1) ], account: [], inbox_status: [], inbox_uids_after: [ 1 ],
+    inbox_uids_since: [ Time.utc(2026, 1, 1) ], fetch_message: [ 'm1' ]
   }.each do |method_name, args|
     describe "##{method_name}" do
       it 'raises NotImplementedError' do

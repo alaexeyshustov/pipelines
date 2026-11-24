@@ -12,6 +12,8 @@ module Tags
 
     private
 
+    def save_tagging: (Tagging tagging) -> bool
+
     def fail_with: (Symbol attribute, String message) -> false
   end
 end

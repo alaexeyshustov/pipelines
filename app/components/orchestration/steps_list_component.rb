@@ -16,7 +16,7 @@ module Orchestration
       @steps.each_with_object(collector) do |step, result|
         result[step.id] = seen.dup
         step.step_actions.sort_by(&:position).each do |sa|
-          seen[sa.output_key] = sa.action.agent&.output_schema
+          seen[sa.output_key] = Orchestration::PipelineValidator.output_schema_for(sa.action)
         end
       end
     end

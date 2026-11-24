@@ -1,6 +1,6 @@
 class SchedulerJob < ApplicationJob
   def perform
-    active_ids      = Orchestration::PipelineRun.in_progress.select(:pipeline_id)
+    active_ids      = Orchestration::PipelineRun.blocking.select(:pipeline_id)
     latest_finished = load_latest_finished_times
 
     schedulable_pipelines.where.not(id: active_ids).find_each do |pipeline|

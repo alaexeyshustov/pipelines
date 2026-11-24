@@ -1,3 +1,5 @@
 class ApplicationJob < ActiveJob::Base
+  TRANSPORT_ERRORS: Array[singleton(Exception)]
+
   def perform: (serializable_object_value) -> void
 end

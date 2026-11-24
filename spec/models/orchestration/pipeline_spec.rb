@@ -123,6 +123,27 @@ RSpec.describe Orchestration::Pipeline do
       pipeline = create(:orchestration_pipeline)
       expect(pipeline.run_in_progress?).to be false
     end
+
+    it "is true for a running run with a recent heartbeat" do
+      pipeline = create(:orchestration_pipeline)
+      create(:orchestration_pipeline_run, pipeline: pipeline, status: "running", started_at: 1.hour.ago, heartbeat_at: 1.minute.ago)
+      expect(pipeline.run_in_progress?).to be true
+    end
+
+    it "is false for a running run whose heartbeat is stale (its job died)" do
+      pipeline = create(:orchestration_pipeline)
+      create(:orchestration_pipeline_run, pipeline: pipeline, status: "running", started_at: 1.hour.ago, heartbeat_at: 15.minutes.ago)
+      expect(pipeline.run_in_progress?).to be false
+    end
+
+    it "falls back to started_at, then created_at, when there is no heartbeat" do
+      pipeline = create(:orchestration_pipeline)
+      create(:orchestration_pipeline_run, pipeline: pipeline, status: "running", started_at: 15.minutes.ago, created_at: 1.minute.ago)
+      expect(pipeline.run_in_progress?).to be false
+
+      create(:orchestration_pipeline_run, pipeline: pipeline, status: "pending", created_at: 1.minute.ago)
+      expect(pipeline.run_in_progress?).to be true
+    end
   end
 
   describe "#enabled_steps" do

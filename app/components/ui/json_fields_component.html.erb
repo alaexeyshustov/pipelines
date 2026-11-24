@@ -54,5 +54,12 @@
              name="<%= input_name(field[:name]) %>"
              class="<%= UI::JsonFieldsComponent::INPUT_CLASSES %>">
     <% end %>
+
+    <% if field[:description].present? %>
+      <p class="mt-1 text-xs text-gray-500"><%= field[:description] %></p>
+    <% end %>
+    <% if field[:hint].present? %>
+      <p class="mt-1 text-xs text-indigo-600"><%= field[:hint] %></p>
+    <% end %>
   </div>
 <% end %>
