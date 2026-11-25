@@ -21,6 +21,7 @@ module Orchestration
       def eligible: () -> ActiveRecord::Relation
       def unprocessed: () -> ActiveRecord::Relation
       def existing_document_ids: () -> Array[Integer]
+      def unfinished_document_ids: () -> Array[Integer]
     end
   end
 end

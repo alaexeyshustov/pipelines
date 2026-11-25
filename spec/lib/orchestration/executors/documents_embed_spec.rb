@@ -26,7 +26,7 @@ RSpec.describe Orchestration::Executors::DocumentsEmbed do
 
     output = execute(first, second)
 
-    expect(output).to eq("embedded" => [ first.id, second.id ], "duplicates_found" => 3, "failed" => [])
+    expect(output).to eq("embedded" => [ first.id, second.id ], "skipped" => [], "duplicates_found" => 3, "failed" => [])
     expect(embed_calls).to contain_exactly([ first ], [ second ])
     expect(Document::DetectDuplicates).to have_received(:call).with(first, any_args)
     expect(Document::DetectDuplicates).to have_received(:call).with(second, any_args)
@@ -39,12 +39,12 @@ RSpec.describe Orchestration::Executors::DocumentsEmbed do
   end
 
   %w[pending untagged failed].each do |status|
-    it "leaves a #{status} document alone: no embedding, no duplicate detection" do
+    it "lists a #{status} document as skipped: no embedding, no duplicate detection" do
       document = create(:document, classification_status: status)
 
       output = execute(document)
 
-      expect(output).to eq("embedded" => [], "duplicates_found" => 0, "failed" => [])
+      expect(output).to eq("embedded" => [], "skipped" => [ document.id ], "duplicates_found" => 0, "failed" => [])
       expect(embed_calls).to be_empty
       expect(Document::DetectDuplicates).not_to have_received(:call)
     end
@@ -54,16 +54,16 @@ RSpec.describe Orchestration::Executors::DocumentsEmbed do
     document = create(:document, classification_status: "tagged")
     embed_as(document, unit_vector(0))
 
-    expect(execute(document)["embedded"]).to be_empty
+    expect(execute(document)).to include("embedded" => [], "skipped" => [])
     expect(embed_calls).to be_empty
     expect(Document::DetectDuplicates).not_to have_received(:call)
   end
 
-  it "does not run duplicate detection for a document that had no text to embed" do
+  it "lists a document that had no text to embed as skipped, without duplicate detection" do
     document = create(:document, classification_status: "tagged", text: "")
     allow(Embeddings::Embed).to receive(:call).and_return(Embeddings::Embed::Result.new(embedded: 0, unchanged: 0, skipped: 1))
 
-    expect(execute(document)).to include("embedded" => [])
+    expect(execute(document)).to include("embedded" => [], "skipped" => [ document.id ])
     expect(Document::DetectDuplicates).not_to have_received(:call)
   end
 
@@ -129,10 +129,10 @@ RSpec.describe Orchestration::Executors::DocumentsEmbed do
     expect(Orchestration::Heartbeat).to have_received(:beat).at_least(:twice)
   end
 
-  it "declares document_ids as its required input and embedded, duplicates_found and failed as outputs" do
+  it "declares document_ids as its required input and embedded, skipped, duplicates_found and failed as outputs" do
     expect(described_class.input_schema["required"]).to eq([ "document_ids" ])
     schema = described_class.output_schema
-    expect(schema["required"]).to contain_exactly("embedded", "duplicates_found", "failed")
+    expect(schema["required"]).to contain_exactly("embedded", "skipped", "duplicates_found", "failed")
     expect(schema["properties"]["duplicates_found"]).to include("type" => "integer")
   end
 

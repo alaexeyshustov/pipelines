@@ -331,5 +331,16 @@ RSpec.describe "Email Ingestion pipeline", prosopite: false do # rubocop:disable
       expect([ pending_document, failed_document ].map { |document| document.reload.classification_status }).to eq(%w[tagged tagged])
       expect([ pending_document, failed_document ].map { |document| document.embeddings.count }).to eq([ 1, 1 ])
     end
+
+    it "classifies and embeds the leftover documents of an email that is already tagged and embedded", :aggregate_failures do
+      done = create(:email, provider: "gmail", provider_message_id: "d1", subject: "Interview done", classification_status: "tagged")
+      embed_as(done, unit_vector(1))
+      leftover = create(:document, email: done, text: "Interview leftover doc", classification_status: "failed")
+
+      run_pipeline({ "providers" => [ "gmail" ] })
+
+      expect(leftover.reload).to be_tagged
+      expect(leftover.embeddings.count).to eq(1)
+    end
   end
 end

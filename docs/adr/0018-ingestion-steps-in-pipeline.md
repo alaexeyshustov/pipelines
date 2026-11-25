@@ -24,7 +24,7 @@ ADR 0013 ran ingestion as a chain of background jobs and put only its entry poin
 - Every stage shows up in the run: its input, its output (id lists) and its failures.
 - The migration carries no data over (the app held none); every row starts `pending`. A run is synchronous and serial, so a run classifies every `pending` email in one step. The heartbeat keeps that run from being marked stale; a single message fetch or OCR call slower than 10 minutes could still make a live run look stale.
 - A step failing for one email never blocks the others, but a failed email is retried only by running the pipeline again.
-- Unsupported attachment types are ignored silently; an email's attachments are downloaded until it has a document: if every attachment failed, the next run tries again; once one succeeds, its failed siblings are not retried.
+- Unsupported attachment types are ignored silently. A failed attachment is not retried: step 4 downloads only listed emails without a document, and step 1 stops listing an email once it is tagged and embedded (which step 3 does before step 4 runs). Documents are not lost the same way: step 4 also passes on every document of a tagged Gmail email that is `pending`, `failed`, or tagged without an embedding, so steps 5 and 6 finish them on a later run.
 - Another pipeline that still has an `EmailsSync` step is kept by the seeds and logged; it fails when run because the class is gone.
 - The cursor, the research note and the schema changes stay: `email_sync_cursors` (ADR 0013), `classification_status` and `heartbeat_at` (this ADR).
 

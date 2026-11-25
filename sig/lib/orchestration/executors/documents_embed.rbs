@@ -5,7 +5,7 @@ module Orchestration
       extend Executable::ClassMethods
       include PerRecord
 
-      type output = { "embedded" => Array[Integer], "duplicates_found" => Integer, "failed" => Array[json_object] }
+      type output = { "embedded" => Array[Integer], "skipped" => Array[Integer], "duplicates_found" => Integer, "failed" => Array[json_object] }
 
       @document_ids: Array[Integer]
 
@@ -16,6 +16,8 @@ module Orchestration
 
       private
 
+      def embed: (Document document, output output) -> void
+      def skipped_ids: () -> Array[Integer]
       def detect_duplicates: (Document document, Array[json_object] failed) -> Integer
       def unembedded: () -> ActiveRecord::Relation
     end

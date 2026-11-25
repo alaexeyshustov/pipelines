@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Orchestration::Executors::AttachmentsIngest do
+  include EmbeddingHelpers
+
   let(:results) { {} }
 
   before do
@@ -43,6 +45,19 @@ RSpec.describe Orchestration::Executors::AttachmentsIngest do
 
     expect(Document::IngestEmailAttachments).not_to have_received(:call)
     expect(output).to eq("document_ids" => [ leftover.id ], "skipped" => [], "failed" => [])
+  end
+
+  it "returns the unfinished documents of tagged Gmail emails that were not listed, since step 1 does not re-list an embedded email" do
+    email = gmail_email
+    unfinished = %w[pending failed tagged].map { |status| create(:document, email:, classification_status: status) }
+    done = create(:document, email:, classification_status: "tagged")
+    embed_as(done, unit_vector(0))
+    create(:document, email:, classification_status: "untagged")
+    create(:document, email: nil, source: "drive", classification_status: "pending")
+    create(:document, email: create(:email, provider: "yahoo", classification_status: "tagged"), classification_status: "pending")
+
+    expect(execute["document_ids"]).to match_array(unfinished.map(&:id))
+    expect(Document::IngestEmailAttachments).not_to have_received(:call)
   end
 
   it "ingests the emails without documents among a mix of re-listed and new ones" do

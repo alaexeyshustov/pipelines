@@ -3,9 +3,10 @@ module Orchestration
     # Step 4 of the Email Ingestion pipeline (ADR 0018): Document::IngestEmailAttachments for each tagged Gmail email
     # among the ids that has no document yet (a re-listed email is not downloaded again, so a failed attachment is not
     # retried). Other emails are listed as skipped (Yahoo has no attachment listing; only tagged emails are ingested).
-    # +document_ids+ holds the documents the service returned plus the ones the listed tagged Gmail emails already
-    # have, so a pending or failed document from an earlier run reaches the classify and embed steps. A failed
-    # attachment is reported as { "id" => email id, "error" => "<filename>: <class>: <message>" }.
+    # +document_ids+ holds the documents the service returned, the ones the listed tagged Gmail emails already have, and
+    # every document of a tagged Gmail email that an earlier run left unfinished (pending, failed, or tagged without an embedding for the
+    # current model), whichever emails were listed: step 1 does not re-list an email that is tagged and embedded. A
+    # failed attachment is reported as { "id" => email id, "error" => "<filename>: <class>: <message>" }.
     class AttachmentsIngest
       include Orchestration::Executable
       include PerRecord
@@ -25,7 +26,7 @@ module Orchestration
         document_ids = Array.new # : Array[Integer]
         failed = Array.new # : Array[json_object]
         each_record(unprocessed, @email_ids, failed) { |email| ingest(email, document_ids, failed) }
-        { "document_ids" => (document_ids + existing_document_ids).uniq, "skipped" => skipped_ids, "failed" => failed }
+        { "document_ids" => (document_ids + existing_document_ids + unfinished_document_ids).uniq, "skipped" => skipped_ids, "failed" => failed }
       end
 
       private
@@ -52,6 +53,12 @@ module Orchestration
 
       def existing_document_ids
         Document.where(email_id: eligible.where(id: @email_ids).select(:id)).ids
+      end
+
+      def unfinished_document_ids
+        attachments = Document.where(email_id: eligible.select(:id))
+        attachments.where(classification_status: %w[pending failed]).ids +
+          Document.without_embedding(model: LlmModels.embedding).merge(attachments).where(classification_status: "tagged").ids
       end
     end
   end
