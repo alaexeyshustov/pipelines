@@ -4,7 +4,7 @@
   "pipelines": [
     {
       "name": "Email Ingestion",
-      "description": "Reads new mail from Gmail and Yahoo, tags and embeds it, and ingests the attachments of tagged Gmail emails. Runs on demand.",
+      "description": "Reads new mail from Gmail and Yahoo, tags and embeds it, and ingests the attachments of tagged emails. Runs on demand.",
       "enabled": true,
       "cron_expression": null,
       "model": null,
@@ -128,7 +128,7 @@
               },
               "action": {
                 "name": "Ingest attachments",
-                "description": "Downloads and reads the attachments of tagged Gmail emails into documents.",
+                "description": "Downloads and reads the attachments of tagged Gmail and Yahoo emails into documents.",
                 "kind": "service",
                 "agent_class": "agent_attachments_ingest",
                 "agent": null

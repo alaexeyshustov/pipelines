@@ -1,0 +1,27 @@
+module Emails
+  module Adapters
+    class ImapTextFetcher
+      MAX_TEXT_PART_BYTES: Integer
+      MAX_TEXT_PARTS: Integer
+      CONTENT_HEADERS: Regexp
+      SAFE_CHARSET: Regexp
+
+      @session: ImapSession
+
+      def initialize: (ImapSession session) -> void
+      def mail: (Integer uid, mailbox: String) -> Mail::Message?
+
+      private
+
+      def build: (Integer uid, Net::IMAP::FetchData head) -> Mail::Message
+
+      def text_leaves: (Net::IMAP::bodystructure? structure) -> Array[ImapBodyStructure::Leaf]
+      def fetch_bodies: (Integer uid, Array[ImapBodyStructure::Leaf] leaves) -> Array[String]
+      def multipart: (String header, Array[ImapBodyStructure::Leaf] leaves, Array[String] bodies) -> Mail::Message
+      def text_part: (String boundary, ImapBodyStructure::Leaf leaf, String body) -> String
+      def multipart_header: (String boundary) -> String
+      def without_content_headers: (String header) -> String
+      def part_headers: (ImapBodyStructure::Leaf leaf) -> String
+    end
+  end
+end

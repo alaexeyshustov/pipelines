@@ -1,0 +1,35 @@
+From: HR Team <hr@company.com>
+To: test@yahoo.com
+Subject: Documents
+Date: Mon, 1 Jan 2026 12:00:00 +0000
+Message-ID: <names@company.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="n"
+
+--n
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Documents attached.
+--n
+Content-Type: application/pdf
+Content-Disposition: attachment; filename*=UTF-8''Lebenslauf%20M%C3%BCller.pdf
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKZmFrZSBjdiBieXRlcwolJUVPRgo=
+
+--n
+Content-Type: application/pdf
+Content-Disposition: attachment; filename*0*=UTF-8''Zeugnis%20; filename*1*=Gr%C3%BC%C3%9Fe.pdf
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKZmFrZSBjdiBieXRlcwolJUVPRgo=
+
+--n
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="=?UTF-8?B?Q1Yg0JjQstCw0L0ucGRm?="
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKZmFrZSBjdiBieXRlcwolJUVPRgo=
+
+--n--

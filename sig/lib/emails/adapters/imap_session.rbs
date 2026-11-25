@@ -14,6 +14,8 @@ module Emails
       def ensure_mailbox: (String mailbox) -> void
       def with_lock: [T] () { () -> T } -> T
       def drop_connection: (StandardError error) -> void
+      def fetch: (Integer uid, Array[String] attrs) -> Net::IMAP::FetchData?
+      def uid_validity: (String mailbox) -> Integer
       def fetch_raw_mail: (Integer uid, Array[String] fields) -> String?
     end
   end

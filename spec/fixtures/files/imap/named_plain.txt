@@ -1,0 +1,1 @@
+("TEXT" "PLAIN" ("CHARSET" "us-ascii" "NAME" "a.txt") NIL NIL "7BIT" 11 1 NIL NIL NIL NIL)

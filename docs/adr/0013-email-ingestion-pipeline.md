@@ -53,7 +53,7 @@ Unique index on `[provider, account, mailbox]`. A model (`Email::SyncCursor`), n
 
 - Steady-state cost is one cheap history/UID query per provider per run; the 90-day rescan is the rare recovery path.
 - Adapters gain real work: Gmail must return `html_body`, `source_url` and a parseable date, and expose history; IMAP must expose `UIDVALIDITY` and fetch by UID range. Today `get_message` returns one `body`, no html, and `date` as a string.
-- Yahoo ids change shape; any code reading Yahoo `provider_message_id` as a bare UID (`Emails.get_message`) must split it. Attachments stay Gmail-only (#220).
+- Yahoo ids change shape; any code reading Yahoo `provider_message_id` as a bare UID (`Emails.get_message`) must split it. Attachments stay Gmail-only (#220). Superseded by #304: Yahoo attachments are listed from BODYSTRUCTURE and fetched part by part (`ImapAttachmentReader`), and step 4 ingests them.
 - Emails older than 90 days are never ingested unless the window setting is raised and a rescan is forced.
 - The legacy Applications Workflow and the new pipeline coexist until #228; they share only the `Emails` seam.
 - Three small additions to the schema: `email_sync_cursors`, `emails.tagged_at` (and Yahoo id format).

@@ -31,10 +31,12 @@ module Emails
       end
 
       def initialize(host:, port:, username:, password:)
-        @account       = username
-        @session       = ImapSession.new(host: host, port: port, username: username, password: password)
-        @label_manager = ImapLabelManager.new(session: @session)
-        @inbox         = ImapInboxReader.new(@session)
+        @account           = username
+        @session           = ImapSession.new(host: host, port: port, username: username, password: password)
+        @label_manager     = ImapLabelManager.new(session: @session)
+        @inbox             = ImapInboxReader.new(@session)
+        @text_fetcher      = ImapTextFetcher.new(@session)
+        @attachment_reader = ImapAttachmentReader.new(@session)
       end
 
       def on_exit
@@ -55,14 +57,17 @@ module Emails
         uid     = ImapInboxReader.split_message_id(message_id).last
         mailbox = build_mailbox(label)
 
-        @session.with_lock do
-          @session.ensure_mailbox(mailbox)
-          mail = parse_mail(uid, FULL_FIELDS)
-          raise "Message not found: #{message_id}" unless mail
+        mail    = @text_fetcher.mail(uid, mailbox:) || raise("Message not found: #{message_id}")
 
-          parsed = YahooMessageParser.new(uid, mail, mailbox).to_h
-          to_message(parsed, mail)
-        end
+        YahooMessageParser.new(uid, mail, mailbox).to_message
+      end
+
+      def attachments(message_id)
+        @attachment_reader.list(message_id)
+      end
+
+      def attachment(message_id, attachment_id)
+        @attachment_reader.data(message_id, attachment_id)
       end
 
       def labels
@@ -90,7 +95,6 @@ module Emails
       end
 
       HEADER_FIELDS = %w[RFC822.HEADER FLAGS UID].freeze
-      FULL_FIELDS   = %w[RFC822 FLAGS UID].freeze
 
       private
 
@@ -111,20 +115,6 @@ module Emails
       rescue StandardError => error
         $stderr.puts "Warning: failed to parse message UID #{uid}: #{error.message}"
         nil
-      end
-
-      def to_message(parsed, mail)
-        {
-          id: parsed[:id],
-          provider: parsed[:provider],
-          subject: parsed[:subject],
-          from: parsed[:from],
-          to: parsed[:to],
-          date: parsed[:date],
-          snippet: parsed[:snippet],
-          body: ImapBodyParser.new(mail).body,
-          labels: parsed[:labels]
-        }
       end
 
       def build_mailbox(label)

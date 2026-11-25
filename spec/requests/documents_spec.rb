@@ -1,6 +1,10 @@
 require "rails_helper"
 
 RSpec.describe "Documents" do
+  include EmailAdapterHelpers
+
+  after { Emails.configure }
+
   describe "GET /documents" do
     it "lists documents and searches by text" do
       create(:document, title: "Lease", text: "monthly rent")
@@ -65,6 +69,18 @@ RSpec.describe "Documents" do
       expect(response.body).to eq("%PDF-")
       expect(response.media_type).to eq("application/pdf")
       expect(response.headers["Content-Disposition"]).to include("attachment", "Offer letter.pdf")
+    end
+
+    it "streams the original file of a Yahoo email attachment" do
+      stub_yahoo_adapter(attachment: "%PDF-yahoo")
+      document = create(:document, title: "Offer letter", mime_type: "application/pdf",
+                                   source_ref: { "provider" => "yahoo", "message_id" => "77:101", "attachment_id" => "2" })
+
+      get download_document_path(document)
+
+      expect(response.body).to eq("%PDF-yahoo")
+      expect(response.headers["Content-Disposition"]).to include("attachment", "Offer letter.pdf")
+      expect(response.media_type).to eq("application/pdf")
     end
 
     it "redirects back with a generic alert that leaks no detail when the original cannot be fetched" do

@@ -1,0 +1,11 @@
+From: HR Team <hr@company.com>
+To: test@yahoo.com
+Subject: Scan
+Date: Mon, 1 Jan 2026 12:00:00 +0000
+Message-ID: <pdfonly@company.com>
+MIME-Version: 1.0
+Content-Type: application/pdf; name="scan.pdf"
+Content-Disposition: attachment; filename="scan.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKZmFrZSBjdiBieXRlcwolJUVPRgo=

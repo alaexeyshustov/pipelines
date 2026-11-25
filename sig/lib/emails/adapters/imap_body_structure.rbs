@@ -1,0 +1,38 @@
+module Emails
+  module Adapters
+    class ImapBodyStructure
+      MAX_DEPTH: Integer
+      TEXT_TYPES: Array[String]
+      ENCODINGS: Array[String]
+
+      class Leaf
+        attr_reader path: String
+        attr_reader mime_type: String
+        attr_reader charset: String?
+        attr_reader encoding: String
+        attr_reader size: Integer
+        attr_reader filename: String?
+        attr_reader inline: bool
+        attr_reader location: String?
+
+        def self.new: (path: String, mime_type: String, charset: String?, encoding: String, size: Integer, filename: String?, inline: bool, location: String?) -> instance
+        def text?: () -> bool
+        def attachment?: () -> bool
+        def part_numbers: () -> Array[Integer]
+      end
+
+      def self.leaves: (Net::IMAP::bodystructure? structure) -> Array[Leaf]
+
+      def leaves: (Net::IMAP::bodystructure? structure) -> Array[Leaf]
+
+      private
+
+      def walk: (Net::IMAP::bodystructure node, Array[Integer] numbers) -> Array[Leaf]
+      def leaf: (Net::IMAP::BodyTypeBasic | Net::IMAP::BodyTypeText | Net::IMAP::BodyTypeMessage node, Array[Integer] numbers) -> Leaf
+      def inline?: (Net::IMAP::BodyTypeBasic | Net::IMAP::BodyTypeText | Net::IMAP::BodyTypeMessage node) -> bool
+      def encoding: (String? value) -> String
+      def filename: (Net::IMAP::BodyTypeBasic | Net::IMAP::BodyTypeText | Net::IMAP::BodyTypeMessage node, Mail::ParameterHash type_params) -> String?
+      def parameters: (Hash[String, String]? params) -> Mail::ParameterHash
+    end
+  end
+end

@@ -1,0 +1,27 @@
+From: HR Team <hr@company.com>
+To: test@yahoo.com
+Subject: Interview invitation
+Date: Mon, 1 Jan 2026 12:00:00 +0000
+Message-ID: <alt@company.com>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="alt-b"
+
+This is a multi-part message in MIME format.
+--alt-b
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Dear candidate,
+
+We reviewed your application carefully and would like to invite you to an interview next week. We reviewed your application carefully and would like to invite you to an interview next week. We reviewed your application carefully and would like to invite you to an interview next week.
+
+Best regards
+HR
+
+--alt-b
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+<html><body><p>Dear candidate,</p><p>Please see the invitation.</p></body></html>
+
+--alt-b--
