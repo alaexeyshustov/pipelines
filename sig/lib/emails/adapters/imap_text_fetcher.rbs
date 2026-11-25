@@ -17,6 +17,8 @@ module Emails
 
       def text_leaves: (Net::IMAP::bodystructure? structure) -> Array[ImapBodyStructure::Leaf]
       def fetch_bodies: (Integer uid, Array[ImapBodyStructure::Leaf] leaves) -> Array[String]
+      def single_part: (String header, String body) -> Mail::Message
+
       def multipart: (String header, Array[ImapBodyStructure::Leaf] leaves, Array[String] bodies) -> Mail::Message
       def text_part: (String boundary, ImapBodyStructure::Leaf leaf, String body) -> String
       def multipart_header: (String boundary) -> String

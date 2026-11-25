@@ -154,6 +154,18 @@ RSpec.describe Emails::Adapters::ImapTextFetcher do
       end
     end
 
+    describe "a server that drops the blank line ending BODY[HEADER]" do
+      it "keeps the body of a single-part message apart from the last header" do
+        stub_const("HeaderWithoutBlankLine", Class.new(ImapResponseHelpers::Message) { def header = super.sub(/(?:\r\n)+\z/, "") })
+        message = HeaderWithoutBlankLine.new(**imap_text_message("first body line\r\nsecond").to_h)
+
+        mail = fetch_mail(message)
+
+        expect(mail.header["Content-Transfer-Encoding"].to_s).to eq("7bit")
+        expect(parsed(mail).body).to eq("first body line\nsecond")
+      end
+    end
+
     describe "multipart messages" do
       it "fetches every text part of nested alternatives in one request and not the image or the PDF" do
         mail = fetch_mail(imap_fixture("nested"))

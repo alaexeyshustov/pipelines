@@ -32,7 +32,12 @@ module Emails
         return Mail.new(header) if leaves.empty?
 
         bodies = fetch_bodies(uid, leaves)
-        structure&.multipart? ? multipart(header, leaves, bodies) : Mail.new(header + bodies.fetch(0))
+        structure&.multipart? ? multipart(header, leaves, bodies) : single_part(header, bodies.fetch(0))
+      end
+
+      # The header ends in exactly one blank line, even if the server dropped it, so the body never joins the last header.
+      def single_part(header, body)
+        Mail.new(header.sub(/(?:\r?\n)*\z/, "\r\n\r\n") + body)
       end
 
       # A single-part message is its own body whatever its name (as ImapBodyParser#text_parts has it); in a multipart one
