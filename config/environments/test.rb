@@ -43,7 +43,8 @@ Rails.application.configure do
   # Raise error when a before_action's only/except options reference missing actions.
   config.action_controller.raise_on_missing_callback_actions = true
 
-  config.active_job.queue_adapter = :test
+  # Playwright e2e (E2E=1, playwright.config.ts) runs the jobs it triggers, e.g. a pipeline run from the UI.
+  config.active_job.queue_adapter = ENV["E2E"].present? ? :async : :test
 
   # Fixed, non-secret Active Record Encryption keys so specs never need the master key.
   config.active_record.encryption.primary_key = "test-primary-key-0123456789abcdef"

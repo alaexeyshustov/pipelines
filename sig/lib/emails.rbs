@@ -37,6 +37,7 @@ module Emails
   self.@provider_registry: ProviderRegistry?
 
   def self.configure: (**options) -> void
+  def self.use_fixtures: (String path) -> void
   def self.search_messages: (String provider_name, String query, ?max_results: Integer, ?offset: Integer, ?label: String?) -> Array[message]
   def self.list_messages: (String provider_name, ?max_results: Integer, ?after_date: Date?, ?before_date: Date?, ?offset: Integer, ?label: String?) -> Array[message]
   def self.message: (String provider_name, String | Integer message_id, ?label: String?) -> message

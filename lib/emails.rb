@@ -20,6 +20,13 @@ module Emails
     end
   end
 
+  # Serves every provider from the JSON mailbox at +path+ (Adapters::FixtureAdapter); for e2e runs and offline
+  # development, set through EMAIL_FIXTURES (config/initializers/email_fixtures.rb).
+  def self.use_fixtures(path)
+    registry = @provider_registry = ProviderRegistry.new(PROVIDERS)
+    PROVIDER_NAMES.each { |name| registry.register(name, Adapters::FixtureAdapter.from_env(path:, provider: name)) }
+  end
+
   def self.search_messages(provider_name, query, max_results: 10, offset: 0, label: nil)
     fetch(provider_name).search_messages(query, max_results:, offset:, label:)
   end

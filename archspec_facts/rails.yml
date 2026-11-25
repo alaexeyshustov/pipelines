@@ -2,7 +2,7 @@
 version: 2
 producer: rails
 env:
-  RAILS_ENV: test
+  RAILS_ENV: development
 inputs:
 - config/**/*.{rb,yml,yaml}
 - Gemfile
@@ -66,10 +66,11 @@ snapshot:
   config/environment.rb: 73b2e731e02cedb9dc0335e1a35c3a2b7738032e3aa7e62ac32cbb8432b43c69
   config/environments/development.rb: 1044be7925d9d0001a5f5ef9544b5cafad428486a9e525f25748bc338528c448
   config/environments/production.rb: e14eef12b4f2aad88e1884814338f7ea61cedcb8c5ee80a58e78f40765ba0c07
-  config/environments/test.rb: 37496b8c4cca49da047eea7a83986772d0629a8a261ab7298af4e1bc9b8c15c4
+  config/environments/test.rb: b7b2fb267f2299d85cf124205aea9781b10a89e1896ab68e8bea3af06e8da674
   config/importmap.rb: e063c356463c79934ce80c5d458e2334214b5d4bedd454dcfc7c25e5831a377b
   config/initializers/active_job_logger.rb: 6158081cf3169400f2c81f3f1a54b0bae8589aaf9e919603cf9d223aafe9b144
   config/initializers/content_security_policy.rb: d9b4e4b943c3b00c59aeb215efde698089988dee7742fd64b147761f265c05b0
+  config/initializers/email_fixtures.rb: 3b47926948c8b9078719c02459694bcb0a97ad515a4fb0a96afdee2a29babca6
   config/initializers/falcon.rb: e1197b1710b85ef369f8f4ffd610dc50cdcb551a3d2f7b019edb8493acdaacd6
   config/initializers/filter_parameter_logging.rb: 4034b982447ad279f322984ce71a6ed3c4071a0b094120c6f2c35b5c96bb4029
   config/initializers/inflections.rb: 2eba6606afd45f7a45e0112fca908f5f717fa3e3e3707df10fd5f562fe8d74d1
