@@ -100,18 +100,18 @@ RSpec.describe Emails::Adapters::ImapTextFetcher do
         expect(parsed(fetch_mail(imap_fixture("base64_utf8"))).body).to eq("Привет, мир! Это тестовое письмо о вашей заявке.")
       end
 
-      it "drops a charset that is not a plain token instead of copying it into the rebuilt header" do
-        message = imap_text_message("Hello there")
+      it "drops a charset that is not a plain token instead of copying it into a rebuilt part header" do
+        message = imap_fixture("alternative")
         hostile = message.with(structure: message.structure.sub('"UTF-8"', '"utf-8; x-injected=1"'))
-        mail = fetch_mail(hostile)
+        plain = fetch_mail(hostile).parts.first
 
-        expect(mail.header.to_s).not_to include("x-injected")
-        expect(mail.content_type).not_to include("x-injected")
-        expect(parsed(mail).body).to eq("Hello there")
+        expect(plain.header.to_s).not_to include("x-injected")
+        expect(plain.content_type).to eq("text/plain")
+        expect(plain.decoded).to eq(Mail.new(message.raw).text_part.decoded)
       end
 
-      it "keeps a well-formed charset in the rebuilt header" do
-        expect(fetch_mail(imap_fixture("qp_latin1")).content_type).to match(/charset=iso-8859-1/i)
+      it "keeps a well-formed charset in a rebuilt part header" do
+        expect(fetch_mail(imap_fixture("alternative")).parts.map(&:content_type)).to eq([ "text/plain; charset=UTF-8", "text/html; charset=UTF-8" ])
       end
 
       it "asks for the part of a single-part message with the path 1" do
@@ -163,6 +163,31 @@ RSpec.describe Emails::Adapters::ImapTextFetcher do
 
         expect(mail.header["Content-Transfer-Encoding"].to_s).to eq("7bit")
         expect(parsed(mail).body).to eq("first body line\nsecond")
+      end
+
+      it "drops a final Content-Type line and keeps the rebuilt multipart header apart from the original headers" do
+        stub_const("HeaderWithoutBlankLine", Class.new(ImapResponseHelpers::Message) { def header = super.sub(/(?:\r\n)+\z/, "") })
+        message = HeaderWithoutBlankLine.new(**imap_fixture("alternative").to_h)
+        legacy = Mail.new(message.raw)
+
+        mail = fetch_mail(message)
+
+        expect(mail.header.to_s).not_to include("multipart/alternative")
+        expect(mail.parts.map(&:mime_type)).to eq(%w[text/plain text/html])
+        expect([ mail.message_id, parsed(mail).body ]).to eq([ legacy.message_id, parsed(legacy).body ])
+      end
+    end
+
+    describe "a message expunged between the header and the body request" do
+      it "returns nil instead of a Mail with an empty body" do
+        message = imap_fixture("alternative")
+        allow(imap).to receive(:uid_fetch) do |uid, attrs, *|
+          calls << Array(attrs)
+          calls.size == 1 ? [ imap_fetch_response(message, Array(attrs), uid: uid) ] : nil
+        end
+
+        expect(fetcher.mail(101, mailbox: "INBOX")).to be_nil
+        expect(calls.size).to eq(2)
       end
     end
 

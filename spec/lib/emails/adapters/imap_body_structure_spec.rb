@@ -89,12 +89,12 @@ RSpec.describe Emails::Adapters::ImapBodyStructure do
       expect(paths.map { |path| path.split(".").size }.max).to be <= 10
     end
 
-    it "logs a warning for the subtree it drops" do
+    it "logs one warning for the subtree it drops, not one per dropped child" do
       allow(Rails.logger).to receive(:warn)
 
       leaves_of(imap_nested_message(12))
 
-      expect(Rails.logger).to have_received(:warn).at_least(:once)
+      expect(Rails.logger).to have_received(:warn).once
     end
 
     it "returns every leaf of a structure at the depth limit without logging" do

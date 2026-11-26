@@ -13,10 +13,10 @@ module Emails
 
       private
 
-      def build: (Integer uid, Net::IMAP::FetchData head) -> Mail::Message
+      def build: (Integer uid, Net::IMAP::FetchData head) -> Mail::Message?
 
       def text_leaves: (Net::IMAP::bodystructure? structure) -> Array[ImapBodyStructure::Leaf]
-      def fetch_bodies: (Integer uid, Array[ImapBodyStructure::Leaf] leaves) -> Array[String]
+      def fetch_bodies: (Integer uid, Array[ImapBodyStructure::Leaf] leaves) -> Array[String]?
       def single_part: (String header, String body) -> Mail::Message
 
       def multipart: (String header, Array[ImapBodyStructure::Leaf] leaves, Array[String] bodies) -> Mail::Message

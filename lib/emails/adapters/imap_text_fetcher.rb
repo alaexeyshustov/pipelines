@@ -7,14 +7,15 @@ module Emails
     class ImapTextFetcher
       MAX_TEXT_PART_BYTES = 1_048_576
       MAX_TEXT_PARTS = 20
-      CONTENT_HEADERS = /^Content-(?:Type|Transfer-Encoding):[^\r\n]*(?:\r?\n[ \t][^\r\n]*)*\r?\n/i
+      CONTENT_HEADERS = /^Content-(?:Type|Transfer-Encoding):[^\r\n]*(?:\r?\n[ \t][^\r\n]*)*(?:\r?\n|\z)/i
       SAFE_CHARSET = /\A[\w.:-]+\z/
 
       def initialize(session)
         @session = session
       end
 
-      # The message of +uid+ in +mailbox+, or nil when the UID does not exist. Takes the session lock once.
+      # The message of +uid+ in +mailbox+, or nil when the UID does not exist (also when it is expunged between the
+      # header and the body request). Takes the session lock once.
       def mail(uid, mailbox:)
         @session.with_lock do
           @session.ensure_mailbox(mailbox)
@@ -32,6 +33,8 @@ module Emails
         return Mail.new(header) if leaves.empty?
 
         bodies = fetch_bodies(uid, leaves)
+        return unless bodies
+
         structure&.multipart? ? multipart(header, leaves, bodies) : single_part(header, bodies.fetch(0))
       end
 
@@ -48,14 +51,17 @@ module Emails
         leaves.first(MAX_TEXT_PARTS)
       end
 
-      # The encoded bytes of each leaf, in order, from one request (a partial range cuts a part at the limit).
+      # The encoded bytes of each leaf, in order, from one request (a partial range cuts a part at the limit); nil when
+      # the message is gone.
       def fetch_bodies(uid, leaves)
         data = @session.fetch(uid, leaves.map { |leaf| "BODY.PEEK[#{leaf.path}]<0.#{MAX_TEXT_PART_BYTES}>" })
+        return unless data
+
         leaves.map do |leaf|
           numbers = leaf.part_numbers
           first = numbers.fetch(0)
           rest = numbers.drop(1)
-          (data&.part(first, *rest, offset: 0) || data&.part(first, *rest)).to_s.b
+          (data.part(first, *rest, offset: 0) || data.part(first, *rest)).to_s.b
         end
       end
 
@@ -74,8 +80,9 @@ module Emails
         %(Content-Type: multipart/mixed; boundary="#{boundary}"\r\n\r\n).b
       end
 
+      # Ends in exactly one line break, even if the server dropped the blank line, so the rebuilt header starts a line.
       def without_content_headers(header)
-        header.gsub(CONTENT_HEADERS, "").sub(/(?:\r?\n)+\z/, "\r\n")
+        header.gsub(CONTENT_HEADERS, "").sub(/(?:\r?\n)*\z/, "\r\n")
       end
 
       def part_headers(leaf)

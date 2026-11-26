@@ -40,14 +40,15 @@ module Emails
 
       private
 
+      # A multipart at MAX_DEPTH would put its children deeper, so its whole subtree is dropped with one warning.
       def walk(node, numbers)
-        if numbers.size > MAX_DEPTH
-          Rails.logger.warn("IMAP BODYSTRUCTURE nested deeper than #{MAX_DEPTH} levels; part #{numbers.join('.')} and below skipped")
-          return []
-        end
-
         case node
         when Net::IMAP::BodyTypeMultipart
+          if numbers.size >= MAX_DEPTH
+            Rails.logger.warn("IMAP BODYSTRUCTURE nested deeper than #{MAX_DEPTH} levels; parts below #{numbers.join('.')} skipped")
+            return []
+          end
+
           node.parts.each_with_index.flat_map { |part, index| walk(part, numbers + [ index + 1 ]) }
         else
           [ leaf(node, numbers) ]
