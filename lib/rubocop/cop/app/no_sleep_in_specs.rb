@@ -3,7 +3,7 @@ module RuboCop
     module App
       # Forbids sleep calls in specs; use Capybara's async helpers or freeze time instead.
       class NoSleepInSpecs < Base
-        MSG = "Do not use `sleep` in specs; use Capybara's async helpers or `travel_to` instead."
+        MSG = "Do not use `sleep` in specs; use Capybara's async helpers or `travel_to` instead.".freeze
 
         def on_send(node)
           return unless spec_file?

@@ -3,7 +3,7 @@ module RuboCop
     module App
       # Only `call` and `initialize` may be public instance methods in a service.
       class ServiceSinglePublicMethod < Base
-        MSG = "Service public instance methods must be limited to `call` and `initialize`; `%<method>s` is not allowed."
+        MSG = "Service public instance methods must be limited to `call` and `initialize`; `%<method>s` is not allowed.".freeze
 
         ALLOWED = %i[call initialize].freeze
 

@@ -16,7 +16,7 @@
 class Interviews::EmailExtractor
   Result = Data.define(:interview)
 
-  TAG = "job_application"
+  TAG = "job_application".freeze
   MAX_CHARS = 8_000
   INTERVIEW_SLOTS = %i[first_interview_at second_interview_at third_interview_at fourth_interview_at].freeze
   # Order in which a status may replace another; a later action never moves the status to a lower rank.

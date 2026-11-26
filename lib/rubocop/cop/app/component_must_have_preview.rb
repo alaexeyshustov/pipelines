@@ -4,7 +4,7 @@ module RuboCop
       # Each *_component.rb must have a corresponding *_component_preview.rb. The abstract ApplicationComponent
       # base class has nothing to render, so it needs none.
       class ComponentMustHavePreview < Base
-        MSG = "Missing preview file for this component: expected `%<path>s`."
+        MSG = "Missing preview file for this component: expected `%<path>s`.".freeze
 
         def on_class(node)
           return unless component_file?

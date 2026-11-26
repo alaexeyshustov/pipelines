@@ -3,7 +3,7 @@ module RuboCop
     module App
       # aasm blocks must include the `column:` keyword argument.
       class AasmMustSpecifyColumn < Base
-        MSG = "Specify the `column:` keyword in `aasm` blocks (e.g., `aasm column: :status do`)."
+        MSG = "Specify the `column:` keyword in `aasm` blocks (e.g., `aasm column: :status do`).".freeze
 
         def on_block(node)
           return unless model_file?

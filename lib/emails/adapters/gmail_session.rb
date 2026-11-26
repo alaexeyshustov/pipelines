@@ -5,7 +5,7 @@ require "googleauth/stores/file_token_store"
 module Emails
   module Adapters
     class GmailSession
-      APPLICATION_NAME = "Application Pipeline"
+      APPLICATION_NAME = "Application Pipeline".freeze
       SCOPE = [ "https://www.googleapis.com/auth/gmail.modify" ].freeze
 
       def self.setup

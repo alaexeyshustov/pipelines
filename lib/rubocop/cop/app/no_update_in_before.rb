@@ -4,7 +4,7 @@ module RuboCop
       # Specs create records in their final state (factory attributes, traits or `let` overrides)
       # instead of updating them in `before`.
       class NoUpdateInBefore < Base
-        MSG = "Create records in their final state instead of updating them in `before`."
+        MSG = "Create records in their final state instead of updating them in `before`.".freeze
         UPDATE_METHODS = %i[update update!].freeze
 
         def on_send(node)

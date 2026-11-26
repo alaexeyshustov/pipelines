@@ -3,7 +3,7 @@ module RuboCop
     module App
       # Forbids Current.* access inside ViewComponents; inject current user explicitly.
       class NoCurrentInComponent < Base
-        MSG = "Do not access `Current` inside a component; inject the value through the constructor instead."
+        MSG = "Do not access `Current` inside a component; inject the value through the constructor instead.".freeze
 
         def on_send(node)
           return unless component_file?

@@ -4,7 +4,7 @@ module RuboCop
       # Forbids test doubles (double, instance_double, spy) in specs.
       # Use real objects or fake implementations instead.
       class NoTestDoubles < Base
-        MSG = "Do not use `%<method>s`; use real objects or fake implementations instead."
+        MSG = "Do not use `%<method>s`; use real objects or fake implementations instead.".freeze
 
         FORBIDDEN = %i[double instance_double spy].freeze
 

@@ -22,8 +22,8 @@ module RuboCop
         #   MAPPING: Hash[String, Integer]
         #
         class NoUntyped < RuboCop::RBS::CopBase
-          MSG = "Avoid `untyped`. Use a more specific type."
-          BARE_COLLECTION_MSG = "Give the element types, e.g. `Array[String]` or `Hash[Symbol, Integer]`."
+          MSG = "Avoid `untyped`. Use a more specific type.".freeze
+          BARE_COLLECTION_MSG = "Give the element types, e.g. `Array[String]` or `Hash[Symbol, Integer]`.".freeze
           COLLECTIONS = %i[Array Hash].freeze
 
           def on_rbs_def(decl)

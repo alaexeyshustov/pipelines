@@ -5,8 +5,8 @@ module RuboCop
       class ServiceMustDefineResult < Base
         extend AutoCorrector
 
-        MSG = "Services must define `Result = Data.define(...)` (or a `*Result` name) and return it."
-        STRUCT_MSG = "Define `%<name>s` with `Data.define`, not `Struct.new`."
+        MSG = "Services must define `Result = Data.define(...)` (or a `*Result` name) and return it.".freeze
+        STRUCT_MSG = "Define `%<name>s` with `Data.define`, not `Struct.new`.".freeze
 
         def on_class(node)
           return unless service_file?

@@ -6,7 +6,7 @@ module RuboCop
       # Heuristic: flags query methods on a model constant (`Metric.where`) or on an
       # association reader (`@experiment.samples.count`), not on passed-in collections.
       class NoQueriesInComponent < Base
-        MSG = "Do not query ActiveRecord in a component; have the caller pass loaded data."
+        MSG = "Do not query ActiveRecord in a component; have the caller pass loaded data.".freeze
         QUERY_METHODS = %i[
           where order reorder find_by find_by! pluck count exists? includes joins left_joins
           limit offset none distinct group sum maximum minimum average find_each
