@@ -721,7 +721,47 @@ class DbHelperCleanupFinishedTest < Minitest::Test
     assert worktree_registered?("GH-128")
   end
 
+  def test_cleanup_finished_removes_the_dependency_volumes_of_a_finished_container
+    worktree_path = register_issue_worktree("GH-140", sandbox_worktree_path("gh-140"))
+    register_container("GH-140", "claude-omcc", "finished")
+    container = "pipelines-claude-omcc-gh-140"
+    kept = [ "#{container}-other-bundle-amd64", "pipelines-claude-omcc-home", "pipelines-sandbox-pnpm-store" ]
+    removed = %W[#{container}-bundle-amd64 #{container}-node-modules-amd64 #{container}-bundle #{container}-node-modules]
+
+    cleaned = cleanup_finished(worktree_path, "STUB_PODMAN_LOG" => podman_log, "STUB_PODMAN_VOLUMES" => (removed + kept).join(","))
+
+    removed.each { |volume| assert_includes cleaned, "Removing sandbox volume: #{volume}" }
+    assert_equal removed.sort, podman_calls.grep(/\Avolume rm /).map { _1.split.last }.sort
+  end
+
+  def test_cleanup_finished_removes_agent_images_that_no_container_uses
+    images = %w[
+      localhost/pipelines-claude-matt-agent-amd64:old localhost/pipelines-claude-matt-agent-amd64:used
+      localhost/pipelines-claude-omcc-agent:verify localhost/pipelines-sandbox-gateway:abc
+      localhost/propstack-codex-matt-agent:x
+    ]
+
+    stdout, stderr, status = run_helper(
+      "cleanup_finished",
+      "STUB_PODMAN_LOG" => podman_log, "STUB_PODMAN_IMAGES" => images.join(","),
+      "STUB_PODMAN_IMAGE_USERS" => "localhost/pipelines-claude-matt-agent-amd64:used=pipelines-claude-matt-gh-1"
+    )
+
+    assert status.success?, stderr
+    assert_includes stdout, "Keeping image still used by pipelines-claude-matt-gh-1: localhost/pipelines-claude-matt-agent-amd64:used"
+    assert_equal %w[localhost/pipelines-claude-matt-agent-amd64:old localhost/pipelines-claude-omcc-agent:verify],
+                 podman_calls.grep(/\Aimage rm /).map { _1.split.last }
+  end
+
   private
+
+  def podman_log
+    @podman_log ||= File.join(@temporary_directory, "podman.log")
+  end
+
+  def podman_calls
+    File.exist?(podman_log) ? File.readlines(podman_log, chomp: true) : []
+  end
 
   # Runs cleanup_finished with the git stub owning worktree_path and returns
   # its output once it has succeeded.

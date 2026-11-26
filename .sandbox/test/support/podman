@@ -25,6 +25,9 @@
 #   STUB_PODMAN_BUILD_FAILURE=true     `build` fails
 #   STUB_FIREWALL_FAILURE=true         `machine ssh ... nft -f -` fails
 #   STUB_PODMAN_NFT_LOG=<file>         append stdin of `machine ssh ... nft -f -`
+#   STUB_PODMAN_VOLUMES=<a,b,..>       names printed by `volume ls`
+#   STUB_PODMAN_IMAGES=<repo:tag,..>   tags printed by `image list`
+#   STUB_PODMAN_IMAGE_USERS=<repo:tag=name,..>   containers printed by `container list --filter ancestor=<repo:tag>`
 
 require "json"
 require "fileutils"
@@ -221,6 +224,14 @@ args.shift if args.first == "container" && %w[inspect exists rm stop start].incl
 case args.first
 when "image"
   exit 1 if args[1] == "exists" && ENV["STUB_PODMAN_IMAGE_MISSING"] == "true"
+  puts ENV.fetch("STUB_PODMAN_IMAGES", "").split(",") if args[1] == "list"
+when "volume"
+  puts ENV.fetch("STUB_PODMAN_VOLUMES", "").split(",") if args[1] == "ls"
+when "container"
+  abort "Unexpected podman container command: #{args.join(" ")}" unless args[1] == "list"
+  ancestor = option_values(args, "--filter").first.to_s.delete_prefix("ancestor=")
+  users = ENV.fetch("STUB_PODMAN_IMAGE_USERS", "").split(",").map { _1.split("=", 2) }
+  puts users.select { |tag, _| tag == ancestor }.map(&:last)
 when "build"
   abort "stubbed build failure" if ENV["STUB_PODMAN_BUILD_FAILURE"] == "true"
 when "attach", "logs"
