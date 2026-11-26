@@ -1,4 +1,5 @@
-# Embeds one Document for vector search (ADR 0014). Idempotent: unchanged text is skipped by digest, so it can be enqueued
+# Embeds one Document for vector search (ADR 0014) and queues its duplicate detection. Document::SyncDriveJob queues it
+# for Drive files; email attachments are embedded by the Email Ingestion pipeline (DocumentsEmbed, ADR 0018). Idempotent: unchanged text is skipped by digest, so it can be enqueued
 # after every store or update. RubyLLM already retries HTTP-level failures, so an unreachable model server gets one outer retry.
 class Document::EmbedJob < ApplicationJob
   queue_as :default

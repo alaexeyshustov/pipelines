@@ -1,4 +1,20 @@
 module Taggable
+  type classification_status = "pending" | "tagged" | "untagged" | "failed"
+
   def taggings: () -> ActiveRecord::Associations::CollectionProxy
   def tags: () -> ActiveRecord::Associations::CollectionProxy
+  def classification_status: () -> classification_status
+  def classification_status=: (classification_status | Symbol) -> (classification_status | Symbol)
+  def pending?: () -> bool
+  def tagged?: () -> bool
+  def untagged?: () -> bool
+  def failed?: () -> bool
+
+  module ClassMethods
+    def awaiting_tagging: (before: Time | ActiveSupport::TimeWithZone) -> ActiveRecord::Relation
+    def pending: () -> ActiveRecord::Relation
+    def tagged: () -> ActiveRecord::Relation
+    def untagged: () -> ActiveRecord::Relation
+    def failed: () -> ActiveRecord::Relation
+  end
 end

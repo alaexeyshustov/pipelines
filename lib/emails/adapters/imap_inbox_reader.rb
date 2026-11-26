@@ -32,8 +32,9 @@ module Emails
         search([ "UID", "#{last_uid + 1}:*" ]).select { |uid| uid > last_uid }
       end
 
-      def uids_since(date)
-        search(ImapSearchCriteria.new(after_date: date).build)
+      # UIDs received from +from+ (a day, IMAP has no finer search) up to the day of +before+, exclusive.
+      def uids_since(from, before: nil)
+        search(ImapSearchCriteria.new(after_date: from.to_date, before_date: before&.to_date).build)
       end
 
       # The parsed RFC822 message, or nil when the UID does not exist.

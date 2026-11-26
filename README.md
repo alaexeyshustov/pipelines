@@ -116,7 +116,7 @@ bin/pipeline upload_gist --filename=jobs.csv
 
 ## How the pipeline works
 
-Pipelines are configured and run from the web UI (`/orchestration/pipelines`). The seeded `Email Ingestion` pipeline syncs new Gmail/Yahoo INBOX mail into `Email`, then tags it and extracts `Interview` rows from `job_application` emails (ADR 0013).
+Pipelines are configured and run from the web UI (`/orchestration/pipelines`). The seeded `Email Ingestion` pipeline syncs new Gmail/Yahoo INBOX mail into `Email`, then tags and embeds it and ingests the attachments of tagged emails into documents (ADR 0018). It runs on demand from the pipeline page: pick the mailboxes and, optionally, a date range; without dates each mailbox continues from where its last sync stopped. Interview rows are not extracted from `job_application` emails by this pipeline.
 
 ---
 

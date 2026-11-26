@@ -1,18 +1,20 @@
 # Embeds Emails and Documents (ADR 0014): one batched model call for the records whose text digest differs from
-# the stored embedding of +model+. Unchanged records cost nothing; records without text are skipped.
+# the stored embedding of +model+. Unchanged records cost nothing; records without text are skipped. With
+# +force: true+ the digest comparison is skipped and every record with text is embedded again.
 #
 #   Embeddings::Embed.call([ email ])  # => Result[embedded: 1, unchanged: 0, skipped: 0]
 class Embeddings::Embed
   Result = Data.define(:embedded, :unchanged, :skipped)
   Pending = Data.define(:record, :text, :digest)
 
-  def self.call(records, model: LlmModels.embedding)
-    new(records, model:).call
+  def self.call(records, model: LlmModels.embedding, force: false)
+    new(records, model:, force:).call
   end
 
-  def initialize(records, model:)
+  def initialize(records, model:, force:)
     @records = records
     @model = model
+    @force = force
   end
 
   def call
@@ -32,6 +34,8 @@ class Embeddings::Embed
   end
 
   def stale_candidates(pending)
+    return pending if @force
+
     digests = stored_digests(pending.map(&:record))
     pending.reject { |candidate| digests[[ candidate.record.class.polymorphic_name, candidate.record.id ]] == candidate.digest }
   end

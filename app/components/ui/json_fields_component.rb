@@ -5,10 +5,13 @@ module UI
     CHECKBOX_CLASSES = "rounded border-gray-300 text-indigo-600".freeze
     LABEL_CLASSES    = "block text-sm font-medium text-gray-700 mb-1".freeze
 
-    def initialize(form:, schema:, name_prefix: nil)
+    # +hints+ maps a field name to a line of context under that field (what the caller already knows, e.g. when each
+    # mailbox was last synced). The component makes no queries, so the caller looks it up.
+    def initialize(form:, schema:, name_prefix: nil, hints: {})
       @form        = form
       @schema      = schema
       @name_prefix = name_prefix
+      @hints       = hints
     end
 
     def fields
@@ -17,7 +20,9 @@ module UI
           name:     field_name,
           schema:   field_schema,
           kind:     field_kind(field_schema),
-          required: required_fields.include?(field_name)
+          required: required_fields.include?(field_name),
+          description: field_schema["description"],
+          hint:     @hints[field_name]
         }
       end
     end

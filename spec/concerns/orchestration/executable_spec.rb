@@ -79,4 +79,56 @@ RSpec.describe Orchestration::Executable do
       end
     end
   end
+
+  describe '.output_schema' do
+    it 'returns nil when output_schema is not declared' do
+      klass = make_executor { def initialize(**); end }
+      expect(klass.output_schema).to be_nil
+    end
+
+    context 'with a declaration' do
+      subject(:schema) do
+        make_executor do
+          output_schema(
+            tagged: { "type" => "array", "items" => { "type" => "integer" } },
+            failed: { type: "array", items: { type: "object" } }
+          )
+          def initialize(**); end
+        end.output_schema
+      end
+
+      it 'builds an object schema with the declared properties' do
+        expect(schema).to include("type" => "object")
+        expect(schema["properties"].keys).to contain_exactly("tagged", "failed")
+      end
+
+      it 'requires every declared key' do
+        expect(schema["required"]).to contain_exactly("tagged", "failed")
+      end
+
+      it 'stringifies nested keys' do
+        expect(schema["properties"]["failed"]).to eq("type" => "array", "items" => { "type" => "object" })
+      end
+    end
+
+    it 'is not checked against the initialize keywords' do
+      klass = make_executor do
+        output_schema(ids: { "type" => "array" })
+        def initialize(date:, **); end
+      end
+
+      expect { klass.output_schema }.not_to raise_error
+    end
+
+    it 'is independent of input_schema' do
+      klass = make_executor do
+        input_schema(date: { "type" => "string" })
+        output_schema(ids: { "type" => "array" })
+        def initialize(date:, **); end
+      end
+
+      expect(klass.input_schema["properties"].keys).to eq([ "date" ])
+      expect(klass.output_schema["properties"].keys).to eq([ "ids" ])
+    end
+  end
 end

@@ -21,6 +21,8 @@ module Orchestration
 
     @pipeline: Pipeline
 
+    def self.output_schema_for: (Action action) -> json_object?
+
     def initialize: (Pipeline pipeline) -> void
     def validate: () -> Array[StepResult]
 

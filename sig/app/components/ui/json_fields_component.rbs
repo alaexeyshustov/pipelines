@@ -7,14 +7,16 @@ module UI
     @form: ActionView::Helpers::FormBuilder
     @schema: json_object
     @name_prefix: String?
+    @hints: Hash[String, String]
 
     def initialize: (
       form: ActionView::Helpers::FormBuilder,
       schema: json_object,
-      ?name_prefix: String?
+      ?name_prefix: String?,
+      ?hints: Hash[String, String]
     ) -> void
 
-    def fields: () -> Array[{ name: String, schema: json_object, kind: Symbol, required: bool }]
+    def fields: () -> Array[{ name: String, schema: json_object, kind: Symbol, required: bool, description: json_object_value, hint: String? }]
     def hardcoded_display: (json_object field_schema) -> String
     def input_name: (String field_name, ?array: bool) -> String
 

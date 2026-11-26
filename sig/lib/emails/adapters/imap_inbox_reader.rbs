@@ -18,7 +18,7 @@ module Emails
       def uid_validity: () -> Integer
       def status: () -> Status
       def uids_after: (Integer last_uid) -> Array[Integer]
-      def uids_since: (Date date) -> Array[Integer]
+      def uids_since: (Time | ActiveSupport::TimeWithZone from, ?before: (Time | ActiveSupport::TimeWithZone)?) -> Array[Integer]
       def mail: (Integer uid) -> Mail::Message?
 
       private

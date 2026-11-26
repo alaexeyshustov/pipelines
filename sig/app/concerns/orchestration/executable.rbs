@@ -5,8 +5,11 @@ module Orchestration
     module ClassMethods
       @_input_schema: json_object?
       @_input_schema_types: Hash[String, json_object]?
+      @_output_schema: json_object?
+      @_output_schema_properties: Hash[String, json_object]?
 
       def input_schema: (?Hash[Symbol, json_object] declared_types) -> json_object?
+      def output_schema: (**json_object properties) -> json_object?
 
       private
 

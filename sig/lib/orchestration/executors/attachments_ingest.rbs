@@ -1,0 +1,27 @@
+module Orchestration
+  module Executors
+    class AttachmentsIngest
+      include Executable
+      extend Executable::ClassMethods
+      include PerRecord
+
+      type output = { "document_ids" => Array[Integer], "skipped" => Array[Integer], "failed" => Array[json_object] }
+
+      @email_ids: Array[Integer]
+
+      def self.call: (email_ids: Array[Integer], **json_object_value) -> output
+
+      def initialize: (email_ids: Array[Integer], **json_object_value) -> void
+      def execute: () -> output
+
+      private
+
+      def ingest: (Email email, Array[Integer] document_ids, Array[json_object] failed) -> void
+      def skipped_ids: () -> Array[Integer]
+      def eligible: () -> ActiveRecord::Relation
+      def unprocessed: () -> ActiveRecord::Relation
+      def existing_document_ids: () -> Array[Integer]
+      def unfinished_document_ids: () -> Array[Integer]
+    end
+  end
+end

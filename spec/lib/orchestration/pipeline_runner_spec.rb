@@ -1357,4 +1357,107 @@ RSpec.describe Orchestration::PipelineRunner do
       end
     end
   end
+
+  describe 'heartbeat' do
+    include ActiveSupport::Testing::TimeHelpers
+
+    let(:service_action) { create(:orchestration_action, :service_kind, agent_class: "Orchestration::Executors::DriveDocumentsSync") }
+    let(:step2)          { create(:orchestration_step, pipeline: pipeline, name: "second", position: 2) }
+    let(:seen)           { {} }
+    let(:start)          { Time.zone.local(2026, 4, 1, 12) }
+
+    before do
+      create(:orchestration_step_action, step: step1, action: service_action, position: 1, output_key: "first")
+      create(:orchestration_step_action, step: step2, action: service_action, position: 1, output_key: "second")
+      travel_to(start)
+    end
+
+    after { Orchestration::Current.reset }
+
+    # Reads the stored value (the spec's own look at the row is not the code under test).
+    def stored_heartbeat = Prosopite.pause { Orchestration::PipelineRun.where(id: pipeline_run.id).pick(:heartbeat_at) }
+
+    def stub_executor(&block)
+      calls = 0
+      allow(Orchestration::Executors::DriveDocumentsSync).to receive(:call) do
+        calls += 1
+        yield(calls)
+        { "ok" => true }
+      end
+    end
+
+    it 'sets heartbeat_at when the run starts' do
+      stub_executor { |_call| seen[:during_first] = stored_heartbeat }
+
+      described_class.new(pipeline_run).run
+
+      expect(seen[:during_first]).to eq(start)
+    end
+
+    it 'touches it before and after each step' do
+      stub_executor do |call|
+        seen[:"during_#{call}"] = stored_heartbeat
+        travel 5.minutes
+      end
+
+      described_class.new(pipeline_run).run
+
+      expect(seen[:during_1]).to eq(start)
+      expect(seen[:during_2]).to eq(start + 5.minutes) # set after step 1, before step 2
+      expect(pipeline_run.reload.heartbeat_at).to eq(start + 10.minutes) # set after the last step
+    end
+
+    # Executors run in Async tasks (a new fiber each) and the app isolates CurrentAttributes per fiber
+    # (config.active_support.isolation_level = :fiber), so the runner must set the run inside the task too.
+    it 'makes the run the current one inside the executor, which runs in its own Async task, and clears it afterwards' do
+      stub_executor { |call| seen[:"current_#{call}"] = Orchestration::Current.pipeline_run&.id }
+
+      described_class.new(pipeline_run).run
+
+      expect(seen).to eq(current_1: pipeline_run.id, current_2: pipeline_run.id)
+      expect(Orchestration::Current.pipeline_run).to be_nil
+    end
+
+    it 'lets Heartbeat.beat inside an executor stamp the run' do
+      stub_executor do |call|
+        next unless call == 1
+
+        travel 2.minutes
+        Orchestration::Heartbeat.beat
+        seen[:beat] = stored_heartbeat
+      end
+
+      described_class.new(pipeline_run).run
+
+      expect(seen[:beat]).to eq(start + 2.minutes)
+    end
+
+    it 'clears the current run when a step fails' do
+      allow(Orchestration::Executors::DriveDocumentsSync).to receive(:call).and_raise(RuntimeError, "boom")
+
+      described_class.new(pipeline_run).run
+
+      expect(pipeline_run.reload.status).to eq("failed")
+      expect(Orchestration::Current.pipeline_run).to be_nil
+    end
+
+    it 'clears the current run when the runner itself raises' do
+      allow(Orchestration::Executors::DriveDocumentsSync).to receive(:call).and_return({ "ok" => true })
+      allow(pipeline_run).to receive(:update!).and_call_original
+      allow(pipeline_run).to receive(:update!).with(hash_including(status: "completed")).and_raise(ActiveRecord::StatementInvalid, "db gone")
+
+      expect { described_class.new(pipeline_run).run }.to raise_error(ActiveRecord::StatementInvalid)
+      expect(Orchestration::Current.pipeline_run).to be_nil
+    end
+
+    it 'stamps the beat after a step that ran, even when the next step fails to resolve its input' do
+      step_action = Orchestration::StepAction.find_by!(output_key: "second")
+      step_action.update!(input_mapping: { "x" => { "from" => "missing" } })
+      stub_executor { |_call| nil }
+
+      described_class.new(pipeline_run).run
+
+      expect(pipeline_run.reload).to have_attributes(status: "failed", heartbeat_at: start)
+    end
+  end
 end

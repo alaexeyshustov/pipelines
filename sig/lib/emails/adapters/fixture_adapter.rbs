@@ -1,0 +1,60 @@
+module Emails
+  module Adapters
+    type fixture_options = { path: String, provider: String }
+
+    class FixtureAdapter < BaseAdapter
+      class Message
+        attr_reader id: String
+        attr_reader uid: Integer
+        attr_reader from: String
+        attr_reader to: String
+        attr_reader subject: String
+        attr_reader date: Time
+        attr_reader body: String
+        attr_reader html_body: String?
+        attr_reader attachments: Array[Attachment]
+
+        def initialize: (id: String, uid: Integer, from: String, to: String, subject: String, date: Time, body: String, html_body: String?, attachments: Array[Attachment]) -> void
+      end
+
+      class Attachment
+        attr_reader id: String
+        attr_reader filename: String
+        attr_reader mime_type: String
+        attr_reader data: String
+
+        def initialize: (id: String, filename: String, mime_type: String, data: String) -> void
+      end
+
+      @provider: String
+      @account: String
+      @history_id: String
+      @uid_validity: Integer
+      @messages: Hash[String, Message]
+
+      def self.from_env: (fixture_options opts) -> FixtureAdapter
+
+      def initialize: (provider: String, mailbox: Hash[String, json_object_value]) -> void
+      attr_reader account: String
+      def profile: () -> { email_address: String, history_id: String }
+      def inbox_message_ids_since: (String history_id) -> Array[String]
+      def inbox_message_ids_after: (Time | ActiveSupport::TimeWithZone from, ?before: (Time | ActiveSupport::TimeWithZone)?) -> Array[String]
+      def inbox_status: () -> ImapInboxReader::Status
+      def inbox_uids_after: (Integer last_uid) -> Array[Integer]
+      def inbox_uids_since: (Time | ActiveSupport::TimeWithZone from, ?before: (Time | ActiveSupport::TimeWithZone)?) -> Array[Integer]
+      def fetch_message: (String | Integer message_id) -> full_message
+      def attachments: (String | Integer message_id) -> Array[attachment]
+      def attachment: (String | Integer message_id, String attachment_id) -> String
+
+      private
+
+      def build_message: (json_object message) -> Message
+      def build_attachments: (json_object message) -> Array[Attachment]
+      def text: (json_object fixture, String key) -> String
+      def message_id: (Message message) -> String
+      def uids: () -> Array[Integer]
+      def find: (String | Integer message_id) -> Message
+      def received: (Time | ActiveSupport::TimeWithZone from, (Time | ActiveSupport::TimeWithZone)? before) -> Array[Message]
+    end
+  end
+end

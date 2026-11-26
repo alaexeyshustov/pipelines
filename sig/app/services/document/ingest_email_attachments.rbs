@@ -1,0 +1,29 @@
+class Document
+  class IngestEmailAttachments
+    class Result
+      attr_reader document_ids: Array[Integer]
+      attr_reader failed: Array[String]
+
+      def self.new: (document_ids: Array[Integer], failed: Array[String]) -> Result
+    end
+
+    # An attachment whose MIME type was resolved from its declared type and filename; nil when unknown.
+    type resolved_attachment = { id: String, filename: String, mime_type: String?, size: Integer }
+
+    @email: Email
+
+    def self.call: (Email email) -> Result
+
+    def initialize: (Email email) -> void
+    def call: () -> Result
+
+    private
+
+    def supported_attachments: () -> Array[resolved_attachment]
+    def ingest_one: (resolved_attachment attachment) -> [Integer?, String?]
+    def with_resolved_type: (Emails::attachment attachment) -> resolved_attachment
+    def document_id: (resolved_attachment attachment) -> Integer
+    def extract_text: (String data, resolved_attachment attachment) -> String
+    def ingest: (resolved_attachment attachment, String checksum, String text) -> Document
+  end
+end

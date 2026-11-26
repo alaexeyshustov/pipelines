@@ -18,10 +18,11 @@ module Embeddings
 
     @records: Array[Email | Document]
     @model: String
+    @force: bool
 
-    def self.call: (Array[Email | Document] records, ?model: String) -> Result
+    def self.call: (Array[Email | Document] records, ?model: String, ?force: bool) -> Result
 
-    def initialize: (Array[Email | Document] records, model: String) -> void
+    def initialize: (Array[Email | Document] records, model: String, force: bool) -> void
     def call: () -> Result
 
     private

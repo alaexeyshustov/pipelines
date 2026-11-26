@@ -58,10 +58,10 @@ RSpec.describe Document::SyncDriveJob do
     expect { described_class.perform_now }.to have_enqueued_job(Document::TagJob).exactly(2).times
   end
 
-  it "leaves new Documents untagged until Document::TagJob succeeds" do
+  it "leaves new Documents pending until Document::TagJob classifies them" do
     described_class.perform_now
 
-    expect(Document.where(source: "drive").pluck(:tagged_at)).to all(be_nil)
+    expect(Document.where(source: "drive").pluck(:classification_status)).to all(eq("pending"))
   end
 
   it "enqueues the embedding of each new Document" do
@@ -94,13 +94,13 @@ RSpec.describe Document::SyncDriveJob do
   end
 
   describe "retrying the tagging of unchanged Documents" do
-    let!(:stale) { drive_document("f1", md5: "md5-1", created_at: 2.hours.ago, tagged_at: nil) }
+    let!(:stale) { drive_document("f1", md5: "md5-1", created_at: 2.hours.ago, classification_status: "pending") }
 
     before do
-      drive_document("g1", modified_time: "2026-02-01T00:00:00.000Z", created_at: 2.hours.ago, tagged_at: 1.hour.ago)
+      drive_document("g1", modified_time: "2026-02-01T00:00:00.000Z", created_at: 2.hours.ago, classification_status: "tagged")
     end
 
-    it "queues Document::TagJob for an untagged one that is older than REQUEUE_AFTER" do
+    it "queues Document::TagJob for a pending one that is older than REQUEUE_AFTER" do
       expect { described_class.perform_now }.to have_enqueued_job(Document::TagJob).with(stale.id).once
     end
 
@@ -125,12 +125,41 @@ RSpec.describe Document::SyncDriveJob do
     )
   end
 
-  it "clears tagged_at of a changed file and queues it for tagging again" do
-    existing = drive_document("f1", md5: "stale-md5", tagged_at: 1.day.ago)
-    drive_document("g1", modified_time: "2026-02-01T00:00:00.000Z", tagged_at: 1.day.ago)
+  it "resets a changed file to pending and queues it for tagging again" do
+    existing = drive_document("f1", md5: "stale-md5", classification_status: "tagged")
+    drive_document("g1", modified_time: "2026-02-01T00:00:00.000Z", classification_status: "tagged")
 
     expect { described_class.perform_now }.to have_enqueued_job(Document::TagJob).with(existing.id).once
-    expect(existing.reload.tagged_at).to be_nil
+    expect(existing.reload).to be_pending
+  end
+
+  it "resets a changed file that was untagged or failed to pending too" do
+    untagged = drive_document("f1", md5: "stale-md5", classification_status: "untagged")
+    drive_document("g1", modified_time: "2026-02-01T00:00:00.000Z", classification_status: "tagged")
+
+    described_class.perform_now
+
+    expect(untagged.reload).to be_pending
+  end
+
+  it "classifies a changed file when the queued Document::TagJob runs" do
+    allow(Tags::Classifier).to receive(:call) do |item|
+      Tagging.create!(taggable: item, tag: create(:tag), source: "llm", confidence: 0.9)
+      Tags::Classifier::Result.new(taggings: [])
+    end
+    existing = drive_document("f1", md5: "stale-md5", classification_status: "untagged")
+    drive_document("g1", modified_time: "2026-02-01T00:00:00.000Z", classification_status: "tagged")
+
+    perform_enqueued_jobs(only: Document::TagJob) { described_class.perform_now }
+
+    expect(existing.reload).to be_tagged
+  end
+
+  it "requeues a failed Document older than REQUEUE_AFTER, like a pending one" do
+    failed = drive_document("f1", md5: "md5-1", created_at: 2.hours.ago, classification_status: "failed")
+    drive_document("g1", modified_time: "2026-02-01T00:00:00.000Z", classification_status: "tagged")
+
+    expect { described_class.perform_now }.to have_enqueued_job(Document::TagJob).with(failed.id).once
   end
 
   it "deletes Documents of Drive files that are gone, leaving other sources alone" do
@@ -207,7 +236,7 @@ RSpec.describe Document::SyncDriveJob do
   end
 
   context "when a gone file was re-uploaded under a new id with the same bytes" do
-    let!(:old) { drive_document("old", md5: "md5-1", checksum: Digest::SHA256.hexdigest("%PDF"), tagged_at: 1.day.ago) }
+    let!(:old) { drive_document("old", md5: "md5-1", checksum: Digest::SHA256.hexdigest("%PDF"), classification_status: "tagged") }
 
     before { entries.replace([ pdf_entry ]) }
 
@@ -223,7 +252,7 @@ RSpec.describe Document::SyncDriveJob do
     it "keeps its tagging and does not extract it again" do
       described_class.perform_now
 
-      expect(old.reload.tagged_at).to be_present
+      expect(old.reload).to be_tagged
       expect(Document::TextExtractor).not_to have_received(:call)
     end
 

@@ -484,4 +484,127 @@ RSpec.describe "Orchestration::Pipelines" do
       expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
     end
   end
+
+  describe "the Email Ingestion run dialog" do
+    include ActiveJob::TestHelper
+
+    let(:pipeline) { Orchestration::PipelineImporter.call(JSON.parse(Rails.root.join("config/pipelines/email_ingestion.json").read)).pipelines.sole }
+
+    describe "GET /orchestration/pipelines/:id" do
+      it "shows when each provider was last synced, 'never' for one that was not" do
+        create(:email_sync_cursor, provider: "gmail", last_synced_at: Time.utc(2026, 3, 20, 14, 3))
+
+        get orchestration_pipeline_path(pipeline)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Last synced: gmail 2026-03-20 14:03, yahoo never")
+      end
+
+      it "describes the fields of the run form" do
+        get orchestration_pipeline_path(pipeline)
+
+        expect(response.body).to include("Mailboxes to read.")
+        expect(response.body).to include("Leave empty to fetch mail received since the last sync.")
+      end
+
+      it "offers a date input per date field and a checkbox per provider" do
+        get orchestration_pipeline_path(pipeline)
+
+        page = Nokogiri::HTML(response.body)
+        expect(page.css("input[type='date'][name='initial_input[date_from]']")).to be_present
+        expect(page.css("input[type='date'][name='initial_input[date_to]']")).to be_present
+        expect(page.css("input[type='checkbox'][name='initial_input[providers][]']").pluck("value")).to match_array(%w[gmail yahoo])
+      end
+
+      it "shows no hints on another pipeline's run dialog" do
+        schema = { "type" => "object", "required" => [ "date" ], "properties" => { "date" => { "type" => "string" } } }
+        other = create(:orchestration_pipeline, name: "Fetcher Pipeline", initial_input_schema: schema)
+        step = create(:orchestration_step, pipeline: other, position: 1)
+        create(:orchestration_step_action, step:, position: 1,
+                                           action: create(:orchestration_action, :service_kind, agent_class: "Orchestration::Executors::EmailsFetcher"))
+
+        get orchestration_pipeline_path(other)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).not_to include("Last synced")
+        expect(Nokogiri::HTML(response.body).css("input[name='initial_input[date]']")).to be_present
+      end
+
+      it "shows no hints for a pipeline without steps" do
+        get orchestration_pipeline_path(create(:orchestration_pipeline, initial_input_schema: { "type" => "object", "properties" => {} }))
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).not_to include("Last synced")
+      end
+    end
+
+    describe "POST /orchestration/pipelines/:id/run" do
+      it "accepts blank dates, as the form sends them", :aggregate_failures do
+        params = { initial_input: { providers: [ "gmail" ], date_from: "", date_to: "" } }
+
+        expect { post run_orchestration_pipeline_path(pipeline), params: }.to change(Orchestration::PipelineRun, :count).by(1)
+
+        expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
+        expect(flash[:notice]).to eq("Pipeline run triggered.")
+        expect(Orchestration::PipelineRun.last.initial_input).to eq("providers" => [ "gmail" ], "date_from" => "", "date_to" => "")
+      end
+
+      it "enqueues the run for the blank-date request" do
+        params = { initial_input: { providers: [ "gmail" ], date_from: "", date_to: "" } }
+
+        expect { post run_orchestration_pipeline_path(pipeline), params: }.to have_enqueued_job(PipelineRunJob)
+      end
+
+      it "shows the form error when no provider was ticked", :aggregate_failures do
+        expect {
+          post run_orchestration_pipeline_path(pipeline), params: { initial_input: { date_from: "", date_to: "" } }
+        }.not_to change(Orchestration::PipelineRun, :count)
+
+        expect(response).to redirect_to(orchestration_pipeline_path(pipeline))
+        expect(flash[:alert]).to include("providers")
+      end
+
+      it "enqueues nothing when no provider was ticked" do
+        expect {
+          post run_orchestration_pipeline_path(pipeline), params: { initial_input: { date_from: "", date_to: "" } }
+        }.not_to have_enqueued_job(PipelineRunJob)
+      end
+
+      it "accepts an invalid date, and the run fails with a message that names it" do
+        perform_enqueued_jobs(only: PipelineRunJob) do
+          post run_orchestration_pipeline_path(pipeline), params: { initial_input: { providers: [ "gmail" ], date_from: "not-a-date", date_to: "" } }
+        end
+
+        run = Orchestration::PipelineRun.last
+        expect(run).to have_attributes(status: "failed", error: a_string_including("date_from"))
+      end
+
+      it "fails a run whose date_to is in the future" do
+        perform_enqueued_jobs(only: PipelineRunJob) do
+          post run_orchestration_pipeline_path(pipeline),
+               params: { initial_input: { providers: [ "gmail" ], date_from: "2026-01-01", date_to: 2.days.from_now.to_date.iso8601 } }
+        end
+
+        expect(Orchestration::PipelineRun.last).to have_attributes(status: "failed", error: a_string_including("date_to"))
+      end
+
+      it "rejects a second run while one is active" do
+        create(:orchestration_pipeline_run, pipeline:, status: "running", heartbeat_at: 1.minute.ago)
+
+        expect {
+          post run_orchestration_pipeline_path(pipeline), params: { initial_input: { providers: [ "gmail" ] } }
+        }.not_to change(Orchestration::PipelineRun, :count)
+        expect(flash[:alert]).to include("already pending")
+      end
+
+      it "accepts a run when the active one has gone stale" do
+        allow(PipelineRunJob).to receive(:perform_later)
+        create(:orchestration_pipeline_run, pipeline:, status: "running", heartbeat_at: 30.minutes.ago)
+
+        expect {
+          post run_orchestration_pipeline_path(pipeline), params: { initial_input: { providers: [ "gmail" ] } }
+        }.to change(Orchestration::PipelineRun, :count).by(1)
+      end
+    end
+  end
 end

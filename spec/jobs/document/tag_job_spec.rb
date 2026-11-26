@@ -2,31 +2,56 @@ require "rails_helper"
 
 RSpec.describe Document::TagJob do
   include ActiveJob::TestHelper
-  include ActiveSupport::Testing::TimeHelpers
 
   let(:document) { create(:document) }
 
-  describe "#perform" do
-    context "when the classifier succeeds" do
-      before { allow(Tags::Classifier).to receive(:call).and_return(Tags::Classifier::Result.new(taggings: [])) }
+  def classified(status, error: nil) = Tags::Classify::Result.new(status:, error:)
 
-      it "classifies the document and sets tagged_at" do
-        freeze_time do
-          described_class.perform_now(document.id)
-          expect(Tags::Classifier).to have_received(:call).with(document)
-          expect(document.reload.tagged_at).to eq(Time.current)
-        end
+  describe "#perform" do
+    context "when the service classifies the document" do
+      before { allow(Tags::Classify).to receive(:call).and_return(classified("tagged")) }
+
+      it "delegates to Tags::Classify without forcing" do
+        described_class.perform_now(document.id)
+
+        expect(Tags::Classify).to have_received(:call).with(document, force: false)
+      end
+
+      it "passes force: through to reclassify an already classified document" do
+        described_class.perform_now(document.id, force: true)
+
+        expect(Tags::Classify).to have_received(:call).with(document, force: true)
       end
     end
 
-    context "when the document is already tagged" do
-      let(:document) { create(:document, tagged_at: 1.day.ago) }
+    context "with the real service" do
+      before do
+        allow(Tags::Classifier).to receive(:call) do |item|
+          Tagging.create!(taggable: item, tag: create(:tag), source: "llm", confidence: 0.9)
+          Tags::Classifier::Result.new(taggings: [])
+        end
+      end
 
-      before { allow(Tags::Classifier).to receive(:call) }
-
-      it "makes no LLM call, so a queued duplicate is a no-op" do
+      it "marks a pending document tagged" do
         described_class.perform_now(document.id)
+
+        expect(document.reload).to be_tagged
+      end
+
+      it "makes no LLM call for an already classified document, so a queued duplicate is a no-op" do
+        document.update!(classification_status: "untagged")
+
+        described_class.perform_now(document.id)
+
         expect(Tags::Classifier).not_to have_received(:call)
+      end
+
+      it "reclassifies an already classified document with force: true" do
+        document.update!(classification_status: "untagged")
+
+        described_class.perform_now(document.id, force: true)
+
+        expect(document.reload).to be_tagged
       end
     end
 
@@ -37,19 +62,21 @@ RSpec.describe Document::TagJob do
         expect { described_class.perform_now(document.id) }.not_to raise_error
       end
 
-      it "leaves tagged_at nil" do
+      it "marks the document failed" do
         described_class.perform_now(document.id)
-        expect(document.reload.tagged_at).to be_nil
+
+        expect(document.reload).to be_failed
       end
     end
 
     context "when the classifier raises a transport error" do
       before { allow(Tags::Classifier).to receive(:call).and_raise(RubyLLM::ConnectionError, "reset") }
 
-      it "retries once and leaves tagged_at nil" do
+      it "retries once and leaves the document failed" do
         perform_enqueued_jobs(only: described_class) { described_class.perform_later(document.id) }
+
         expect(Tags::Classifier).to have_received(:call).twice
-        expect(document.reload.tagged_at).to be_nil
+        expect(document.reload).to be_failed
       end
     end
 

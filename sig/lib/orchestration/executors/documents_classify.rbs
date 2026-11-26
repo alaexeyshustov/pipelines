@@ -1,0 +1,16 @@
+module Orchestration
+  module Executors
+    class DocumentsClassify
+      include Executable
+      extend Executable::ClassMethods
+      include ClassifyRecords
+
+      @document_ids: Array[Integer]
+
+      def self.call: (document_ids: Array[Integer], **json_object_value) -> ClassifyRecords::outcome
+
+      def initialize: (document_ids: Array[Integer], **json_object_value) -> void
+      def execute: () -> ClassifyRecords::outcome
+    end
+  end
+end

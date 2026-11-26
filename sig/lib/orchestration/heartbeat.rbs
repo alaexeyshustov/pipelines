@@ -1,0 +1,7 @@
+module Orchestration
+  module Heartbeat
+    INTERVAL: ActiveSupport::Duration
+
+    def self.beat: () -> void
+  end
+end

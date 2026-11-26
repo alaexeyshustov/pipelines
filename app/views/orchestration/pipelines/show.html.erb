@@ -16,7 +16,7 @@
                           variant: :primary,
                           size: :md,
                           body_component: UI::JsonFieldsComponent,
-                          body_options: { schema: @pipeline.initial_input_schema, name_prefix: "initial_input" }) %>
+                          body_options: { schema: @pipeline.initial_input_schema, name_prefix: "initial_input", hints: @run_hints }) %>
   <% else %>
     <% header.with_action(type: :button, label: "Run now",
                           url: run_orchestration_pipeline_path(@pipeline),

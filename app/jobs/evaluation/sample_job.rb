@@ -12,7 +12,7 @@ module Evaluation
   class SampleJob < ApplicationJob
     queue_as :default
 
-    TRANSPORT_ERRORS = [ RubyLLM::ConnectionError, Net::OpenTimeout, Net::ReadTimeout ].freeze
+    TRANSPORT_ERRORS = ApplicationJob::TRANSPORT_ERRORS
 
     retry_on(*TRANSPORT_ERRORS, wait: 5.seconds, attempts: 2) do |job, error|
       Rails.logger.error("[SampleJob] transport error after retries: #{error.message}")

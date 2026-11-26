@@ -1,0 +1,49 @@
+{
+  "gmail": {
+    "account": "e2e@gmail.test",
+    "history_id": "1000",
+    "messages": [
+      {
+        "id": "e2e-gmail-1",
+        "from": "Jane Recruiter <jane@acme.test>",
+        "to": "e2e@gmail.test",
+        "subject": "Interview invitation: Senior Ruby Engineer at Acme",
+        "date": "2026-11-03T09:15:00Z",
+        "body": "Hi,\n\nthank you for applying to the Senior Ruby Engineer position at Acme. We would like to invite you to a first interview on Thursday, 12 November at 10:00 CET. The job description is attached.\n\nBest regards,\nJane, Acme Talent Team",
+        "html_body": null,
+        "attachments": [
+          {
+            "id": "e2e-attachment-1",
+            "filename": "job_description.txt",
+            "mime_type": "text/plain",
+            "data": "Senior Ruby Engineer at Acme\n\nYou will build Rails services for our payments platform. Requirements: 5+ years of Ruby, PostgreSQL, background jobs. Salary range 80-95k EUR. Hiring process: recruiter call, technical interview, offer."
+          }
+        ]
+      },
+      {
+        "id": "e2e-gmail-2",
+        "from": "Streamflix <billing@streamflix.test>",
+        "to": "e2e@gmail.test",
+        "subject": "Your Streamflix subscription renews on 1 December",
+        "date": "2026-11-04T07:00:00Z",
+        "body": "Your monthly Streamflix Premium subscription renews on 1 December for 13.99 EUR. Manage or cancel your plan in your account settings.",
+        "html_body": null
+      }
+    ]
+  },
+  "yahoo": {
+    "account": "e2e@yahoo.test",
+    "uid_validity": 7,
+    "messages": [
+      {
+        "uid": 41,
+        "from": "Dental Practice Dr. Weber <praxis@weber.test>",
+        "to": "e2e@yahoo.test",
+        "subject": "Appointment reminder: dental check-up",
+        "date": "2026-11-05T16:30:00Z",
+        "body": "This is a reminder of your dental check-up appointment on 9 November at 08:30. Please bring your insurance card.",
+        "html_body": null
+      }
+    ]
+  }
+}

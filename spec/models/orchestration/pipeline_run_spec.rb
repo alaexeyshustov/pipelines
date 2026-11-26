@@ -48,6 +48,62 @@ RSpec.describe Orchestration::PipelineRun do
     end
   end
 
+  describe 'STALE_AFTER' do
+    it 'is 10 minutes' do
+      expect(described_class::STALE_AFTER).to eq(10.minutes)
+    end
+  end
+
+  describe '.blocking' do
+    it 'includes an in-progress run with a recent heartbeat, however old it started' do
+      run = create(:orchestration_pipeline_run, status: 'running', started_at: 3.hours.ago, heartbeat_at: 2.minutes.ago)
+      expect(described_class.blocking).to include(run)
+    end
+
+    it 'excludes an in-progress run whose heartbeat is older than STALE_AFTER, however recently it started' do
+      run = create(:orchestration_pipeline_run, status: 'running', started_at: 1.minute.ago, heartbeat_at: 11.minutes.ago)
+      expect(described_class.blocking).not_to include(run)
+    end
+
+    it 'falls back to started_at when there is no heartbeat' do
+      recent = create(:orchestration_pipeline_run, status: 'running', started_at: 5.minutes.ago)
+      stale = create(:orchestration_pipeline_run, status: 'running', started_at: 11.minutes.ago)
+      expect(described_class.blocking).to include(recent)
+      expect(described_class.blocking).not_to include(stale)
+    end
+
+    it 'falls back to created_at when there is neither a heartbeat nor started_at' do
+      recent = create(:orchestration_pipeline_run, status: 'pending', created_at: 5.minutes.ago)
+      stale = create(:orchestration_pipeline_run, status: 'pending', created_at: 11.minutes.ago)
+      expect(described_class.blocking).to include(recent)
+      expect(described_class.blocking).not_to include(stale)
+    end
+
+    it 'prefers the heartbeat to started_at and created_at' do
+      run = create(:orchestration_pipeline_run, status: 'running', created_at: 2.hours.ago, started_at: 2.hours.ago, heartbeat_at: 1.minute.ago)
+      expect(described_class.blocking).to include(run)
+    end
+
+    it 'excludes completed and failed runs even with a recent heartbeat' do
+      done = create(:orchestration_pipeline_run, status: 'completed', heartbeat_at: 1.minute.ago)
+      failed = create(:orchestration_pipeline_run, status: 'failed', heartbeat_at: 1.minute.ago)
+      expect(described_class.blocking).not_to include(done, failed)
+    end
+
+    it 'is a relation that composes with where' do
+      pipeline = create(:orchestration_pipeline)
+      mine = create(:orchestration_pipeline_run, pipeline:, status: 'running', heartbeat_at: 1.minute.ago)
+      create(:orchestration_pipeline_run, status: 'running', heartbeat_at: 1.minute.ago)
+      expect(described_class.where(pipeline:).blocking).to eq([ mine ])
+    end
+  end
+
+  describe 'heartbeat_at' do
+    it 'is nil until a run beats' do
+      expect(create(:orchestration_pipeline_run).heartbeat_at).to be_nil
+    end
+  end
+
   describe 'associations' do
     it 'destroys action_runs when pipeline_run is destroyed' do
       pipeline_run = create(:orchestration_pipeline_run)

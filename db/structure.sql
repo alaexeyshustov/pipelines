@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS "ar_internal_metadata" ("key" varchar NOT NULL PRIMAR
 CREATE TABLE IF NOT EXISTS "interviews" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "company" varchar NOT NULL, "job_title" varchar NOT NULL, "status" varchar DEFAULT 'pending_reply', "applied_at" date, "rejected_at" date, "first_interview_at" date, "second_interview_at" date, "third_interview_at" date, "fourth_interview_at" date, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_interviews_on_company_and_job_title" ON "interviews" ("company", "job_title") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "ruby_llm_models" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "model_id" varchar NOT NULL, "name" varchar NOT NULL, "provider" varchar NOT NULL, "family" varchar, "model_created_at" datetime(6), "context_window" integer, "max_output_tokens" integer, "knowledge_cutoff" date, "modalities" json DEFAULT '{}', "capabilities" json DEFAULT '[]', "pricing" json DEFAULT '{}', "metadata" json DEFAULT '{}', "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "unlisted_at" datetime(6) /*application='ApplicationPipeline'*/);
-CREATE TABLE IF NOT EXISTS "orchestration_pipeline_runs" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "pipeline_id" integer NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "triggered_by" varchar, "started_at" datetime(6), "finished_at" datetime(6), "error" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "initial_input" json /*application='ApplicationPipeline'*/, CONSTRAINT "fk_rails_7774d88070"
+CREATE TABLE IF NOT EXISTS "orchestration_pipeline_runs" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "pipeline_id" integer NOT NULL, "status" varchar DEFAULT 'pending' NOT NULL, "triggered_by" varchar, "started_at" datetime(6), "finished_at" datetime(6), "error" text, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "initial_input" json /*application='ApplicationPipeline'*/, "heartbeat_at" datetime(6), CONSTRAINT "fk_rails_7774d88070"
 FOREIGN KEY ("pipeline_id")
   REFERENCES "orchestration_pipelines" ("id")
 );
@@ -135,7 +135,7 @@ CREATE INDEX "index_ruby_llm_mcp_credentials_on_owner" ON "ruby_llm_mcp_credenti
 CREATE UNIQUE INDEX "index_ruby_llm_mcp_credentials_on_key" ON "ruby_llm_mcp_credentials" ("key") /*application='ApplicationPipeline'*/;
 CREATE TABLE IF NOT EXISTS "ruby_llm_provider_files" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "blob_key" varchar NOT NULL, "provider" varchar NOT NULL, "account" varchar NOT NULL, "file_id" text NOT NULL, "expires_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL);
 CREATE UNIQUE INDEX "index_ruby_llm_provider_files_uniqueness" ON "ruby_llm_provider_files" ("blob_key", "provider", "account") /*application='ApplicationPipeline'*/;
-CREATE TABLE IF NOT EXISTS "emails" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "provider" varchar NOT NULL, "provider_message_id" varchar NOT NULL, "from_address" varchar NOT NULL, "to_address" varchar, "subject" varchar, "date" datetime(6) NOT NULL, "body" text, "html_body" text, "source_url" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "tagged_at" datetime(6), "interview_id" integer, CONSTRAINT "fk_rails_cc1315310c"
+CREATE TABLE IF NOT EXISTS "emails" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "provider" varchar NOT NULL, "provider_message_id" varchar NOT NULL, "from_address" varchar NOT NULL, "to_address" varchar, "subject" varchar, "date" datetime(6) NOT NULL, "body" text, "html_body" text, "source_url" varchar, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "interview_id" integer, "classification_status" varchar DEFAULT 'pending' NOT NULL, CONSTRAINT "fk_rails_cc1315310c"
 FOREIGN KEY ("interview_id")
   REFERENCES "interviews" ("id")
  ON DELETE SET NULL);
@@ -178,7 +178,7 @@ FOREIGN KEY ("subtag_id")
 CREATE INDEX "index_taggings_on_tag_id" ON "taggings" ("tag_id") /*application='ApplicationPipeline'*/;
 CREATE INDEX "index_taggings_on_subtag_id" ON "taggings" ("subtag_id") /*application='ApplicationPipeline'*/;
 CREATE UNIQUE INDEX "index_taggings_on_taggable_type_and_taggable_id_and_tag_id" ON "taggings" ("taggable_type", "taggable_id", "tag_id") /*application='ApplicationPipeline'*/;
-CREATE TABLE IF NOT EXISTS "documents" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "title" varchar NOT NULL, "mime_type" varchar NOT NULL, "text" text DEFAULT '' NOT NULL, "checksum" varchar NOT NULL, "source" varchar NOT NULL, "source_url" varchar, "source_ref" json DEFAULT '{}' NOT NULL, "email_id" integer, "tagged_at" datetime(6), "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, CONSTRAINT "fk_rails_5607550914"
+CREATE TABLE IF NOT EXISTS "documents" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL, "title" varchar NOT NULL, "mime_type" varchar NOT NULL, "text" text DEFAULT '' NOT NULL, "checksum" varchar NOT NULL, "source" varchar NOT NULL, "source_url" varchar, "source_ref" json DEFAULT '{}' NOT NULL, "email_id" integer, "created_at" datetime(6) NOT NULL, "updated_at" datetime(6) NOT NULL, "classification_status" varchar DEFAULT 'pending' NOT NULL, CONSTRAINT "fk_rails_5607550914"
 FOREIGN KEY ("email_id")
   REFERENCES "emails" ("id")
  ON DELETE SET NULL);
@@ -233,7 +233,11 @@ FOREIGN KEY ("user_id")
   REFERENCES "users" ("id")
 );
 CREATE INDEX "index_sessions_on_user_id" ON "sessions" ("user_id") /*application='ApplicationPipeline'*/;
+CREATE INDEX "index_emails_on_provider_and_classification_status" ON "emails" ("provider", "classification_status");
+CREATE INDEX "index_documents_on_classification_status" ON "documents" ("classification_status");
 INSERT INTO "schema_migrations" (version) VALUES
+('20261124090100'),
+('20261124090000'),
 ('20261119090000'),
 ('20261119071332'),
 ('20261119071330'),

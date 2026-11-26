@@ -15,7 +15,7 @@ module Orchestration
     end
 
     def run
-      @pipeline_run.update!(status: "running", started_at: Time.current)
+      @pipeline_run.update!(status: "running", started_at: Time.current, heartbeat_at: Time.current)
       previous_outputs = build_initial_outputs
       process_steps(previous_outputs)
     end
@@ -30,11 +30,18 @@ module Orchestration
     def process_steps(previous_outputs)
       steps = @pipeline_run.pipeline.enabled_steps.includes(step_actions: { action: :agent }).to_a # : Array[Step]
       completed = steps.each do |step|
+        beat
         action_runs = run_step(step, previous_outputs)
+        beat
         break if handle_step_failure(action_runs)
         accumulate_step_outputs(action_runs, previous_outputs)
       end
       @pipeline_run.update!(status: "completed", finished_at: Time.current) if completed
+    end
+
+    # Tells the run it is alive; an in-progress run without a recent beat is stale (PipelineRun.blocking).
+    def beat
+      @pipeline_run.update_columns(heartbeat_at: Time.current)
     end
 
     def handle_step_failure(action_runs)
@@ -98,8 +105,11 @@ module Orchestration
       end
     end
 
+    # Runs in an Async task, a new fiber, and CurrentAttributes are isolated per fiber, so the run is made current here.
     def execute_action(action_run)
-      ActionExecutor.new(action_run:, pipeline_run: @pipeline_run, prompt_resolver: @prompt_resolver).call
+      Orchestration::Current.set(pipeline_run: @pipeline_run) do
+        ActionExecutor.new(action_run:, pipeline_run: @pipeline_run, prompt_resolver: @prompt_resolver).call
+      end
     end
   end
 end

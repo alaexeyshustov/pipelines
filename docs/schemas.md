@@ -63,8 +63,8 @@ One row per INBOX email, full body kept.
 | html_body | TEXT | YES | |
 | source_url | STRING | YES | Gmail web link |
 | created_at, updated_at | DATETIME | NO | |
-| tagged_at | DATETIME | YES | Set by the per-email processing job after a successful classification; `NULL` = untagged backlog |
-| interview_id | INTEGER | YES | FK `interviews.id` (`ON DELETE SET NULL`, indexed). Set by `Interviews::EmailExtractor` (job `Interview::ExtractJob`): the Interview this `job_application` email fed. `Email belongs_to :interview, optional: true` / `Interview has_many :emails` |
+| classification_status | STRING | NO | `pending` (default, never classified), `tagged` (has any tagging, manual ones included), `untagged` (classified, nothing assigned) or `failed`. Set by `Tags::Classify` and `Tags::ManualTaggingForm`; indexed with `provider` |
+| interview_id | INTEGER | YES | FK `interviews.id` (`ON DELETE SET NULL`, indexed). Set by `Interviews::EmailExtractor`: the Interview this `job_application` email fed. Nothing runs the extractor yet; the Email Ingestion pipeline does not (ADR 0018). `Email belongs_to :interview, optional: true` / `Interview has_many :emails` |
 
 `Email.backfill_days` reads Setting `email_backfill_days` (then ENV `EMAIL_BACKFILL_DAYS`, default 90): the window for a first sync or rescan.
 
@@ -122,7 +122,7 @@ A pdf/doc(x)/image reduced to extracted text (markdown). Only the text is stored
 | source_url | STRING | YES | Drive `webViewLink` / Gmail message link |
 | source_ref | JSON | NO | `provider` + `message_id`/`attachment_id` (gmail) or `drive_file_id` (drive) |
 | email_id | FK | YES | `emails.id`, nulled when the email is deleted |
-| tagged_at | DATETIME | YES | Set by `Document::TagJob` after a successful classification; `NULL` = untagged backlog, re-queued by `EmailsSync` (attachments) / `Document::SyncDriveJob` (Drive) |
+| classification_status | STRING | NO | As on `emails`: `pending` (default), `tagged`, `untagged`, `failed`; indexed. Email attachments are classified by the Email Ingestion pipeline, Drive documents by `Document::TagJob` (queued, and re-queued when pending or failed, by `Document::SyncDriveJob`); a changed Drive file goes back to `pending` |
 | created_at, updated_at | DATETIME | NO | |
 
 ```ruby
@@ -330,12 +330,15 @@ A single execution of a pipeline.
 | status | STRING | NO | `"pending"` | See STATUSES below |
 | triggered_by | STRING | YES | — | `"manual"` or `"schedule"`; nil allowed |
 | started_at | DATETIME | YES | — | |
+| heartbeat_at | DATETIME | YES | — | Last sign of life: set by `PipelineRunner` around each step and by the per-item executor loops (`Orchestration::Heartbeat`, at most once a minute) |
 | finished_at | DATETIME | YES | — | |
 | error | TEXT | YES | — | Set on failure |
 | created_at | DATETIME | NO | — | |
 | updated_at | DATETIME | NO | — | |
 
 **Indexes:** `status`
+
+A `pending`/`running` run whose `COALESCE(heartbeat_at, started_at, created_at)` is older than `PipelineRun::STALE_AFTER` (10 minutes) is stale: its job is assumed dead, and `PipelineRun.blocking` (used by `Pipeline#run_in_progress?` and `SchedulerJob`) no longer counts it.
 
 **Model constants:**
 ```ruby

@@ -20,6 +20,13 @@ module Emails
     end
   end
 
+  # Serves every provider from the JSON mailbox at +path+ (Adapters::FixtureAdapter); for e2e runs and offline
+  # development, set through EMAIL_FIXTURES (config/initializers/email_fixtures.rb).
+  def self.use_fixtures(path)
+    registry = @provider_registry = ProviderRegistry.new(PROVIDERS)
+    PROVIDER_NAMES.each { |name| registry.register(name, Adapters::FixtureAdapter.from_env(path:, provider: name)) }
+  end
+
   def self.search_messages(provider_name, query, max_results: 10, offset: 0, label: nil)
     fetch(provider_name).search_messages(query, max_results:, offset:, label:)
   end
@@ -48,8 +55,8 @@ module Emails
     fetch(provider_name).inbox_message_ids_since(history_id)
   end
 
-  def self.inbox_message_ids_after(provider_name, date)
-    fetch(provider_name).inbox_message_ids_after(date)
+  def self.inbox_message_ids_after(provider_name, from, before: nil)
+    fetch(provider_name).inbox_message_ids_after(from, before:)
   end
 
   def self.account(provider_name)
@@ -64,8 +71,8 @@ module Emails
     fetch(provider_name).inbox_uids_after(last_uid)
   end
 
-  def self.inbox_uids_since(provider_name, date)
-    fetch(provider_name).inbox_uids_since(date)
+  def self.inbox_uids_since(provider_name, from, before: nil)
+    fetch(provider_name).inbox_uids_since(from, before:)
   end
 
   def self.fetch_message(provider_name, message_id)

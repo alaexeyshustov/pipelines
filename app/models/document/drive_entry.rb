@@ -30,7 +30,7 @@ class Document::DriveEntry
   def attributes(file, text, checksum)
     {
       title: entry.name, mime_type: Document::FileType.resolve(file.mime_type, entry.name), text:, checksum:,
-      source: Document::DRIVE, source_url: entry.web_view_link, tagged_at: nil,
+      source: Document::DRIVE, source_url: entry.web_view_link, classification_status: "pending",
       source_ref:
     }
   end

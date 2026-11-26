@@ -1,0 +1,16 @@
+module Orchestration
+  module Executors
+    class EmailsClassify
+      include Executable
+      extend Executable::ClassMethods
+      include ClassifyRecords
+
+      @email_ids: Array[Integer]
+
+      def self.call: (email_ids: Array[Integer], **json_object_value) -> ClassifyRecords::outcome
+
+      def initialize: (email_ids: Array[Integer], **json_object_value) -> void
+      def execute: () -> ClassifyRecords::outcome
+    end
+  end
+end

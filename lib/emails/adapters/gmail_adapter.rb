@@ -83,9 +83,10 @@ module Emails
         @inbox_lister.since(history_id)
       end
 
-      # Ids of INBOX messages received on or after +date+.
-      def inbox_message_ids_after(date)
-        @inbox_lister.after(date)
+      # Ids of INBOX messages received at or after +from+ and, when given, before +before+ (both Time, sent as
+      # epoch seconds so the time zone is not Gmail's).
+      def inbox_message_ids_after(from, before: nil)
+        @inbox_lister.after(from, before:)
       end
 
       # A message with +body+, +html_body+, +source_url+ and a parsed +date+ (Time).

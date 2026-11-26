@@ -40,7 +40,7 @@ module Emails
         raise NotImplementedError, "#{self.class}#create_label is not implemented"
       end
 
-      # Inbox sync (Email::SyncInboxJob), attachments and mailbox identity. Gmail implements the history/id readers,
+      # Inbox sync (Email::InboxSync), attachments and mailbox identity. Gmail implements the history/id readers,
       # attachments and #profile; Yahoo (IMAP) the UID readers and #account/#inbox_status.
       def attachment(message_id, attachment_id)
         raise NotImplementedError, "#{self.class}#attachment is not implemented"
@@ -58,7 +58,7 @@ module Emails
         raise NotImplementedError, "#{self.class}#inbox_message_ids_since is not implemented"
       end
 
-      def inbox_message_ids_after(date)
+      def inbox_message_ids_after(from, before: nil)
         raise NotImplementedError, "#{self.class}#inbox_message_ids_after is not implemented"
       end
 
@@ -74,7 +74,7 @@ module Emails
         raise NotImplementedError, "#{self.class}#inbox_uids_after is not implemented"
       end
 
-      def inbox_uids_since(date)
+      def inbox_uids_since(from, before: nil)
         raise NotImplementedError, "#{self.class}#inbox_uids_since is not implemented"
       end
 

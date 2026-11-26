@@ -14,10 +14,12 @@ module Emails
         paged_ids { |page_token| added_message_ids(list_history(history_id, page_token)) }
       end
 
-      # Ids of INBOX messages received on or after +date+.
-      def after(date)
+      # Ids of INBOX messages received at or after +from+ and, when given, before +before+. Epoch seconds, because a
+      # YYYY/MM/DD date is read as Pacific time.
+      def after(from, before: nil)
+        query = [ "after:#{from.to_i}", ("before:#{before.to_i}" if before) ].compact.join(" ")
         paged_ids do |page_token|
-          response = @service.list_user_messages("me", max_results: PAGE_SIZE, q: "after:#{date.strftime('%Y/%m/%d')}",
+          response = @service.list_user_messages("me", max_results: PAGE_SIZE, q: query,
                                                        label_ids: [ "INBOX" ], page_token: page_token)
           [ Array(response&.messages).filter_map(&:id), response&.next_page_token ]
         end
@@ -37,7 +39,7 @@ module Emails
       end
 
       def list_history(history_id, page_token)
-        @service.list_user_histories("me", start_history_id: history_id, history_types: [ "messageAdded" ],
+        @service.list_user_histories("me", start_history_id: history_id, history_types: %w[messageAdded labelAdded],
                                            label_id: "INBOX", page_token: page_token)
       rescue Google::Apis::ClientError => error
         raise Emails::HistoryExpiredError, "Gmail history #{history_id} is gone" if error.status_code == 404
@@ -45,11 +47,19 @@ module Emails
         raise
       end
 
+      # Messages added to INBOX, or given the INBOX label (moved in from elsewhere).
       def added_message_ids(response)
-        ids = Array(response&.history).flat_map do |history|
-          Array(history.messages_added).filter_map { |added| added.message&.id }
-        end
+        ids = Array(response&.history).flat_map { |history| messages_added(history) + messages_labelled_inbox(history) }
         [ ids, response&.next_page_token ]
+      end
+
+      def messages_added(history)
+        Array(history.messages_added).filter_map { |entry| entry.message&.id }
+      end
+
+      def messages_labelled_inbox(history)
+        inbox = Array(history.labels_added).select { |entry| Array(entry.label_ids).include?("INBOX") }
+        inbox.filter_map { |entry| entry.message&.id }
       end
     end
   end

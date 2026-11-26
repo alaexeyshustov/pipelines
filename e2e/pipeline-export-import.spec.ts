@@ -3,7 +3,7 @@ import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 const PIPELINE = 'Email Ingestion';
-const STEP_COUNT = 1;
+const STEP_COUNT = 6;
 
 // Without ADMIN_EMAIL the seeds create no login user, and nothing here would remove one.
 const { ADMIN_EMAIL: _email, ADMIN_PASSWORD: _password, ...seedEnv } = process.env;

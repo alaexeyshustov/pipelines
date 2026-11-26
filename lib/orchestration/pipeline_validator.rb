@@ -5,6 +5,11 @@ module Orchestration
     Issue = Data.define(:code, :message, :mapping_key, :from, :path)
     StepResult = Data.define(:step_action_id, :output_key, :errors, :warnings)
 
+    # The output schema later steps can map from: an agent's own, or the executor's for a service action.
+    def self.output_schema_for(action)
+      action.agent? ? action.agent&.output_schema : ServiceRegistry.lookup(action.agent_class)&.output_schema
+    end
+
     def initialize(pipeline)
       @pipeline = pipeline
     end
@@ -13,7 +18,7 @@ module Orchestration
       known_schemas = { "_initial" => @pipeline.initial_input_schema }
       ordered_step_actions.map do |sa|
         result = validate_step_action(sa, known_schemas)
-        known_schemas[sa.output_key] = sa.action.agent&.output_schema
+        known_schemas[sa.output_key] = self.class.output_schema_for(sa.action)
         result
       end
     end

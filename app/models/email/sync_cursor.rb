@@ -46,6 +46,12 @@ class Email::SyncCursor < ApplicationRecord
     end
   end
 
+  # True when the cursor has a position to continue from (a Gmail historyId, or an IMAP UIDVALIDITY with its last UID)
+  # and a finished sync. A row that only counts +failed_runs+ is not usable.
+  def usable?
+    last_synced_at.present? && (history_id.present? || (!uid_validity.nil? && !last_uid.nil?))
+  end
+
   private
 
   def with_current_row(&)

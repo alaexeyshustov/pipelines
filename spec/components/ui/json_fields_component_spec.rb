@@ -166,4 +166,82 @@ RSpec.describe UI::JsonFieldsComponent, type: :component do
       expect(rendered.css("div").length).to eq(0)
     end
   end
+
+  describe "descriptions and hints" do
+    subject(:rendered) do
+      render_inline(described_class.new(form: form, schema: described_schema, name_prefix: "initial_input", hints: hints))
+    end
+
+    let(:hints) { { "providers" => "Last synced: gmail 2026-03-20 14:03, yahoo never" } }
+    let(:described_schema) do
+      {
+        "properties" => {
+          "providers" => { "type" => "array", "items" => { "enum" => %w[gmail yahoo] }, "description" => "Mailboxes to read." },
+          "date_from" => { "type" => "string", "format" => "date", "description" => "Received on or after." },
+          "note"      => { "type" => "string" }
+        }
+      }
+    end
+
+    def field_block(label)
+      rendered.css("div.mb-4").find { |block| block.at_css("> label")&.text.to_s.include?(label) }
+    end
+
+    it "renders a field's description under it" do
+      expect(field_block("Providers").text).to include("Mailboxes to read.")
+      expect(field_block("Date from").text).to include("Received on or after.")
+    end
+
+    it "renders the hint of the field it is keyed by, and only there" do
+      expect(field_block("Providers").text).to include("Last synced: gmail 2026-03-20 14:03, yahoo never")
+      expect(field_block("Date from").text).not_to include("Last synced")
+      expect(field_block("Note").text).not_to include("Last synced")
+    end
+
+    it "renders a description and a hint together" do
+      block = field_block("Providers").text
+
+      expect(block.index("Mailboxes to read.")).to be < block.index("Last synced")
+    end
+
+    it "adds nothing for a field without a description or hint" do
+      expect(field_block("Note").css("p, small, span").map(&:text).join.strip).to be_empty
+    end
+
+    it "renders a hint for a field that has no description" do
+      rendered = render_inline(described_class.new(form: form, schema: described_schema, name_prefix: "initial_input",
+                                                   hints: { "note" => "Free text." }))
+
+      block = rendered.css("div.mb-4").find { |div| div.at_css("> label")&.text.to_s.include?("Note") }
+      expect(block.text).to include("Free text.")
+    end
+
+    it "ignores a hint for a field the schema does not have" do
+      rendered = render_inline(described_class.new(form: form, schema: described_schema, name_prefix: "initial_input",
+                                                   hints: { "ghost" => "boo" }))
+
+      expect(rendered.text).not_to include("boo")
+    end
+
+    it "still renders the inputs" do
+      expect(rendered.css("input[type='checkbox'][name='initial_input[providers][]']").size).to eq(2)
+      expect(rendered.css("input[type='date'][name='initial_input[date_from]']")).to be_present
+    end
+
+    it "works without hints (the keyword is optional)" do
+      plain = render_inline(described_class.new(form: form, schema: described_schema, name_prefix: "initial_input"))
+
+      expect(plain.text).to include("Mailboxes to read.")
+      expect(plain.text).not_to include("Last synced")
+    end
+
+    it "makes no database queries" do
+      count = 0
+      counter = ->(*, payload) { count += 1 unless payload[:name] == "SCHEMA" }
+
+      ActiveSupport::Notifications.subscribed(counter, "sql.active_record") { rendered }
+
+      expect(count).to eq(0)
+    end
+  end
 end

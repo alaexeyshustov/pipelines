@@ -16,13 +16,27 @@ module Tags
 
       tagging = @taggable.taggings.find_or_initialize_by(tag:)
       tagging.assign_attributes(subtag: (Subtag.find_by(id: subtag_id) if subtag_id), source: "manual", confidence: nil)
-      return true if tagging.save
+      return true if save_tagging(tagging)
 
-      tagging.errors.each { |error| errors.add(error.attribute, error.message) }
-      false
+      copy_errors(tagging)
+    rescue ActiveRecord::RecordInvalid => error
+      copy_errors(error.record)
     end
 
     private
+
+    # The tagging and the status change together: a manually tagged record counts as tagged, so the next ingestion
+    # run embeds it and ingests its attachments. Removing a manual tag leaves the status alone.
+    def save_tagging(tagging)
+      Tagging.transaction do
+        tagging.save && @taggable.update!(classification_status: "tagged")
+      end
+    end
+
+    def copy_errors(record)
+      record.errors.each { |error| errors.add(error.attribute, error.message) }
+      false
+    end
 
     def fail_with(attribute, message)
       errors.add(attribute, message)

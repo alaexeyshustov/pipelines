@@ -1,0 +1,13 @@
+module Orchestration
+  module Executors
+    module PerRecord
+      ID_LIST: json_object
+      FAILED_LIST: json_object
+
+      private
+
+      def each_record: [R < ActiveRecord::Base] (ActiveRecord::Relation scope, Array[Integer] ids, Array[json_object] failed) { (R record) -> void } -> void
+      def failure: (Integer id, String message) -> json_object
+    end
+  end
+end

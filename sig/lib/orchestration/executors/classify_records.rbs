@@ -1,0 +1,16 @@
+module Orchestration
+  module Executors
+    module ClassifyRecords
+      include PerRecord
+
+      type outcome = Hash[String, Array[Integer] | Array[json_object]]
+
+      CLASSIFY_OUTPUT: Hash[Symbol, json_object]
+
+      private
+
+      def ids_with: (Hash[Integer, String] statuses, String status) -> Array[Integer]
+      def classify: (singleton(Email) | singleton(Document) model, Array[Integer] ids) -> outcome
+    end
+  end
+end

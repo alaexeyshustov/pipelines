@@ -1,0 +1,25 @@
+module Orchestration
+  module Executors
+    class DocumentsEmbed
+      include Executable
+      extend Executable::ClassMethods
+      include PerRecord
+
+      type output = { "embedded" => Array[Integer], "skipped" => Array[Integer], "duplicates_found" => Integer, "failed" => Array[json_object] }
+
+      @document_ids: Array[Integer]
+
+      def self.call: (document_ids: Array[Integer], **json_object_value) -> output
+
+      def initialize: (document_ids: Array[Integer], **json_object_value) -> void
+      def execute: () -> output
+
+      private
+
+      def embed: (Document document, output output) -> void
+      def skipped_ids: () -> Array[Integer]
+      def detect_duplicates: (Document document, Array[json_object] failed) -> Integer
+      def unembedded: () -> ActiveRecord::Relation
+    end
+  end
+end

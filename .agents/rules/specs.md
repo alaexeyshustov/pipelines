@@ -5,7 +5,6 @@ paths:
 
 # Specs
 
-- Instead of test doubles, use real objects, `instance_double` with verified methods, or WebMock/VCR at external boundaries.
 - When stubbing, keep keyword arguments matching the real method signatures.
 - Factories: explicit attributes (`create(:interview, status: :screening)`), traits for variants, `let` by default (`let!` only when the record must exist up front).
 - System specs drive the verified interaction through the UI (`click_link`, `fill_in`, `accept_confirm`).

@@ -1,0 +1,186 @@
+{
+  "format": "pipeline_export",
+  "schema_version": 1,
+  "pipelines": [
+    {
+      "name": "Email Ingestion",
+      "description": "Reads new mail from Gmail and Yahoo, tags and embeds it, and ingests the attachments of tagged Gmail emails. Runs on demand.",
+      "enabled": true,
+      "cron_expression": null,
+      "model": null,
+      "initial_input_schema": {
+        "type": "object",
+        "required": [
+          "providers"
+        ],
+        "properties": {
+          "providers": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "gmail",
+                "yahoo"
+              ]
+            },
+            "minItems": 1,
+            "description": "Mailboxes to read."
+          },
+          "date_from": {
+            "type": "string",
+            "format": "date",
+            "description": "Received on or after. Leave empty to fetch mail received since the last sync."
+          },
+          "date_to": {
+            "type": "string",
+            "format": "date",
+            "description": "Received on or before. Leave empty for up to now."
+          }
+        }
+      },
+      "steps": [
+        {
+          "name": "List emails",
+          "enabled": true,
+          "step_actions": [
+            {
+              "output_key": "list_emails",
+              "input_mapping": {
+                "providers": {
+                  "from": "_initial",
+                  "path": "providers"
+                },
+                "date_from": {
+                  "from": "_initial",
+                  "path": "date_from",
+                  "optional": true
+                },
+                "date_to": {
+                  "from": "_initial",
+                  "path": "date_to",
+                  "optional": true
+                }
+              },
+              "action": {
+                "name": "List emails",
+                "description": "Reads the chosen mailboxes, from the last sync or from a date window, and stores new emails.",
+                "kind": "service",
+                "agent_class": "agent_emails_list",
+                "agent": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "Classify emails",
+          "enabled": true,
+          "step_actions": [
+            {
+              "output_key": "classify_emails",
+              "input_mapping": {
+                "email_ids": {
+                  "from": "list_emails",
+                  "path": "email_ids"
+                }
+              },
+              "action": {
+                "name": "Classify emails",
+                "description": "Tags the pending and failed emails.",
+                "kind": "service",
+                "agent_class": "agent_emails_classify",
+                "agent": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "Embed emails",
+          "enabled": true,
+          "step_actions": [
+            {
+              "output_key": "embed_emails",
+              "input_mapping": {
+                "email_ids": {
+                  "from": "list_emails",
+                  "path": "email_ids"
+                }
+              },
+              "action": {
+                "name": "Embed emails",
+                "description": "Embeds the tagged emails that have no embedding for the current model.",
+                "kind": "service",
+                "agent_class": "agent_emails_embed",
+                "agent": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ingest attachments",
+          "enabled": true,
+          "step_actions": [
+            {
+              "output_key": "ingest_attachments",
+              "input_mapping": {
+                "email_ids": {
+                  "from": "list_emails",
+                  "path": "email_ids"
+                }
+              },
+              "action": {
+                "name": "Ingest attachments",
+                "description": "Downloads and reads the attachments of tagged Gmail emails into documents.",
+                "kind": "service",
+                "agent_class": "agent_attachments_ingest",
+                "agent": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "Classify documents",
+          "enabled": true,
+          "step_actions": [
+            {
+              "output_key": "classify_documents",
+              "input_mapping": {
+                "document_ids": {
+                  "from": "ingest_attachments",
+                  "path": "document_ids"
+                }
+              },
+              "action": {
+                "name": "Classify documents",
+                "description": "Tags the pending and failed documents.",
+                "kind": "service",
+                "agent_class": "agent_documents_classify",
+                "agent": null
+              }
+            }
+          ]
+        },
+        {
+          "name": "Embed documents",
+          "enabled": true,
+          "step_actions": [
+            {
+              "output_key": "embed_documents",
+              "input_mapping": {
+                "document_ids": {
+                  "from": "ingest_attachments",
+                  "path": "document_ids"
+                }
+              },
+              "action": {
+                "name": "Embed documents",
+                "description": "Embeds the tagged documents that have no embedding, then flags near-duplicates.",
+                "kind": "service",
+                "agent_class": "agent_documents_embed",
+                "agent": null
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

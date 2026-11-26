@@ -35,6 +35,48 @@ RSpec.describe Emails do
     end
   end
 
+  describe '.use_fixtures' do
+    let(:fixture_path) { Rails.root.join('tmp', "emails_fixtures_#{SecureRandom.hex(4)}.json").to_s }
+
+    before do
+      mailbox = ->(account) { { 'account' => account, 'messages' => [] } }
+      File.write(fixture_path, JSON.generate('gmail' => mailbox.call('g@x.test'), 'yahoo' => mailbox.call('y@x.test')))
+    end
+
+    after { FileUtils.rm_f(fixture_path) }
+
+    it 'builds each provider adapter from the path' do
+      allow(Emails::Adapters::FixtureAdapter).to receive(:from_env).and_call_original
+
+      described_class.use_fixtures(fixture_path)
+
+      expect(Emails::Adapters::FixtureAdapter).to have_received(:from_env).with(path: fixture_path, provider: 'gmail')
+      expect(Emails::Adapters::FixtureAdapter).to have_received(:from_env).with(path: fixture_path, provider: 'yahoo')
+    end
+
+    it 'serves every provider from the fixture file' do
+      described_class.use_fixtures(fixture_path)
+
+      expect(described_class.profile('gmail')).to include(email_address: 'g@x.test')
+      expect(described_class.profile('yahoo')).to include(email_address: 'y@x.test')
+    end
+
+    it 'registers only the known providers' do
+      described_class.use_fixtures(fixture_path)
+
+      expect { described_class.profile('nope') }
+        .to raise_error(Emails::ProviderRegistry::UnknownProviderError, /Available: gmail, yahoo/)
+    end
+
+    it 'replaces previously configured adapters' do
+      allow(adapter).to receive(:profile).and_return({ email_address: 'old@x.test' })
+
+      described_class.use_fixtures(fixture_path)
+
+      expect(described_class.profile('gmail')).to include(email_address: 'g@x.test')
+    end
+  end
+
   describe '.list_messages' do
     it 'delegates to the matching adapter' do
       allow(adapter).to receive(:list_messages)

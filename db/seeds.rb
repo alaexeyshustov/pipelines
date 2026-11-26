@@ -111,24 +111,36 @@ if drive_pipeline.steps.empty?
   )
 end
 
-# Incremental INBOX sync of Gmail and Yahoo into Emails (ADR 0013); a provider without credentials is skipped.
-email_sync_action = Orchestration::Action.find_or_initialize_by(name: "Sync Inbox Emails").tap do |a|
-  a.kind        = :service
-  a.agent_class = "Orchestration::Executors::EmailsSync"
-  a.save!
+# Email Ingestion (GH #248, ADR 0018): an on-demand pipeline of six steps, loaded from config/pipelines/email_ingestion.json
+# (written with Orchestration::PipelineExporter). Fresh databases get it enabled; an existing one is left as the user
+# has it, so a later edit or disable survives the next seed run.
+#
+# The version it replaces had one EmailsSync step on a */30 cron. That pipeline, its runs and its action are removed
+# once; another pipeline that still has an EmailsSync step is kept, and logged, because the class no longer exists.
+emails_sync_class = "Orchestration::Executors::EmailsSync"
+email_ingestion_name = "Email Ingestion"
+
+emails_sync_pipelines = Orchestration::Pipeline.joins(steps: { step_actions: :action })
+                                               .where(orchestration_actions: { agent_class: emails_sync_class }).distinct
+
+emails_sync_pipelines.where(name: email_ingestion_name).find_each do |legacy|
+  legacy.pipeline_runs.destroy_all # a step action cannot go while action runs refer to it
+  legacy.destroy!
+end
+Orchestration::Action.where(name: "Sync Inbox Emails", agent_class: emails_sync_class).where.missing(:step_actions).destroy_all
+
+emails_sync_pipelines.pluck(:name).then do |names|
+  next if names.empty?
+
+  Rails.logger.warn("Pipeline(s) #{names.map(&:inspect).join(', ')} still have a step with #{emails_sync_class}, " \
+                    "which no longer exists; they fail when run. Replace the step with the Email Ingestion steps.")
 end
 
-email_pipeline = Orchestration::Pipeline.find_or_create_by!(name: "Email Ingestion") do |p|
-  p.description     = "Pulls new INBOX mail from Gmail and Yahoo into Emails."
-  p.enabled         = true
-  p.cron_expression = "*/30 * * * *"
-end
+unless Orchestration::Pipeline.exists?(name: email_ingestion_name)
+  imported = Orchestration::PipelineImporter.call(JSON.parse(Rails.root.join("config/pipelines/email_ingestion.json").read))
+  raise "Email Ingestion import failed: #{imported.errors.join('; ')}" if imported.errors.any?
 
-if email_pipeline.steps.empty?
-  email_step = email_pipeline.steps.create!(name: email_sync_action.name, position: 1)
-  Orchestration::StepAction.create!(
-    step: email_step, action: email_sync_action, position: 1, output_key: "sync_inbox_emails", input_mapping: {}
-  )
+  imported.pipelines.each { |pipeline| pipeline.update!(enabled: true) }
 end
 
 # Agents are seeded independently of any pipeline.
