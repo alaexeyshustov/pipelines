@@ -13,6 +13,8 @@ Claude Code with `--dangerously-skip-permissions` against that worktree.
 ```bash
 gem install dry-cli sqlite3            # once per host Ruby
 claude setup-token                     # once per host; save to ~/.claude-container/oauth-token
+# once per host: egress CA and fine-grained GitHub PAT in ~/.config/pipelines-sandbox
+# (commands in .sandbox/docs/sandbox-network.md)
 .sandbox/bin/init-worktree 42          # worktree + branch for GitHub issue #42, opens Zed
 .sandbox/bin/attach-worktree 42        # claude-matt (default)
 .sandbox/bin/attach-worktree 42 claude-omcc
@@ -76,6 +78,11 @@ for t in .sandbox/test/*_test.rb; do ruby "$t" || exit 1; done   # every test fi
   Containerfiles), and every session runs `rtk init -g --auto-patch`, giving
   the container the same Bash hook, `RTK.md` and `@RTK.md` import as the host.
   Only the rtk part of the host's global `CLAUDE.md` is reproduced.
+- **Agents egress only through a shared gateway** (nono with a dedicated CA, a
+  VM firewall on the sandbox bridge; see
+  [ADR 0002](0002-egress-gateway-nono-vm-firewall.md)). GitHub auth is one
+  shared fine-grained PAT from `~/.config/pipelines-sandbox/gh-token`, not the
+  host's `gh auth token`.
 - `db_helper` runs on the host Ruby with global gems rather than the app's
   bundle, so it works before `bundle install` and across Ruby upgrades.
 
@@ -86,3 +93,10 @@ for t in .sandbox/test/*_test.rb; do ruby "$t" || exit 1; done   # every test fi
   prints).
 - Adding a profile is still just a `profiles/<name>/` directory with a
   `profile.env`, `Containerfile` and `claude-session`.
+- Never `podman start` an agent by hand: the firewall table does not survive a
+  VM reboot, and only `attach-worktree` reconciles it first.
+- Running sessions are replaced on their next attach after the gateway landed,
+  because the launch config changed.
+- Old gateway images (`localhost/pipelines-sandbox-gateway:<fingerprint>`) are
+  not pruned.
+- Rotating the PAT only reaches existing sandboxes through `recreate-worktree`.
