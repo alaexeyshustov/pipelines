@@ -16,6 +16,10 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
 
+# Read-only token: no job pushes, comments or writes to the API (SEC-15, GH #240).
+permissions:
+  contents: read
+
 jobs:
   # Job id and name: MUST both be exactly mutant_baseline_guard -- GitHub matches
   # required status checks by job name, not workflow filename.
@@ -23,7 +27,7 @@ jobs:
     name: mutant_baseline_guard
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Full history so base.sha and the PR's whole commit range are available.
           fetch-depth: 0

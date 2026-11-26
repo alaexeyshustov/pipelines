@@ -59,6 +59,7 @@ Rails.application.configure do
   # Enable DNS rebinding protection and other `Host` header attacks.
   # APP_HOST is a comma-separated list of the hostnames the app is served on. It is not required at boot,
   # so `assets:precompile` (which runs without env) works; while it is unset every host is allowed.
+  # TODO(GH #213): once the app is deployed, require APP_HOST when the server boots (SEC-13, GH #240).
   app_hosts = ENV.fetch("APP_HOST", "").split(",").map(&:strip).compact_blank
   config.hosts.concat(app_hosts) if app_hosts.any?
 
