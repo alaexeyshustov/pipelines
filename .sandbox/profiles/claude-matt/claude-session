@@ -4,6 +4,8 @@ set -euo pipefail
 
 source /usr/local/lib/session-common.sh
 
+configure_sandbox_ca
+
 ticket="${1:-}"
 export CLAUDE_HOME="${CLAUDE_HOME:-/root/.claude}"
 

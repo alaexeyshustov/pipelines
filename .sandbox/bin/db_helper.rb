@@ -15,6 +15,8 @@ module DbHelper
   BRANCH_PATTERN = %r{\A(?:feat|fix|refactor|chore)/gh-\d+(?:-[a-z0-9]+)*\z}
   IDENTIFIER_PATTERN = /\A(?:GH-\d+|scratch-\d{14}-\d+)\z/
   PROFILE_PATTERN = /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/
+  # pipelines-sandbox-* container and network names belong to the egress gateway.
+  RESERVED_PROFILES = %w[sandbox].freeze
   CONTAINER_STATUSES = %w[created active finished].freeze
 
   # Branch type prefix by GitHub label; the first matching label wins and an
@@ -100,9 +102,10 @@ module DbHelper
     end
 
     def validate_profile(profile)
-      return profile if profile.match?(PROFILE_PATTERN)
+      raise Error, "Invalid sandbox profile: #{profile}" unless profile.match?(PROFILE_PATTERN)
+      raise Error, "Sandbox profile #{profile} is reserved for the egress gateway" if RESERVED_PROFILES.include?(profile)
 
-      raise Error, "Invalid sandbox profile: #{profile}"
+      profile
     end
 
     def validate_status(status)
