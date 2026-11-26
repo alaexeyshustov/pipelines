@@ -18,9 +18,9 @@ const OLLAMA_BASE = (
 ).replace(/\/v1\/?$/, '');
 const MODELS = [
   process.env.OLLAMA_TEST_MODEL ?? 'qwen3:8b',
-  process.env.OLLAMA_DECISION_MODEL ?? 'clef-flash:latest',
+  process.env.OLLAMA_DECISION_MODEL ?? 'clef-flash',
   process.env.EMBEDDING_MODEL ?? 'qwen3-embedding:0.6b',
-];
+].map((model) => (model.includes(':') ? model : `${model}:latest`));
 
 const { ADMIN_EMAIL: _email, ADMIN_PASSWORD: _password, ...seedEnv } = process.env;
 
@@ -127,7 +127,8 @@ test('runs the email ingestion pipeline from the UI', async ({ page }) => {
       `runner 'puts({ emails: Email.count, documents: Document.count, ` +
         `unclassified: Email.where(classification_status: %w[pending failed]).count + ` +
         `Document.where(classification_status: %w[pending failed]).count, ` +
-        `unembedded: Email.tagged.without_embedding(model: LlmModels.embedding).count }.to_json)'`,
+        `unembedded: Email.tagged.without_embedding(model: LlmModels.embedding).count + ` +
+        `Document.tagged.without_embedding(model: LlmModels.embedding).count }.to_json)'`,
     ).trim(),
   );
   expect(counts).toEqual({

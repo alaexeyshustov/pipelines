@@ -2,7 +2,7 @@
 version: 2
 producer: rails
 env:
-  RAILS_ENV: development
+  RAILS_ENV: test
 inputs:
 - config/**/*.{rb,yml,yaml}
 - Gemfile

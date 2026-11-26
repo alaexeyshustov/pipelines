@@ -33,6 +33,9 @@ export default defineConfig({
     {
       name: 'chromium',
       testIgnore: /screenshots\//,
+      // The pipeline specs reset and seed the same test database, so their files must not run side by side.
+      fullyParallel: false,
+      workers: 1,
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'], storageState: STORAGE_STATE },
     },
