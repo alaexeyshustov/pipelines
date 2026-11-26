@@ -65,6 +65,38 @@ RSpec.describe Document::IngestEmailAttachments do
     end
   end
 
+  describe "a Yahoo email" do
+    let(:email) { create(:email, provider: "yahoo", provider_message_id: "77:101", source_url: nil) }
+    let(:yahoo) do
+      stub_yahoo_adapter(
+        attachments: [ { id: "2", filename: "cv.pdf", mime_type: "application/pdf", size: 10 },
+                       { id: "3", filename: "notes.zip", mime_type: "application/zip", size: 10 } ],
+        attachment: "%PDF-yahoo"
+      )
+    end
+
+    before { yahoo }
+
+    it "stores a Document whose source_ref carries the id, the IMAP part path and the provider", :aggregate_failures do
+      result = described_class.call(email)
+      document = Document.sole
+
+      expect(result).to have_attributes(document_ids: [ document.id ], failed: be_empty)
+      expect(document).to have_attributes(
+        title: "cv.pdf", source: "email_attachment", email_id: email.id, mime_type: "application/pdf",
+        checksum: Digest::SHA256.hexdigest("%PDF-yahoo"),
+        source_ref: { "provider" => "yahoo", "message_id" => "77:101", "attachment_id" => "2" }
+      )
+    end
+
+    it "downloads only the supported attachment" do
+      described_class.call(email)
+
+      expect(yahoo).to have_received(:attachment).with("77:101", "2")
+      expect(yahoo).not_to have_received(:attachment).with("77:101", "3")
+    end
+  end
+
   describe "unsupported attachment types" do
     it "ignores them silently: not downloaded, not listed as failed" do
       result = described_class.call(email)

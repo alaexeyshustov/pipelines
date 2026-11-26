@@ -58,9 +58,19 @@ module Emails
         @current_mailbox = nil
       end
 
+      # One UID FETCH answer, or nil when the UID does not exist. Takes no lock: callers hold it (see #with_lock) and
+      # have selected the mailbox.
+      def fetch(uid, attrs)
+        imap.uid_fetch(uid, attrs)&.first
+      end
+
+      # UIDVALIDITY of +mailbox+ from STATUS. Takes no lock, like #fetch.
+      def uid_validity(mailbox)
+        imap.status(mailbox, [ "UIDVALIDITY" ]).fetch("UIDVALIDITY").to_i
+      end
+
       def fetch_raw_mail(uid, fields)
-        result = imap.uid_fetch(uid, fields)&.first&.attr
-        result&.values_at("RFC822", "RFC822.HEADER")&.compact&.first
+        fetch(uid, fields)&.attr&.[]("RFC822.HEADER")
       end
     end
   end

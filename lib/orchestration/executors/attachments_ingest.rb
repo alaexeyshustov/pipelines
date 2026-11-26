@@ -1,10 +1,10 @@
 module Orchestration
   module Executors
-    # Step 4 of the Email Ingestion pipeline (ADR 0018): Document::IngestEmailAttachments for each tagged Gmail email
-    # among the ids that has no document yet (a re-listed email is not downloaded again, so a failed attachment is not
-    # retried). Other emails are listed as skipped (Yahoo has no attachment listing; only tagged emails are ingested).
-    # +document_ids+ holds the documents the service returned, the ones the listed tagged Gmail emails already have, and
-    # every document of a tagged Gmail email that an earlier run left unfinished (pending, failed, or tagged without an embedding for the
+    # Step 4 of the Email Ingestion pipeline (ADR 0018): Document::IngestEmailAttachments for each tagged email (Gmail or
+    # Yahoo) among the ids that has no document yet (a re-listed email is not downloaded again, so a failed attachment
+    # is not retried). Untagged emails are listed as skipped.
+    # +document_ids+ holds the documents the service returned, the ones the listed tagged emails already have, and
+    # every document of a tagged email that an earlier run left unfinished (pending, failed, or tagged without an embedding for the
     # current model), whichever emails were listed: step 1 does not re-list an email that is tagged and embedded. A
     # failed attachment is reported as { "id" => email id, "error" => "<filename>: <class>: <message>" }.
     class AttachmentsIngest
@@ -42,7 +42,7 @@ module Orchestration
       end
 
       def eligible
-        Email.tagged.where(provider: Emails::GMAIL)
+        Email.tagged
       end
 
       # Emails without a document are the ones never ingested; one that has documents is not downloaded again, so a

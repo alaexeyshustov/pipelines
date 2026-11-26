@@ -1,0 +1,1 @@
+(("TEXT" "PLAIN" ("CHARSET" "UTF-8") NIL NIL "7BIT" 13 1 NIL NIL NIL NIL)("IMAGE" "PNG" ("NAME" "logo.png") "<l@company.com>" NIL "BASE64" 14 NIL ("INLINE" ("FILENAME" "logo.png")) NIL NIL) "MIXED" ("BOUNDARY" "i") NIL NIL NIL)

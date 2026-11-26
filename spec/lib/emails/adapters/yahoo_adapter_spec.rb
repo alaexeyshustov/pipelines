@@ -73,39 +73,91 @@ RSpec.describe Emails::Adapters::YahooAdapter do
   end
 
   describe '#message' do
-    let(:full_message_text) do
-      header_text + "We are pleased to inform you that your application was successful.\r\n"
-    end
+    include ImapResponseHelpers
 
-    let(:full_fetch_data) do
-      [ Net::IMAP::FetchData.new(101, { 'RFC822' => full_message_text, 'FLAGS' => [], 'UID' => 101 }) ]
-    end
+    let(:message) { imap_fixture('plain') }
+    let!(:calls) { stub_imap_message(imap, message, uid: 101) }
 
-    before do
-      allow(imap).to receive(:select)
-      allow(imap).to receive(:uid_fetch).with(101, anything).and_return(full_fetch_data)
+    before { allow(imap).to receive(:select) }
+
+    def legacy(message)
+      mail = Mail.new(message.raw)
+      Emails::Adapters::YahooMessageParser.new(101, mail, 'INBOX').to_h.merge(body: Emails::Adapters::ImapBodyParser.new(mail).body)
     end
 
     it 'returns the message for the given uid' do
-      message = adapter.message(101)
-
-      expect(message).to include(
-        id:      "101",
-        subject: 'Job Application Update',
-        from:    'hr@company.com'
-      )
+      expect(adapter.message(101)).to include(id: '101', subject: 'Job Application Update', from: 'hr@company.com')
     end
 
     it 'includes the message body' do
-      message = adapter.message(101)
-
-      expect(message[:body]).to include('application was successful')
+      expect(adapter.message(101)[:body]).to include('application was successful')
     end
 
-    it 'fetches the full RFC822 message' do
+    it 'raises when the message does not exist' do
+      expect { adapter.message(999) }.to raise_error(/Message not found/)
+    end
+
+    it 'never fetches RFC822, the whole body or the TEXT section' do
       adapter.message(101)
 
-      expect(imap).to have_received(:uid_fetch).with(101, include('RFC822'))
+      expect(calls.flatten).not_to include('RFC822', 'RFC822.TEXT', 'BODY[]', 'BODY.PEEK[]', 'BODY.PEEK[TEXT]')
+      expect(calls.flatten).to include('BODYSTRUCTURE')
+    end
+
+    it 'selects the mailbox of the label' do
+      adapter.message(101)
+
+      expect(imap).to have_received(:select).with('INBOX')
+    end
+
+    context 'with a large attachment' do
+      let(:message) { imap_fixture('mixed_pdf', structure: 'mixed_large_pdf') }
+
+      it 'fetches only the text parts, with a partial range' do
+        result = adapter.message(101)
+
+        expect(calls.drop(1)).to eq([ [ 'BODY.PEEK[1]<0.1048576>' ] ])
+        expect(result[:body]).to eq('Please find my CV attached.')
+      end
+    end
+
+    context 'with a single-part message' do
+      it 'returns the same output as the Mail.new(raw) path' do
+        expect(adapter.message(101)).to eq(legacy(message).slice(:id, :provider, :subject, :from, :to, :date, :snippet, :body, :labels))
+      end
+    end
+
+    context 'with a single-part text message that has a filename' do
+      let(:message) { imap_fixture('named_plain') }
+
+      it 'returns the body like the Mail.new(raw) path' do
+        expect(adapter.message(101)[:body]).to eq(legacy(message)[:body])
+        expect(adapter.message(101)[:body]).to eq('hello named')
+      end
+    end
+
+    context 'with a multipart message' do
+      let(:message) { imap_fixture('alternative') }
+
+      it 'returns the same id, subject, from, to, date, body and labels as the Mail.new(raw) path' do
+        expect(adapter.message(101)).to include(legacy(message).slice(:id, :provider, :subject, :from, :to, :date, :body, :labels))
+      end
+
+      it 'takes the snippet from the first 200 characters of the decoded text, not of the raw MIME' do
+        snippet = adapter.message(101)[:snippet]
+
+        expect(snippet).to eq(adapter.message(101)[:body][0, 200])
+        expect(snippet.length).to eq(200)
+        expect(snippet).not_to include('Content-Type', '--alt-b', 'multi-part message')
+      end
+    end
+
+    context 'with a quoted-printable ISO-8859-1 message' do
+      let(:message) { imap_fixture('qp_latin1') }
+
+      it 'returns the decoded body' do
+        expect(adapter.message(101)[:body]).to include('Grüße aus Köln')
+      end
     end
   end
 

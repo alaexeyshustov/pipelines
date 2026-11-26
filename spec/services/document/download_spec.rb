@@ -2,6 +2,7 @@ require "rails_helper"
 
 RSpec.describe Document::Download do
   include GmailHelpers
+  include EmailAdapterHelpers
 
   before { setup_gmail }
   after  { teardown_gmail }
@@ -48,8 +49,19 @@ RSpec.describe Document::Download do
     expect(described_class.call(document).filename).to eq("Resume.pdf")
   end
 
+  it "fetches a Yahoo attachment via source_ref (IMAP message id and part path)" do
+    yahoo = stub_yahoo_adapter(attachment: "%PDF-yahoo")
+    document = create(:document, title: "Offer letter", mime_type: "application/pdf",
+                                 source_ref: { "provider" => "yahoo", "message_id" => "77:101", "attachment_id" => "2" })
+
+    file = described_class.call(document)
+
+    expect([ file.data, file.filename, file.mime_type ]).to eq([ "%PDF-yahoo", "Offer letter.pdf", "application/pdf" ])
+    expect(yahoo).to have_received(:attachment).with("77:101", "2")
+  end
+
   it "raises for an unsupported source_ref" do
-    document = create(:document, source_ref: { "provider" => "yahoo" })
+    document = create(:document, source_ref: { "provider" => "outlook" })
     expect { described_class.call(document) }.to raise_error(described_class::Unsupported)
   end
 end

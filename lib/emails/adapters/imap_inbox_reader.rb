@@ -1,6 +1,6 @@
 module Emails
   module Adapters
-    # Read-only INBOX queries behind the incremental sync (ADR 0013): UIDVALIDITY, UID listings and full messages.
+    # Read-only INBOX queries behind the incremental sync (ADR 0013): UIDVALIDITY, UID listings and messages.
     class ImapInboxReader
       MAILBOX = "INBOX".freeze
 
@@ -15,10 +15,11 @@ module Emails
 
       def initialize(session)
         @session = session
+        @text_fetcher = ImapTextFetcher.new(session)
       end
 
       def uid_validity
-        @session.with_lock { @session.imap.status(MAILBOX, [ "UIDVALIDITY" ]).fetch("UIDVALIDITY").to_i }
+        @session.with_lock { @session.uid_validity(MAILBOX) }
       end
 
       # UIDVALIDITY and the highest UID from a single STATUS call, so they describe the same moment.
@@ -37,13 +38,9 @@ module Emails
         search(ImapSearchCriteria.new(after_date: from.to_date, before_date: before&.to_date).build)
       end
 
-      # The parsed RFC822 message, or nil when the UID does not exist.
+      # The message rebuilt from its header and text parts only (ImapTextFetcher), or nil when the UID does not exist.
       def mail(uid)
-        raw = @session.with_lock do
-          @session.ensure_mailbox(MAILBOX)
-          @session.fetch_raw_mail(uid, YahooAdapter::FULL_FIELDS)
-        end
-        raw.blank? ? nil : Mail.new(raw)
+        @text_fetcher.mail(uid, mailbox: MAILBOX)
       end
 
       private

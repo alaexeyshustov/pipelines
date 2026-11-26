@@ -16,7 +16,7 @@ RSpec.describe "Email Ingestion pipeline", prosopite: false do # rubocop:disable
   let(:pipeline_file) { Rails.root.join("config/pipelines/email_ingestion.json") }
   let(:pipeline) { Orchestration::PipelineImporter.call(JSON.parse(File.read(pipeline_file))).pipelines.sole }
   let(:gmail) { stub_gmail_adapter(inbox_message_ids_since: [], inbox_message_ids_after: []) }
-  let(:yahoo) { stub_yahoo_adapter(inbox_uids_after: [], inbox_uids_since: []) }
+  let(:yahoo) { stub_yahoo_adapter(inbox_uids_after: [], inbox_uids_since: [], attachments: []) }
   let(:cv) { { id: "att1", filename: "cv.pdf", mime_type: "application/pdf", size: 10 } }
 
   before do
@@ -255,7 +255,7 @@ RSpec.describe "Email Ingestion pipeline", prosopite: false do # rubocop:disable
                                               .and_return(adapter_message("777:3", provider: "yahoo", subject: "Interview at Initech"))
     end
 
-    it "still processes the other, reports the error, and skips attachments for the Yahoo email", :aggregate_failures do
+    it "still processes the other, reports the error, and ingests the Yahoo email with no attachments", :aggregate_failures do
       run = run_pipeline({ "providers" => %w[gmail yahoo] })
 
       expect(run.status).to eq("completed")
@@ -265,7 +265,7 @@ RSpec.describe "Email Ingestion pipeline", prosopite: false do # rubocop:disable
       yahoo_email = email("777:3")
       expect(yahoo_email).to be_tagged
       expect(embed["embedded"]).to eq([ yahoo_email.id ])
-      expect(ingest).to include("document_ids" => [], "skipped" => [ yahoo_email.id ])
+      expect(ingest).to include("document_ids" => [], "skipped" => [])
     end
   end
 

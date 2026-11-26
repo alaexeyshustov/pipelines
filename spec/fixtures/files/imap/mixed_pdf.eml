@@ -1,0 +1,22 @@
+From: HR Team <hr@company.com>
+To: test@yahoo.com
+Subject: Application
+Date: Mon, 1 Jan 2026 12:00:00 +0000
+Message-ID: <mixed@company.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="mix-b"
+
+--mix-b
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Please find my CV attached.
+
+--mix-b
+Content-Type: application/pdf; name="cv.pdf"
+Content-Disposition: attachment; filename="cv.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKZmFrZSBjdiBieXRlcwolJUVPRgo=
+
+--mix-b--

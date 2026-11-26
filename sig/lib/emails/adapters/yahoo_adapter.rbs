@@ -12,6 +12,8 @@ module Emails
       @session: ImapSession
       @inbox: ImapInboxReader
       @label_manager: ImapLabelManager
+      @text_fetcher: ImapTextFetcher
+      @attachment_reader: ImapAttachmentReader
       @labels: Array[label]
 
       def self.from_env: (?imap_options) -> YahooAdapter
@@ -19,18 +21,18 @@ module Emails
 
       def initialize: (host: String, port: Integer, username: String, password: String) -> void
       def message: (String | Integer message_id, ?label: String?) -> message
+      def attachments: (String | Integer message_id) -> Array[attachment]
+      def attachment: (String | Integer message_id, String attachment_id) -> String
       def modify_labels: (String | Integer message_uid, ?add: Array[String], ?remove: Array[String], ?source_mailbox: String) -> modify_result
       def create_label: (name: String) -> label
 
       HEADER_FIELDS: Array[String]
-      FULL_FIELDS: Array[String]
 
       private
 
       def fetch_uids: (String mailbox, Array[String] criteria, Integer max_results, Integer offset) -> Array[message]
       def build_mailbox: (String?) -> String
       def parse_mail: (Integer uid, Array[String] fields) -> Mail::Message?
-      def to_message: (message parsed, Mail::Message mail) -> message
     end
   end
 end

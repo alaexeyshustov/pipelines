@@ -11,6 +11,7 @@ module Emails
       end
 
       @session: ImapSession
+      @text_fetcher: ImapTextFetcher
 
       def self.split_message_id: (String | Integer message_id) -> [Integer?, Integer]
 

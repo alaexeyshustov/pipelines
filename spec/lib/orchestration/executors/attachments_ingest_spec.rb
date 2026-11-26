@@ -54,7 +54,6 @@ RSpec.describe Orchestration::Executors::AttachmentsIngest do
     embed_as(done, unit_vector(0))
     create(:document, email:, classification_status: "untagged")
     create(:document, email: nil, source: "drive", classification_status: "pending")
-    create(:document, email: create(:email, provider: "yahoo", classification_status: "tagged"), classification_status: "pending")
 
     expect(execute["document_ids"]).to match_array(unfinished.map(&:id))
     expect(Document::IngestEmailAttachments).not_to have_received(:call)
@@ -91,14 +90,42 @@ RSpec.describe Orchestration::Executors::AttachmentsIngest do
     expect(execute(first, second)["document_ids"]).to eq([ shared.id ])
   end
 
-  it "skips Yahoo emails without calling the service, even when tagged, and does not return their documents" do
-    yahoo = create(:email, provider: "yahoo", classification_status: "tagged")
+  def yahoo_email(status = "tagged") = create(:email, provider: "yahoo", classification_status: status)
+
+  it "ingests the attachments of tagged Yahoo emails and returns the document ids" do
+    email = yahoo_email
+    document = create(:document, email: nil)
+    results[email.id] = ingest_result(document_ids: [ document.id ])
+
+    expect(execute(email)).to eq("document_ids" => [ document.id ], "skipped" => [], "failed" => [])
+    expect(Document::IngestEmailAttachments).to have_received(:call).with(email)
+  end
+
+  it "skips untagged Yahoo emails without calling the service" do
+    yahoo = yahoo_email("untagged")
     create(:document, email: yahoo)
 
     output = execute(yahoo)
 
     expect(output).to eq("document_ids" => [], "skipped" => [ yahoo.id ], "failed" => [])
     expect(Document::IngestEmailAttachments).not_to have_received(:call)
+  end
+
+  it "returns the leftover documents of a re-listed Yahoo email without downloading again" do
+    yahoo = yahoo_email
+    leftover = create(:document, email: yahoo, classification_status: "failed")
+
+    output = execute(yahoo)
+
+    expect(Document::IngestEmailAttachments).not_to have_received(:call)
+    expect(output).to eq("document_ids" => [ leftover.id ], "skipped" => [], "failed" => [])
+  end
+
+  it "returns the unfinished documents of tagged Yahoo emails that were not listed" do
+    yahoo = yahoo_email
+    unfinished = create(:document, email: yahoo, classification_status: "pending")
+
+    expect(execute["document_ids"]).to eq([ unfinished.id ])
   end
 
   %w[pending untagged failed].each do |status|

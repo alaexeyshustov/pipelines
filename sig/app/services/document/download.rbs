@@ -20,7 +20,7 @@ class Document
 
     private
 
-    def from_gmail: (Hash[String, String | Integer | bool | nil] ref) -> Result
+    def from_email: (Hash[String, String | Integer | bool | nil] ref) -> Result
     def from_drive: (Hash[String, String | Integer | bool | nil] ref) -> Result
     def filename: (String name, String? mime_type) -> String
   end

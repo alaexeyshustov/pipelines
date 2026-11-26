@@ -1,0 +1,38 @@
+From: HR Team <hr@company.com>
+To: test@yahoo.com
+Subject: Fwd: Original
+Date: Mon, 1 Jan 2026 12:00:00 +0000
+Message-ID: <rfc822@company.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="f"
+
+--f
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+FYI
+--f
+Content-Type: message/rfc822
+Content-Disposition: attachment; filename="fwd.eml"
+
+From: boss@company.com
+To: test@yahoo.com
+Subject: Original
+Date: Mon, 1 Jan 2026 11:00:00 +0000
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="in"
+
+--in
+Content-Type: text/plain; charset=UTF-8
+
+Original text
+--in
+Content-Type: application/pdf; name="secret.pdf"
+Content-Disposition: attachment; filename="secret.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKZmFrZSBjdiBieXRlcwolJUVPRgo=
+
+--in--
+
+--f--

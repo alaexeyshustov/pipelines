@@ -1,0 +1,42 @@
+From: HR Team <hr@company.com>
+To: test@yahoo.com
+Subject: Offer
+Date: Mon, 1 Jan 2026 12:00:00 +0000
+Message-ID: <nested@company.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="m"
+
+--m
+Content-Type: multipart/related; boundary="r"
+
+--r
+Content-Type: multipart/alternative; boundary="a"
+
+--a
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Nested plain text
+--a
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+<p>Nested html</p>
+--a--
+--r
+Content-Type: image/png
+Content-ID: <logo@company.com>
+Content-Disposition: inline
+Content-Transfer-Encoding: base64
+
+UE5HREFUQQ==
+
+--r--
+--m
+Content-Type: application/pdf; name="offer.pdf"
+Content-Disposition: attachment; filename="offer.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKZmFrZSBjdiBieXRlcwolJUVPRgo=
+
+--m--

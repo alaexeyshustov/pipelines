@@ -1,0 +1,22 @@
+From: HR Team <hr@company.com>
+To: test@yahoo.com
+Subject: Logo
+Date: Mon, 1 Jan 2026 12:00:00 +0000
+Message-ID: <inline@company.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="i"
+
+--i
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+See our logo.
+--i
+Content-Type: image/png; name="logo.png"
+Content-Disposition: inline; filename="logo.png"
+Content-ID: <l@company.com>
+Content-Transfer-Encoding: base64
+
+UE5HREFUQQ==
+
+--i--

@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe Emails::Adapters::YahooAdapter do
+  include ImapResponseHelpers
+
   subject(:adapter) { described_class.new(host: "imap.mail.yahoo.com", port: 993, username: "me@yahoo.com", password: "secret") }
 
   let(:imap) { Net::IMAP.allocate }
@@ -8,10 +10,6 @@ RSpec.describe Emails::Adapters::YahooAdapter do
   before do
     allow(Net::IMAP).to receive(:new).and_return(imap)
     allow(imap).to receive_messages(login: nil, select: nil)
-  end
-
-  def fetch_data(uid, raw)
-    [ Net::IMAP::FetchData.new(uid, { "RFC822" => raw, "FLAGS" => [], "UID" => uid }) ]
   end
 
   describe "#account" do
@@ -76,24 +74,31 @@ RSpec.describe Emails::Adapters::YahooAdapter do
   end
 
   describe "#fetch_message" do
-    let(:raw) do
-      "Subject: Hello\r\nFrom: hr@company.com\r\nTo: me@yahoo.com\r\nDate: Mon, 1 Jan 2026 12:00:00 +0000\r\n" \
-        "MIME-Version: 1.0\r\nContent-Type: multipart/alternative; boundary=\"b\"\r\n\r\n" \
-        "--b\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\nPlain text\r\n" \
-        "--b\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n<p>Html text</p>\r\n--b--\r\n"
-    end
-
-    before do
-      allow(imap).to receive(:uid_fetch).with(101, anything).and_return(fetch_data(101, raw))
-    end
+    let(:message) { imap_fixture("alternative") }
+    let!(:calls) { stub_imap_message(imap, message, uid: 101) }
 
     it "returns plain and html bodies, a parsed date and a composite id" do
-      message = adapter.fetch_message("77:101")
+      result = adapter.fetch_message("77:101")
 
-      expect(message).to include(
-        id: "77:101", provider: "yahoo", subject: "Hello", from: "hr@company.com", to: "me@yahoo.com",
-        body: "Plain text", html_body: "<p>Html text</p>", source_url: nil, date: Time.utc(2026, 1, 1, 12)
+      expect(result).to include(
+        id: "77:101", provider: "yahoo", subject: "Interview invitation", from: "hr@company.com", to: "test@yahoo.com",
+        html_body: "<html><body><p>Dear candidate,</p><p>Please see the invitation.</p></body></html>", source_url: nil, date: Time.utc(2026, 1, 1, 12)
       )
+      expect(result[:body]).to start_with("Dear candidate,")
+    end
+
+    it "gives the same body and html_body as parsing the full raw message" do
+      legacy = Emails::Adapters::ImapBodyParser.new(Mail.new(message.raw))
+
+      expect(adapter.fetch_message("77:101")).to include(body: legacy.body, html_body: legacy.html)
+    end
+
+    it "fetches the structure and header, then only the text parts, never RFC822" do
+      adapter.fetch_message("77:101")
+
+      expect(calls.flatten).not_to include("RFC822")
+      expect(calls.first).to include("BODYSTRUCTURE")
+      expect(calls.drop(1)).to eq([ %w[BODY.PEEK[1]<0.1048576> BODY.PEEK[2]<0.1048576>] ])
     end
 
     it "prefixes a bare UID with the current INBOX UIDVALIDITY" do
@@ -103,32 +108,51 @@ RSpec.describe Emails::Adapters::YahooAdapter do
     end
 
     it "raises when the message does not exist" do
-      allow(imap).to receive(:uid_fetch).with(102, anything).and_return(nil)
-
       expect { adapter.fetch_message("77:102") }.to raise_error(/not found/)
     end
 
     it "raises when the message has no usable date" do
-      allow(imap).to receive(:uid_fetch).with(101, anything).and_return(fetch_data(101, "Subject: x\r\n\r\nbody"))
+      dated = imap_text_message("body")
+      stub_imap_message(imap, dated.with(raw: dated.raw.sub(/Date: [^\r]*\r\n/, "")), uid: 101)
 
       expect { adapter.fetch_message("77:101") }.to raise_error(ArgumentError, /date/)
+    end
+
+    it "reads a large-attachment message through its text parts only" do
+      large = imap_fixture("mixed_pdf", structure: "mixed_large_pdf")
+      large_calls = stub_imap_message(imap, large, uid: 101)
+
+      result = adapter.fetch_message("77:101")
+
+      expect(result[:body]).to eq("Please find my CV attached.")
+      expect(large_calls.drop(1)).to eq([ [ "BODY.PEEK[1]<0.1048576>" ] ])
     end
   end
 
   describe "#message" do
-    let(:raw) { "Subject: Legacy\r\nFrom: a@b.com\r\nTo: me@yahoo.com\r\nDate: Mon, 1 Jan 2026 12:00:00 +0000\r\n\r\nHi\r\n" }
-
-    before do
-      allow(imap).to receive(:uid_fetch).with(101, anything).and_return(fetch_data(101, raw))
-    end
+    let(:message) { imap_text_message("Hi") }
+    let!(:calls) { stub_imap_message(imap, message, uid: 101) }
 
     it "accepts the legacy bare UID" do
-      expect(adapter.message("101")).to include(subject: "Legacy")
+      expect(adapter.message("101")).to include(subject: "Generated")
     end
 
     it "accepts a <uid_validity>:<uid> id" do
-      expect(adapter.message("77:101")).to include(subject: "Legacy")
-      expect(imap).to have_received(:uid_fetch).with(101, anything)
+      expect(adapter.message("77:101")).to include(subject: "Generated")
+      expect(imap).to have_received(:uid_fetch).with(101, anything).at_least(:once)
+    end
+
+    it "agrees with #fetch_message on subject, from, to and body" do
+      alternative = imap_fixture("alternative")
+      stub_imap_message(imap, alternative, uid: 101)
+
+      expect(adapter.message("101")).to include(adapter.fetch_message("77:101").slice(:subject, :from, :to, :body))
+    end
+
+    it "does not fetch RFC822" do
+      adapter.message("101")
+
+      expect(calls.flatten).not_to include("RFC822")
     end
   end
 end

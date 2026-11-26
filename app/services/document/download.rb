@@ -1,4 +1,4 @@
-# Fetches a Document's original file live from its source (Gmail attachment or Drive file) via +source_ref+.
+# Fetches a Document's original file live from its source (Gmail or Yahoo attachment, or Drive file) via +source_ref+.
 #
 #   file = Document::Download.call(document)  # => Result(data:, filename:, mime_type:)
 class Document::Download
@@ -17,7 +17,7 @@ class Document::Download
   def call
     ref = @document.source_ref
     case ref["provider"]
-    when Emails::GMAIL then from_gmail(ref)
+    when Emails::GMAIL, Emails::YAHOO then from_email(ref)
     when Document::DRIVE_REF_PROVIDER then from_drive(ref)
     else raise Unsupported, "Cannot download from #{ref['provider'].inspect}"
     end
@@ -25,8 +25,8 @@ class Document::Download
 
   private
 
-  def from_gmail(ref)
-    data = Emails.attachment(Emails::GMAIL, ref.fetch("message_id").to_s, ref.fetch("attachment_id").to_s)
+  def from_email(ref)
+    data = Emails.attachment(ref.fetch("provider").to_s, ref.fetch("message_id").to_s, ref.fetch("attachment_id").to_s)
     Result.new(data:, filename: filename(@document.title, @document.mime_type), mime_type: @document.mime_type)
   end
 

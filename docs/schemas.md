@@ -120,7 +120,7 @@ A pdf/doc(x)/image reduced to extracted text (markdown). Only the text is stored
 | checksum | STRING | NO | Unique; dedup key |
 | source | STRING | NO | `"email_attachment"` or `"drive"` |
 | source_url | STRING | YES | Drive `webViewLink` / Gmail message link |
-| source_ref | JSON | NO | `provider` + `message_id`/`attachment_id` (gmail) or `drive_file_id` (drive) |
+| source_ref | JSON | NO | `provider` + `message_id`/`attachment_id` (gmail; yahoo: `message_id` is `"<uid_validity>:<uid>"`, `attachment_id` the IMAP part path) or `drive_file_id` (drive) |
 | email_id | FK | YES | `emails.id`, nulled when the email is deleted |
 | classification_status | STRING | NO | As on `emails`: `pending` (default), `tagged`, `untagged`, `failed`; indexed. Email attachments are classified by the Email Ingestion pipeline, Drive documents by `Document::TagJob` (queued, and re-queued when pending or failed, by `Document::SyncDriveJob`); a changed Drive file goes back to `pending` |
 | created_at, updated_at | DATETIME | NO | |
@@ -130,7 +130,7 @@ Document.ingest!(attrs)               # idempotent on checksum: returns the exis
 Document::Download.call(document)     # => File(data:, filename:, mime_type:), fetched live via source_ref
 ```
 
-`GET /documents/:id/download` streams it. Gmail uses `Emails.attachment`; Drive uses `Emails::Adapters::DriveFileFetcher` (minimal Net::HTTP client for Drive v3, `drive.readonly` token from `DRIVE_TOKEN_PATH`, raises `NotConfigured` otherwise).
+`GET /documents/:id/download` streams it. Gmail and Yahoo use `Emails.attachment`; Drive uses `Emails::Adapters::DriveFileFetcher` (minimal Net::HTTP client for Drive v3, `drive.readonly` token from `DRIVE_TOKEN_PATH`, raises `NotConfigured` otherwise).
 
 ### documents_fts
 

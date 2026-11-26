@@ -1,0 +1,10 @@
+From: HR Team <hr@company.com>
+To: test@yahoo.com
+Subject: Named Plain
+Date: Mon, 1 Jan 2026 12:00:00 +0000
+Message-ID: <named@company.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii; name="a.txt"
+Content-Transfer-Encoding: 7bit
+
+hello named

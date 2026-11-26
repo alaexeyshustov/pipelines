@@ -1,6 +1,6 @@
 # Turns the supported attachments (pdf, docx, images, text) of one email into Documents: download, SHA256 checksum,
 # OCR (Document::TextExtractor), Document.ingest!. The caller decides which emails qualify (the pipeline step takes
-# tagged Gmail emails; providers without attachment listing, like Yahoo, have none to list).
+# tagged emails of either provider).
 #
 # Documents dedupe on the checksum of the bytes, so the same attachment on two emails yields one Document (linked to
 # the first email); the checksum is looked up before the text extraction, so a recurring attachment is never OCR'd

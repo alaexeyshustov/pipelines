@@ -1,0 +1,19 @@
+module Emails
+  module Adapters
+    class ImapAttachmentReader
+      PART_PATH: Regexp
+
+      @session: ImapSession
+
+      def initialize: (ImapSession session) -> void
+      def list: (String | Integer message_id) -> Array[attachment]
+      def data: (String | Integer message_id, String attachment_id) -> String
+
+      private
+
+      def attachment_leaves: (String | Integer message_id, Integer? validity, Integer uid) -> Array[ImapBodyStructure::Leaf]
+      def fetch_part: (Integer uid, ImapBodyStructure::Leaf leaf) -> String
+      def decode: (ImapBodyStructure::Leaf leaf, String encoded) -> String
+    end
+  end
+end
