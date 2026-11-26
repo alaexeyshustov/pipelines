@@ -65,7 +65,7 @@ snapshot:
   config/database.yml: ddba8855b1c19ca5df84a910731b5d0835cd5f90e806cc7c5a01e8104b8a96d3
   config/environment.rb: 73b2e731e02cedb9dc0335e1a35c3a2b7738032e3aa7e62ac32cbb8432b43c69
   config/environments/development.rb: 1044be7925d9d0001a5f5ef9544b5cafad428486a9e525f25748bc338528c448
-  config/environments/production.rb: e14eef12b4f2aad88e1884814338f7ea61cedcb8c5ee80a58e78f40765ba0c07
+  config/environments/production.rb: 7b8f163f8dd1d3adaae2719d1998492fc2ff51edab7e753b58b81ab64e80426d
   config/environments/test.rb: b7b2fb267f2299d85cf124205aea9781b10a89e1896ab68e8bea3af06e8da674
   config/importmap.rb: e063c356463c79934ce80c5d458e2334214b5d4bedd454dcfc7c25e5831a377b
   config/initializers/active_job_logger.rb: 6158081cf3169400f2c81f3f1a54b0bae8589aaf9e919603cf9d223aafe9b144
