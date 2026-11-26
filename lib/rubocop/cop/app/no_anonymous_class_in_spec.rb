@@ -4,7 +4,7 @@ module RuboCop
       # Anonymous classes in specs get a name through `stub_const`, so they can be
       # deserialized, constantized and reported by name.
       class NoAnonymousClassInSpec < Base
-        MSG = 'Name anonymous classes with `stub_const("Name", Class.new)`.'
+        MSG = 'Name anonymous classes with `stub_const("Name", Class.new)`.'.freeze
 
         def on_send(node)
           return unless spec_file?

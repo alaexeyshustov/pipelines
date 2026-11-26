@@ -2,7 +2,7 @@ module RuboCop
   module Cop
     module App
       class FormObjectMustInheritBaseForm < Base
-        MSG = "Form objects must inherit from `::BaseForm`."
+        MSG = "Form objects must inherit from `::BaseForm`.".freeze
 
         def on_class(node)
           return unless form_file?

@@ -20,10 +20,10 @@ module UI
       success:   "bg-green-600 text-white hover:bg-green-700"
     }.freeze
 
-    BASE_CLASSES   = "px-4 py-2 text-sm font-medium rounded-lg transition-colors border"
-    LINK_CLASSES   = "px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-    BUTTON_CLASSES = "px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors border border-gray-300"
-    DELETE_CLASSES = "px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors border-0 cursor-pointer"
+    BASE_CLASSES   = "px-4 py-2 text-sm font-medium rounded-lg transition-colors border".freeze
+    LINK_CLASSES   = "px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors".freeze
+    BUTTON_CLASSES = "px-4 py-2 bg-white text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors border border-gray-300".freeze
+    DELETE_CLASSES = "px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors border-0 cursor-pointer".freeze
 
     def initialize(type: :raw, label: nil, url: nil, confirm: nil, method: nil,
                    variant: nil, dialog_title: nil, confirm_label: nil, size: :sm,

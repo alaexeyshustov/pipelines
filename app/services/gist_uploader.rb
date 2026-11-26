@@ -2,8 +2,8 @@ require "net/http"
 require "json"
 
 class GistUploader
-  GITHUB_API = "https://api.github.com"
-  API_VERSION = "2022-11-28"
+  GITHUB_API = "https://api.github.com".freeze
+  API_VERSION = "2022-11-28".freeze
   GIST_ID_FORMAT = /\A[a-f0-9]{1,64}\z/i
 
   Result = Data.define(:url)

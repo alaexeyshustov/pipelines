@@ -1,7 +1,7 @@
 module Emails
   module Adapters
     class ImapSearchCriteria
-      IMAP_DATE_FORMAT = "%d-%b-%Y"
+      IMAP_DATE_FORMAT = "%d-%b-%Y".freeze
 
       def initialize(query: nil, flagged: nil, after_date: nil, before_date: nil)
         @query       = query

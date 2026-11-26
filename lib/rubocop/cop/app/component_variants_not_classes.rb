@@ -3,7 +3,7 @@ module RuboCop
     module App
       # Components take a `variant:` rather than CSS classes from the caller.
       class ComponentVariantsNotClasses < Base
-        MSG = "Use a `variant:` instead of passing CSS classes into a component."
+        MSG = "Use a `variant:` instead of passing CSS classes into a component.".freeze
         CLASS_KEYWORDS = %i[class classes css_class css_classes html_class html_classes].freeze
 
         def on_def(node)

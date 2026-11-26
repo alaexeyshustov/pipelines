@@ -17,7 +17,7 @@ module RuboCop
         #   end
         #
         class NoCompactNamespace < RuboCop::RBS::CopBase
-          MSG = "Open full namespace blocks instead of a compact `%<name>s`."
+          MSG = "Open full namespace blocks instead of a compact `%<name>s`.".freeze
 
           def on_rbs_class(decl)
             return if decl.name.namespace.path.empty?

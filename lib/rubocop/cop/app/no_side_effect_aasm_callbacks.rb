@@ -3,7 +3,7 @@ module RuboCop
     module App
       # Forbids jobs, mail and LLM calls inside `aasm` blocks; AASM callbacks may only normalize data.
       class NoSideEffectAasmCallbacks < Base
-        MSG = "Do not trigger jobs, mail or LLM calls from AASM; the service or job that fires the event does that."
+        MSG = "Do not trigger jobs, mail or LLM calls from AASM; the service or job that fires the event does that.".freeze
         SIDE_EFFECT_METHODS = %i[perform_later perform_now deliver_later deliver_now].freeze
         SIDE_EFFECT_CONSTANTS = %i[RubyLLM].freeze
 

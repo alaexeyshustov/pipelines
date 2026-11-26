@@ -2,7 +2,7 @@ module RuboCop
   module Cop
     module App
       class ServiceMustHaveClassCall < Base
-        MSG = "Service classes must define `def self.call`."
+        MSG = "Service classes must define `def self.call`.".freeze
 
         def on_class(node)
           return unless service_file?

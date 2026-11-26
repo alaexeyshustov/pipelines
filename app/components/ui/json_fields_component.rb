@@ -1,9 +1,9 @@
 module UI
   class JsonFieldsComponent < ViewComponent::Base
     INPUT_CLASSES    = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm " \
-                       "focus:outline-none focus:ring-2 focus:ring-indigo-500"
-    CHECKBOX_CLASSES = "rounded border-gray-300 text-indigo-600"
-    LABEL_CLASSES    = "block text-sm font-medium text-gray-700 mb-1"
+                       "focus:outline-none focus:ring-2 focus:ring-indigo-500".freeze
+    CHECKBOX_CLASSES = "rounded border-gray-300 text-indigo-600".freeze
+    LABEL_CLASSES    = "block text-sm font-medium text-gray-700 mb-1".freeze
 
     def initialize(form:, schema:, name_prefix: nil)
       @form        = form

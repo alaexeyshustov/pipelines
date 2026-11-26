@@ -3,7 +3,7 @@ module Evaluation
   # sampling only) and persists the captured evidence as an Evaluation::Sample.
   # Write tools are replaced by a sentinel so sampling never mutates data.
   class Sampler
-    WRITE_BLOCKED_SENTINEL = "[write tool blocked during sampling]"
+    WRITE_BLOCKED_SENTINEL = "[write tool blocked during sampling]".freeze
 
     Result = Data.define(:sample)
 

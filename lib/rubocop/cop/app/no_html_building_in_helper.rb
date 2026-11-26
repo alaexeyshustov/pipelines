@@ -3,7 +3,7 @@ module RuboCop
     module App
       # Forbids HTML building in helpers; structure belongs in ViewComponents.
       class NoHtmlBuildingInHelper < Base
-        MSG = "Do not build HTML in helpers with `%<method>s`; use a ViewComponent instead."
+        MSG = "Do not build HTML in helpers with `%<method>s`; use a ViewComponent instead.".freeze
 
         FORBIDDEN_METHODS = %i[content_tag concat].freeze
 

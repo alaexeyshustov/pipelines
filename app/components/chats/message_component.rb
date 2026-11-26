@@ -14,8 +14,8 @@ module Chats
       "tool"      => "bg-amber-100 text-amber-700"
     }.freeze
 
-    DEFAULT_CONTAINER_CLASSES = "bg-gray-50 border-gray-200"
-    DEFAULT_BADGE_CLASSES     = "bg-gray-100 text-gray-600"
+    DEFAULT_CONTAINER_CLASSES = "bg-gray-50 border-gray-200".freeze
+    DEFAULT_BADGE_CLASSES     = "bg-gray-100 text-gray-600".freeze
 
     def initialize(message:)
       @message = message

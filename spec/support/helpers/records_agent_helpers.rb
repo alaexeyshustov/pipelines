@@ -1,6 +1,6 @@
 module RecordsAgentHelpers
-  OPENAI_COMPLETIONS_URL  = 'https://api.openai.com/v1/chat/completions'
-  MISTRAL_COMPLETIONS_URL = 'https://api.mistral.ai/v1/chat/completions'
+  OPENAI_COMPLETIONS_URL  = 'https://api.openai.com/v1/chat/completions'.freeze
+  MISTRAL_COMPLETIONS_URL = 'https://api.mistral.ai/v1/chat/completions'.freeze
 
   def openai_completions_url  = OPENAI_COMPLETIONS_URL
   def mistral_completions_url = MISTRAL_COMPLETIONS_URL

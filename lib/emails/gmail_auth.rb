@@ -12,7 +12,7 @@ module Emails
     class InvalidState < StandardError; end
     class MissingCode < StandardError; end
 
-    USER_ID = "default"
+    USER_ID = "default".freeze
     ACCEPT_TIMEOUT = 120
 
     def initialize(credentials_path:, token_path:, scope:, output: $stderr, accept_timeout: ACCEPT_TIMEOUT)

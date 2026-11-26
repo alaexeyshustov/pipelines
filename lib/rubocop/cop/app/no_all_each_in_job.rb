@@ -3,7 +3,7 @@ module RuboCop
     module App
       # Forbids .all.each in job classes; use find_each for memory-safe batch iteration.
       class NoAllEachInJob < Base
-        MSG = "Do not use `.all.each` in jobs; use `find_each` for memory-safe batch iteration."
+        MSG = "Do not use `.all.each` in jobs; use `find_each` for memory-safe batch iteration.".freeze
 
         def on_send(node)
           return unless job_file?
