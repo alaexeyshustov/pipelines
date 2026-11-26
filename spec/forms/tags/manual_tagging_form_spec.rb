@@ -63,6 +63,15 @@ RSpec.describe Tags::ManualTaggingForm do
     expect(email.reload).to be_untagged
   end
 
+  it "returns false with the record's errors and keeps no tagging when the status update is invalid" do
+    email.update_column(:provider, "bogus")
+    form = described_class.new(taggable: email, tag_id: tag.id, subtag_id: nil)
+
+    expect(form.save).to be(false)
+    expect(form.errors[:provider]).not_to be_empty
+    expect(email.taggings.reload).to be_empty
+  end
+
   it "keeps the status when the tag does not exist" do
     described_class.new(taggable: email, tag_id: "0", subtag_id: nil).save
 

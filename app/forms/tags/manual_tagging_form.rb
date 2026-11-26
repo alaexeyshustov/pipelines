@@ -18,8 +18,9 @@ module Tags
       tagging.assign_attributes(subtag: (Subtag.find_by(id: subtag_id) if subtag_id), source: "manual", confidence: nil)
       return true if save_tagging(tagging)
 
-      tagging.errors.each { |error| errors.add(error.attribute, error.message) }
-      false
+      copy_errors(tagging)
+    rescue ActiveRecord::RecordInvalid => error
+      copy_errors(error.record)
     end
 
     private
@@ -30,6 +31,11 @@ module Tags
       Tagging.transaction do
         tagging.save && @taggable.update!(classification_status: "tagged")
       end
+    end
+
+    def copy_errors(record)
+      record.errors.each { |error| errors.add(error.attribute, error.message) }
+      false
     end
 
     def fail_with(attribute, message)
