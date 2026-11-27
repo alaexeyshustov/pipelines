@@ -124,9 +124,11 @@ begin
     [code == "403", "status #{code}"]
   end
 
-  check("PUT registry.npmjs.org/x is denied (403)") do
-    code = http_code("-X", "PUT", "https://registry.npmjs.org/x")
-    [code == "403", "status #{code}"]
+  # npm is tunnelled: nono refuses intercepted paths with %2F, which pnpm uses
+  # for every scoped package.
+  check("scoped npm package metadata is allowed (200)") do
+    code = http_code("https://registry.npmjs.org/@pnpm%2Fexe")
+    [code == "200", "status #{code}"]
   end
 
   check("getent hosts example.com fails") do
@@ -146,10 +148,10 @@ begin
   check("TCP to the bridge gateway #{bridge_gateway}:22 is blocked") { [tcp_blocked?(bridge_gateway, 22)] }
   check("TCP to the VM host 192.168.127.254:22 is blocked") { [tcp_blocked?("192.168.127.254", 22)] }
 
-  check("sandbox-gateway:11434 connects (Ollama relay)") do
-    script = "require 'socket'; Socket.tcp('sandbox-gateway', 11434, connect_timeout: 4).close"
-    _, ok = agent("ruby", "-e", script)
-    [ok]
+  # Needs Ollama running on the host; Ollama itself refuses a non-local Host.
+  check("Ollama answers through OLLAMA_API_BASE (200)") do
+    code, = agent("bash", "-c", 'curl -sS --max-time 10 -o /dev/null -w "%{http_code}" "${OLLAMA_API_BASE%/v1}/api/tags"')
+    [code == "200", "status #{code}"]
   end
 
   check("/run/ca/ca-key.pem is absent in the agent") do

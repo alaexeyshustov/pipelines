@@ -52,7 +52,7 @@ class GatewaySourceTest < Minitest::Test
     rubygems.org index.rubygems.org registry.npmjs.org api.anthropic.com api.openai.com api.mistral.ai
     gmail.googleapis.com www.googleapis.com oauth2.googleapis.com cdn.playwright.dev
     playwright.download.prss.microsoft.com deb.debian.org github.com api.github.com
-    *.actions.githubusercontent.com *.blob.core.windows.net
+    *.actions.githubusercontent.com *.blob.core.windows.net storage.googleapis.com
   ].freeze
   GITHUB_REPOSITORIES = %w[alaexeyshustov/pipelines ruby/gem_rbs_collection rubysec/ruby-advisory-db].freeze
 
@@ -64,13 +64,28 @@ class GatewaySourceTest < Minitest::Test
     assert_equal EXPECTED_DOMAINS.sort, entries.map { domain_of(_1) }.sort
   end
 
-  def test_package_registries_allow_only_get_and_head
-    %w[rubygems.org index.rubygems.org registry.npmjs.org].each do |domain|
+  def test_gem_registries_allow_only_get_and_head
+    %w[rubygems.org index.rubygems.org].each do |domain|
       rules = endpoints(domain)
       refute_empty rules, "#{domain} needs endpoint rules"
       assert_equal [ %w[GET HEAD] ], [ rules.map { _1.fetch("method") }.uniq.sort & %w[GET HEAD] ]
       assert_empty rules.map { _1.fetch("method") } - %w[GET HEAD], "#{domain} must not allow writes"
     end
+  end
+
+  # cdn.playwright.dev redirects Chrome for Testing there; the rest of the
+  # host (any bucket, uploads) stays closed.
+  def test_google_storage_allows_only_reads_of_chrome_for_testing
+    rules = endpoints("storage.googleapis.com")
+
+    assert_equal %w[GET HEAD], rules.map { _1.fetch("method") }.uniq.sort
+    assert(rules.all? { _1.fetch("path").start_with?("/chrome-for-testing-public/") })
+  end
+
+  # nono refuses any intercepted path with an encoded slash, and pnpm fetches
+  # every scoped package as /@scope%2Fname, so npm is tunnelled, not filtered.
+  def test_npm_registry_is_a_plain_tunnelled_host
+    assert_includes entries, "registry.npmjs.org"
   end
 
   def test_no_path_uses_brace_expansion
@@ -107,6 +122,7 @@ class GatewaySourceTest < Minitest::Test
       https://api.github.com/repos/alaexeyshustov/pipelines/issues/1
       https://api.github.com/graphql
       https://x.actions.githubusercontent.com
+      https://storage.googleapis.com/chrome-for-testing-public/159.0.8154.6/linux64/chrome-linux64.zip
     ].each { |url| assert_equal "allowed", nono_decision(url), url }
   end
 
@@ -522,8 +538,8 @@ class SandboxNetworkUnitTest < Minitest::Test
       "--http-proxy=false", "--cap-drop NET_ADMIN", "--cap-drop NET_RAW", "--security-opt no-new-privileges",
       "--label io.pipelines.sandbox.egress=gateway",
       *%w[HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy GH_TOKEN].map { "--env #{_1}" },
-      "--env NO_PROXY=localhost,127.0.0.1,::1,sandbox-gateway", "--env no_proxy=localhost,127.0.0.1,::1,sandbox-gateway",
-      "--env OLLAMA_API_BASE=http://sandbox-gateway:11434/v1"
+      "--env NO_PROXY=localhost,127.0.0.1,::1,sandbox-gateway,sandbox-gateway.internal", "--env no_proxy=localhost,127.0.0.1,::1,sandbox-gateway,sandbox-gateway.internal",
+      "--env OLLAMA_API_BASE=http://sandbox-gateway.internal:11434/v1", "--add-host sandbox-gateway.internal:10.89.7.2"
     ].each { assert_includes joined, _1 }
   end
 
@@ -863,7 +879,7 @@ class SandboxNetworkCliTest < Minitest::Test
     refute_includes run, token
     refute_includes run, "ca-key.pem"
     %w[HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy].each { assert_equal proxy, environment[_1], _1 }
-    assert_includes run, "--env NO_PROXY=localhost,127.0.0.1,::1,sandbox-gateway"
+    assert_includes run, "--env NO_PROXY=localhost,127.0.0.1,::1,sandbox-gateway,sandbox-gateway.internal"
     assert_equal "github_pat_test", environment["GH_TOKEN"]
   end
 

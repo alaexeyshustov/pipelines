@@ -46,27 +46,7 @@
           }
         ]
       },
-      {
-        "domain": "registry.npmjs.org",
-        "endpoints": [
-          {
-            "method": "GET",
-            "path": "/"
-          },
-          {
-            "method": "GET",
-            "path": "/**"
-          },
-          {
-            "method": "HEAD",
-            "path": "/"
-          },
-          {
-            "method": "HEAD",
-            "path": "/**"
-          }
-        ]
-      },
+      "registry.npmjs.org",
       "api.anthropic.com",
       "api.openai.com",
       "api.mistral.ai",
@@ -74,6 +54,19 @@
       "www.googleapis.com",
       "oauth2.googleapis.com",
       "cdn.playwright.dev",
+      {
+        "domain": "storage.googleapis.com",
+        "endpoints": [
+          {
+            "method": "GET",
+            "path": "/chrome-for-testing-public/**"
+          },
+          {
+            "method": "HEAD",
+            "path": "/chrome-for-testing-public/**"
+          }
+        ]
+      },
       "playwright.download.prss.microsoft.com",
       "deb.debian.org",
       {

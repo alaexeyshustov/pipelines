@@ -40,8 +40,11 @@ module SandboxNetwork
   AGENT_NAME_PATTERN = /\Apipelines-[a-z0-9]+(?:-[a-z0-9]+)*\z/
   RESERVED_NAME_PATTERN = /\Apipelines-sandbox(?:-|\z)/
   PROXY_VARIABLES = %w[HTTP_PROXY HTTPS_PROXY ALL_PROXY http_proxy https_proxy all_proxy].freeze
-  NO_PROXY = "localhost,127.0.0.1,::1,sandbox-gateway"
-  OLLAMA_API_BASE = "http://sandbox-gateway:11434/v1"
+  # Ollama answers 403 to a Host that isn't local; it accepts *.internal, so
+  # the relay gets its own alias for the same gateway address.
+  OLLAMA_HOST = "sandbox-gateway.internal"
+  NO_PROXY = "localhost,127.0.0.1,::1,#{GATEWAY_HOST},#{OLLAMA_HOST}"
+  OLLAMA_API_BASE = "http://#{OLLAMA_HOST}:11434/v1"
   READY_SCRIPT = "exec 3<>/dev/tcp/127.0.0.1/3128 && exec 4<>/dev/tcp/127.0.0.1/11434"
   READY_ATTEMPTS = 30
   READY_INTERVAL = 0.2
@@ -212,7 +215,7 @@ module SandboxNetwork
   def agent_args(gateway_ip:, ca_cert:)
     [
       "--network", NETWORK, "--dns=none", "--add-host", "#{GATEWAY_HOST}:#{gateway_ip}",
-      "--restart=no", "--http-proxy=false", "--cap-drop", "NET_ADMIN", "--cap-drop", "NET_RAW",
+      "--add-host", "#{OLLAMA_HOST}:#{gateway_ip}", "--restart=no", "--http-proxy=false", "--cap-drop", "NET_ADMIN", "--cap-drop", "NET_RAW",
       "--security-opt", "no-new-privileges",
       "--label", "#{EGRESS_LABEL}=gateway",
       "--mount", "type=bind,src=#{ca_cert},dst=/run/sandbox-ca.crt,ro",

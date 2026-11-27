@@ -131,17 +131,26 @@ The line carries the host, method, path and a `denial_category`
 did not come from the gateway. For path or method denials, compare the request
 against the endpoint rules with `nono why --host <url>`.
 
+nono refuses any intercepted path containing an encoded slash (`%2F`) with
+`denial_category=endpoint_policy`, whatever the rules say, and `nono why`
+does not show this. A host whose clients send such paths has to be a plain
+(tunnelled) entry. That's why `registry.npmjs.org` is plain: pnpm fetches
+every scoped package as `/@scope%2Fname`.
+
 ## Ollama
 
-Agents reach the host's Ollama at `http://sandbox-gateway:11434/v1`
+Agents reach the host's Ollama at `http://sandbox-gateway.internal:11434/v1`
 (`OLLAMA_API_BASE`); the gateway relays to `host.containers.internal:11434`.
-Ollama must be listening on a host address Podman's VM can reach. `sandbox-gateway`
-is in `NO_PROXY`, so the request bypasses nono.
+The `.internal` alias matters: Ollama answers 403 to a Host header that isn't
+local, and it accepts `*.internal`. Ollama must be listening on a host address
+Podman's VM can reach. The alias is in `NO_PROXY`, so the request bypasses nono.
 
 ## Limitations
 
 - Allowed hosts remain leak paths (model and Google APIs accept any key); GitHub
   is limited by the PAT's repository scope.
+- npm is tunnelled, so the gateway doesn't block `npm publish`; it needs an
+  npm token the agent doesn't have. RubyGems stays `GET`/`HEAD` only.
 - All agents share one bridge and can reach each other's dev servers.
 - IMAP and other non-HTTP protocols do not work; Gemini is not allowed.
 - Never `podman start` an agent by hand: the nft table does not survive a VM

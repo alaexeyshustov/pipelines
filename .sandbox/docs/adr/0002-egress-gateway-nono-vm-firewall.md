@@ -22,8 +22,12 @@ container had unrestricted outbound access and the host's full-scope
   `pipelines-sandbox-gateway`, runs nono (version and checksums pinned in
   `.sandbox/gateway/Containerfile`) with a dedicated local CA. A CONNECT-only
   proxy such as Squid can filter by host but not by method or path; interception
-  gives host + method + path rules (for example `GET` only on the gem and npm
-  registries, one repository on GitHub). nono refuses `--no-auth` on a
+  gives host + method + path rules (for example `GET` only on the gem
+  registries, one repository on GitHub). npm is the exception: nono refuses
+  intercepted paths with an encoded slash, and pnpm requests every scoped
+  package as `/@scope%2Fname`, so `registry.npmjs.org` is tunnelled.
+  `cdn.playwright.dev` redirects Chrome for Testing to `storage.googleapis.com`,
+  which is open only for `GET`/`HEAD` under `/chrome-for-testing-public/`. nono refuses `--no-auth` on a
   non-loopback bind, so the proxy requires a token (`proxy-token`, generated
   once, passed to agents by name).
 - **One shared, non-internal bridge** `pipelines-sandbox-net`
@@ -72,7 +76,8 @@ container had unrestricted outbound access and the host's full-scope
   gateway address replaces agents.
 - **Host Ollama relay.** The gateway runs `socat` from `:11434` to
   `host.containers.internal:11434`; agents get
-  `OLLAMA_API_BASE=http://sandbox-gateway:11434/v1`.
+  `OLLAMA_API_BASE=http://sandbox-gateway.internal:11434/v1`. The `.internal`
+  alias is needed because Ollama refuses a Host that isn't local.
 - **The helper runs from the primary checkout only.** The policy and proxy
   token are snapshotted into the state directory (mode 700, `flock`), so an
   agent editing its worktree copy changes nothing.
@@ -88,7 +93,8 @@ container had unrestricted outbound access and the host's full-scope
 - Allowed hosts are still leak paths: the model APIs (Anthropic, OpenAI,
   Mistral) and Google APIs accept any caller's key, and GitHub is limited by the
   PAT's repository scope rather than by path. Credential injection (nono
-  `--credential`) is a follow-up.
+  `--credential`) is a follow-up. npm is tunnelled, so `npm publish` isn't
+  blocked by the gateway (it needs an npm token the agent doesn't have).
 - No agent-to-agent isolation: all agents share one bridge and can reach each
   other's dev servers. Accepted for a single-user setup.
 - IMAP and other non-HTTP protocols are dropped; use the Gmail API adapter.
@@ -98,6 +104,24 @@ container had unrestricted outbound access and the host's full-scope
 
 ## Verification
 
-_To be filled in after the run on the rootful machine (GH #267, step 6): date,
-versions (macOS, Podman, nono, agent image), integration script result, and the
-manual checklist._
+2026-11-27, macOS 26.7.2, Podman 5.5.1 client / 5.5.2 server (rootful
+`podman-machine-default`, VM kernel 6.12.13), nono 0.82.0, agent image
+`pipelines-claude-matt-agent-amd64:eef854c8…`.
+
+`sandbox_network_integration.rb`: all 15 checks pass. Direct egress, DNS
+lookups and TCP to the bridge gateway and VM host fail. `example.com` gets a
+403 logged as `host_denied`, `github.com/openai/codex` a 403, a `POST` to
+RubyGems a 403. This repository, scoped npm metadata and Ollama through
+`OLLAMA_API_BASE` answer 200. The CA key is absent in the agent, the published
+port answers from the host, `ensure` keeps the gateway `Id` and restores a
+deleted nft table.
+
+Session checks, in a throwaway agent on a clone of the branch, through the
+gateway: `bundle install`, `pnpm install`, `rbs collection install`,
+`bundle-audit update`, `git fetch`, `gh issue view`, `gh run view --log`,
+`playwright install chromium`, `claude -p` and an Ollama request all pass.
+`git push` and `gh pr create` were not exercised.
+
+The run found the npm `%2F` and Ollama Host problems described above, and that
+`run-agent` didn't name the container it validated (fixed: it now passes
+`--name` and refuses a caller's).
