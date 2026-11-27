@@ -125,7 +125,9 @@ Session checks, in a throwaway agent on a clone of the branch, through the
 gateway: `bundle install`, `pnpm install`, `rbs collection install`,
 `bundle-audit update`, `git fetch`, `gh issue view`, `gh run view --log`,
 `playwright install chromium`, `claude -p` and an Ollama request all pass.
-`git push` and `gh pr create` were not exercised.
+From the same kind of agent, `git push` of a scratch branch and
+`gh pr create --draft` (#347) pass with the fine-grained PAT; the PR was closed
+and the branch deleted.
 
 The run found the npm `%2F` and Ollama Host problems described above, and that
 `run-agent` didn't name the container it validated (fixed: it now passes
