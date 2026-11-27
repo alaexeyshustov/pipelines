@@ -21,6 +21,12 @@ preserved:
   pipelines-sandbox-pnpm-store   (shared by every sandbox)
   pipelines-<profile>-home       (shared by every worktree on that profile)
 
+The egress gateway (pipelines-sandbox-gateway) and its network
+(pipelines-sandbox-net) are shared by every sandbox and are never touched;
+attach-worktree reconciles them. Rotating the GitHub token in
+~/.config/pipelines-sandbox/gh-token needs this command to reach existing
+sandboxes.
+
 Agent session history survives: the claude-* profiles keep Claude Code state
 (CLAUDE_CONFIG_DIR=/root/.claude) on the shared home volume.
 
@@ -59,6 +65,8 @@ done
 identifier="${positional[0]:-}"
 [[ -n "$profile" ]] || profile="${positional[1]:-claude-matt}"
 [[ "$profile" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || fail "Invalid profile name: $profile"
+# Removing the container by name would delete the egress gateway.
+[[ "$profile" != sandbox ]] || fail "Profile name is reserved for the egress gateway: $profile"
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 # Where the user is, not where this script lives: the helpers are usually run

@@ -1,0 +1,146 @@
+{
+  "meta": {
+    "name": "pipelines-sandbox-egress"
+  },
+  "network": {
+    "allow_domain": [
+      {
+        "domain": "rubygems.org",
+        "endpoints": [
+          {
+            "method": "GET",
+            "path": "/"
+          },
+          {
+            "method": "GET",
+            "path": "/**"
+          },
+          {
+            "method": "HEAD",
+            "path": "/"
+          },
+          {
+            "method": "HEAD",
+            "path": "/**"
+          }
+        ]
+      },
+      {
+        "domain": "index.rubygems.org",
+        "endpoints": [
+          {
+            "method": "GET",
+            "path": "/"
+          },
+          {
+            "method": "GET",
+            "path": "/**"
+          },
+          {
+            "method": "HEAD",
+            "path": "/"
+          },
+          {
+            "method": "HEAD",
+            "path": "/**"
+          }
+        ]
+      },
+      "registry.npmjs.org",
+      "api.anthropic.com",
+      "api.openai.com",
+      "api.mistral.ai",
+      "gmail.googleapis.com",
+      "www.googleapis.com",
+      "oauth2.googleapis.com",
+      "cdn.playwright.dev",
+      {
+        "domain": "storage.googleapis.com",
+        "endpoints": [
+          {
+            "method": "GET",
+            "path": "/chrome-for-testing-public/**"
+          },
+          {
+            "method": "HEAD",
+            "path": "/chrome-for-testing-public/**"
+          }
+        ]
+      },
+      "playwright.download.prss.microsoft.com",
+      "deb.debian.org",
+      {
+        "domain": "github.com",
+        "endpoints": [
+          {
+            "method": "*",
+            "path": "/alaexeyshustov/pipelines"
+          },
+          {
+            "method": "*",
+            "path": "/alaexeyshustov/pipelines/**"
+          },
+          {
+            "method": "*",
+            "path": "/alaexeyshustov/pipelines.git"
+          },
+          {
+            "method": "*",
+            "path": "/alaexeyshustov/pipelines.git/**"
+          },
+          {
+            "method": "*",
+            "path": "/ruby/gem_rbs_collection"
+          },
+          {
+            "method": "*",
+            "path": "/ruby/gem_rbs_collection/**"
+          },
+          {
+            "method": "*",
+            "path": "/ruby/gem_rbs_collection.git"
+          },
+          {
+            "method": "*",
+            "path": "/ruby/gem_rbs_collection.git/**"
+          },
+          {
+            "method": "*",
+            "path": "/rubysec/ruby-advisory-db"
+          },
+          {
+            "method": "*",
+            "path": "/rubysec/ruby-advisory-db/**"
+          },
+          {
+            "method": "*",
+            "path": "/rubysec/ruby-advisory-db.git"
+          },
+          {
+            "method": "*",
+            "path": "/rubysec/ruby-advisory-db.git/**"
+          }
+        ]
+      },
+      {
+        "domain": "api.github.com",
+        "endpoints": [
+          {
+            "method": "*",
+            "path": "/repos/alaexeyshustov/pipelines"
+          },
+          {
+            "method": "*",
+            "path": "/repos/alaexeyshustov/pipelines/**"
+          },
+          {
+            "method": "*",
+            "path": "/graphql"
+          }
+        ]
+      },
+      "*.actions.githubusercontent.com",
+      "*.blob.core.windows.net"
+    ]
+  }
+}

@@ -1,45 +1,270 @@
-#!/usr/bin/env bash
+#!/usr/bin/env ruby
 
-# STUB_PODMAN_LOG: append each invocation's arguments (one line per call).
-# STUB_PODMAN_IMAGE_MISSING=true: `podman image exists` fails, forcing a build.
-[[ -z "${STUB_PODMAN_LOG:-}" ]] || printf '%s\n' "$*" >> "$STUB_PODMAN_LOG"
+# Stub for podman. Happy-path defaults: rootful engine, one machine whose SSH
+# port matches the default root connection, the shared network present and
+# labelled (podman7, 10.89.7.0/24, gateway 10.89.7.1), the egress gateway
+# running with STUB_GATEWAY_FINGERPRINT and attached at 10.89.7.2, exec ready.
+#
+# Knobs:
+#   STUB_PODMAN_LOG=<file>             append each invocation's arguments, one line per call
+#   STUB_PODMAN_IMAGE_MISSING=true     `image exists` fails, forcing a build
+#   STUB_PODMAN_ENV_LOG=<file>         record NAME=value, NUL-terminated, for each `--env NAME` of `run`
+#   STUB_PODMAN_STATE_DIR=<dir>        stateful: network create/connect, run, start, stop and rm are
+#                                      recorded under containers/ and network.json. Tests may write
+#                                      containers/<name>.json directly:
+#                                      {"Name":..,"Id":..,"State":{"Status":..},"Config":{"Labels":{..}},
+#                                       "NetworkIPs":{"<network>":"<ip>"}}
+#   STUB_PODMAN_ROOTLESS=true          `info` reports a rootless engine
+#   STUB_PODMAN_CONNECTION_URI=<uri>   URI of the default system connection
+#   STUB_PODMAN_NETWORK=absent         the shared network does not exist until `network create`
+#   STUB_PODMAN_NETWORK_JSON=<json>    verbatim `network inspect` output (overrides everything else)
+#   STUB_PODMAN_GATEWAY=absent|running|exited|unmanaged   initial gateway container (default running);
+#                                      unmanaged = running without the sandbox labels
+#   STUB_GATEWAY_FINGERPRINT=<fp>      value of the gateway-config label on a managed gateway
+#   STUB_PODMAN_GATEWAY_UNREADY=true|exited   `exec` fails; exited also flips the gateway to exited
+#   STUB_PODMAN_BUILD_FAILURE=true     `build` fails
+#   STUB_FIREWALL_FAILURE=true         `machine ssh ... nft -f -` fails
+#   STUB_PODMAN_NFT_LOG=<file>         append stdin of `machine ssh ... nft -f -`
+#   STUB_PODMAN_DOWN=true              every call fails as if the machine were stopped
+#   STUB_PODMAN_VOLUMES=<a,b,..>       names printed by `volume ls`
+#   STUB_PODMAN_IMAGES=<repo:tag,..>   tags printed by `image list`
+#   STUB_PODMAN_IMAGE_USERS=<repo:tag=name,..>   containers printed by `container list --filter ancestor=<repo:tag>`
 
-case "$1" in
-  image)
-    [[ "$2" == exists && "${STUB_PODMAN_IMAGE_MISSING:-}" == true ]] && exit 1
-    exit 0
-    ;;
-  build)
-    exit 0
-    ;;
-  container)
-    case "$2" in
-      inspect)
-        exit 1
-        ;;
-      exists|rm)
-        exit 0
-        ;;
-      *)
-        printf 'Unexpected podman container command: %s\n' "$*" >&2
-        exit 1
-        ;;
-    esac
-    ;;
-  run)
-    # STUB_PODMAN_ENV_LOG: record NAME=value, NUL-terminated, for each `--env NAME`
-    # passed by name.
-    if [[ -n "${STUB_PODMAN_ENV_LOG:-}" ]]; then
-      previous=""
-      for arg in "$@"; do
-        [[ "$previous" == --env && "$arg" != *=* ]] && printf '%s=%s\0' "$arg" "${!arg-}" >> "$STUB_PODMAN_ENV_LOG"
-        previous="$arg"
-      done
-    fi
-    exit 0
-    ;;
-  *)
-    printf 'Unexpected podman command: %s\n' "$*" >&2
-    exit 1
-    ;;
-esac
+require "json"
+require "fileutils"
+require "digest"
+
+NETWORK = "pipelines-sandbox-net"
+GATEWAY = "pipelines-sandbox-gateway"
+MACHINE = "podman-machine-default"
+MACHINE_PORT = 54_321
+EGRESS_LABEL = "io.pipelines.sandbox.egress"
+CONFIG_LABEL = "io.pipelines.sandbox.gateway-config"
+NETWORK_LABEL = "io.pipelines.sandbox.network"
+
+if (log = ENV["STUB_PODMAN_LOG"])
+  File.open(log, "a") { _1.puts ARGV.join(" ") }
+end
+
+abort "Cannot connect to Podman: the machine is not running" if ENV["STUB_PODMAN_DOWN"] == "true"
+
+STATE_DIR = ENV["STUB_PODMAN_STATE_DIR"]
+
+def container_path(name) = File.join(STATE_DIR, "containers", "#{name}.json")
+def tombstone_path(name) = File.join(STATE_DIR, "removed", name)
+
+def record(name, status:, labels:, ips: {})
+  { "Name" => name, "Id" => Digest::SHA256.hexdigest(name), "State" => { "Status" => status },
+    "Config" => { "Labels" => labels }, "NetworkIPs" => ips }
+end
+
+def default_gateway
+  case ENV.fetch("STUB_PODMAN_GATEWAY", "running")
+  when "absent" then nil
+  when "unmanaged" then record(GATEWAY, status: "running", labels: {}, ips: { NETWORK => "10.89.7.2" })
+  else
+    status = ENV["STUB_PODMAN_GATEWAY"] == "exited" ? "exited" : "running"
+    record(GATEWAY, status: status, ips: { NETWORK => "10.89.7.2" },
+           labels: { EGRESS_LABEL => "gateway", CONFIG_LABEL => ENV.fetch("STUB_GATEWAY_FINGERPRINT", "stub-fingerprint") })
+  end
+end
+
+def find_container(name)
+  if STATE_DIR
+    return JSON.parse(File.read(container_path(name))) if File.exist?(container_path(name))
+    return nil if File.exist?(tombstone_path(name))
+  end
+  name == GATEWAY ? default_gateway : nil
+end
+
+def save_container(data)
+  return unless STATE_DIR
+
+  FileUtils.mkdir_p(File.dirname(container_path(data["Name"])))
+  File.write(container_path(data["Name"]), JSON.generate(data))
+  FileUtils.rm_f(tombstone_path(data["Name"]))
+end
+
+def remove_container(name)
+  return unless STATE_DIR
+
+  FileUtils.rm_f(container_path(name))
+  FileUtils.mkdir_p(File.dirname(tombstone_path(name)))
+  FileUtils.touch(tombstone_path(name))
+end
+
+def set_status(name, status)
+  data = find_container(name) or return
+  data["State"]["Status"] = status
+  save_container(data)
+end
+
+def option_values(args, flag)
+  args.each_with_index.filter_map { |arg, index| args[index + 1] if arg == flag }
+end
+
+def known_containers
+  names = Dir.glob(File.join(STATE_DIR.to_s, "containers", "*.json")).map { File.basename(_1, ".json") }
+  names |= [GATEWAY] if find_container(GATEWAY)
+  names.filter_map { find_container(_1) }
+end
+
+def network_record(labels: { NETWORK_LABEL => "shared" }, options: { "metric" => "200" }, dns: false)
+  containers = known_containers.select { _1["NetworkIPs"]&.key?(NETWORK) }.to_h do |container|
+    [container["Id"], { "name" => container["Name"], "interfaces" => { "eth0" => {
+      "subnets" => [{ "ipnet" => "#{container["NetworkIPs"][NETWORK]}/24", "gateway" => "10.89.7.1" }] } } }]
+  end
+  record = { "name" => NETWORK, "id" => Digest::SHA256.hexdigest(NETWORK), "driver" => "bridge",
+             "network_interface" => "podman7", "subnets" => [{ "subnet" => "10.89.7.0/24", "gateway" => "10.89.7.1" }],
+             "ipv6_enabled" => false, "internal" => false, "dns_enabled" => dns, "ipam_options" => { "driver" => "host-local" },
+             "containers" => containers }
+  record["labels"] = labels unless labels.empty?
+  record["options"] = options unless options.empty?
+  record
+end
+
+def network_state_path = File.join(STATE_DIR, "network.json")
+
+def current_network
+  return JSON.parse(File.read(network_state_path)) if STATE_DIR && File.exist?(network_state_path)
+  return nil if ENV["STUB_PODMAN_NETWORK"] == "absent"
+
+  {}
+end
+
+def inspect_format(data, format)
+  case format
+  when "{{.State.Status}}" then data.dig("State", "Status")
+  when "{{.Id}}" then data["Id"]
+  when /\A\{\{index \.Config\.Labels "([^"]+)"\}\}\z/ then data.dig("Config", "Labels", Regexp.last_match(1)).to_s
+  else
+    warn "Unsupported inspect format: #{format}"
+    exit 125
+  end
+end
+
+def container_inspect(args)
+  format = option_values(args, "--format").first || option_values(args, "-f").first
+  name = args.last
+  data = find_container(name) or exit 1
+  if format.nil? || format == "json"
+    puts JSON.generate([data])
+  else
+    puts inspect_format(data, format)
+  end
+end
+
+def run_container(args)
+  if (log = ENV["STUB_PODMAN_ENV_LOG"])
+    option_values(args, "--env").reject { _1.include?("=") }.each do |name|
+      File.open(log, "a") { _1.write("#{name}=#{ENV[name]}\0") }
+    end
+  end
+  name = option_values(args, "--name").first or return
+  labels = option_values(args, "--label").to_h { _1.split("=", 2) }
+  ips = {}
+  option_values(args, "--network").each do |spec|
+    network, options = spec.split(":", 2)
+    ips[network] = options[/ip=([\d.]+)/, 1] if options&.include?("ip=")
+  end
+  detached = args.include?("--detach") || args.include?("-d")
+  save_container(record(name, status: detached ? "running" : "exited", labels: labels, ips: ips))
+end
+
+def remove(args)
+  args.reject { _1.start_with?("-") || _1.match?(/\A\d+\z/) }.each { remove_container(_1) }
+end
+
+def machine(args)
+  case args.first
+  when "list"
+    puts JSON.generate([{ "Name" => MACHINE, "Default" => true, "Running" => true, "Rootful" => true,
+                          "Port" => MACHINE_PORT, "RemoteUsername" => "core" }])
+  when "inspect"
+    puts JSON.generate([{ "Name" => MACHINE, "Rootful" => true,
+                          "SSHConfig" => { "Port" => MACHINE_PORT, "RemoteUsername" => "core" } }])
+  when "ssh"
+    return unless args.last(3) == %w[nft -f -]
+
+    ruleset = $stdin.read
+    File.open(ENV["STUB_PODMAN_NFT_LOG"], "a") { _1.write(ruleset) } if ENV["STUB_PODMAN_NFT_LOG"]
+    abort "stubbed nft failure" if ENV["STUB_FIREWALL_FAILURE"] == "true"
+  else
+    abort "Unexpected podman machine command: #{args.join(" ")}"
+  end
+end
+
+def network(args)
+  case args.first
+  when "inspect"
+    if (verbatim = ENV["STUB_PODMAN_NETWORK_JSON"])
+      puts verbatim
+      return
+    end
+    stored = current_network or exit 1
+    puts JSON.generate([stored.empty? ? network_record : network_record(**stored.transform_keys(&:to_sym))])
+  when "create"
+    return unless STATE_DIR
+
+    labels = option_values(args, "--label").to_h { _1.split("=", 2) }
+    options = option_values(args, "--opt").to_h { _1.split("=", 2) }
+    FileUtils.mkdir_p(STATE_DIR)
+    File.write(network_state_path, JSON.generate(labels: labels, options: options, dns: !args.include?("--disable-dns")))
+  when "connect"
+    ip = option_values(args, "--ip").first
+    name = args.last
+    data = find_container(name) or exit 1
+    data["NetworkIPs"][args[-2]] = ip
+    save_container(data)
+  else
+    abort "Unexpected podman network command: #{args.join(" ")}"
+  end
+end
+
+args = ARGV.dup
+args.shift if args.first == "container" && %w[inspect exists rm stop start].include?(args[1])
+
+case args.first
+when "image"
+  exit 1 if args[1] == "exists" && ENV["STUB_PODMAN_IMAGE_MISSING"] == "true"
+  puts ENV.fetch("STUB_PODMAN_IMAGES", "").split(",") if args[1] == "list"
+when "volume"
+  puts ENV.fetch("STUB_PODMAN_VOLUMES", "").split(",") if args[1] == "ls"
+when "container"
+  abort "Unexpected podman container command: #{args.join(" ")}" unless args[1] == "list"
+  ancestor = option_values(args, "--filter").first.to_s.delete_prefix("ancestor=")
+  users = ENV.fetch("STUB_PODMAN_IMAGE_USERS", "").split(",").map { _1.split("=", 2) }
+  puts users.select { |tag, _| tag == ancestor }.map(&:last)
+when "build"
+  abort "stubbed build failure" if ENV["STUB_PODMAN_BUILD_FAILURE"] == "true"
+when "attach", "logs"
+  nil
+when "info"
+  rootless = ENV["STUB_PODMAN_ROOTLESS"] == "true"
+  if option_values(args, "--format").first == "{{.Host.Security.Rootless}}"
+    puts rootless
+  else
+    puts JSON.generate("host" => { "security" => { "rootless" => rootless } })
+  end
+when "system"
+  abort "Unexpected podman system command: #{args.join(" ")}" unless args[1, 2] == %w[connection list]
+  puts JSON.generate([{ "Name" => "#{MACHINE}-root", "Default" => true, "ReadWrite" => true,
+                        "URI" => ENV.fetch("STUB_PODMAN_CONNECTION_URI", "ssh://root@127.0.0.1:#{MACHINE_PORT}/run/podman/podman.sock") }])
+when "machine" then machine(args.drop(1))
+when "network" then network(args.drop(1))
+when "inspect" then container_inspect(args.drop(1))
+when "exists"
+  exit(find_container(args.last) ? 0 : 1)
+when "rm" then remove(args.drop(1))
+when "stop" then set_status(args.last, "exited")
+when "start"
+  set_status(args.last, "running")
+when "exec"
+  case ENV["STUB_PODMAN_GATEWAY_UNREADY"]
+  when "exited" then set_status(args[1], "exited"); exit 1
+  when "true" then exit 1
+  end
+when "run" then run_container(args.drop(1))
+else
+  abort "Unexpected podman command: #{args.join(" ")}"
+end

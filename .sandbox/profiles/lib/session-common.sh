@@ -4,6 +4,40 @@
 
 set -euo pipefail
 
+# The agent's only way out is the egress gateway. attach-worktree starts the
+# container through `sandbox-network run-agent`, which mounts the gateway's CA
+# certificate and sets the proxy variables; refuse to start without them rather
+# than run a session that cannot reach anything (or looks like it can). The two
+# overrides exist for tests.
+configure_sandbox_ca() {
+  local ca_cert="${SANDBOX_CA_CERT:-/run/sandbox-ca.crt}"
+  local ca_store="${SANDBOX_CA_STORE:-/usr/local/share/ca-certificates}"
+
+  if [[ ! -f "$ca_cert" ]]; then
+    printf 'Egress CA certificate not found at %s.\n' "$ca_cert" >&2
+    printf 'Start the sandbox with .sandbox/bin/attach-worktree, which routes it through the egress gateway.\n' >&2
+    exit 1
+  fi
+  if [[ -z "${HTTPS_PROXY:-}" ]]; then
+    printf 'HTTPS_PROXY is not set; the egress gateway proxy is missing.\n' >&2
+    printf 'Start the sandbox with .sandbox/bin/attach-worktree.\n' >&2
+    exit 1
+  fi
+
+  cp "$ca_cert" "$ca_store/pipelines-sandbox.crt"
+  update-ca-certificates >/dev/null
+
+  # Node reads only the extra certificate; everything else the system bundle.
+  export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+  export CURL_CA_BUNDLE="$SSL_CERT_FILE"
+  export REQUESTS_CA_BUNDLE="$SSL_CERT_FILE"
+  export BUNDLE_SSL_CA_CERT="$SSL_CERT_FILE"
+  export GIT_SSL_CAINFO="$SSL_CERT_FILE"
+  export NODE_EXTRA_CA_CERTS="$ca_cert"
+  export NODE_USE_ENV_PROXY=1
+  export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+}
+
 # Missing files are skipped. Written with `continue` rather than
 # `[[ -f ]] && ...`: a false test as the loop's last command would fail the
 # pipeline under pipefail and silently abort the session under set -e.

@@ -3,10 +3,13 @@ require "fileutils"
 require "json"
 require "open3"
 require "tmpdir"
+require_relative "sandbox_fixtures"
 
 module DbHelperTestSupport
   DB_HELPER = File.expand_path("../bin/db_helper", __dir__)
   ATTACH_WORKTREE = File.expand_path("../bin/attach-worktree", __dir__)
+  RECREATE_WORKTREE = File.expand_path("../bin/recreate-worktree", __dir__)
+  SANDBOX_NETWORK = File.expand_path("../bin/sandbox-network", __dir__)
   STUB_BIN = File.expand_path("support", __dir__)
 
   def setup
@@ -15,6 +18,9 @@ module DbHelperTestSupport
     @home_directory = File.join(@temporary_directory, "home")
     FileUtils.mkdir_p(File.join(@home_directory, ".claude-container"))
     File.write(File.join(@home_directory, ".claude-container", "oauth-token"), "token")
+    # What the user supplies once: the egress CA and the fine-grained GitHub token.
+    @sandbox_state = SandboxFixtures.install(@home_directory)
+    @podman_state = File.join(@temporary_directory, "podman-state")
   end
 
   def teardown
@@ -70,15 +76,59 @@ module DbHelperTestSupport
 
   def run_attach(*arguments)
     environment = arguments.last.is_a?(Hash) ? arguments.pop : {}
-    Open3.capture3(
-      {
-        "DB_HELPER_DATABASE_PATH" => @database_path,
-        "HOME" => @home_directory,
-        "PATH" => "#{STUB_BIN}:#{ENV.fetch("PATH")}"
-      }.merge(environment),
-      ATTACH_WORKTREE,
-      *arguments
-    )
+    Open3.capture3(attach_environment.merge(environment), ATTACH_WORKTREE, *arguments)
+  end
+
+  def run_recreate(*arguments)
+    Open3.capture3(attach_environment, RECREATE_WORKTREE, *arguments)
+  end
+
+  def attach_environment
+    {
+      "DB_HELPER_DATABASE_PATH" => @database_path,
+      "HOME" => @home_directory,
+      "PATH" => "#{STUB_BIN}:#{ENV.fetch("PATH")}",
+      "STUB_PODMAN_STATE_DIR" => @podman_state,
+      "STUB_PODMAN_NFT_LOG" => File.join(@temporary_directory, "nft.log"),
+      "STUB_GATEWAY_FINGERPRINT" => gateway_fingerprint
+    }
+  end
+
+  # The fingerprint of the gateway the helper would build, so the stub's
+  # existing gateway counts as current. Blank until the helper exists.
+  def gateway_fingerprint
+    @gateway_fingerprint ||= begin
+      stdout, _, status = Open3.capture3(
+        { "HOME" => @home_directory, "PATH" => "#{STUB_BIN}:#{ENV.fetch("PATH")}" },
+        SANDBOX_NETWORK, "fingerprint", "--gateway"
+      )
+      status.success? ? stdout.strip : ""
+    rescue Errno::ENOENT
+      ""
+    end
+  end
+
+  # The launch of the agent itself, as opposed to the gateway's `run --detach`.
+  def agent_run(calls)
+    calls.find { _1.start_with?("run ") && _1.include?("--interactive") }
+  end
+
+  def agent_container_name
+    "pipelines-claude-matt-#{File.basename(File.realpath(worktree_root))}"
+  end
+
+  def agent_state_path
+    File.join(@podman_state, "containers", "#{agent_container_name}.json")
+  end
+
+  def agent_labels
+    JSON.parse(File.read(agent_state_path)).dig("Config", "Labels")
+  end
+
+  def set_agent_status(status)
+    state = JSON.parse(File.read(agent_state_path))
+    state["State"]["Status"] = status
+    File.write(agent_state_path, JSON.generate(state))
   end
 
   # Registers the worktree, attaches it with the podman stub logging its
@@ -287,12 +337,14 @@ class DbHelperAttachTest < Minitest::Test
   # run as amd64 (Rosetta on Apple Silicon) with per-arch images and volumes.
   def test_attach_builds_and_runs_the_sandbox_as_amd64
     attached, calls = attach_logging_podman("GH-132", "STUB_PODMAN_IMAGE_MISSING" => "true")
-    build = calls.find { _1.start_with?("build ") }
+    builds = calls.select { _1.start_with?("build ") }
+    build = builds.first
 
     assert attached.fetch(2).success?, attached.fetch(1)
+    assert_equal 1, builds.size, "only the agent image builds while the gateway is current"
     assert_includes build, "--platform linux/amd64"
     assert_match %r{--tag pipelines-claude-matt-agent-amd64:\h{64}}, build
-    assert_amd64_run(calls.find { _1.start_with?("run ") })
+    assert_amd64_run(agent_run(calls))
   end
 
   # A linked worktree's gitdir points back at the worktree's host path; mounted
@@ -300,7 +352,7 @@ class DbHelperAttachTest < Minitest::Test
   def test_attach_mounts_the_worktree_at_its_host_path
     worktree_path = File.realpath(worktree_root)
     attached, calls = attach_logging_podman("GH-133")
-    run = calls.find { _1.start_with?("run ") }
+    run = agent_run(calls)
 
     assert attached.fetch(2).success?, attached.fetch(1)
     assert_includes run, "--workdir #{worktree_path}"
@@ -316,8 +368,9 @@ class DbHelperAttachTest < Minitest::Test
     log = File.join(@temporary_directory, "podman.log")
 
     run_attach("GH-132", "STUB_PODMAN_LOG" => log)
+    FileUtils.rm_f(agent_state_path) # the first container would be restarted, not relaunched
     run_attach("GH-132", "STUB_PODMAN_LOG" => log, "SANDBOX_MEMORY" => "5g")
-    default_run, overridden_run = File.readlines(log, chomp: true).select { _1.start_with?("run ") }
+    default_run, overridden_run = File.readlines(log, chomp: true).select { _1.start_with?("run ") && _1.include?("--interactive") }
 
     assert_includes default_run, "--memory 3g"
     assert_includes overridden_run, "--memory 5g"
@@ -339,7 +392,7 @@ class DbHelperAttachOnePasswordTest < Minitest::Test
   # Environment with the CLI and passes each secret by name, never by value.
   def test_attach_passes_1password_environment_secrets_by_name
     attached, calls = attach_with_secrets("GH-134", "OPENAI_API_KEY" => "sk-'se cret'$HOME")
-    run = calls.find { _1.start_with?("run ") }
+    run = agent_run(calls)
 
     assert attached.fetch(2).success?, attached.fetch(1)
     assert_includes run, "--env OPENAI_API_KEY "
@@ -353,7 +406,7 @@ class DbHelperAttachOnePasswordTest < Minitest::Test
     attached, = attach_with_secrets("GH-137", "PRIVATE_KEY" => private_key)
 
     assert attached.fetch(2).success?, attached.fetch(1)
-    assert_equal [ "PRIVATE_KEY=#{private_key}" ], podman_environment
+    assert_includes podman_environment, "PRIVATE_KEY=#{private_key}"
   end
 
   def test_attach_stops_when_the_1password_environment_cannot_be_read
@@ -361,7 +414,7 @@ class DbHelperAttachOnePasswordTest < Minitest::Test
 
     refute attached.fetch(2).success?
     assert_includes attached.fetch(1), "op signin"
-    assert_nil(calls.find { _1.start_with?("run ") })
+    assert_nil(agent_run(calls))
   end
 
   def test_attach_refuses_an_invalid_1password_secret_name
@@ -369,7 +422,7 @@ class DbHelperAttachOnePasswordTest < Minitest::Test
 
     refute attached.fetch(2).success?
     assert_includes attached.fetch(1), "Invalid 1Password secret name: BAD-NAME"
-    assert_nil(calls.find { _1.start_with?("run ") })
+    assert_nil(agent_run(calls))
   end
 
   # A secret named like a host variable (PATH, HOME) would change how podman
@@ -379,7 +432,7 @@ class DbHelperAttachOnePasswordTest < Minitest::Test
 
     refute attached.fetch(2).success?
     assert_includes attached.fetch(1), "HOME"
-    assert_nil(calls.find { _1.start_with?("run ") })
+    assert_nil(agent_run(calls))
   end
 
   # Unset on the host, BASH_ENV would still make every bash script attach runs
@@ -392,14 +445,36 @@ class DbHelperAttachOnePasswordTest < Minitest::Test
     refute attached.fetch(2).success?
     assert_includes attached.fetch(1), "BASH_ENV"
     refute_path_exists marker
-    assert_nil(calls.find { _1.start_with?("run ") })
+    assert_nil(agent_run(calls))
+  end
+
+  # These would override the gateway proxy, the CA bundle or the GitHub token
+  # that run-agent sets for the agent.
+  def test_attach_refuses_a_1password_secret_that_overrides_the_egress_configuration
+    %w[GH_TOKEN HTTP_PROXY HTTPS_PROXY ALL_PROXY NO_PROXY OLLAMA_API_BASE SSL_CERT_FILE NODE_EXTRA_CA_CERTS
+       CURL_CA_BUNDLE REQUESTS_CA_BUNDLE BUNDLE_SSL_CA_CERT GIT_SSL_CAINFO NODE_USE_ENV_PROXY].each_with_index do |name, index|
+      attached, calls = attach_with_secrets("GH-#{200 + index}", name => "override")
+
+      refute attached.fetch(2).success?, "#{name} must be refused"
+      assert_includes attached.fetch(1), name
+      assert_includes attached.fetch(1), "egress configuration", name
+      assert_nil agent_run(calls), name
+    end
+  end
+
+  def test_attach_refuses_a_lowercase_proxy_secret_as_an_invalid_name
+    attached, calls = attach_with_secrets("GH-230", "https_proxy" => "override")
+
+    refute attached.fetch(2).success?
+    assert_includes attached.fetch(1), "Invalid 1Password secret name"
+    assert_nil agent_run(calls)
   end
 
   def test_attach_relaunches_the_container_when_a_1password_secret_changes
     launch_configs = { "GH-140" => "old", "GH-141" => "new" }.map do |identifier, value|
       attached, calls = attach_with_secrets(identifier, "API_KEY" => value)
       assert attached.fetch(2).success?, attached.fetch(1)
-      calls.reverse.find { _1.start_with?("run ") }[/io\.pipelines\.sandbox\.launch-config=\S+/]
+      calls.reverse.find { _1.start_with?("run ") && _1.include?("--interactive") }[/io\.pipelines\.sandbox\.launch-config=\S+/]
     end
 
     refute_equal(*launch_configs)
@@ -425,6 +500,173 @@ class DbHelperAttachOnePasswordTest < Minitest::Test
   # NAME=value for each variable the podman stub saw passed by name.
   def podman_environment
     File.read(podman_environment_log).split("\0")
+  end
+end
+
+# Every attach path reconciles the shared egress gateway first, and the agent
+# launches through it. The CA and token fixtures live in the temporary HOME.
+class DbHelperAttachGatewayTest < Minitest::Test
+  include DbHelperTestSupport
+
+  def test_attach_reconciles_the_gateway_before_inspecting_the_container
+    attached, calls = attach_logging_podman("GH-150")
+    firewall = calls.index { _1.start_with?("machine ssh") }
+    status_inspect = calls.index { _1.include?("inspect") && _1.include?(".State.Status") && _1.end_with?(agent_container_name) }
+
+    assert attached.fetch(2).success?, attached.fetch(1)
+    assert firewall, "the nft ruleset was never applied: #{calls}"
+    assert status_inspect, "the container status was never inspected: #{calls}"
+    assert_operator firewall, :<, status_inspect
+  end
+
+  def test_attach_restart_and_running_paths_reconcile_first
+    attach_logging_podman("GH-151")
+    log = File.join(@temporary_directory, "podman.log")
+
+    set_agent_status("exited")
+    File.delete(log)
+    restarted = run_attach("GH-151", "STUB_PODMAN_LOG" => log)
+    restart_calls = File.readlines(log, chomp: true)
+
+    set_agent_status("running")
+    File.delete(log)
+    reattached = run_attach("GH-151", "STUB_PODMAN_LOG" => log)
+    attach_calls = File.readlines(log, chomp: true)
+
+    assert restarted.fetch(2).success?, restarted.fetch(1)
+    assert reattached.fetch(2).success?, reattached.fetch(1)
+    assert_applied_before(restart_calls, "start --interactive --attach #{agent_container_name}")
+    assert_applied_before(attach_calls, "attach #{agent_container_name}")
+  end
+
+  def test_attach_launches_through_the_gateway
+    environment_log = File.join(@temporary_directory, "podman-env.log")
+    attached, calls = attach_logging_podman("GH-152", "STUB_PODMAN_ENV_LOG" => environment_log)
+    run = agent_run(calls)
+    environment = File.exist?(environment_log) ? File.read(environment_log).split("\0").to_h { _1.split("=", 2) } : {}
+
+    assert attached.fetch(2).success?, attached.fetch(1)
+    assert run, "the agent was not launched: #{calls}"
+    [
+      "--network pipelines-sandbox-net", "--dns=none", "--add-host sandbox-gateway:10.89.7.2",
+      "--cap-drop NET_ADMIN", "--cap-drop NET_RAW", "--restart=no", "--http-proxy=false",
+      "dst=/run/sandbox-ca.crt,ro"
+    ].each { assert_includes run, _1 }
+    refute_includes run, "ca-key.pem"
+    assert_equal "github_pat_test", environment["GH_TOKEN"]
+    assert_match(%r{\Ahttp://nono:\h{64}@sandbox-gateway:3128\z}, environment["HTTPS_PROXY"])
+  end
+
+  def test_attach_no_longer_asks_host_gh_for_a_token
+    bin = File.join(@temporary_directory, "bin")
+    FileUtils.mkdir_p(bin)
+    File.write(File.join(bin, "gh"), "#!/usr/bin/env bash\necho \"$*\" >> \"#{@temporary_directory}/gh-calls\"\nexit 1\n")
+    File.chmod(0o755, File.join(bin, "gh"))
+    run_helper("register_worktree", "GH-153", worktree_root, "--ticket=GH-153")
+
+    attached = run_attach("GH-153", "PATH" => "#{bin}:#{STUB_BIN}:#{ENV.fetch("PATH")}")
+
+    assert attached.fetch(2).success?, attached.fetch(1)
+    refute_path_exists File.join(@temporary_directory, "gh-calls")
+    refute_includes attached.fetch(1), "gh auth login"
+  end
+
+  def test_attach_launch_config_follows_the_ca_not_the_policy
+    attach_logging_podman("GH-154")
+    first = agent_labels.fetch("io.pipelines.sandbox.launch-config")
+
+    SandboxFixtures.write_ca(File.join(@sandbox_state, "ca"))
+    @gateway_fingerprint = nil
+    attached = run_attach("GH-154")
+    second = agent_labels.fetch("io.pipelines.sandbox.launch-config")
+
+    assert attached.fetch(2).success?, attached.fetch(1)
+    refute_equal first, second, "a new CA must replace the agent"
+
+    # A different gateway fingerprint (policy edit, helper change) recreates
+    # the gateway only: the agent keeps its launch config and is restarted.
+    log = File.join(@temporary_directory, "podman.log")
+    File.delete(log) # the earlier launches also logged a `run --interactive`
+    restarted = run_attach("GH-154", "STUB_PODMAN_LOG" => log, "STUB_GATEWAY_FINGERPRINT" => "policy-edited")
+    calls = File.readlines(log, chomp: true)
+
+    assert restarted.fetch(2).success?, restarted.fetch(1)
+    assert_equal second, agent_labels.fetch("io.pipelines.sandbox.launch-config")
+    assert_nil agent_run(calls), "the agent must not be relaunched: #{calls}"
+    assert(calls.any? { _1.start_with?("start --interactive --attach") }, calls.inspect)
+  end
+
+  def test_attach_refuses_to_launch_without_the_egress_prerequisites
+    {
+      "missing CA" => -> { FileUtils.rm_rf(File.join(@sandbox_state, "ca")) },
+      "CA key readable by others" => -> { File.chmod(0o644, File.join(@sandbox_state, "ca", "ca-key.pem")) },
+      "classic GitHub token" => -> { File.write(File.join(@sandbox_state, "gh-token"), "ghp_x\n") },
+      "missing GitHub token" => -> { FileUtils.rm_f(File.join(@sandbox_state, "gh-token")) },
+      "rootless podman" => { "STUB_PODMAN_ROOTLESS" => "true" },
+      "mismatched remote engine" => { "STUB_PODMAN_CONNECTION_URI" => "ssh://root@127.0.0.1:1/run/podman/podman.sock" },
+      "unmanaged gateway container" => { "STUB_PODMAN_GATEWAY" => "unmanaged" },
+      "unlabelled network" => { "STUB_PODMAN_NETWORK_JSON" => JSON.generate([ unlabelled_network ]) },
+      "firewall failure" => { "STUB_FIREWALL_FAILURE" => "true" }
+    }.each_with_index do |(description, breakage), index|
+      identifier = "GH-#{160 + index}"
+      FileUtils.rm_rf(@podman_state)
+      SandboxFixtures.install(@home_directory)
+      environment = breakage.is_a?(Hash) ? breakage : (breakage.call && {})
+
+      attached, calls = attach_logging_podman(identifier, environment)
+
+      refute attached.fetch(2).success?, "#{description}: attach must refuse"
+      assert_nil agent_run(calls), "#{description}: nothing may be launched"
+      assert_equal "created\n", run_helper("get_container_status", identifier, "--profile=claude-matt").first, description
+      File.delete(File.join(@temporary_directory, "podman.log")) if File.exist?(File.join(@temporary_directory, "podman.log"))
+    end
+  end
+
+  def test_attach_refuses_the_reserved_sandbox_profile
+    run_helper("register_worktree", "GH-170", worktree_root, "--ticket=GH-170")
+
+    attached = run_attach("GH-170", "--profile=sandbox")
+
+    refute attached.fetch(2).success?
+    assert_includes attached.fetch(1), "reserved"
+  end
+
+  def test_recreate_worktree_refuses_the_reserved_sandbox_profile
+    run_helper("register_worktree", "GH-171", worktree_root, "--ticket=GH-171")
+
+    recreated = run_recreate("GH-171", "--profile=sandbox", "--dry-run")
+
+    refute recreated.fetch(2).success?
+    assert_includes recreated.fetch(1), "reserved"
+  end
+
+  def test_register_container_refuses_the_reserved_sandbox_profile
+    register_issue_worktree("GH-172", File.join(@temporary_directory, "gh-172"))
+
+    registered = run_helper("register_container", "GH-172", "sandbox")
+    status = run_helper("get_container_status", "GH-172", "--profile=sandbox")
+
+    refute registered.fetch(2).success?
+    assert_includes registered.fetch(1), "reserved"
+    refute status.fetch(2).success?, "nothing may be registered under the reserved profile"
+  end
+
+  private
+
+  def unlabelled_network
+    {
+      "name" => "pipelines-sandbox-net", "network_interface" => "podman7", "internal" => false, "dns_enabled" => false,
+      "subnets" => [ { "subnet" => "10.89.7.0/24", "gateway" => "10.89.7.1" } ], "containers" => {}
+    }
+  end
+
+  def assert_applied_before(calls, launch)
+    firewall = calls.index { _1.start_with?("machine ssh") }
+    action = calls.index(launch)
+
+    assert action, "expected `podman #{launch}`, got #{calls}"
+    assert firewall, "the nft ruleset was never applied: #{calls}"
+    assert_operator firewall, :<, action
   end
 end
 
@@ -479,7 +721,66 @@ class DbHelperCleanupFinishedTest < Minitest::Test
     assert worktree_registered?("GH-128")
   end
 
+  def test_cleanup_finished_removes_the_dependency_volumes_of_a_finished_container
+    worktree_path = register_issue_worktree("GH-140", sandbox_worktree_path("gh-140"))
+    register_container("GH-140", "claude-omcc", "finished")
+    container = "pipelines-claude-omcc-gh-140"
+    kept = [ "#{container}-other-bundle-amd64", "pipelines-claude-omcc-home", "pipelines-sandbox-pnpm-store" ]
+    removed = %W[#{container}-bundle-amd64 #{container}-node-modules-amd64 #{container}-bundle #{container}-node-modules]
+
+    cleaned = cleanup_finished(worktree_path, "STUB_PODMAN_LOG" => podman_log, "STUB_PODMAN_VOLUMES" => (removed + kept).join(","))
+
+    removed.each { |volume| assert_includes cleaned, "Removing sandbox volume: #{volume}" }
+    assert_equal removed.sort, podman_calls.grep(/\Avolume rm /).map { _1.split.last }.sort
+  end
+
+  def test_cleanup_finished_leaves_a_sibling_worktrees_volumes_alone
+    worktree_path = register_issue_worktree("GH-140", sandbox_worktree_path("gh-140"))
+    register_container("GH-140", "claude-omcc", "finished")
+    sibling = "pipelines-claude-omcc-gh-1400"
+
+    cleanup_finished(worktree_path, "STUB_PODMAN_LOG" => podman_log,
+                                    "STUB_PODMAN_VOLUMES" => "#{sibling}-bundle-amd64,#{sibling}-node-modules")
+
+    assert_empty podman_calls.grep(/\Avolume rm /)
+  end
+
+  def test_cleanup_finished_succeeds_with_nothing_to_clean_while_podman_is_down
+    stdout, stderr, status = run_helper("cleanup_finished", "STUB_PODMAN_DOWN" => "true")
+
+    assert status.success?, stderr
+    assert_equal "No finished sandbox containers.\n", stdout
+    assert_includes stderr, "skipping unused image cleanup"
+  end
+
+  def test_cleanup_finished_removes_agent_images_that_no_container_uses
+    images = %w[
+      localhost/pipelines-claude-matt-agent-amd64:old localhost/pipelines-claude-matt-agent-amd64:used
+      localhost/pipelines-claude-omcc-agent:verify localhost/pipelines-sandbox-gateway:abc
+      localhost/propstack-codex-matt-agent:x
+    ]
+
+    stdout, stderr, status = run_helper(
+      "cleanup_finished",
+      "STUB_PODMAN_LOG" => podman_log, "STUB_PODMAN_IMAGES" => images.join(","),
+      "STUB_PODMAN_IMAGE_USERS" => "localhost/pipelines-claude-matt-agent-amd64:used=pipelines-claude-matt-gh-1"
+    )
+
+    assert status.success?, stderr
+    assert_includes stdout, "Keeping image still used by pipelines-claude-matt-gh-1: localhost/pipelines-claude-matt-agent-amd64:used"
+    assert_equal %w[localhost/pipelines-claude-matt-agent-amd64:old localhost/pipelines-claude-omcc-agent:verify],
+                 podman_calls.grep(/\Aimage rm /).map { _1.split.last }
+  end
+
   private
+
+  def podman_log
+    @podman_log ||= File.join(@temporary_directory, "podman.log")
+  end
+
+  def podman_calls
+    File.exist?(podman_log) ? File.readlines(podman_log, chomp: true) : []
+  end
 
   # Runs cleanup_finished with the git stub owning worktree_path and returns
   # its output once it has succeeded.

@@ -1,0 +1,26 @@
+FROM debian:trixie-slim
+
+ARG NONO_VERSION=0.82.0
+ARG NONO_SHA256_ARM64=de16b663f1941b4ff8500f75f34d10a497ef1d1934281573888fb9e808dab53e
+ARG NONO_SHA256_AMD64=81d7a5616622dcf68ca0ed2b7e6b3af08c1216fb0c42dc6d7ecfbd2bbf2d3f50
+
+# socat relays the host's Ollama to the agents (see entrypoint.sh).
+RUN set -eux; \
+    apt-get update; \
+    apt-get install --no-install-recommends -y bash ca-certificates curl socat; \
+    case "$(dpkg --print-architecture)" in \
+      arm64) nono_target="aarch64-unknown-linux-gnu"; nono_sha256="${NONO_SHA256_ARM64}" ;; \
+      amd64) nono_target="x86_64-unknown-linux-gnu"; nono_sha256="${NONO_SHA256_AMD64}" ;; \
+      *) echo "Unsupported architecture for nono: $(dpkg --print-architecture)" >&2; exit 1 ;; \
+    esac; \
+    cd /tmp; \
+    nono_asset="nono-v${NONO_VERSION}-${nono_target}.tar.gz"; \
+    curl -fsSL -o "${nono_asset}" "https://github.com/nolabs-ai/nono/releases/download/v${NONO_VERSION}/${nono_asset}"; \
+    echo "${nono_sha256}  ${nono_asset}" | sha256sum --check; \
+    tar -xzf "${nono_asset}" nono; \
+    install -m 0755 nono /usr/local/bin/nono; \
+    nono --version; \
+    find /var/lib/apt/lists /tmp -mindepth 1 -delete
+
+COPY --chmod=0755 entrypoint.sh /usr/local/bin/gateway-entrypoint
+ENTRYPOINT ["/usr/local/bin/gateway-entrypoint"]

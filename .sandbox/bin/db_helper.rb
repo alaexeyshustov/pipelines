@@ -15,6 +15,8 @@ module DbHelper
   BRANCH_PATTERN = %r{\A(?:feat|fix|refactor|chore)/gh-\d+(?:-[a-z0-9]+)*\z}
   IDENTIFIER_PATTERN = /\A(?:GH-\d+|scratch-\d{14}-\d+)\z/
   PROFILE_PATTERN = /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/
+  # pipelines-sandbox-* container and network names belong to the egress gateway.
+  RESERVED_PROFILES = %w[sandbox].freeze
   CONTAINER_STATUSES = %w[created active finished].freeze
 
   # Branch type prefix by GitHub label; the first matching label wins and an
@@ -100,9 +102,10 @@ module DbHelper
     end
 
     def validate_profile(profile)
-      return profile if profile.match?(PROFILE_PATTERN)
+      raise Error, "Invalid sandbox profile: #{profile}" unless profile.match?(PROFILE_PATTERN)
+      raise Error, "Sandbox profile #{profile} is reserved for the egress gateway" if RESERVED_PROFILES.include?(profile)
 
-      raise Error, "Invalid sandbox profile: #{profile}"
+      profile
     end
 
     def validate_status(status)
@@ -488,7 +491,13 @@ module DbHelper
         ORDER BY sandbox_containers.updated_at, sandbox_containers.rowid;
       SQL
 
-      desc 'Remove containers and worktrees whose lifecycle status is finished'
+      # The per-worktree dependency volumes attach-worktree creates, with or
+      # without the architecture suffix older launches did not add.
+      DEPENDENCY_VOLUME_SUFFIX = /-(?:bundle|node-modules)(?:-(?:amd64|arm64))?\z/
+      # Agent image tags of every profile; the egress gateway image is not one.
+      AGENT_IMAGE_PATTERN = /\A(?:localhost\/)?pipelines-[a-z0-9-]+-agent(?:-(?:amd64|arm64))?:[^:\s]+\z/
+
+      desc 'Remove containers, volumes and worktrees whose lifecycle status is finished, then unused agent images'
 
       def call(**)
         database = Database.open
@@ -499,6 +508,7 @@ module DbHelper
         else
           cleanup_records(database, records)
         end
+        remove_unused_agent_images
       ensure
         database&.close
       end
@@ -576,11 +586,55 @@ module DbHelper
       end
 
       def cleanup_container(container_name)
-        return unless system('podman', 'container', 'exists', container_name)
+        if system('podman', 'container', 'exists', container_name)
+          puts "Removing sandbox container: #{container_name}"
+          success = system('podman', 'container', 'rm', '--force', container_name)
+          raise Error, "Could not remove sandbox container: #{container_name}" unless success
+        end
+        # Also when the container is already gone, so a retried cleanup still frees them.
+        cleanup_volumes(container_name)
+      end
 
-        puts "Removing sandbox container: #{container_name}"
-        success = system('podman', 'container', 'rm', '--force', container_name)
-        raise Error, "Could not remove sandbox container: #{container_name}" unless success
+      # The shared volumes (agent home, pnpm store) never match: their names
+      # don't start with a worktree container's name.
+      def cleanup_volumes(container_name)
+        podman_lines('volume', 'ls', '--format', '{{.Name}}').each do |volume|
+          next unless volume.start_with?(container_name) &&
+                      volume.delete_prefix(container_name).match?(/\A#{DEPENDENCY_VOLUME_SUFFIX}/o)
+
+          puts "Removing sandbox volume: #{volume}"
+          raise Error, "Could not remove sandbox volume: #{volume}" unless system('podman', 'volume', 'rm', volume, out: File::NULL)
+        end
+      end
+
+      # Tags no container (running or stopped) was created from. The next
+      # attach rebuilds the profile image when its tag is gone. An attach that
+      # has just built its image but not yet started the container can lose
+      # it here; that attach fails and a retry rebuilds.
+      def remove_unused_agent_images
+        tags = begin
+          podman_lines('image', 'list', '--format', '{{.Repository}}:{{.Tag}}')
+        rescue Error => e
+          warn "#{e.message}; skipping unused image cleanup."
+          return
+        end
+        tags.grep(AGENT_IMAGE_PATTERN).each do |tag|
+          users = podman_lines('container', 'list', '--all', '--filter', "ancestor=#{tag}", '--format', '{{.Names}}')
+          if users.any?
+            puts "Keeping image still used by #{users.join(',')}: #{tag}"
+          elsif system('podman', 'image', 'rm', tag, out: File::NULL)
+            puts "Removed unused sandbox image: #{tag}"
+          else
+            warn "Could not remove sandbox image: #{tag}"
+          end
+        end
+      end
+
+      def podman_lines(*arguments)
+        output, status = Open3.capture2('podman', *arguments)
+        raise Error, "podman #{arguments.first(2).join(' ')} failed" unless status.success?
+
+        output.lines(chomp: true).reject(&:empty?)
       end
 
       def cleanup_worktree(worktree_path)

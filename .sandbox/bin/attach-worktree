@@ -17,6 +17,12 @@ profile defaults to claude-matt. Available profiles live as directories under
 Set SANDBOX_OP_ENVIRONMENT to a 1Password Environment name or ID to pass its
 secrets into a newly launched container (needs `op signin` or
 OP_SERVICE_ACCOUNT_TOKEN on the host).
+
+Agents reach the network only through the shared egress gateway. One-time
+setup in ~/.config/pipelines-sandbox (see .sandbox/docs/sandbox-network.md):
+  ca/ca-cert.pem, ca/ca-key.pem  dedicated CA (key mode 600)
+  gh-token                       fine-grained GitHub PAT (github_pat_..., mode 600)
+Rotating the PAT takes effect on the next recreate-worktree.
 USAGE
 }
 
@@ -39,6 +45,8 @@ done
 identifier="${positional[0]:-}"
 [[ -n "$profile" ]] || profile="${positional[1]:-claude-matt}"
 [[ "$profile" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || fail "Invalid profile name: $profile"
+# pipelines-sandbox-* names belong to the egress gateway and its network.
+[[ "$profile" != sandbox ]] || fail "Profile name is reserved for the egress gateway: $profile"
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 # Where the user is, not where this script lives: the helpers are usually run
@@ -49,11 +57,13 @@ primary_repo_root="$(dirname "$script_git_common_dir")"
 
 
 db_helper="$primary_repo_root/.sandbox/bin/db_helper"
+network_helper="$primary_repo_root/.sandbox/bin/sandbox-network"
 profiles_root="$primary_repo_root/.sandbox/profiles"
 profile_dir="$profiles_root/$profile"
 profile_env="$profile_dir/profile.env"
 
 [[ -x "$db_helper" ]] || fail "Database helper is not executable: $db_helper"
+[[ -x "$network_helper" ]] || fail "Sandbox network helper is not executable: $network_helper"
 [[ -d "$profile_dir" ]] || fail "Unknown sandbox profile: $profile (expected a directory under .sandbox/profiles/)"
 [[ -f "$profile_env" ]] || fail "Profile is missing profile.env: $profile_env"
 
@@ -134,31 +144,13 @@ pnpm_store_volume="pipelines-sandbox-pnpm-store"
 [[ -f "$profile_dir/Containerfile" ]] || fail "Profile image definition not found: $profile_dir/Containerfile"
 [[ -d "$lib_dir" ]] || fail "Shared profile library not found: $lib_dir"
 
-# The GitHub CLI in the image needs host credentials. They cannot be mounted
-# like the Claude OAuth token: `gh auth login` stores the token in the macOS
-# keyring, leaving no token in ~/.config/gh. Ask gh for it and hand it over
-# through the environment -- exported rather than passed as --env GH_TOKEN=...
-# so the token never appears in this process's command line.
-gh_token_mount=()
-if command -v gh >/dev/null; then
-  GH_TOKEN="$(gh auth token 2>/dev/null || true)"
-  if [[ -n "$GH_TOKEN" ]]; then
-    export GH_TOKEN
-    gh_token_mount+=(--env GH_TOKEN)
-  else
-    printf 'Warning: host gh has no token; `gh` will be unauthenticated in the sandbox.\n' >&2
-    printf '         Run `gh auth login` on the host to fix this.\n' >&2
-  fi
-else
-  printf 'Warning: gh is not installed on the host; `gh` will be unauthenticated in the sandbox.\n' >&2
-fi
-
 # Secrets from a 1Password Environment, when SANDBOX_OP_ENVIRONMENT names one
 # (by name or ID). The host has no 1Password desktop app to mount a .env file,
 # so the CLI reads the Environment -- signed in with `op signin` or a service
 # account's OP_SERVICE_ACCOUNT_TOKEN. Each secret is exported only to `podman
-# run` (with_op_secrets) and passed by name, like GH_TOKEN, so no value appears
-# on a command line and no other host command sees it.
+# run` (with_op_secrets) and passed by name, so no value appears on a command
+# line and no other host command sees it. The GitHub token is the exception:
+# sandbox-network run-agent reads it from ~/.config/pipelines-sandbox/gh-token.
 op_secret_names=()
 op_secret_values=()
 op_secret_env=()
@@ -179,6 +171,10 @@ if [[ -n "${SANDBOX_OP_ENVIRONMENT:-}" ]]; then
       abort "Invalid 1Password secret name: #{name}" unless name.match?(/\A[A-Z_][A-Z0-9_]*\z/)
       if name.match?(/\A(?:(?:DYLD|LD|BASH|CONTAINERS?|PODMAN|XDG|SSH|SANDBOX)_|(?:ENV|SHELLOPTS|TMPDIR)\z)/)
         abort "1Password secret #{name} would configure host tools; rename it"
+      end
+      # run-agent owns these: the gateway proxy, the CA bundle and the GitHub token.
+      if name.match?(/\A(?:GH_TOKEN|HTTPS?_PROXY|ALL_PROXY|NO_PROXY|OLLAMA_API_BASE|SSL_CERT_FILE|NODE_EXTRA_CA_CERTS|CURL_CA_BUNDLE|REQUESTS_CA_BUNDLE|BUNDLE_SSL_CA_CERT|GIT_SSL_CAINFO|NODE_USE_ENV_PROXY)\z/)
+        abort "1Password secret #{name} would override the sandbox egress configuration; rename it"
       end
       puts "#{name} #{Base64.strict_encode64(secret.fetch("value").to_s)}"
     end' <<< "$op_secrets_json")" \
@@ -207,7 +203,6 @@ directory_fingerprint() {
 }
 
 image_tag="pipelines-${profile}-agent-${sandbox_arch}:$(directory_fingerprint "$profile_dir" "$lib_dir")"
-launch_config_tag="$(cksum "${BASH_SOURCE[0]}" | awk '{print $1 "-" $2}')${op_secrets_fingerprint:+-${op_secrets_fingerprint:0:16}}"
 
 if ! podman image exists "$image_tag"; then
   printf 'Building %s agent image: %s\n' "$profile" "$image_tag"
@@ -216,6 +211,17 @@ if ! podman image exists "$image_tag"; then
     --build-context "lib=$lib_dir" \
     "$profile_dir"
 fi
+
+# Every path below -- launch, restart and attach -- may only run once the
+# gateway and its firewall are in place: the firewall does not survive a VM
+# reboot, and only this script reconciles it.
+"$network_helper" ensure
+
+# The agent's own egress configuration (CA, gateway address) is part of its
+# launch config; the gateway's policy is not, so a policy edit recreates only
+# the gateway and leaves running sessions alone.
+agent_fingerprint="$("$network_helper" fingerprint)"
+launch_config_tag="$(cksum "${BASH_SOURCE[0]}" | awk '{print $1 "-" $2}')-${agent_fingerprint:0:16}${op_secrets_fingerprint:+-${op_secrets_fingerprint:0:16}}"
 
 container_status="$(podman container inspect --format '{{.State.Status}}' "$container_name" 2>/dev/null || true)"
 container_image_tag="$(podman container inspect --format '{{index .Config.Labels "io.pipelines.sandbox.agent-image"}}' "$container_name" 2>/dev/null || true)"
@@ -301,9 +307,8 @@ case "$container_status" in
     ;;
   '')
     printf 'Launching sandbox container: %s\n' "$container_name"
-    run_agent_container with_op_secrets podman run --interactive --tty \
+    run_agent_container with_op_secrets "$network_helper" run-agent "$container_name" --interactive --tty \
       --platform "$sandbox_platform" \
-      --name "$container_name" \
       --label "io.pipelines.sandbox.agent-image=$image_tag" \
       --label "io.pipelines.sandbox.launch-config=$launch_config_tag" \
       --label "io.pipelines.sandbox.profile=$profile" \
@@ -315,7 +320,6 @@ case "$container_status" in
       --env "SANDBOX_HOST_PORT=$host_port" \
       --env 'BINDING=0.0.0.0' \
       --publish "127.0.0.1:$host_port:3000" \
-      "${gh_token_mount[@]+"${gh_token_mount[@]}"}" \
       "${op_secret_env[@]+"${op_secret_env[@]}"}" \
       --mount "type=bind,src=$repo_root,dst=$repo_root" \
       --mount "type=bind,src=$git_common_dir,dst=$git_common_dir" \
