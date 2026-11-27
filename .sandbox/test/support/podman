@@ -25,6 +25,7 @@
 #   STUB_PODMAN_BUILD_FAILURE=true     `build` fails
 #   STUB_FIREWALL_FAILURE=true         `machine ssh ... nft -f -` fails
 #   STUB_PODMAN_NFT_LOG=<file>         append stdin of `machine ssh ... nft -f -`
+#   STUB_PODMAN_DOWN=true              every call fails as if the machine were stopped
 #   STUB_PODMAN_VOLUMES=<a,b,..>       names printed by `volume ls`
 #   STUB_PODMAN_IMAGES=<repo:tag,..>   tags printed by `image list`
 #   STUB_PODMAN_IMAGE_USERS=<repo:tag=name,..>   containers printed by `container list --filter ancestor=<repo:tag>`
@@ -44,6 +45,8 @@ NETWORK_LABEL = "io.pipelines.sandbox.network"
 if (log = ENV["STUB_PODMAN_LOG"])
   File.open(log, "a") { _1.puts ARGV.join(" ") }
 end
+
+abort "Cannot connect to Podman: the machine is not running" if ENV["STUB_PODMAN_DOWN"] == "true"
 
 STATE_DIR = ENV["STUB_PODMAN_STATE_DIR"]
 

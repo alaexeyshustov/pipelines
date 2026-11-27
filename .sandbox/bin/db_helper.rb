@@ -608,9 +608,17 @@ module DbHelper
       end
 
       # Tags no container (running or stopped) was created from. The next
-      # attach rebuilds the profile image when its tag is gone.
+      # attach rebuilds the profile image when its tag is gone. An attach that
+      # has just built its image but not yet started the container can lose
+      # it here; that attach fails and a retry rebuilds.
       def remove_unused_agent_images
-        podman_lines('image', 'list', '--format', '{{.Repository}}:{{.Tag}}').grep(AGENT_IMAGE_PATTERN).each do |tag|
+        tags = begin
+          podman_lines('image', 'list', '--format', '{{.Repository}}:{{.Tag}}')
+        rescue Error => e
+          warn "#{e.message}; skipping unused image cleanup."
+          return
+        end
+        tags.grep(AGENT_IMAGE_PATTERN).each do |tag|
           users = podman_lines('container', 'list', '--all', '--filter', "ancestor=#{tag}", '--format', '{{.Names}}')
           if users.any?
             puts "Keeping image still used by #{users.join(',')}: #{tag}"

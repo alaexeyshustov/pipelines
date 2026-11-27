@@ -554,21 +554,22 @@ class SandboxNetworkUnitTest < Minitest::Test
     refute_match(/nono:/, joined)
   end
 
-  def test_agent_fingerprint_follows_the_ca_and_the_gateway_address_only
+  def test_agent_fingerprint_follows_the_ca_the_gateway_address_and_the_proxy_token_only
     ca_dir = write_ca
     cert = File.join(ca_dir, "ca-cert.pem")
-    first = SandboxNetwork.agent_fingerprint(gateway_ip: "10.89.7.2", ca_cert: cert)
+    first = SandboxNetwork.agent_fingerprint(gateway_ip: "10.89.7.2", ca_cert: cert, proxy_token: "t1")
     assert_match(/\A\h{64}\z/, first)
-    assert_equal first, SandboxNetwork.agent_fingerprint(gateway_ip: "10.89.7.2", ca_cert: cert)
-    refute_equal first, SandboxNetwork.agent_fingerprint(gateway_ip: "10.89.8.2", ca_cert: cert)
+    assert_equal first, SandboxNetwork.agent_fingerprint(gateway_ip: "10.89.7.2", ca_cert: cert, proxy_token: "t1")
+    refute_equal first, SandboxNetwork.agent_fingerprint(gateway_ip: "10.89.8.2", ca_cert: cert, proxy_token: "t1")
+    refute_equal first, SandboxNetwork.agent_fingerprint(gateway_ip: "10.89.7.2", ca_cert: cert, proxy_token: "t2")
 
     File.write(cert, SandboxFixtures.generate_ca.last.to_pem)
-    refute_equal first, SandboxNetwork.agent_fingerprint(gateway_ip: "10.89.7.2", ca_cert: cert)
+    refute_equal first, SandboxNetwork.agent_fingerprint(gateway_ip: "10.89.7.2", ca_cert: cert, proxy_token: "t1")
 
-    assert_equal %i[ca_cert gateway_ip], SandboxNetwork.method(:agent_fingerprint).parameters.map(&:last).sort
+    assert_equal %i[ca_cert gateway_ip proxy_token], SandboxNetwork.method(:agent_fingerprint).parameters.map(&:last).sort
   end
 
-  def test_gateway_fingerprint_follows_the_helper_the_gateway_files_the_policy_and_the_ca
+  def test_gateway_fingerprint_follows_the_helper_the_gateway_files_the_policy_the_ca_and_the_proxy_token
     sandbox_dir = File.join(@workspace, "sandbox")
     cert = File.join(write_ca, "ca-cert.pem")
     {
@@ -579,20 +580,21 @@ class SandboxNetworkUnitTest < Minitest::Test
       FileUtils.mkdir_p(File.dirname(File.join(sandbox_dir, relative)))
       File.write(File.join(sandbox_dir, relative), contents)
     end
-    baseline = SandboxNetwork.gateway_fingerprint(sandbox_dir: sandbox_dir, ca_cert: cert)
+    baseline = SandboxNetwork.gateway_fingerprint(sandbox_dir: sandbox_dir, ca_cert: cert, proxy_token: "t1")
     assert_match(/\A\h{64}\z/, baseline)
 
     %w[bin/sandbox_network.rb bin/sandbox-network gateway/Containerfile gateway/entrypoint.sh gateway/policy.json].each do |relative|
       path = File.join(sandbox_dir, relative)
       original = File.read(path)
       File.write(path, "#{original}# changed\n")
-      refute_equal baseline, SandboxNetwork.gateway_fingerprint(sandbox_dir: sandbox_dir, ca_cert: cert), relative
+      refute_equal baseline, SandboxNetwork.gateway_fingerprint(sandbox_dir: sandbox_dir, ca_cert: cert, proxy_token: "t1"), relative
       File.write(path, original)
     end
 
-    assert_equal baseline, SandboxNetwork.gateway_fingerprint(sandbox_dir: sandbox_dir, ca_cert: cert)
+    assert_equal baseline, SandboxNetwork.gateway_fingerprint(sandbox_dir: sandbox_dir, ca_cert: cert, proxy_token: "t1")
+    refute_equal baseline, SandboxNetwork.gateway_fingerprint(sandbox_dir: sandbox_dir, ca_cert: cert, proxy_token: "t2")
     File.write(cert, SandboxFixtures.generate_ca.last.to_pem)
-    refute_equal baseline, SandboxNetwork.gateway_fingerprint(sandbox_dir: sandbox_dir, ca_cert: cert)
+    refute_equal baseline, SandboxNetwork.gateway_fingerprint(sandbox_dir: sandbox_dir, ca_cert: cert, proxy_token: "t1")
   end
 
   # state directory
@@ -737,6 +739,25 @@ class SandboxNetworkCliTest < Minitest::Test
     assert removal, "expected the stale gateway to be removed, got #{calls}"
     assert run, "expected a new gateway, got #{calls}"
     assert_operator removal, :<, run
+  end
+
+  # Running agents keep their egress while the new image builds.
+  def test_ensure_builds_the_replacement_image_before_removing_a_stale_gateway
+    _, stderr, status = run_cli("ensure", "STUB_GATEWAY_FINGERPRINT" => "stale", "STUB_PODMAN_IMAGE_MISSING" => "true")
+    build = calls.index { _1.start_with?("build ") }
+    removal = calls.index { _1.match?(/rm --force\b.*#{GATEWAY}/) }
+
+    assert status.success?, stderr
+    assert build, "expected a build, got #{calls}"
+    assert_operator build, :<, removal
+  end
+
+  def test_ensure_keeps_a_stale_gateway_when_its_replacement_fails_to_build
+    _, _, status = run_cli("ensure", "STUB_GATEWAY_FINGERPRINT" => "stale", "STUB_PODMAN_IMAGE_MISSING" => "true",
+                                     "STUB_PODMAN_BUILD_FAILURE" => "true")
+
+    refute status.success?
+    assert_empty(calls.grep(/rm --force\b.*#{GATEWAY}/))
   end
 
   def test_ensure_restarts_an_exited_gateway

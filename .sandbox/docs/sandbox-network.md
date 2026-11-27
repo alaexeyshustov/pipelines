@@ -38,7 +38,8 @@ anything wider):
   ca/ca-key.pem     CA key, mode 600 (gateway only)
   gh-token          fine-grained PAT, mode 600
   policy.json       snapshot of .sandbox/gateway/policy.json (generated)
-  proxy-token       nono password, mode 600 (generated once)
+  proxy-token       nono password, mode 600 (generated once; delete it to
+                    rotate, and the next attach replaces the gateway and agent)
   lock              flock file
 ```
 
@@ -117,8 +118,8 @@ nono why --profile .sandbox/gateway/policy.json --host https://example.com      
 ```
 
 The next `attach-worktree` (or `sandbox-network ensure`) sees the new gateway
-fingerprint, rebuilds the image and replaces only the gateway. Running agent
-sessions stay up; their connections drop briefly.
+fingerprint, builds the new image, then replaces only the gateway. Running agent
+sessions stay up; their connections drop briefly while the gateway restarts.
 
 ## Reading denials
 

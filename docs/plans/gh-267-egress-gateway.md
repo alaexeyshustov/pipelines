@@ -1,6 +1,17 @@
 # Plan: egress gateway (nono + local CA) for the agent container (GH #267)
 
-**Status:** planned | One PR | Spec: issue body (design settled)
+**Status:** implemented (PR #345) | One PR | Spec: issue body (design settled)
+
+## Deviations found during implementation
+
+The real-machine run (step 6) changed these; ADR 0002 and `.sandbox/docs/sandbox-network.md` are current where this plan differs.
+
+- `registry.npmjs.org` is a plain, tunnelled host, not `GET`/`HEAD` only. nono refuses intercepted paths containing `%2F`, and pnpm fetches every scoped package as `/@scope%2Fname`. The gateway therefore no longer blocks `npm publish`; it needs an npm token the agent doesn't have. The integration check is a scoped-package `GET` → 200 instead of `PUT` → 403.
+- `storage.googleapis.com` is allowed for `GET`/`HEAD` under `/chrome-for-testing-public/**` only, where `cdn.playwright.dev` redirects Chrome for Testing.
+- Agents reach Ollama as `sandbox-gateway.internal` (`OLLAMA_API_BASE=http://sandbox-gateway.internal:11434/v1`, added to `NO_PROXY` and `--add-host`). Ollama answers 403 to a Host header that isn't local.
+- `run-agent` passes `--name` itself and refuses a caller's; `attach-worktree` no longer passes it.
+- Both fingerprints include the proxy token, and a stale gateway's replacement image is built before the old gateway is removed.
+- `cleanup_finished` also removes finished containers' gem and node_modules volumes and agent images no container uses. It skips the image cleanup when Podman is unreachable.
 
 No Archspec layer applies: `Archspec.rb` scans only `app/` and `lib/`, `.rubocop.yml` excludes `.sandbox/**/*`, and Steep/RBS don't cover `.sandbox`. There is no Gemfile or config change, so `archspec reflect` isn't needed.
 

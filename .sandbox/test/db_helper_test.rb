@@ -734,6 +734,25 @@ class DbHelperCleanupFinishedTest < Minitest::Test
     assert_equal removed.sort, podman_calls.grep(/\Avolume rm /).map { _1.split.last }.sort
   end
 
+  def test_cleanup_finished_leaves_a_sibling_worktrees_volumes_alone
+    worktree_path = register_issue_worktree("GH-140", sandbox_worktree_path("gh-140"))
+    register_container("GH-140", "claude-omcc", "finished")
+    sibling = "pipelines-claude-omcc-gh-1400"
+
+    cleanup_finished(worktree_path, "STUB_PODMAN_LOG" => podman_log,
+                                    "STUB_PODMAN_VOLUMES" => "#{sibling}-bundle-amd64,#{sibling}-node-modules")
+
+    assert_empty podman_calls.grep(/\Avolume rm /)
+  end
+
+  def test_cleanup_finished_succeeds_with_nothing_to_clean_while_podman_is_down
+    stdout, stderr, status = run_helper("cleanup_finished", "STUB_PODMAN_DOWN" => "true")
+
+    assert status.success?, stderr
+    assert_equal "No finished sandbox containers.\n", stdout
+    assert_includes stderr, "skipping unused image cleanup"
+  end
+
   def test_cleanup_finished_removes_agent_images_that_no_container_uses
     images = %w[
       localhost/pipelines-claude-matt-agent-amd64:old localhost/pipelines-claude-matt-agent-amd64:used

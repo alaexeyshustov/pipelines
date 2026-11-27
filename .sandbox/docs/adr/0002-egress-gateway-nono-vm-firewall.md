@@ -69,11 +69,13 @@ container had unrestricted outbound access and the host's full-scope
   path-scoped, so the token's own repository scope is the real limit; the helper
   refuses anything not starting with `github_pat_`.
 - **Split fingerprints.** The agent fingerprint (run-agent arguments including
-  the gateway address, plus the CA certificate) is part of `launch_config_tag`.
-  The gateway fingerprint (helper, `.sandbox/gateway/*` including the policy, CA
-  certificate) is only a label on the gateway and part of its image tag. A
-  policy edit recreates just the gateway and leaves sessions alive; a new CA or
-  gateway address replaces agents.
+  the gateway address, plus the CA certificate and the proxy token) is part of
+  `launch_config_tag`. The gateway fingerprint (helper, `.sandbox/gateway/*`
+  including the policy, CA certificate, proxy token) is only a label on the
+  gateway and part of its image tag. A policy edit recreates just the gateway
+  and leaves sessions alive; a new CA, proxy token or gateway address replaces
+  agents. The replacement image is built before the old gateway is removed, so
+  agents keep egress during the build and a failed build keeps the old one.
 - **Host Ollama relay.** The gateway runs `socat` from `:11434` to
   `host.containers.internal:11434`; agents get
   `OLLAMA_API_BASE=http://sandbox-gateway.internal:11434/v1`. The `.internal`
@@ -101,6 +103,9 @@ container had unrestricted outbound access and the host's full-scope
 - Gemini is not allowed (add `generativelanguage.googleapis.com` if needed).
 - macOS with one rootful `podman machine` only.
 - The host and the Podman VM administrator remain trusted.
+- Agents mount the primary checkout's git common directory read-write, so they
+  can plant hooks or `.git/config` commands that run on the host and could
+  rewrite the policy or the helper. Tracked in #346.
 
 ## Verification
 

@@ -227,20 +227,24 @@ module SandboxNetwork
 
   # Part of the agent's launch config: a new CA or gateway address replaces
   # running agents, a policy edit does not.
-  def agent_fingerprint(gateway_ip:, ca_cert:)
-    Digest::SHA256.hexdigest("#{JSON.generate(agent_args(gateway_ip: gateway_ip, ca_cert: ca_cert))}\0#{File.binread(ca_cert)}")
+  # The proxy token is in both fingerprints: the gateway reads it once at
+  # start and agents carry it in HTTPS_PROXY, so a new token replaces both.
+  def agent_fingerprint(gateway_ip:, ca_cert:, proxy_token:)
+    Digest::SHA256.hexdigest(
+      "#{JSON.generate(agent_args(gateway_ip: gateway_ip, ca_cert: ca_cert))}\0#{File.binread(ca_cert)}\0#{proxy_token}"
+    )
   end
 
   # Names the gateway's identity: the helper that builds it, its image sources
-  # (including the policy) and the CA it signs with.
-  def gateway_fingerprint(sandbox_dir:, ca_cert:)
+  # (including the policy), the CA it signs with and its proxy token.
+  def gateway_fingerprint(sandbox_dir:, ca_cert:, proxy_token:)
     files = [File.join(sandbox_dir, "bin", "sandbox-network"), File.join(sandbox_dir, "bin", "sandbox_network.rb")]
     files += Dir.glob(File.join(sandbox_dir, "gateway", "**", "*")).select { File.file?(_1) }.sort
     digest = Digest::SHA256.new
     files.each do |file|
       digest << file.delete_prefix("#{sandbox_dir}/") << "\0" << File.binread(file) << "\0"
     end
-    digest << File.binread(ca_cert)
+    digest << File.binread(ca_cert) << "\0" << proxy_token
     digest.hexdigest
   end
 
@@ -361,6 +365,9 @@ module SandboxNetwork
     if gateway
       validate_gateway_owner!(gateway)
       if gateway.dig("Config", "Labels", CONFIG_LABEL) != fingerprint
+        # Build first: agents keep egress during the build, and a failed build
+        # leaves the old gateway in place.
+        build_gateway_image(fingerprint)
         podman("rm", "--force", GATEWAY)
         gateway = nil
       end
@@ -403,9 +410,10 @@ module SandboxNetwork
     # Checked here too, not only at launch, so no attach path starts with a token run-agent would refuse.
     read_pat!(File.join(state, "gh-token"))
     snapshot_policy(state, File.join(SANDBOX_DIR, "gateway", "policy.json"))
-    proxy_token(state)
+    token = proxy_token(state)
     network = ensure_network
-    ensure_gateway(network, gateway_fingerprint(sandbox_dir: SANDBOX_DIR, ca_cert: File.join(ca_dir, "ca-cert.pem")), state)
+    fingerprint = gateway_fingerprint(sandbox_dir: SANDBOX_DIR, ca_cert: File.join(ca_dir, "ca-cert.pem"), proxy_token: token)
+    ensure_gateway(network, fingerprint, state)
     wait_until_ready!
     network = inspect_network
     apply_firewall(machine, network.fetch("network_interface"))
@@ -451,11 +459,13 @@ module SandboxNetwork
     ca_cert = File.join(state_dir, "ca", "ca-cert.pem")
     raise Error, missing_ca_message(File.dirname(ca_cert)) unless File.file?(ca_cert)
 
+    # Creates the token if it's missing, so this agrees with the next ensure.
+    token = proxy_token(prepare_state_dir(state_dir))
     if gateway
-      puts gateway_fingerprint(sandbox_dir: SANDBOX_DIR, ca_cert: ca_cert)
+      puts gateway_fingerprint(sandbox_dir: SANDBOX_DIR, ca_cert: ca_cert, proxy_token: token)
     else
       network = inspect_network or raise Error, "#{NETWORK} does not exist yet; run sandbox-network ensure"
-      puts agent_fingerprint(gateway_ip: gateway_address(network), ca_cert: ca_cert)
+      puts agent_fingerprint(gateway_ip: gateway_address(network), ca_cert: ca_cert, proxy_token: token)
     end
   end
 
