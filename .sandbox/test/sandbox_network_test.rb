@@ -850,7 +850,7 @@ class SandboxNetworkCliTest < Minitest::Test
   end
 
   def test_run_agent_runs_podman_with_the_agent_args_and_the_proxy_environment
-    _, stderr, status = run_cli("run-agent", AGENT, "--interactive", "--name", AGENT, "example/image:tag")
+    _, stderr, status = run_cli("run-agent", AGENT, "--interactive", "example/image:tag")
     run = calls.find { _1.start_with?("run ") }
     token = File.read(File.join(@state, "proxy-token")).strip
     proxy = "http://nono:#{token}@sandbox-gateway:3128"
@@ -968,7 +968,7 @@ class SandboxNetworkCliTest < Minitest::Test
   end
 
   def test_run_agent_passes_the_secrets_only_through_the_environment
-    _, stderr, status = run_cli("run-agent", AGENT, "--name", AGENT, "image")
+    _, stderr, status = run_cli("run-agent", AGENT, "image")
     environment = File.read(@env_log)
 
     assert status.success?, stderr
@@ -979,8 +979,26 @@ class SandboxNetworkCliTest < Minitest::Test
     assert_includes run, "--env HTTP_PROXY"
   end
 
+  def test_run_agent_names_the_container_it_validated
+    _, stderr, status = run_cli("run-agent", AGENT, "image")
+
+    assert status.success?, stderr
+    assert_match(/\Arun --name #{AGENT} /, calls.find { _1.start_with?("run ") })
+  end
+
+  def test_run_agent_refuses_a_caller_supplied_name
+    %W[--name --name=other].each do |flag|
+      arguments = flag == "--name" ? [flag, "other"] : [flag]
+      _, stderr, status = run_cli("run-agent", AGENT, *arguments, "image")
+
+      refute status.success?, flag
+      assert_includes stderr, "--name"
+    end
+    assert_empty(calls.grep(/\Arun\b/))
+  end
+
   def test_run_agent_reconciles_the_gateway_and_firewall_before_launching
-    _, stderr, status = run_cli("run-agent", AGENT, "--name", AGENT, "image")
+    _, stderr, status = run_cli("run-agent", AGENT, "image")
 
     assert status.success?, stderr
     assert_operator calls.index { _1.start_with?("machine ssh") }, :<, calls.index { _1.start_with?("run ") }

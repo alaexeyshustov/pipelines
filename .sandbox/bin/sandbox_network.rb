@@ -430,6 +430,10 @@ module SandboxNetwork
 
   def run_agent(container, podman_args)
     validate_container_name!(container)
+    # The validated name is the one that runs; a caller --name would bypass it.
+    if podman_args.any? { _1 == "--name" || _1.start_with?("--name=") }
+      raise Error, "run-agent names the container itself; drop --name from the podman arguments"
+    end
     state = prepare_state_dir(state_dir)
     token = read_pat!(File.join(state, "gh-token"))
     network = with_lock(state) { ensure_all(state) }
@@ -437,7 +441,7 @@ module SandboxNetwork
     environment = PROXY_VARIABLES.to_h { [_1, proxy] }
     environment.merge!("NO_PROXY" => NO_PROXY, "no_proxy" => NO_PROXY, "GH_TOKEN" => token)
     arguments = agent_args(gateway_ip: gateway_address(network), ca_cert: File.join(state, "ca", "ca-cert.pem"))
-    exec(environment, "podman", "run", *arguments, *podman_args)
+    exec(environment, "podman", "run", "--name", container, *arguments, *podman_args)
   end
 
   def print_fingerprint(gateway:)

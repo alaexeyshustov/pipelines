@@ -70,8 +70,8 @@ def gateway_id = podman("container", "inspect", "--format", "{{.Id}}", GATEWAY).
 def machine_name = JSON.parse(podman("machine", "inspect").first).first.fetch("Name")
 
 def start_agent
-  _, stderr, ok = run(HELPER, "run-agent", AGENT, "--detach", "--publish", "127.0.0.1::3000",
-                      "--entrypoint", "bash", IMAGE, "-c", AGENT_SCRIPT)
+  _, stderr, ok = run(HELPER, "run-agent", AGENT, "--detach", "--platform", "linux/amd64",
+                      "--publish", "127.0.0.1::3000", "--entrypoint", "bash", IMAGE, "-c", AGENT_SCRIPT)
   abort "run-agent failed: #{stderr}" unless ok
   wait_for_server
 end
@@ -82,7 +82,9 @@ def wait_for_server
     return if ok
     sleep 0.5
   end
-  abort "The agent's server on :3000 did not come up; see `podman logs #{AGENT}`"
+  # The agent is removed on exit, so show its logs now.
+  logs, = podman("logs", AGENT)
+  abort "The agent's server on :3000 did not come up. Agent logs:\n#{logs}"
 end
 
 running, = podman("ps", "--filter", "label=#{LABEL}", "--format", "{{.Names}}")
@@ -98,8 +100,10 @@ begin
     [!ok]
   end
 
+  # A host nono doesn't intercept is refused at CONNECT, so the 403 is the
+  # proxy's reply (%{http_connect}); %{http_code} stays 000.
   check("https://example.com is refused with 403 and logged as host_denied") do
-    code = http_code("https://example.com")
+    code, = agent("curl", "-sS", "--max-time", "20", "-o", "/dev/null", "-w", "%{http_connect}", "https://example.com")
     logs = podman("logs", GATEWAY).then { _1[0] + _1[1] }
     denied = logs.lines.grep(/proxy request denied/).any? { _1.include?("host_denied") && _1.include?("example.com") }
     [code == "403" && denied, "status #{code}, logged #{denied}"]

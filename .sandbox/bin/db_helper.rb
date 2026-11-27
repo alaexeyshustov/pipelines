@@ -603,7 +603,7 @@ module DbHelper
                       volume.delete_prefix(container_name).match?(/\A#{DEPENDENCY_VOLUME_SUFFIX}/o)
 
           puts "Removing sandbox volume: #{volume}"
-          raise Error, "Could not remove sandbox volume: #{volume}" unless system('podman', 'volume', 'rm', volume)
+          raise Error, "Could not remove sandbox volume: #{volume}" unless system('podman', 'volume', 'rm', volume, out: File::NULL)
         end
       end
 

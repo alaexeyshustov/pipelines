@@ -309,7 +309,6 @@ case "$container_status" in
     printf 'Launching sandbox container: %s\n' "$container_name"
     run_agent_container with_op_secrets "$network_helper" run-agent "$container_name" --interactive --tty \
       --platform "$sandbox_platform" \
-      --name "$container_name" \
       --label "io.pipelines.sandbox.agent-image=$image_tag" \
       --label "io.pipelines.sandbox.launch-config=$launch_config_tag" \
       --label "io.pipelines.sandbox.profile=$profile" \
